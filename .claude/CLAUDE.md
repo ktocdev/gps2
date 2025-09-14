@@ -119,3 +119,40 @@ src/components/
 ### Quality Checks
 - Always run `npm run build` to verify TypeScript compilation
 - Ensure all files pass linting before commits
+
+## Documentation Structure
+
+The project uses an organized documentation system for maintainability:
+
+### Primary Documentation Files
+- **PROJECT_PLAN.md** - Master overview with navigation links to all systems
+- **DEVELOPMENT_PHASES.md** - Implementation roadmap and phase summaries
+- **SYSTEM_INTEGRATION.md** - Architecture, dependencies, and data flow details
+
+### Documentation Directories
+- **docs/systems/** - Detailed system specifications organized by development phase
+  - **phase1/** - Foundation systems (Game Controller, Layout Framework, Logging, Debug)
+  - **phase2/** - Core entities and timing (Guinea Pig, Needs, Habitat, Game Loop)
+  - **phase3/** - Game world and environment (Items, Inventory, Maintenance)
+  - **phase4/** - Interactions and behaviors (Player interactions, AI)
+  - **phase5/** - Polish and enhancements (Achievements, Sound, Animation)
+- **docs/game-design/** - Core mechanics and design philosophy
+  - **wellness-system.md** - Hidden wellness calculation and friendship penalties
+  - **happiness-mechanics.md** - Entertainment system preventing boredom
+  - **preferences-system.md** - Individual guinea pig personality through discovery
+  - **habitat-conditions.md** - Environmental management separate from needs
+  - **activity-feed-design.md** - Text-based communication before animations
+- **docs/technical/** - Technical considerations and guides (planned)
+
+### Using the Documentation
+- Start with **PROJECT_PLAN.md** for overview and navigation
+- Use **phase-specific files** for detailed system implementation
+- Reference **game-design files** for understanding core mechanics
+- Check **SYSTEM_INTEGRATION.md** for architecture and dependencies
+- Follow **DEVELOPMENT_PHASES.md** for implementation sequence
+
+### Maintaining Documentation
+- Update specific system files rather than monolithic documents
+- Maintain cross-references between related systems
+- Keep PROJECT_PLAN.md navigation links current
+- Document architectural decisions in appropriate system files
