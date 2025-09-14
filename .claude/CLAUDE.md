@@ -24,6 +24,75 @@
 - Use PascalCase for component file names
 - Keep router configuration in `src/router/index.ts`
 
+## Folder Organization Strategy
+
+### Core Principle
+**Organize by function, not file type.** As files accumulate, group related functionality together rather than separating by technical file type.
+
+### Component Organization (`src/components/`)
+
+**Start Simple:** Initially place all components directly in `src/components/`
+
+**Reorganize When Needed:** When you have 8-10+ components, organize into functional folders:
+
+- **`/basic/`** - Reusable form and UI elements
+  - `Button.vue`, `Input.vue`, `Toggle.vue`, `ProgressBar.vue`, `Modal.vue`
+- **`/game/`** - Game-specific components
+  - `NeedBar.vue`, `ActivityFeed.vue`, `GuineaPigSprite.vue`, `FriendshipMeter.vue`
+  - `PreferenceTracker.vue`, `HabitatStatusDisplay.vue`, `StatsDisplay.vue`
+- **`/layout/`** - Layout and navigation components
+  - `NavigationHeader.vue`, `BottomMenu.vue`, `SidePanel.vue`, `PageHeader.vue`
+- **`/debug/`** - Development and debugging components
+  - `DebugPanel.vue`, `ValueAdjuster.vue`, `LogViewer.vue`, `FeatureToggle.vue`
+
+### Store Organization (`src/stores/`)
+
+- **`/core/`** - Essential game state
+  - `gameController.ts`, `guineaPig.ts`, `needs.ts`
+- **`/systems/`** - Feature-specific stores
+  - `habitat.ts`, `inventory.ts`, `interactions.ts`, `autonomy.ts`
+- **`/ui/`** - UI and user preferences
+  - `settings.ts`, `debug.ts`, `achievements.ts`
+
+### Composable Organization (`src/composables/`)
+
+- **`/game/`** - Core game logic
+  - `useNeeds.ts`, `useWellness.ts`, `usePreferences.ts`, `useFriendship.ts`
+- **`/ui/`** - UI utilities
+  - `useModal.ts`, `useTooltip.ts`, `useResponsive.ts`, `useNotifications.ts`
+- **`/data/`** - Data management
+  - `useStorage.ts`, `useLogging.ts`, `useActivityFeed.ts`
+
+### Reorganization Guidelines
+
+1. **File Count Threshold:** When any folder contains 8-10+ files, consider subdividing
+2. **Function-Based Grouping:** Group files that work together or serve similar purposes
+3. **Update Imports:** Use find-and-replace to update import paths when reorganizing
+4. **Document Changes:** Note major reorganization decisions in commit messages
+5. **Consistent Naming:** Use consistent folder names across components/stores/composables
+
+### Example Evolution
+
+**Phase 1 (Simple):**
+```
+src/components/
+  ├── Button.vue
+  ├── Modal.vue
+  ├── NeedBar.vue
+  └── ActivityFeed.vue
+```
+
+**Phase 2 (Organized):**
+```
+src/components/
+  ├── basic/
+  │   ├── Button.vue
+  │   └── Modal.vue
+  └── game/
+      ├── NeedBar.vue
+      └── ActivityFeed.vue
+```
+
 ### State Management
 - Use Pinia for global state management
 - Use composables for reusable logic
@@ -36,6 +105,9 @@
 - **Theming system** - Design variables for easy theming with dark mode and light mode support
 - **No scoped styles** - Always use global CSS with BEM naming to maintain consistency and reusability
 - **Consistent naming** - Follow BEM conventions: `.game-board`, `.game-board__cell`, `.game-board__cell--active`
+- **Container Queries** - Use `@container` for component-specific responsive design, enabling context-aware layouts that respond to container size rather than viewport
+- **Container Types** - Set `container-type: inline-size` for width-based queries, `size` for both dimensions
+- **Naming Convention** - Use descriptive container names: `text-panel`, `habitat-container`, `layout-region`
 
 ## Build & Development
 

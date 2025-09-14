@@ -3,23 +3,61 @@
 ## Phase 1: Foundation & Infrastructure
 1. **Game Controller Store (Pinia)**
    - Game state (intro, playing, paused, stopped)
+   - **Enhanced Pause System:**
+     - User manual pause/resume controls
+     - Automatic orientation-based pause (when OrientationModal is active)
+     - Pause state priority (manual pause takes precedence)
+     - Preserve user intent across orientation changes
    - Save/load game functionality with browser persistence
    - New game functionality with data reset
    - Auto-save and auto-load on browser open
    - Settings management foundation (expandable structure for all game preferences)
-   - Initial settings: basic game preferences only (theme selection added after CSS Framework)
+   - **Initial Settings (Phase 1.1):**
+     - **Auto-save enabled/disabled** (default: enabled)
+     - **Save frequency** (30 seconds, 1 minute, 2 minutes)
+     - **Tutorial Controls** (global user preferences that persist across games):
+       - Tutorial mode: 'auto' | 'always_show' | 'never_show' (default: 'auto')
+       - Global first-time user detection
+       - Manual override controls for tutorial display
+     - **Performance mode** (standard/reduced for older devices)
+     - **Error reporting enabled/disabled** (default: enabled in development, disabled in production)
+       - Captures JavaScript errors, failed save/load operations, performance issues
+       - Stores error data locally: timestamp, error type, message, game state summary
+       - User privacy control with clear explanation of data collection
+   - **Settings Added Later:** Theme selection (after CSS Framework), sound controls (after Sound System), etc.
    - Game session tracking (play time, statistics)
 
-2. **CSS Styling Framework**
-   - BEM methodology for consistent class naming
-   - CSS custom properties in `src/styles/variables.css`
-   - Theming system with dark mode and light mode support
-   - Theme selection integration with Game Controller Store settings
-   - Mobile-first breakpoint strategy
-   - Global CSS only (no scoped styles) for consistency and reusability
-   - Reusable design tokens for colors, spacing, typography
+2. **Unified Layout & Component Framework**
+   **Combined development approach for Systems 2-4 with region-based construction**
 
-3. **Reusable Component Library**
+   - **CSS Styling Foundation:**
+     - BEM methodology for consistent class naming
+     - CSS custom properties in `src/styles/variables.css`
+     - Theming system with dark mode and light mode support
+     - Mobile-first breakpoint strategy with landscape mobile (768px+) foundation
+     - Global CSS only (no scoped styles) for consistency and reusability
+     - Responsive layout regions using CSS Grid/Flexbox
+
+   - **Adaptive Navigation System:**
+     - **Desktop/Tablet:** Full bottom navigation bar with complete controls
+     - **Mobile Landscape (height < 500px):** Bottom nav collapses into Floating Action Button (FAB)
+       - **Layout Grid:** Three-column layout with fixed top nav (50-60px height)
+       - **Left Navigation:** Fixed sidebar (~200px max width, 15% of screen)
+       - **Habitat Container:** Centered main content area (~60-65% of available width)
+       - **TextInfoPanel:** Right sidebar (~25-30% of width, 280px minimum for comfortable reading)
+       - **FAB Positioning:** Bottom-right corner between TextInfoPanel and habitat with 16px spacing
+       - **Container-Query Integration:** Components adapt based on their allocated container size
+     - **FAB Implementation:** Bottom-right positioned, expandable to reveal nav controls
+     - **FAB Menu Options:** Radial menu, slide-up panel, or contextual overlay
+     - **Primary FAB Actions:** Most common interactions (interact with guinea pig, urgent needs)
+
+   - **Region-Based Development Strategy:**
+     - **Step 1:** Responsive layout framework foundation with OrientationModal
+     - **Step 2:** Navigation regions (top nav, adaptive bottom nav/FAB)
+     - **Step 3:** Core content regions (habitat grid, info panels, activity feed)
+     - **Step 4:** Iterative component development as regions are populated
+
+   - **Reusable Component Library:**
    - Custom reusable components for all UI elements
    - **Basic Form Components:** Button, Toggle, Checkbox, Input, ProgressBar, Slider, Dropdown/Select, DatePicker, RadioButton, TextArea
    - **Game-Specific Components:**
@@ -28,11 +66,15 @@
      - PreferenceTracker (discovered preferences display with visual indicators)
      - PreferenceLearningHint (visual cues for newly discovered preferences)
      - ActivityFeed (scrolling text-based activity stream with timestamps and filtering)
+     - TextInfoPanel (container-query responsive text information display with activity feed, stats, and contextual actions)
+     - ActivityFeedStream (enhanced activity feed with real-time updates, emoji graphics, and container-query sizing)
+     - QuickStatsCard (compact stats summary for narrow layouts with responsive text sizing)
+     - ContextualActionSuggester (displays context-aware action suggestions based on guinea pig state)
      - StatsDisplay (guinea pig info card with name, age, gender, coat)
      - FoodSelector (component for selecting specific hay/vegetable/fruit types)
      - BeddingTypeSelector (interface for selecting bedding varieties)
      - GridCell (habitat grid individual cell component)
-     - GridContainer (habitat grid layout container)
+     - GridContainer (habitat grid layout container with container-query responsive sizing)
      - HabitatItem (draggable/placeable items like food dish, water bottle)
      - MenuCard (interaction menu panels with icons and labels)
      - StatusIndicator (behavior indicators, cleanliness status)
@@ -55,12 +97,18 @@
      - GuineaPigSprite (guinea pig visual representation - starts as static emoji, later enhanced with animation system)
    - **Layout Components:**
      - NavigationHeader (persistent header with play/pause, new game)
-     - BottomMenu (touch-friendly bottom interaction area)
+     - BottomMenu (touch-friendly bottom interaction area - desktop/tablet)
+     - FloatingActionButton (FAB - adaptive bottom nav for mobile landscape)
+     - FABMenu (expandable controls overlay for constrained screens)
      - SidePanel (inventory/store sliding panels)
      - FloatingMenu (context menus for interactions)
      - TabContainer (tabbed interface for settings/menus)
      - Accordion (collapsible content sections)
      - PageHeader (screen titles with back navigation)
+     - TextInfoPanel (container-query aware text information display for mobile landscape right sidebar)
+     - ActivityFeedStream (scrollable message list with real-time text updates and emoji graphics)
+     - QuickStatsCard (compact stats display optimized for narrow text panel layouts)
+     - LayoutRegionContainer (container-query wrapper for major layout regions with responsive sizing)
    - **Modal System:**
      - Modal (base modal component)
      - ConfirmationModal ("Start New Game" warning, etc.)
@@ -68,11 +116,14 @@
      - TutorialModal (onboarding and tip displays)
      - SettingsModal (preferences and configuration)
      - InfoModal (help text and game information)
+     - OrientationModal (mobile portrait rotation prompt with game pause)
    - **Debug Components:**
      - DebugPanel (collapsible debug interface)
      - NeedControl (individual need manipulation controls)
      - WellnessDebugger (wellness calculation breakdown and penalty testing)
      - HabitatDebugger (habitat condition manipulation and testing controls)
+     - ResponsiveDetector (service component for viewport monitoring)
+     - DeviceTypeIndicator (debug component showing current device/orientation state)
      - LogViewer (scrollable log display)
      - ValueAdjuster (debug slider/input for numeric values)
      - FeatureToggle (enable/disable feature flags for testing)
@@ -81,22 +132,35 @@
    - Theming integration with CSS variables
    - Built with responsive design principles
 
-4. **Responsive Design System & UI Framework**
-   - Mobile-first responsive layout design
-   - Touch-optimized interactions for mobile devices
-   - Desktop-enhanced features and larger interaction areas
-   - Adaptive UI scaling for different screen sizes
-   - Context-aware menus and interfaces
-   - Cross-platform compatibility (iOS, Android, desktop browsers)
+   - **Responsive Layout Controller:**
+     - Device type detection (mobile, tablet, desktop)
+     - Orientation monitoring (portrait, landscape) with throttled resize events
+     - Screen size tracking with performance optimization (100-200ms throttling)
+     - Breakpoint management and layout state updates
+     - Adaptive navigation switching (bottom nav ↔ FAB based on screen height)
+     - **Container-Query Integration:**
+       - Container observation setup for major layout regions (habitat, text-panel, layout-region)
+       - Component-level responsive behavior coordination with global layout changes
+       - Performance-optimized container resize detection with debouncing
+       - Context-aware component sizing that responds to allocated container space rather than viewport
+
+   - **Mobile Portrait Handling:**
+     - OrientationModal takeover for mobile portrait mode (< 768px width, height > width)
+     - Automatic game pause when orientation modal is active
+     - Full-screen rotation prompt with clear user instructions
+     - Game resume on landscape rotation (preserves manual pause state)
+
    - **Complete Game UI Structure with Placeholders:**
      - Game intro screen with guinea pig creation form placeholders
      - Navigation header with play/pause and new game button placeholders
      - Guinea pig stats display area (name, gender, coat, age placeholders)
      - Needs bars/indicators with placeholder data
      - **Habitat status display area (cleanliness, bedding freshness, water level)**
-     - Main habitat grid container with responsive sizing and placeholder guinea pig (emoji-based)
+     - Main habitat grid container with container-query responsive sizing and placeholder guinea pig (emoji-based)
      - **Activity feed panel (sidebar or bottom area) for real-time text-based interactions**
-     - Bottom interaction menu area (touch-friendly) with placeholder buttons
+     - **Adaptive bottom interaction area:**
+       - **Desktop/Tablet:** Full bottom menu with complete interaction controls
+       - **Mobile Landscape (height < 500px):** Floating Action Button (FAB) with expandable menu
      - Inventory interface placeholders
      - Store interface placeholders
      - Direct interaction menu placeholders
@@ -150,7 +214,7 @@
      - Cross-system integration validation
 
 ## Phase 2: Core Game Entities & State
-7. **Guinea Pig Creation System**
+5. **Guinea Pig Creation System**
    - Game intro screen with creation form
    - Guinea pig customization options:
      - Name input field
@@ -166,12 +230,17 @@
    - **New Game Tips & Onboarding:**
      - Welcome message and basic game concept explanation
      - Getting started tips (watch needs bars, interact with guinea pig, keep cage clean)
-     - First-time user tutorial highlighting key UI elements
+     - **Tutorial System Integration:**
+       - Respects global tutorial preferences from Game Controller Store
+       - 'auto' mode: Shows tutorials only for genuinely first-time users
+       - 'always_show' mode: Displays all tutorial content regardless of experience
+       - 'never_show' mode: Skips all tutorial content
+       - Tutorial controls persist across different guinea pig creations
      - Tips on building friendship through positive interactions
-     - Optional tutorial mode for guided first interactions
+     - Guided first interactions (when tutorials are enabled)
    - Logging integration for creation events
 
-8. **Guinea Pig Store (Pinia)**
+6. **Guinea Pig Store (Pinia)**
    - Guinea pig entity with customizable properties (name, gender, coat, birthdate)
    - Core stats/needs structure
    - Age calculation based on birthdate
@@ -189,7 +258,7 @@
    - Persistence configuration
    - Logging integration for state changes and preference discoveries
 
-9. **Needs System Architecture**
+7. **Needs System Architecture**
    - Base Need class/interface with decay rates
    - Need categories (hunger, thirst, happiness, cleanliness, health, energy, social)
    - Need value ranges (0-100 scale) with critical thresholds (0-25%, 25-50%, etc.)
@@ -219,7 +288,7 @@
    - Debug interface integration for need manipulation
    - Logging integration for need changes
 
-10. **Needs Controller Store (Pinia)**
+8. **Needs Controller Store (Pinia)**
     - Central needs management
     - Batch processing all needs decay
     - **Internal wellness rating calculation (not exposed to UI)**
@@ -231,7 +300,7 @@
     - Debug menu integration for need control
     - Logging integration for need processing events
 
-11. **Habitat Conditions Store (Pinia)**
+9. **Habitat Conditions Store (Pinia)**
     - **Cleanliness Level (0-100)** - decreases with poop accumulation, reset by cleaning cage
     - **Bedding Freshness (0-100)** - gradual decay over time, refreshed using bedding resource
     - **Water Level (0-100)** - decreases when guinea pig drinks, refilled for free
@@ -242,14 +311,18 @@
     - Debug menu integration for condition manipulation
     - Persistence with game state saving
 
-12. **Interval Management System**
+10. **Interval Management System**
     - Main game tick (every 1-5 seconds)
     - Multiple interval speeds for different systems
-    - Pause/resume functionality
+    - **Enhanced Pause/Resume Functionality:**
+      - Respects manual user pause state
+      - Respects automatic orientation pause state
+      - Combined pause logic (paused if either condition is true)
+      - Seamless resume when orientation modal dismisses
     - Background tab handling
     - Logging integration for timing events
 
-13. **Game Loop Integration**
+11. **Game Loop Integration**
     - Connect needs system with timing
     - **Integrate habitat conditions with game tick system**
     - Synchronize needs decay with game tick
@@ -259,7 +332,7 @@
     - Logging integration for system integration events
 
 ## Phase 3: Game World & Environment
-14. **Habitat Item System**
+12. **Habitat Item System**
     - Grid-based habitat layout for item placement (drag & drop)
     - Item interaction system (guinea pig automatically uses items)
     - **Default habitat items:** water bottle, food dish, hay rack (with multiple hay types), small shelter, small chew toy
@@ -279,7 +352,7 @@
     - Item positioning affects effectiveness (water near food, toys in activity area, etc.)
     - Logging integration for item interactions
 
-15. **Inventory & Store System**
+13. **Inventory & Store System**
     - Player inventory for owned items
     - **Resource inventory for consumables (bedding, food supplies)**
     - Store with purchasable items and currency system
@@ -309,7 +382,7 @@
     - **Resource management (track bedding quantity, consumption rates)**
     - Logging integration for inventory and purchase events
 
-16. **Habitat Maintenance & Hygiene System**
+14. **Habitat Maintenance & Hygiene System**
     - **Enhanced poop system** with grid-based placement and accumulation tracking
     - **Habitat cleanliness level** affected by poop accumulation and general cage state
     - **Bedding freshness system** with gradual decay over time
@@ -331,7 +404,7 @@
     - Logging integration for all habitat maintenance events
 
 ## Phase 4: Interactions & Behaviors
-17. **Direct Interaction System**
+15. **Direct Interaction System**
     - User-to-guinea-pig interactions via click/touch menu
     - **Basic Interactions:** pet, clip nails, hold, brush, use pet wipe, hand feed
     - **Communication Interactions (happiness +):** talk to, sing to, whistle to, call name, make kissing sounds
@@ -362,7 +435,7 @@
     - Cooldown system for interactions
     - Logging integration for interaction events
 
-18. **Guinea Pig Autonomy System**
+16. **Guinea Pig Autonomy System**
     - Autonomous behavior triggered by need thresholds
     - Pathfinding and movement to habitat items
     - Autonomous actions: walk to food/water, hide in shelter, sleep, use items
@@ -380,7 +453,7 @@
     - Logging integration for autonomy and AI decision events
 
 ## Phase 5: Polish & Enhancement
-19. **Achievement & Progression System**
+17. **Achievement & Progression System**
     - Achievement tracking for various milestones
     - Guinea pig care achievements (feed X times, clean cage daily)
     - Collection achievements (own all items, unlock all coat colors)
@@ -390,7 +463,7 @@
     - Achievement notifications and celebration animations
     - Logging integration for achievement events
 
-20. **Sound System**
+18. **Sound System**
     - Audio manager for game sound effects
     - Click/touch interaction sound feedback
     - **Guinea pig reaction sounds:**
@@ -404,7 +477,7 @@
     - Audio file optimization for web delivery
     - Logging integration for audio events
 
-21. **Settings & Preferences Enhancement**
+19. **Settings & Preferences Enhancement**
     - Expand settings as new features are added:
       - Sound settings (master volume, effects, music) - added with Sound System
       - Notification preferences - added with Achievement System
@@ -414,7 +487,7 @@
     - Advanced preference categories and organization
     - Settings search and categorization for large option sets
 
-22. **Guinea Pig Animation System (Future Enhancement)**
+20. **Guinea Pig Animation System (Future Enhancement)**
     - **Core Animation Framework:**
       - Replace static emoji GuineaPigSprite with full animation system
       - CSS transforms/transitions for smooth guinea pig movement
@@ -461,37 +534,35 @@
 
 ## Recommended Development Order:
 
-### Phase 1: Foundation & Infrastructure (Systems 1-6)
+### Phase 1: Foundation & Infrastructure (Systems 1-4)
 1. **Game Controller Store** - Central control system with save/load
-2. **CSS Styling Framework** - Establish design system and theming foundation
-3. **Reusable Component Library** - Base UI components including modal system and ActivityFeed
-4. **Responsive Design System & UI Framework** - Complete game UI using components with activity feed panel
-5. **Logging System & Activity Feed** - Centralized logging and natural language activity generation (implement early!)
-6. **Debug Menu System** - Development debugging tools (implement early for testing needs!)
+2. **Unified Layout & Component Framework** - Region-based development combining CSS foundation, component library, and responsive UI with adaptive FAB navigation
+3. **Logging System & Activity Feed** - Centralized logging and natural language activity generation (implement early!)
+4. **Debug Menu System** - Development debugging tools (implement early for testing needs!)
 
-### Phase 2: Core Game Entities & Timing (Systems 7-13)
-7. **Guinea Pig Creation System** - Intro screen (connect to existing UI placeholders)
-8. **Guinea Pig Store** - Entity management (connect to stats display placeholders)
-9. **Needs System Architecture** - Core game mechanics with internal wellness system (connect to needs bars, enhanced friendship meter, and debug menu)
-10. **Needs Controller Store** - Centralized need processing with wellness calculation and friendship penalties (connect to live needs display, enhanced friendship feedback, and debug controls)
-11. **Habitat Conditions Store** - Environmental condition tracking (cleanliness, bedding freshness, water level) with resource management
-12. **Interval Management System** - Game timing that drives needs decay, friendship penalties, and habitat condition changes
-13. **Game Loop Integration** - Connect needs system with timing for core functionality including wellness-to-friendship feedback and habitat-to-needs integration
+### Phase 2: Core Game Entities & Timing (Systems 5-11)
+5. **Guinea Pig Creation System** - Intro screen (connect to existing UI placeholders)
+6. **Guinea Pig Store** - Entity management (connect to stats display placeholders)
+7. **Needs System Architecture** - Core game mechanics with internal wellness system (connect to needs bars, enhanced friendship meter, and debug menu)
+8. **Needs Controller Store** - Centralized need processing with wellness calculation and friendship penalties (connect to live needs display, enhanced friendship feedback, and debug controls)
+9. **Habitat Conditions Store** - Environmental condition tracking (cleanliness, bedding freshness, water level) with resource management
+10. **Interval Management System** - Game timing that drives needs decay, friendship penalties, and habitat condition changes
+11. **Game Loop Integration** - Connect needs system with timing for core functionality including wellness-to-friendship feedback and habitat-to-needs integration
 
-### Phase 3: Game World & Environment (Systems 14-16)
-14. **Habitat Item System** - Item placement (connect to habitat grid placeholders)
-15. **Inventory & Store System** - Item and resource management including bedding (connect to inventory/store UI placeholders)
-16. **Habitat Maintenance & Hygiene System** - Enhanced poop system, cleanliness, bedding, and water management (connect to maintenance menu and habitat status display placeholders)
+### Phase 3: Game World & Environment (Systems 12-14)
+12. **Habitat Item System** - Item placement (connect to habitat grid placeholders)
+13. **Inventory & Store System** - Item and resource management including bedding (connect to inventory/store UI placeholders)
+14. **Habitat Maintenance & Hygiene System** - Enhanced poop system, cleanliness, bedding, and water management (connect to maintenance menu and habitat status display placeholders)
 
-### Phase 4: Interactions & Behaviors (Systems 17-18)
-17. **Direct Interaction System** - User-guinea pig interactions (connect to interaction menu placeholders)
-18. **Guinea Pig Autonomy System** - AI behavior and pathfinding (connect to behavior indicator placeholders)
+### Phase 4: Interactions & Behaviors (Systems 15-16)
+15. **Direct Interaction System** - User-guinea pig interactions (connect to interaction menu placeholders)
+16. **Guinea Pig Autonomy System** - AI behavior and pathfinding (connect to behavior indicator placeholders)
 
-### Phase 5: Polish & Enhancement (Systems 19-22)
-19. **Achievement & Progression System** - Milestone tracking and rewards
-20. **Sound System** - Audio manager and interaction sound feedback
-21. **Settings & Preferences System** - User preferences and customization
-22. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement)
+### Phase 5: Polish & Enhancement (Systems 17-20)
+17. **Achievement & Progression System** - Milestone tracking and rewards
+18. **Sound System** - Audio manager and interaction sound feedback
+19. **Settings & Preferences System** - User preferences and customization
+20. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement)
 
 ## Wellness Rating System - Strategic Design:
 
@@ -690,11 +761,22 @@
 - **Integration Benefits:** Activity feed remains valuable even after animations for detailed information and accessibility
 
 **Technical Implementation:**
-- **ActivityFeed Component:** Scrollable, filterable message stream
-- **Message Categories:** Actions, reactions, environment, achievements
-- **Emoji Integration:** Simple visual representations (🐹 guinea pig, 🥕 carrot, 💧 water)
-- **Performance:** Efficient message queuing and display management
-- **Accessibility:** Screen reader friendly text descriptions
+- **TextInfoPanel Component:** Container-query responsive wrapper for text information display
+  - `@container (width > 350px)`: Two-column stats layout with expanded activity feed
+  - `@container (width < 250px)`: Compact single-column with abbreviated text and condensed stats
+  - `@container (height > 400px)`: Full activity feed with extended message history (20+ messages)
+  - `@container (height < 300px)`: Condensed view with only recent messages (5-8 messages)
+- **ActivityFeedStream Component:** Enhanced scrollable, filterable message stream
+  - Real-time message updates with smooth scroll animations
+  - Container-query based message density adjustment
+  - Emoji graphics with responsive sizing based on available space
+- **Message Categories:** Actions, reactions, environment, achievements with color coding
+- **QuickStatsCard Component:** Compact stats display with responsive text sizing
+  - Shows critical information (friendship level, urgent needs)
+  - Adapts text size and layout based on container width
+- **ContextualActionSuggester:** Dynamic action recommendations based on guinea pig state
+- **Performance:** Efficient message queuing, display management, and container observation
+- **Accessibility:** Screen reader friendly text descriptions with semantic markup
 
 **Gameplay Benefits:**
 - **Immediate Feedback:** Players instantly understand what's happening
@@ -718,6 +800,7 @@
 - **FriendshipMeter** ← Guinea Pig Store (friendship + wellness penalties)
 - **HabitatStatusDisplay, ResourceCounter** ← Habitat Conditions Store
 - **PreferenceTracker, PreferenceLearningHint** ← Guinea Pig Store
+- **OrientationModal, ResponsiveDetector** ← Game Controller Store (responsive state, pause control)
 - **Debug Components** ↔ Respective system stores
 
 ### **Event Flow & Dependencies:**
@@ -749,6 +832,11 @@
 - Consider performance with frequent state updates including wellness recalculation and habitat condition monitoring
 - **Optimize habitat condition updates** - bedding decay, water consumption, cleanliness changes
 - **Resource management efficiency** - track bedding inventory without excessive state updates
+- **Responsive Performance Optimization:**
+  - Throttle resize events (100-200ms) to prevent excessive layout recalculations
+  - Debounce orientation changes (300ms) to avoid rapid modal show/hide
+  - Use CSS media queries with JavaScript enhancement for efficient breakpoint detection
+  - Minimize component re-renders when breakpoints change
 - Implement pathfinding algorithm for guinea pig movement (A* or simple grid-based)
 - Design behavior decision tree for autonomous actions
 - **Future Animation Considerations:** Optimize animations for smooth guinea pig movement (CSS transforms/transitions) - implemented in Phase 5
