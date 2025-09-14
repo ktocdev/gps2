@@ -2,12 +2,44 @@
 
 ## Phase 1: Foundation & Infrastructure
 1. **Game Controller Store (Pinia)**
-   - Game state (intro, playing, paused, stopped)
-   - **Enhanced Pause System:**
-     - User manual pause/resume controls
-     - Automatic orientation-based pause (when OrientationModal is active)
-     - Pause state priority (manual pause takes precedence)
-     - Preserve user intent across orientation changes
+   - **Game State Management (Four Primary States):**
+     - **INTRO State:** App first loads, no guinea pig exists, or after "New Game"
+       - UI: Guinea pig creation form displayed
+       - Behavior: Game loop inactive, no needs decay, no autonomous behaviors
+       - Transitions: `intro` → `playing` (after guinea pig creation)
+     - **PLAYING State:** Guinea pig exists and user is actively playing
+       - UI: Full game interface visible (habitat, needs bars, interactions)
+       - Behavior: Game loop active, needs decay, autonomous behaviors, all interactions enabled
+       - Transitions: `playing` → `paused` (user pause/orientation), `playing` → `stopped` (user quit)
+     - **PAUSED State:** User manual pause OR OrientationModal active (mobile portrait)
+       - UI: Pause overlay or orientation prompt, game visually frozen
+       - Behavior: Game loop suspended, no needs decay, no autonomous behaviors, limited interactions
+       - Transitions: `paused` → `playing` (resume/orientation fix), `paused` → `stopped` (quit while paused)
+     - **STOPPED State:** User explicitly quits/closes game (future state for cleanup)
+       - UI: Optional goodbye screen or immediate app close
+       - Behavior: Save final state, cleanup resources, prepare for next session
+       - Transitions: `stopped` → `intro` (restart app) or app termination
+   - **State Transition Logic & Pause Priority:**
+     - **Pause Priority System:** Manual pause overrides orientation pause
+     - **State Persistence:** Current state saved to localStorage for recovery
+     - **Resume Logic:** Preserve user intent (if manually paused, don't auto-resume on orientation change)
+     - **Transition Validation:** Ensure only valid state transitions are allowed
+     - **State Recovery:** Detect and handle invalid state combinations on app startup
+   - **State Management Structure (TypeScript Interface):**
+     ```typescript
+     interface GameState {
+       currentState: 'intro' | 'playing' | 'paused' | 'stopped'
+       pauseReason?: 'manual' | 'orientation' | null
+       hasGuineaPig: boolean
+       isFirstTimeUser: boolean
+       lastSaveTimestamp: number
+     }
+     ```
+   - **Auto-Save Integration with State Management:**
+     - **Save Triggers:** State changes, periodic intervals (30s/1m/2m based on settings)
+     - **Save Content:** Current state + guinea pig data + needs + preferences + settings
+     - **Load on Startup:** Detect existing save → skip intro if guinea pig exists
+     - **State-Aware Persistence:** Different save strategies for different states
    - Save/load game functionality with browser persistence
    - New game functionality with data reset
    - Auto-save and auto-load on browser open
@@ -24,6 +56,12 @@
        - Captures JavaScript errors, failed save/load operations, performance issues
        - Stores error data locally: timestamp, error type, message, game state summary
        - User privacy control with clear explanation of data collection
+   - **Error Handling & State Recovery:**
+     - **Corrupted Save Detection:** Fallback to intro state with user notification
+     - **State Recovery:** Log state transitions for debugging save/load issues
+     - **Error Reporting Integration:** Capture state-related errors with context (current state, transition attempted)
+     - **Tutorial System Integration:** State-aware tutorials, persistence across game sessions
+     - **First-Time Detection:** Track across all game sessions, not just current guinea pig
    - **Settings Added Later:** Theme selection (after CSS Framework), sound controls (after Sound System), etc.
    - Game session tracking (play time, statistics)
 
