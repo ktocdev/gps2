@@ -9,7 +9,7 @@ Comprehensive economic system managing player inventory, store purchases, curren
 
 ### Player Inventory Management
 - **Item storage** for owned but unplaced habitat items
-- **Resource inventory** for consumables (bedding, food supplies)
+- **Resource inventory** for consumables (bedding, hay, food supplies)
 - **Inventory capacity** management with upgrade options
 - **Item organization** with categories and sorting options
 - **Quick access** to frequently used items and resources
@@ -46,26 +46,38 @@ Comprehensive economic system managing player inventory, store purchases, curren
 ## Item Categories & Inventory
 
 ### Essential Item Categories
-- **Hay varieties** (8 types) - core nutritional needs with preference variety
+- **Hay varieties** (8 types) - consumable resources for continuous hunger satisfaction
 - **Vegetables** (12 types) - daily nutrition with individual preferences
 - **Fruits** (treats, 10 types) - special rewards and preference discovery
+- **Chew items** (8 types) - dental health and chewing instinct satisfaction
 - **Toys/enrichment** - happiness and entertainment items
 - **Shelter & comfort** - security and rest items
 - **Decorations** - aesthetic customization and themed environments
-- **Habitat supplies** - essential maintenance resources (bedding)
+- **Habitat supplies** - essential maintenance resources (bedding and hay)
 
 ### Expanded Food Categories
 
-#### Hay Types (8 Varieties)
-Essential daily nutrition with individual guinea pig preferences:
-- **Timothy Hay** - Classic high-fiber option, most common preference
-- **Orchard Grass** - Sweet flavor with softer texture
-- **Meadow Hay** - Mixed grasses providing texture variety
-- **Alfalfa Hay** - Rich, high-calcium (young/pregnant guinea pigs)
-- **Botanical Hay** - Mixed with herbs and flowers for enrichment
-- **Oat Hay** - Sweet flavor with seed heads for texture
-- **Bermuda Grass** - Fine texture with mild flavor
-- **Western Timothy** - Premium timothy variety with superior quality
+#### Hay Types (8 Varieties - Consumable Resources)
+Essential consumable resources for continuous hunger satisfaction with individual preferences:
+- **Timothy Hay** - Basic consumable, standard freshness duration, affordable daily nutrition
+- **Orchard Grass** - Premium consumable, extended freshness, sweet flavor preference
+- **Meadow Hay** - Standard consumable, mixed variety providing texture stimulation
+- **Alfalfa Hay** - Specialty consumable, high nutrition for young/pregnant guinea pigs
+- **Botanical Hay** - Premium consumable, enrichment blend with extended freshness
+- **Oat Hay** - Specialty consumable, unique texture with moderate freshness duration
+- **Bermuda Grass** - Standard consumable, gentle nutrition for sensitive guinea pigs
+- **Western Timothy** - Premium consumable, superior quality with longest freshness duration
+
+#### Chew Items (8 Types)
+Dental health and natural chewing instinct satisfaction with individual preferences:
+- **Chew Stick** - Natural wood stick for basic gnawing needs
+- **Chew Cube** - Dense wooden block for extended chewing sessions
+- **Chew Block** - Large rectangular chewing surface for heavy gnawers
+- **Chew Ring** - Circular wooden ring for rolling and chewing combination
+- **Chew Ball** - Spherical chew toy with textured surface for varied gnawing
+- **Chew Log** - Natural tree branch section for rustic chewing experience
+- **Chew Rope** - Woven natural fiber rope for pulling and unraveling
+- **Chew Mat** - Flat woven surface for light chewing and comfort
 
 #### Vegetables (12 Varieties)
 Daily nutrition with preference-based selection:
@@ -99,10 +111,10 @@ Special occasion treats with strong preference effects:
 
 #### Entertainment Toys
 Mental and physical stimulation items:
-- **Chew toys** - Variety of materials and textures for dental health
-- **Balls** - Rolling and pushing toys for physical activity
+- **Activity balls** - Rolling and pushing toys for physical activity
 - **Puzzle feeders** - Mental stimulation requiring problem-solving
 - **Interactive toys** - Complex engagement requiring guinea pig interaction
+- **Foraging toys** - Hide-and-seek style enrichment activities
 
 #### Comfort & Shelter
 Rest and security items:
@@ -110,6 +122,17 @@ Rest and security items:
 - **Platforms** - Territory expansion and observation points
 - **Soft bedding** - Premium comfort materials
 - **Cozy corners** - Specialized rest areas with enhanced comfort
+
+#### Sleep Enhancement Beds (8 Types)
+Specialized sleeping areas providing enhanced energy and happiness recovery:
+- **Small Bed** - Basic cushioned sleeping area with standard comfort (+25% energy recovery)
+- **Large Bed** - Spacious comfort option for extended rest periods (+35% energy recovery)
+- **Hammock** - Suspended sleeping with gentle swaying motion (+30% energy, +15 happiness)
+- **Fleece Bed** - Soft, washable comfort option with premium materials (+40% energy recovery)
+- **Heated Bed** - Warmth bonus during rest periods, especially beneficial in cooler conditions (+45% energy, +10 happiness)
+- **Orthopedic Bed** - Premium support designed for comfort and health (+50% energy recovery, health bonus)
+- **Nest Bed** - Enclosed, secure sleeping environment combining shelter benefits (+35% energy, +20 happiness, security bonus)
+- **Platform Bed** - Elevated sleeping with territory view and climbing access (+30% energy, +10 happiness, territory bonus)
 
 #### Activity Items
 Physical exercise and exploration:
@@ -144,6 +167,12 @@ Special and seasonal content:
 - **Bundle offers** featuring preferred item combinations
 - **Seasonal suggestions** aligning with guinea pig preferences
 - **Discovery tracking** showing preference learning progress
+- **Chew preferences** - individual guinea pig preferred chew types and textures
+- **Chew effectiveness** - preferred chew items provide enhanced satisfaction (+25% bonus)
+- **Novelty bonuses** - new chew types provide temporary excitement (+15 points)
+- **Bed preferences** - individual guinea pig preferred sleeping arrangements and comfort levels
+- **Sleep quality bonuses** - preferred bed types provide enhanced energy and happiness recovery
+- **Shelter synergy** - beds placed near shelters provide additional comfort and security bonuses (+30%)
 
 ## Bedding as Consumable Resource
 
@@ -170,6 +199,35 @@ Special and seasonal content:
 - **Auto-purchase options** for convenient resource management
 - **Usage optimization** learning efficient bedding management
 - **Emergency purchasing** options for urgent situations
+
+## Hay as Consumable Resource
+
+### Resource Management System
+- **Various hay types** with different costs, freshness duration, and nutritional value
+- **Consumption tracking** monitoring hay usage rates and remaining supplies
+- **Strategic purchasing** balancing cost vs quality vs longevity
+- **Critical necessity** hay required for hunger satisfaction - empty hay rack prevents feeding
+- **Resource planning** anticipating hay needs for continuous hunger management
+
+### Hay Variety & Economics
+- **Basic hay (Timothy)** - affordable option with standard freshness duration
+- **Premium hay (Western Timothy, Orchard Grass)** - enhanced nutrition and longer freshness at higher cost
+- **Specialty hay (Alfalfa, Botanical)** - unique properties for specific guinea pig needs
+- **Bulk purchasing** - economic incentives for larger quantity purchases
+- **Faster consumption** - hay depletes more quickly than bedding, requiring frequent restocking
+
+### New Player Support
+- **Starter hay supply** provided at game creation with mixed hay types
+- **Learning buffer** preventing immediate hunger crisis during tutorial phase
+- **Tutorial integration** teaching hay management and refilling fundamentals
+- **Gradual transition** to independent hay resource management
+
+### Critical Maintenance Integration
+- **Empty hay rack alerts** urgent notifications preventing hunger crisis
+- **Low hay warnings** proactive alerts before supplies run out
+- **Auto-purchase options** for convenient hay restocking
+- **Priority purchasing** hay shortage takes precedence over other purchases
+- **Emergency hay delivery** immediate purchasing options during critical shortages
 
 ## Advanced Economic Features
 

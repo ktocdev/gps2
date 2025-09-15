@@ -24,8 +24,8 @@ Interactive item placement system creating enriched habitat environments with dr
 ### Essential Starting Items
 - **Water bottle** - Essential hydration source, refillable for free
 - **Food dish** - Primary feeding location for hay, vegetables, and treats
-- **Hay rack** - Specialized feeding system supporting multiple hay varieties
-- **Small shelter** - Basic hiding and comfort location for security
+- **Hay rack** - Essential feeding system requiring hay resource management and freshness monitoring
+- **Small shelter** - Basic hiding location for shelter need satisfaction and security
 - **Small chew toy** - Entry-level enrichment for dental health and happiness
 
 ### Starter Kit Benefits
@@ -33,6 +33,116 @@ Interactive item placement system creating enriched habitat environments with dr
 - **Learning foundation** introducing players to item placement and usage
 - **Upgrade pathway** creating natural progression to advanced items
 - **Budget management** balancing free essentials with purchasable enhancements
+
+## Sleep Enhancement System
+
+### Bed Item Placement
+- **Grid requirements** - beds require 1x1 to 2x2 grid spaces depending on type
+- **Accessibility zones** - beds must be accessible from at least one adjacent grid space
+- **Shelter proximity detection** - system automatically detects bed-shelter combinations within 1 grid space
+- **Comfort area creation** - beds establish comfort zones affecting surrounding grid spaces
+
+### Bed-Shelter Combination Mechanics
+- **Proximity bonus** - beds placed adjacent to shelters provide +30% enhanced benefits
+- **Security enhancement** - shelter + bed combinations reduce stress and improve sleep quality
+- **Combination detection** - automatic system recognition of bed-shelter pairings
+- **Visual feedback** - UI indicators show when beneficial combinations are achieved
+
+### Sleep Quality Enhancement
+- **Energy recovery multipliers** - beds provide 25-50% faster energy restoration during sleep
+- **Happiness bonuses** - comfortable sleeping adds 10-20 happiness points per rest cycle
+- **Need satisfaction rates** - beds improve efficiency of energy need recovery
+- **Individual preferences** - guinea pigs show preferences for specific bed types affecting bonus effectiveness
+
+### Bed Usage Patterns
+- **Autonomous selection** - guinea pig chooses beds based on energy levels and preferences
+- **Sleep duration scaling** - lower energy levels result in longer sleep periods on beds
+- **Comfort seeking** - guinea pig seeks beds when stressed or tired
+- **Quality indicators** - sleep effectiveness displayed through guinea pig behavior and reactions
+
+## Shelter Security System
+
+### Shelter Need Satisfaction
+- **Primary function** - shelters directly satisfy the shelter need through hiding and security
+- **Proactive usage** - guinea pig seeks shelters when shelter need drops below 60%
+- **Preference-based selection** - individual guinea pigs prefer different shelter types and styles
+- **Security zones** - shelters create comfort areas that provide passive shelter satisfaction
+
+### Shelter Item Types
+- **Enclosed shelters** - fully covered hiding spots for maximum security feeling
+- **Open shelters** - partial coverage for guinea pigs preferring visibility while hiding
+- **Elevated shelters** - raised hiding spots providing territorial advantage and security
+- **Multi-entrance shelters** - shelters with multiple exits for security-conscious guinea pigs
+- **Cozy shelters** - small, snug spaces for guinea pigs preferring tight, secure areas
+- **Spacious shelters** - larger shelters for guinea pigs preferring room to move while hidden
+
+### Shelter Placement Strategy
+- **Security positioning** - shelters most effective when placed in quieter habitat areas
+- **Accessibility requirements** - shelters must be reachable from multiple habitat locations
+- **Bed combination bonuses** - shelters near beds provide enhanced security and rest benefits
+- **Multiple shelter benefits** - several shelters allow guinea pig to establish security network
+
+### Shelter Effectiveness Mechanics
+- **Base shelter satisfaction** - all shelters provide standard shelter need restoration
+- **Preference bonuses** - preferred shelter types provide +25% enhanced effectiveness
+- **Familiarity enhancement** - regularly used shelters gain +15% effectiveness over time
+- **Environmental security** - shelters in secure locations provide additional anxiety reduction
+
+### Shelter Usage Patterns
+- **Comfort checking** - brief shelter visits for security reassurance
+- **Extended hiding** - longer shelter usage when shelter need low or stressed
+- **Territory establishment** - regular shelter use creates guinea pig security zones
+- **Safety base behavior** - shelters used as secure starting points for exploration
+
+### Integration with Other Systems
+- **Bed synergy** - shelter + bed combinations provide enhanced sleep and security
+- **Stress reduction** - adequate shelter access reduces environmental anxiety
+- **Friendship correlation** - high friendship can partially offset shelter need through trust
+- **Wellness contribution** - shelter need satisfaction essential for overall wellness rating
+
+## Hay Rack Resource Management System
+
+### Hay Resource Integration
+- **Consumable resource dependency** - hay rack requires hay from player inventory to function
+- **Freshness monitoring** - displays current hay freshness level (0-100)
+- **Automatic consumption** - hay depletes over time and through guinea pig feeding
+- **Critical function** - empty hay rack prevents autonomous hunger satisfaction
+
+### Hay Rack Mechanics
+- **Refill system** - players must manually refill hay rack from inventory
+- **Hay type selection** - choose which hay type to use for refilling
+- **Quantity management** - track remaining hay supply in rack
+- **Freshness decay** - hay freshness decreases over time, affecting nutritional value
+
+### Visual Status Indicators
+- **Hay level display** - visual representation of hay quantity remaining
+- **Freshness color coding** - green (fresh), yellow (aging), red (stale)
+- **Empty rack warning** - clear visual alert when hay rack is empty
+- **Hay type indicator** - shows which type of hay is currently loaded
+
+### Refilling Process
+- **Inventory access** - refill hay rack directly from player hay inventory
+- **Type switching** - ability to change hay types for preference optimization
+- **Quantity selection** - choose how much hay to load (full refill vs partial)
+- **Resource confirmation** - confirm hay usage from limited inventory supplies
+
+### Hunger Satisfaction Dependency
+- **Autonomous feeding requirement** - guinea pig can only satisfy hunger if hay rack has fresh hay
+- **Freshness quality impact** - fresher hay provides better hunger satisfaction
+- **Empty rack consequences** - guinea pig cannot eat autonomously, relies on hand feeding only
+- **Critical alert system** - urgent notifications when hay rack becomes empty
+
+### Strategic Importance
+- **Essential maintenance** - hay rack management critical for guinea pig survival
+- **Resource planning** - players must anticipate hay needs and maintain supplies
+- **Quality optimization** - balance hay freshness vs resource conservation
+- **Emergency backup** - hand feeding available when hay rack fails but less efficient
+
+### Integration with Other Systems
+- **Habitat conditions** - hay rack freshness contributes to overall habitat quality
+- **Inventory management** - direct connection to hay resource tracking
+- **Economic gameplay** - ongoing hay purchases create resource pressure
+- **Preference system** - optimal hay type selection based on guinea pig preferences
 
 ## Happiness-Focused Items
 

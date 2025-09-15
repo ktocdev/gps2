@@ -5,11 +5,11 @@ Internal wellness calculation system that creates consequences for poor guinea p
 
 ## Core Mechanics
 
-### Balanced Care Requirement
-- **Holistic care approach:** Players must maintain all 7 needs rather than neglecting some for others
-- **No selective attention:** Cannot focus only on favorite needs while ignoring others
-- **Equal importance:** All needs contribute equally to overall guinea pig wellness
-- **Comprehensive responsibility:** Encourages complete pet care simulation
+### Weighted Care Requirement
+- **Holistic care approach:** Players must maintain all 10 needs with understanding of priority levels
+- **Realistic priorities:** Critical physical needs (hunger, thirst, energy) have highest impact on wellness
+- **Weighted importance:** Need groups have different importance levels reflecting real guinea pig care
+- **Strategic care decisions:** Players learn to prioritize appropriately during resource constraints
 
 ### Consequence Feedback Loop
 - **Poor care damages relationship:** Overall neglect affects guinea pig friendship through wellness penalties
@@ -33,12 +33,32 @@ Internal wellness calculation system that creates consequences for poor guinea p
 
 ### Wellness Calculation
 ```
-Wellness = Average of all needs (hunger, thirst, happiness, cleanliness, health, energy, social)
+Wellness = (Critical_Physical × 0.40) + (External_Environment × 0.25) + (Maintenance × 0.20) + (Happiness × 0.15)
+
+Where:
+Critical_Physical = Average(hunger, thirst, energy)
+External_Environment = Average(social, cleanliness, shelter)
+Maintenance = Average(chew, nails, health)
+Happiness = happiness (standalone)
 ```
 - **Calculated internally** - never displayed to player
 - **Real-time computation** during each game tick
-- **Equal weighting** of all 7 needs for balanced importance
+- **Weighted importance** reflecting realistic care priorities
 - **Range:** 0-100 scale matching individual need scales
+
+### Weighted Group System
+
+#### Need Group Classifications
+- **Critical Physical (40% weight):** Hunger, Thirst, Energy - Essential survival needs
+- **External Environment (25% weight):** Social, Cleanliness, Shelter - Environmental wellness
+- **Maintenance (20% weight):** Chew, Nails, Health - Ongoing care needs
+- **Happiness (15% weight):** Entertainment and emotional well-being (standalone)
+
+#### Group Impact Analysis
+- **Critical failure consequences:** Poor physical needs have severe wellness impact
+- **Environmental stress effects:** External needs significantly affect stress and comfort
+- **Maintenance neglect:** Long-term health impacts from poor maintenance care
+- **Happiness balance:** Quality of life important but secondary to survival
 
 ### Penalty Thresholds
 - **Penalty Threshold:** Wellness < 45% triggers friendship loss
@@ -46,10 +66,16 @@ Wellness = Average of all needs (hunger, thirst, happiness, cleanliness, health,
 - **Recovery Threshold:** Wellness > 55% stops penalties and enables recovery
 - **Bonus Threshold:** Wellness > 75% provides friendship bonuses
 
+### Weighted Penalty Considerations
+- **Critical need emphasis:** Poor physical needs (hunger, thirst, energy) cause faster friendship loss
+- **Graduated severity:** External environment needs create moderate penalties
+- **Maintenance tolerance:** Maintenance needs have more forgiving penalty curves
+- **Happiness buffer:** Poor happiness alone rarely triggers severe penalties
+
 ### Penalty Rates
-- **Base Rate:** -0.5 to -1 friendship per game tick
-- **Adjustable for balance:** Configurable based on playtesting feedback
-- **Graduated penalties:** Worse wellness = faster friendship loss
+- **Base Rate:** -0.5 to -1 friendship per game tick (may need adjustment for weighted system)
+- **Group-sensitive scaling:** Critical physical failures may warrant higher penalty rates
+- **Graduated penalties:** Worse wellness = faster friendship loss, with group weighting considered
 - **Immediate application:** Real-time friendship impact during game loop
 
 ### Player Feedback
@@ -61,10 +87,10 @@ Wellness = Average of all needs (hunger, thirst, happiness, cleanliness, health,
 ## Gameplay Impact
 
 ### Strategic Depth
-- **Holistic care strategy:** Forces comprehensive pet care approach
-- **Resource allocation:** Players must balance time and attention across all needs
-- **Priority management:** Learn to identify and address critical needs quickly
-- **Preventive care:** Rewards for maintaining needs before they become critical
+- **Priority-based care strategy:** Weighted system guides realistic care prioritization
+- **Resource allocation:** Players must balance time and attention with understanding of need importance
+- **Emergency triage:** Critical physical needs demand immediate attention during crises
+- **Weighted decision making:** Players learn that hunger matters more than nail trimming
 
 ### Discovery-Based Learning
 - **Observational learning:** Players discover care patterns through guinea pig responses
@@ -95,6 +121,60 @@ Wellness = Average of all needs (hunger, thirst, happiness, cleanliness, health,
 - **Continuous improvement:** Always opportunities to optimize care patterns
 - **Personal investment:** Strong emotional connection to guinea pig wellbeing
 - **Mastery progression:** Advanced players develop expertise in guinea pig care
+
+## Weighted System Gameplay Impact
+
+### Priority Learning
+- **Realistic care education:** Players learn that physical needs trump convenience preferences
+- **Emergency decision making:** Crisis situations teach appropriate triage priorities
+- **Resource optimization:** Limited time and currency force strategic need prioritization
+- **Skill development:** Advanced players efficiently balance all groups while prioritizing critical needs
+
+### Strategic Depth Enhancement
+- **Multi-layered planning:** Players must consider both immediate crises and long-term maintenance
+- **Risk assessment:** Understanding consequences of neglecting different need groups
+- **Efficiency optimization:** Learning to maintain all needs while respecting priority hierarchy
+- **Realistic simulation:** Mirrors real pet care where survival needs override preferences
+
+### Balance Considerations
+- **Critical need urgency:** Physical needs require immediate attention when low
+- **Maintenance tolerance:** Nails, chew, and health can be managed over longer timeframes
+- **Environmental impact:** Poor shelter, social, or cleanliness create stress affecting other needs
+- **Happiness enhancement:** Good happiness supports resilience but can't substitute for physical care
+
+## Need Group Integration Details
+
+### Critical Physical Group (40% Weight)
+- **Hunger impact:** Directly threatens guinea pig survival, highest decay penalties
+- **Thirst urgency:** Essential for all biological functions, rapid wellness impact
+- **Energy dependency:** Affects all other activities and need satisfaction efficiency
+
+### External Environment Group (25% Weight)
+- **Social comfort:** Interaction quality affects willingness to accept care
+- **Cleanliness stress:** Poor hygiene creates anxiety affecting appetite and rest
+- **Shelter security:** Inadequate security increases stress and accelerates other need decay
+
+### Maintenance Group (20% Weight)
+- **Health foundation:** Long-term wellness requiring consistent but not urgent attention
+- **Chew necessity:** Dental health affecting eating and overall comfort
+- **Nail management:** Periodic grooming preventing mobility and comfort issues
+
+### Happiness Enhancement (15% Weight)
+- **Quality of life:** Enrichment and entertainment for optimal guinea pig experience
+- **Resilience boost:** High happiness provides buffer against other need impacts
+- **Relationship building:** Entertainment strengthens player-guinea pig bond
+
+### Shelter Need Impact
+- **Security instinct:** Addresses guinea pig prey animal instincts separate from happiness
+- **Environmental management:** Creates strategic decisions about shelter placement and types
+- **Stress mitigation:** Poor shelter care accelerates other need decay through stress
+- **Preference depth:** Individual shelter preferences add another layer of personality discovery
+
+### Extended Wellness Calculation Benefits
+- **Increased complexity:** 10 needs create more nuanced care requirements
+- **Balanced importance:** All needs equally weighted prevents selective attention
+- **Realistic simulation:** Mirrors real guinea pig care complexity including security needs
+- **Enhanced difficulty:** More challenging to maintain high wellness with additional needs
 
 ## Design Philosophy
 

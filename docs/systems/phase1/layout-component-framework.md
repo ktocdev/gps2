@@ -79,7 +79,7 @@ Button, Toggle, Checkbox, Input, ProgressBar, Slider, Dropdown/Select, DatePicke
 - **InteractionCooldownDisplay** - shows when interactions are available again
 
 #### Inventory & Store
-- **ResourceCounter** - bedding inventory count with low-stock alerts
+- **ResourceCounter** - dual resource tracking for bedding and hay inventory with low-stock alerts
 - **CurrencyDisplay** - coins/money display with icon
 - **ItemCard** - inventory/store item with image, price, description
 - **ItemRotationManager** - interface for managing item storage/rotation

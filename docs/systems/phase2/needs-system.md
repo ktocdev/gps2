@@ -15,6 +15,9 @@ Core game mechanics system managing guinea pig needs, wellness calculation, and 
 5. **Health** - Physical condition and medical needs
 6. **Energy** - Rest, sleep, and activity balance
 7. **Social** - Interaction and companionship needs
+8. **Nails** - Nail growth and trimming maintenance
+9. **Chew** - Natural chewing instinct and dental health
+10. **Shelter** - Security, hiding instincts, and environmental safety
 
 ### Need Value Ranges & Thresholds
 - **Critical (0-25%):** Urgent attention required, severe penalties
@@ -75,13 +78,145 @@ Core game mechanics system managing guinea pig needs, wellness calculation, and 
 - **Cage enrichment:** Toys, hiding places, and variety boost baseline happiness
 - **Seasonal variations:** Environmental changes affect happiness needs
 
+## Detailed Nails Need System
+
+### Natural Growth Mechanics
+- **Slow decay rate:** Nails grow gradually, requiring periodic attention (slower than most needs)
+- **Age-based variation:** Young guinea pigs have faster nail growth than adults
+- **Individual variation:** Each guinea pig has unique nail growth patterns
+- **Critical threshold:** Overgrown nails (< 25%) cause discomfort and affect movement
+
+### Nail Clipping Interaction
+- **Primary satisfaction method:** "Clip Nails" direct interaction
+- **Friendship dependency:** Success rate affected by current friendship level
+- **Wellness dependency:** Guinea pig cooperation affected by overall wellness
+- **Partial success mechanics:** Low friendship/wellness may prevent complete nail trimming
+
+### Success Rate Calculation
+```typescript
+successRate = baseSuccessRate + (friendship * 0.3) + (wellness * 0.2)
+partialSuccess = successRate < 70% // Some nails remain unclipped
+completeSuccess = successRate >= 70% // All nails successfully trimmed
+```
+
+### Nail Clipping Outcomes
+- **Complete success:** Full nail need restoration (+40-50 points)
+- **Partial success:** Moderate improvement (+20-30 points)
+- **Minimal success:** Small improvement (+10-15 points)
+- **Failure:** No improvement, possible stress reaction
+
+## Detailed Chew Need System
+
+### Natural Chewing Instinct
+- **Moderate decay rate:** Steady decline requiring regular chew item provision
+- **Dental health connection:** Affects overall health need when neglected
+- **Individual preferences:** Each guinea pig prefers certain chew types
+- **Variety benefits:** Different chew items provide varied satisfaction levels
+
+### Chew Item Categories
+- **Wooden chews:** Natural wood items for gnawing
+- **Edible chews:** Consumable items providing nutrition and chewing
+- **Textural chews:** Different materials for varied chewing experiences
+- **Interactive chews:** Puzzle-like chewing challenges
+
+### Chew Effectiveness System
+- **Base effectiveness:** All chew items provide standard satisfaction
+- **Preference bonuses:** Preferred chew types provide enhanced benefits (+25% effectiveness)
+- **Novelty bonuses:** New chew types provide temporary excitement (+15 points)
+- **Familiarity decay:** Overused chew types become less effective over time
+
+## Detailed Shelter Need System
+
+### Security Instinct Mechanics
+- **Prey animal behavior:** Guinea pigs have natural hiding and security instincts separate from happiness
+- **Environmental anxiety:** Gradual decay when guinea pig feels exposed or unsafe
+- **Stress acceleration:** Faster decay during loud noises, sudden movements, or environmental changes
+- **Individual sensitivity:** Each guinea pig has unique shelter preferences and anxiety thresholds
+
+### Shelter Satisfaction Methods
+- **Shelter usage:** Primary satisfaction through hiding in shelter items
+- **Secure locations:** Comfort zones near walls, corners, or enclosed areas
+- **Bed-shelter combinations:** Enhanced security when resting areas are near hiding spots
+- **Environmental familiarity:** Established territory areas provide passive shelter satisfaction
+
+### Shelter Decay Triggers
+- **Exposure time:** Extended periods without shelter access increase anxiety
+- **Environmental disturbances:** New items, cage cleaning, or layout changes accelerate decay
+- **Friendship correlation:** Low friendship amplifies shelter need decay rate
+- **Wellness interaction:** Poor overall wellness increases shelter-seeking behavior
+
+### Shelter Preference System
+- **Enclosed vs open:** Individual preferences for fully enclosed shelters vs partial coverage
+- **Elevation preference:** Some guinea pigs prefer ground-level vs elevated hiding spots
+- **Size preference:** Comfort with tight spaces vs spacious shelters
+- **Material preference:** Different shelter materials (wood, plastic, fabric) appeal differently
+
+### Shelter Effectiveness Scaling
+- **Basic satisfaction:** All shelter items provide standard security benefits
+- **Preference bonuses:** Preferred shelter types provide +25% enhanced effectiveness
+- **Combination synergy:** Shelter + bed pairings provide +30% bonus to both shelter and energy needs
+- **Familiarity bonus:** Regular shelter usage creates comfort zones with +15% effectiveness
+
+### Proactive Shelter Behavior
+- **Anxiety prevention:** Guinea pig seeks shelter when need drops below 60%
+- **Stress response:** Immediate shelter-seeking during environmental disturbances
+- **Comfort checking:** Regular visits to preferred shelters for security reassurance
+- **Territory establishment:** Creates secure zones around frequently used shelters
+
+## Weighted Need Groups System
+
+### Need Group Classifications
+
+#### Critical Physical Needs (40% weight)
+- **Hunger, Thirst, Energy** - Essential survival needs threatening life if neglected
+- **Highest priority** in wellness calculation and gameplay importance
+- **Immediate consequences** when these needs reach critical levels
+- **Survival imperative** requiring urgent player attention
+
+#### External Environment Needs (25% weight)
+- **Social, Cleanliness, Shelter** - Environmental wellness and stress management
+- **High importance** for psychological health and comfort
+- **Stress amplification** when these needs are neglected affecting other needs
+- **Security foundation** providing stability for other need satisfaction
+
+#### Maintenance Needs (20% weight)
+- **Chew, Nails, Health** - Ongoing care and long-term health requirements
+- **Medium importance** for sustained health and wellness
+- **Gradual consequences** with long-term impacts rather than immediate crises
+- **Preventive care** focus requiring regular but not urgent attention
+
+#### Happiness Need (15% weight)
+- **Happiness** - Entertainment and emotional well-being (standalone)
+- **Quality of life** importance but secondary to survival needs
+- **Enhancement role** improving overall experience without threatening survival
+- **Enrichment focus** for optimal guinea pig experience
+
+### Weighted Calculation Formula
+```typescript
+wellness = (criticalPhysicalAverage * 0.40) +
+          (externalEnvironmentAverage * 0.25) +
+          (maintenanceAverage * 0.20) +
+          (happiness * 0.15)
+
+Where:
+criticalPhysicalAverage = (hunger + thirst + energy) / 3
+externalEnvironmentAverage = (social + cleanliness + shelter) / 3
+maintenanceAverage = (chew + nails + health) / 3
+```
+
+### Group Priority Benefits
+- **Realistic prioritization** reflecting actual guinea pig care importance
+- **Strategic guidance** helping players understand which needs to address first
+- **Emergency triage** clear direction during resource constraints
+- **Educational value** teaching proper pet care priorities
+
 ## Internal Wellness Rating System
 
-### Wellness Calculation
-- **Real-time average** of all 7 needs (0-100 scale)
+### Weighted Wellness Calculation
+- **Weighted group system** reflecting realistic care priorities (0-100 scale)
 - **Not displayed to player** - internal system only
 - **Continuous monitoring** for threshold detection and penalty triggers
-- **Weighted averaging** with potential for need-specific importance factors
+- **Priority-based weighting** emphasizing critical physical needs over maintenance
 
 ### Wellness Threshold System
 - **Penalty threshold:** < 45% wellness triggers friendship penalties
@@ -127,7 +262,11 @@ Core game mechanics system managing guinea pig needs, wellness calculation, and 
 - **Personality-based needs:** Some guinea pigs have unique needs patterns
 - **Age-related changes:** Needs evolve as guinea pig ages
 - **Health condition effects:** Chronic conditions alter needs requirements
-- **Preference integration:** Individual preferences affect happiness needs specifically
+- **Preference integration:** Individual preferences affect happiness, chew, and shelter needs specifically
+- **Nail growth patterns:** Unique nail growth rates and clipping tolerance levels
+- **Chewing preferences:** Individual preferences for different chew item types and textures
+- **Shelter preferences:** Individual preferences for shelter types, sizes, and placement (enclosed vs open, elevated vs ground-level)
+- **Security sensitivity:** Varying anxiety thresholds and environmental stress tolerance levels
 
 ## Technical Implementation
 

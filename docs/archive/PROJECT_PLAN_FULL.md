@@ -1,3 +1,5 @@
+**ARCHIVED 9/14/2025 - Refer to PROJECT_PLAN.MD**
+
 # Guinea Pig Simulation Game - Framework Plan
 
 ## Phase 1: Foundation & Infrastructure
