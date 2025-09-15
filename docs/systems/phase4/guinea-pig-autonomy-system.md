@@ -51,8 +51,8 @@ Intelligent movement around the habitat grid:
 #### Survival Actions
 - **Walk to Food/Water** - Navigate to essential need satisfaction items
 - **Eat/Drink** - Automatic consumption when reaching food/water sources
-- **Seek Shelter** - Hide in shelter items during stress or fear
-- **Rest/Sleep** - Energy recovery in comfortable locations
+- **Seek Shelter** - Proactive shelter need satisfaction through hiding and security checking
+- **Rest/Sleep** - Energy recovery with bed preference selection and enhanced recovery rates
 
 #### Exploration Actions
 - **Item Investigation** - Approach and examine new or interesting items
@@ -112,6 +112,70 @@ Defensive, fearful, or avoidant behaviors:
 - **Cautious feeding** - Quick, nervous eating patterns
 - **Minimal interaction acceptance** - Rejection of most player interactions
 
+## Enhanced Sleep Behavior System
+
+### Bed Selection Logic
+- **Preference-based selection** - guinea pig chooses beds based on individual preferences
+- **Energy level scaling** - lower energy increases likelihood of bed usage over floor sleeping
+- **Comfort seeking** - stressed or tired guinea pig actively seeks beds for recovery
+- **Shelter proximity preference** - beds near shelters preferred for security during sleep
+
+### Sleep Quality Mechanics
+- **Base sleep effectiveness** - floor sleeping provides standard energy recovery
+- **Bed enhancement multipliers** - beds provide 25-50% faster energy recovery based on type
+- **Preference bonuses** - preferred bed types provide additional +15-25% effectiveness bonus
+- **Shelter synergy** - bed-shelter combinations provide +30% total bonus to energy and happiness
+
+### Sleep Duration Scaling
+- **Energy-based duration** - lower energy levels result in longer sleep periods
+- **Comfortable sleep indicators** - visual cues showing guinea pig contentment during bed usage
+- **Sleep interruption sensitivity** - beds reduce chance of sleep interruption from minor disturbances
+- **Recovery efficiency** - beds improve both energy and happiness recovery during rest periods
+
+### Autonomous Sleep Behavior
+- **Proactive bed seeking** - guinea pig seeks beds when energy drops below 40%
+- **Preference learning** - system tracks which beds guinea pig uses most frequently
+- **Comfort zone establishment** - regular bed usage creates preferred rest areas
+- **Sleep scheduling** - natural rest periods influenced by bed availability and comfort
+
+### Bed Usage Patterns
+- **Exploration phase** - new beds investigated before regular usage
+- **Preference establishment** - repeated bed usage indicates preference development
+- **Comfort behavior** - stretching, yawning, and settling behaviors on preferred beds
+- **Territorial association** - beds become part of guinea pig's preferred territory areas
+
+## Proactive Shelter Behavior System
+
+### Shelter Need-Based Behavior
+- **Proactive seeking** - guinea pig seeks shelter when shelter need drops below 60%
+- **Security checking** - regular visits to preferred shelters for comfort reassurance
+- **Anxiety prevention** - shelter usage to maintain security feeling rather than just stress response
+- **Preference establishment** - develops preferred shelters through repeated usage
+
+### Shelter Selection Logic
+- **Preference-based selection** - guinea pig chooses shelters based on individual preferences
+- **Proximity consideration** - nearby shelters preferred during moderate shelter need
+- **Security level scaling** - lower shelter need increases willingness to travel farther for preferred shelters
+- **Environmental awareness** - shelters in quieter, more secure areas of habitat preferred
+
+### Comfort Zone Development
+- **Territory establishment** - frequent shelter usage creates security zones
+- **Shelter familiarity** - regular shelters become more effective over time
+- **Security pathways** - develops preferred routes between shelter and other essential items
+- **Multiple shelter usage** - may establish several preferred shelters for different situations
+
+### Shelter Behavior Patterns
+- **Brief comfort visits** - short shelter usage when shelter need moderate (60-40%)
+- **Extended hiding** - longer shelter periods when shelter need low (< 40%)
+- **Exploration from security** - uses shelters as safe bases for exploration activities
+- **Stress differentiation** - proactive shelter usage differs from reactive stress hiding
+
+### Environmental Response Integration
+- **Disturbance reactions** - environmental changes trigger immediate shelter need increase
+- **Adaptation behavior** - gradual comfort with new environments reduces shelter dependency
+- **Social comfort** - high friendship levels can partially offset shelter need through trust
+- **Habitat familiarity** - well-known environments require less shelter need satisfaction
+
 ## AI Decision Making System
 
 ### Decision Priority Matrix
@@ -119,6 +183,8 @@ Defensive, fearful, or avoidant behaviors:
 interface BehaviorPriority {
   urgentNeeds: number;      // Weight: 100 (needs < 30%)
   moderateNeeds: number;    // Weight: 75  (needs 30-60%)
+  sleepBehavior: number;    // Weight: 80  (energy < 40%, bed preference)
+  shelterBehavior: number;  // Weight: 70  (shelter < 60%, security seeking)
   friendshipBehaviors: number; // Weight: 50  (varies by friendship)
   exploration: number;      // Weight: 25  (when content)
   environmental: number;    // Weight: 40  (habitat conditions)
@@ -127,9 +193,11 @@ interface BehaviorPriority {
 
 ### Decision Algorithm
 1. **Urgent Need Check** - Highest priority for critical needs
-2. **Friendship State Assessment** - Determines interaction willingness
-3. **Environmental Evaluation** - Habitat cleanliness and item availability
-4. **Moderate Need Processing** - Secondary priority needs
+2. **Sleep Behavior Assessment** - High priority when energy low, evaluates bed availability and preferences
+3. **Shelter Behavior Assessment** - High priority when shelter need low, evaluates shelter availability and security
+4. **Friendship State Assessment** - Determines interaction willingness
+4. **Environmental Evaluation** - Habitat cleanliness and item availability
+5. **Moderate Need Processing** - Secondary priority needs
 5. **Exploration/Entertainment** - Lowest priority when all needs satisfied
 
 ### Behavior Selection Logic

@@ -11,7 +11,7 @@ The Direct Interaction System provides the primary interface for user-to-guinea-
 ### 1. Basic Interactions
 Essential care and handling interactions that form the foundation of guinea pig care:
 - **Pet** - Gentle stroking, builds friendship and social need
-- **Clip Nails** - Health maintenance, prevents overgrowth
+- **Clip Nails** - Nail need satisfaction, friendship and wellness dependent success rate
 - **Hold** - Bonding interaction, builds trust and friendship
 - **Brush** - Grooming care, improves cleanliness and happiness
 - **Use Pet Wipe** - Quick cleaning, maintains hygiene
@@ -62,6 +62,41 @@ Special relationship-building activities:
 - **Show Photo** - Visual stimulation, engagement activity
 - **Gentle Humming** - Soothing sounds, relaxation
 
+## Advanced Interaction Mechanics
+
+### Clip Nails - Complex Success System
+
+#### Success Rate Calculation
+```typescript
+successRate = 0.4 + (friendship * 0.003) + (wellness * 0.002)
+baseSuccess = Math.min(successRate, 0.95) // Maximum 95% success rate
+```
+
+#### Outcome Categories
+- **Complete Success (70%+ rate):** All nails trimmed, full need satisfaction (+40-50 points)
+- **Partial Success (40-69% rate):** Some nails trimmed, moderate satisfaction (+20-30 points)
+- **Minimal Success (20-39% rate):** Few nails trimmed, small improvement (+10-15 points)
+- **Failure (< 20% rate):** No nails trimmed, possible stress reaction
+
+#### Friendship/Wellness Dependencies
+- **High friendship (80%+):** Guinea pig cooperates willingly, stays calm
+- **Medium friendship (50-79%):** Some resistance, requires patience
+- **Low friendship (< 50%):** High resistance, frequent movement, stress reactions
+- **High wellness (75%+):** Guinea pig feels comfortable, easier handling
+- **Low wellness (< 45%):** Guinea pig stressed, more likely to hide or resist
+
+#### Nail Clipping Reactions
+- **Positive reactions:** Calm sitting, gentle purring, trusting eye contact
+- **Neutral reactions:** Mild fidgeting, occasional movement, watchful behavior
+- **Negative reactions:** Hiding, backing away, stress chattering, aggressive posturing
+- **Failure reactions:** Running away, angry wheeks, hiding for extended period
+
+#### Activity Feed Messages
+- **Complete success:** "You successfully trim all of [name]'s nails. They sit calmly and trust you completely!"
+- **Partial success:** "You manage to trim most of [name]'s nails, but they get restless toward the end."
+- **Minimal success:** "[Name] only lets you trim a couple nails before becoming too stressed to continue."
+- **Failure:** "[Name] is too stressed and won't let you near their paws today. Try again when they're feeling better."
+
 ## Preference Discovery System
 
 ### Discovery Interactions
@@ -84,6 +119,12 @@ Special interactions designed to reveal guinea pig preferences:
 - **Positive Response:** Happy munching and content sounds
 - **Negative Response:** Nose turn-up and avoidance behaviors
 - **Discovery Value:** Each new food reveals personality traits
+
+#### Offer Chew Item
+- **Purpose:** Reveals chewing preferences through engagement level
+- **Positive Response:** Immediate investigation, enthusiastic chewing, possessive behavior
+- **Negative Response:** Brief sniff and ignore, or complete avoidance
+- **Preference Learning:** Different chew types show varying interest levels
 
 ## Reaction-Based Feedback System
 

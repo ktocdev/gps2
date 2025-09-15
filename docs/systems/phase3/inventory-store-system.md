@@ -49,6 +49,7 @@ Comprehensive economic system managing player inventory, store purchases, curren
 - **Hay varieties** (8 types) - core nutritional needs with preference variety
 - **Vegetables** (12 types) - daily nutrition with individual preferences
 - **Fruits** (treats, 10 types) - special rewards and preference discovery
+- **Chew items** (8 types) - dental health and chewing instinct satisfaction
 - **Toys/enrichment** - happiness and entertainment items
 - **Shelter & comfort** - security and rest items
 - **Decorations** - aesthetic customization and themed environments
@@ -66,6 +67,17 @@ Essential daily nutrition with individual guinea pig preferences:
 - **Oat Hay** - Sweet flavor with seed heads for texture
 - **Bermuda Grass** - Fine texture with mild flavor
 - **Western Timothy** - Premium timothy variety with superior quality
+
+#### Chew Items (8 Types)
+Dental health and natural chewing instinct satisfaction with individual preferences:
+- **Chew Stick** - Natural wood stick for basic gnawing needs
+- **Chew Cube** - Dense wooden block for extended chewing sessions
+- **Chew Block** - Large rectangular chewing surface for heavy gnawers
+- **Chew Ring** - Circular wooden ring for rolling and chewing combination
+- **Chew Ball** - Spherical chew toy with textured surface for varied gnawing
+- **Chew Log** - Natural tree branch section for rustic chewing experience
+- **Chew Rope** - Woven natural fiber rope for pulling and unraveling
+- **Chew Mat** - Flat woven surface for light chewing and comfort
 
 #### Vegetables (12 Varieties)
 Daily nutrition with preference-based selection:
@@ -99,10 +111,10 @@ Special occasion treats with strong preference effects:
 
 #### Entertainment Toys
 Mental and physical stimulation items:
-- **Chew toys** - Variety of materials and textures for dental health
-- **Balls** - Rolling and pushing toys for physical activity
+- **Activity balls** - Rolling and pushing toys for physical activity
 - **Puzzle feeders** - Mental stimulation requiring problem-solving
 - **Interactive toys** - Complex engagement requiring guinea pig interaction
+- **Foraging toys** - Hide-and-seek style enrichment activities
 
 #### Comfort & Shelter
 Rest and security items:
@@ -110,6 +122,17 @@ Rest and security items:
 - **Platforms** - Territory expansion and observation points
 - **Soft bedding** - Premium comfort materials
 - **Cozy corners** - Specialized rest areas with enhanced comfort
+
+#### Sleep Enhancement Beds (8 Types)
+Specialized sleeping areas providing enhanced energy and happiness recovery:
+- **Small Bed** - Basic cushioned sleeping area with standard comfort (+25% energy recovery)
+- **Large Bed** - Spacious comfort option for extended rest periods (+35% energy recovery)
+- **Hammock** - Suspended sleeping with gentle swaying motion (+30% energy, +15 happiness)
+- **Fleece Bed** - Soft, washable comfort option with premium materials (+40% energy recovery)
+- **Heated Bed** - Warmth bonus during rest periods, especially beneficial in cooler conditions (+45% energy, +10 happiness)
+- **Orthopedic Bed** - Premium support designed for comfort and health (+50% energy recovery, health bonus)
+- **Nest Bed** - Enclosed, secure sleeping environment combining shelter benefits (+35% energy, +20 happiness, security bonus)
+- **Platform Bed** - Elevated sleeping with territory view and climbing access (+30% energy, +10 happiness, territory bonus)
 
 #### Activity Items
 Physical exercise and exploration:
@@ -144,6 +167,12 @@ Special and seasonal content:
 - **Bundle offers** featuring preferred item combinations
 - **Seasonal suggestions** aligning with guinea pig preferences
 - **Discovery tracking** showing preference learning progress
+- **Chew preferences** - individual guinea pig preferred chew types and textures
+- **Chew effectiveness** - preferred chew items provide enhanced satisfaction (+25% bonus)
+- **Novelty bonuses** - new chew types provide temporary excitement (+15 points)
+- **Bed preferences** - individual guinea pig preferred sleeping arrangements and comfort levels
+- **Sleep quality bonuses** - preferred bed types provide enhanced energy and happiness recovery
+- **Shelter synergy** - beds placed near shelters provide additional comfort and security bonuses (+30%)
 
 ## Bedding as Consumable Resource
 

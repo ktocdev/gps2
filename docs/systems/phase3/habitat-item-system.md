@@ -25,7 +25,7 @@ Interactive item placement system creating enriched habitat environments with dr
 - **Water bottle** - Essential hydration source, refillable for free
 - **Food dish** - Primary feeding location for hay, vegetables, and treats
 - **Hay rack** - Specialized feeding system supporting multiple hay varieties
-- **Small shelter** - Basic hiding and comfort location for security
+- **Small shelter** - Basic hiding location for shelter need satisfaction and security
 - **Small chew toy** - Entry-level enrichment for dental health and happiness
 
 ### Starter Kit Benefits
@@ -33,6 +33,72 @@ Interactive item placement system creating enriched habitat environments with dr
 - **Learning foundation** introducing players to item placement and usage
 - **Upgrade pathway** creating natural progression to advanced items
 - **Budget management** balancing free essentials with purchasable enhancements
+
+## Sleep Enhancement System
+
+### Bed Item Placement
+- **Grid requirements** - beds require 1x1 to 2x2 grid spaces depending on type
+- **Accessibility zones** - beds must be accessible from at least one adjacent grid space
+- **Shelter proximity detection** - system automatically detects bed-shelter combinations within 1 grid space
+- **Comfort area creation** - beds establish comfort zones affecting surrounding grid spaces
+
+### Bed-Shelter Combination Mechanics
+- **Proximity bonus** - beds placed adjacent to shelters provide +30% enhanced benefits
+- **Security enhancement** - shelter + bed combinations reduce stress and improve sleep quality
+- **Combination detection** - automatic system recognition of bed-shelter pairings
+- **Visual feedback** - UI indicators show when beneficial combinations are achieved
+
+### Sleep Quality Enhancement
+- **Energy recovery multipliers** - beds provide 25-50% faster energy restoration during sleep
+- **Happiness bonuses** - comfortable sleeping adds 10-20 happiness points per rest cycle
+- **Need satisfaction rates** - beds improve efficiency of energy need recovery
+- **Individual preferences** - guinea pigs show preferences for specific bed types affecting bonus effectiveness
+
+### Bed Usage Patterns
+- **Autonomous selection** - guinea pig chooses beds based on energy levels and preferences
+- **Sleep duration scaling** - lower energy levels result in longer sleep periods on beds
+- **Comfort seeking** - guinea pig seeks beds when stressed or tired
+- **Quality indicators** - sleep effectiveness displayed through guinea pig behavior and reactions
+
+## Shelter Security System
+
+### Shelter Need Satisfaction
+- **Primary function** - shelters directly satisfy the shelter need through hiding and security
+- **Proactive usage** - guinea pig seeks shelters when shelter need drops below 60%
+- **Preference-based selection** - individual guinea pigs prefer different shelter types and styles
+- **Security zones** - shelters create comfort areas that provide passive shelter satisfaction
+
+### Shelter Item Types
+- **Enclosed shelters** - fully covered hiding spots for maximum security feeling
+- **Open shelters** - partial coverage for guinea pigs preferring visibility while hiding
+- **Elevated shelters** - raised hiding spots providing territorial advantage and security
+- **Multi-entrance shelters** - shelters with multiple exits for security-conscious guinea pigs
+- **Cozy shelters** - small, snug spaces for guinea pigs preferring tight, secure areas
+- **Spacious shelters** - larger shelters for guinea pigs preferring room to move while hidden
+
+### Shelter Placement Strategy
+- **Security positioning** - shelters most effective when placed in quieter habitat areas
+- **Accessibility requirements** - shelters must be reachable from multiple habitat locations
+- **Bed combination bonuses** - shelters near beds provide enhanced security and rest benefits
+- **Multiple shelter benefits** - several shelters allow guinea pig to establish security network
+
+### Shelter Effectiveness Mechanics
+- **Base shelter satisfaction** - all shelters provide standard shelter need restoration
+- **Preference bonuses** - preferred shelter types provide +25% enhanced effectiveness
+- **Familiarity enhancement** - regularly used shelters gain +15% effectiveness over time
+- **Environmental security** - shelters in secure locations provide additional anxiety reduction
+
+### Shelter Usage Patterns
+- **Comfort checking** - brief shelter visits for security reassurance
+- **Extended hiding** - longer shelter usage when shelter need low or stressed
+- **Territory establishment** - regular shelter use creates guinea pig security zones
+- **Safety base behavior** - shelters used as secure starting points for exploration
+
+### Integration with Other Systems
+- **Bed synergy** - shelter + bed combinations provide enhanced sleep and security
+- **Stress reduction** - adequate shelter access reduces environmental anxiety
+- **Friendship correlation** - high friendship can partially offset shelter need through trust
+- **Wellness contribution** - shelter need satisfaction essential for overall wellness rating
 
 ## Happiness-Focused Items
 
