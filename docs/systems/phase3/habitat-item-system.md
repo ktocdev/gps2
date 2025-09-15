@@ -24,7 +24,7 @@ Interactive item placement system creating enriched habitat environments with dr
 ### Essential Starting Items
 - **Water bottle** - Essential hydration source, refillable for free
 - **Food dish** - Primary feeding location for hay, vegetables, and treats
-- **Hay rack** - Specialized feeding system supporting multiple hay varieties
+- **Hay rack** - Essential feeding system requiring hay resource management and freshness monitoring
 - **Small shelter** - Basic hiding location for shelter need satisfaction and security
 - **Small chew toy** - Entry-level enrichment for dental health and happiness
 
@@ -99,6 +99,50 @@ Interactive item placement system creating enriched habitat environments with dr
 - **Stress reduction** - adequate shelter access reduces environmental anxiety
 - **Friendship correlation** - high friendship can partially offset shelter need through trust
 - **Wellness contribution** - shelter need satisfaction essential for overall wellness rating
+
+## Hay Rack Resource Management System
+
+### Hay Resource Integration
+- **Consumable resource dependency** - hay rack requires hay from player inventory to function
+- **Freshness monitoring** - displays current hay freshness level (0-100)
+- **Automatic consumption** - hay depletes over time and through guinea pig feeding
+- **Critical function** - empty hay rack prevents autonomous hunger satisfaction
+
+### Hay Rack Mechanics
+- **Refill system** - players must manually refill hay rack from inventory
+- **Hay type selection** - choose which hay type to use for refilling
+- **Quantity management** - track remaining hay supply in rack
+- **Freshness decay** - hay freshness decreases over time, affecting nutritional value
+
+### Visual Status Indicators
+- **Hay level display** - visual representation of hay quantity remaining
+- **Freshness color coding** - green (fresh), yellow (aging), red (stale)
+- **Empty rack warning** - clear visual alert when hay rack is empty
+- **Hay type indicator** - shows which type of hay is currently loaded
+
+### Refilling Process
+- **Inventory access** - refill hay rack directly from player hay inventory
+- **Type switching** - ability to change hay types for preference optimization
+- **Quantity selection** - choose how much hay to load (full refill vs partial)
+- **Resource confirmation** - confirm hay usage from limited inventory supplies
+
+### Hunger Satisfaction Dependency
+- **Autonomous feeding requirement** - guinea pig can only satisfy hunger if hay rack has fresh hay
+- **Freshness quality impact** - fresher hay provides better hunger satisfaction
+- **Empty rack consequences** - guinea pig cannot eat autonomously, relies on hand feeding only
+- **Critical alert system** - urgent notifications when hay rack becomes empty
+
+### Strategic Importance
+- **Essential maintenance** - hay rack management critical for guinea pig survival
+- **Resource planning** - players must anticipate hay needs and maintain supplies
+- **Quality optimization** - balance hay freshness vs resource conservation
+- **Emergency backup** - hand feeding available when hay rack fails but less efficient
+
+### Integration with Other Systems
+- **Habitat conditions** - hay rack freshness contributes to overall habitat quality
+- **Inventory management** - direct connection to hay resource tracking
+- **Economic gameplay** - ongoing hay purchases create resource pressure
+- **Preference system** - optimal hay type selection based on guinea pig preferences
 
 ## Happiness-Focused Items
 

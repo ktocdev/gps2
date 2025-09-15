@@ -126,7 +126,7 @@ interface MaintenanceActions {
 
 ### Component Integration
 - **HabitatStatusDisplay** - Visual condition indicators
-- **ResourceCounter** - Bedding inventory with alerts
+- **ResourceCounter** - Bedding and hay inventory tracking with alerts
 - **GridCell** - Individual poop removal interactions
 - **MaintenanceMenu** - Cage interaction interface
 
