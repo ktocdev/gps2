@@ -220,11 +220,12 @@ const handleChange = (event: Event) => {
 
 /* Select Sizes */
 
-/* Small Size */
+/* Small Size - Mobile First */
 .select--sm .select__input {
   padding-block: var(--space-2);
   padding-inline: var(--space-3);
   font-size: var(--font-size-sm);
+  min-block-size: 40px; /* iOS minimum touch target */
   border-start-start-radius: var(--radius-base);
   border-start-end-radius: var(--radius-base);
   border-end-start-radius: var(--radius-base);
@@ -238,18 +239,20 @@ const handleChange = (event: Event) => {
   block-size: 16px;
 }
 
-/* Medium Size (Default) */
+/* Medium Size (Default) - Mobile First */
 .select--md .select__input {
   padding-block: var(--space-3);
   padding-inline: var(--space-4);
   font-size: var(--font-size-base);
+  min-block-size: 44px; /* iOS minimum touch target */
 }
 
-/* Large Size */
+/* Large Size - Mobile First */
 .select--lg .select__input {
   padding-block: var(--space-4);
   padding-inline: var(--space-5);
   font-size: var(--font-size-lg);
+  min-block-size: 48px; /* iOS minimum touch target */
   border-start-start-radius: var(--radius-lg);
   border-start-end-radius: var(--radius-lg);
   border-end-start-radius: var(--radius-lg);
@@ -331,17 +334,7 @@ const handleChange = (event: Event) => {
   }
 }
 
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  .select__input {
-    min-block-size: 44px; /* iOS minimum touch target */
-  }
-
-  .select--sm .select__input {
-    min-block-size: 40px;
-  }
-
-  .select--lg .select__input {
-    min-block-size: 48px;
-  }
+/* Enhanced styling for larger screens */
+@media (min-width: 641px) {
+  /* Add any larger screen enhancements here if needed */
 }</style>
