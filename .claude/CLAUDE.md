@@ -105,6 +105,19 @@ src/components/
 - **Theming system** - Design variables for easy theming with dark mode and light mode support
 - **No scoped styles** - Always use global CSS with BEM naming to maintain consistency and reusability
 - **Consistent naming** - Follow BEM conventions: `.game-board`, `.game-board__cell`, `.game-board__cell--active`
+- **Logical Properties** - Use logical CSS properties for internationalization and RTL support:
+  - `margin-block-start/end` instead of `margin-top/bottom`
+  - `margin-inline-start/end` instead of `margin-left/right`
+  - `padding-block/inline` instead of `padding-top/bottom` and `padding-left/right`
+  - `inline-size` instead of `width`, `block-size` instead of `height`
+  - `inset-inline-start/end` instead of `left/right`, `inset-block-start/end` instead of `top/bottom`
+  - `border-start-start-radius` etc. instead of `border-top-left-radius`
+- **Text Styling** - Use BEM utility classes instead of semantic HTML tags:
+  - Use `.text-label` class instead of `<strong>` or `<b>` tags for bold labels
+  - Available variants: `.text-label--muted`, `.text-label--accent`
+  - **Avoid semantic text elements:** Do not use `<i>`, `<em>`, `<small>`, `<strong>`, or `<b>` tags
+  - Create BEM utility classes for text styling instead (e.g., `.text-emphasis`, `.text-small`, `.text-italic`)
+  - Maintains consistent styling and follows BEM methodology throughout
 - **Container Queries** - Use `@container` for component-specific responsive design, enabling context-aware layouts that respond to container size rather than viewport
 - **Container Types** - Set `container-type: inline-size` for width-based queries, `size` for both dimensions
 - **Naming Convention** - Use descriptive container names: `text-panel`, `habitat-container`, `layout-region`
