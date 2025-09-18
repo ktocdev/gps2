@@ -116,7 +116,8 @@ const handleChange = (event: Event) => {
 
   emit('update:modelValue', convertedValue)
   emit('change', convertedValue)
-}</script>
+}
+</script>
 
 <style>
 /* Select Component - BEM Methodology */

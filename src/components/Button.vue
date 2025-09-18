@@ -48,7 +48,8 @@ const handleClick = (event: MouseEvent) => {
   if (!props.disabled) {
     emit('click', event)
   }
-}</script>
+}
+</script>
 
 <style>
 /* Button Component - BEM Methodology */

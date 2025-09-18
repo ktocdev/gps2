@@ -6,6 +6,7 @@ import App from './App.vue'
 
 // Import base styles
 import './styles/base.css'
+import './styles/panel.css'
 
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
