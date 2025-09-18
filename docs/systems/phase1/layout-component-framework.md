@@ -13,8 +13,14 @@ Combined development approach for Systems 2-4 with region-based construction, pr
 - **Theming system** with dark mode and light mode support
 - **Mobile-first breakpoint strategy** with landscape mobile (768px+) foundation
 - **Global CSS only** (no scoped styles) for consistency and reusability
+- **Logical CSS Properties** for internationalization and RTL language support:
+  - Use `margin-block-start/end` instead of `margin-top/bottom`
+  - Use `margin-inline-start/end` instead of `margin-left/right`
+  - Use `inline-size` instead of `width`, `block-size` instead of `height`
+  - Use `inset-inline-start/end` instead of `left/right`
+  - Use logical border radius properties for consistent corner rounding
 - **Container Queries** for component-specific responsive design
-- **Responsive layout regions** using CSS Grid/Flexbox
+- **Responsive layout regions** using CSS Grid/Flexbox with logical properties
 
 ## Adaptive Navigation System
 
@@ -131,7 +137,9 @@ Button, Toggle, Checkbox, Input, ProgressBar, Slider, Dropdown/Select, DatePicke
 - Consistent prop interfaces and TypeScript definitions
 - Component documentation and usage examples
 - Theming integration with CSS variables
-- Built with responsive design principles
+- Built with responsive design principles using logical properties
+- International-ready design with automatic RTL language support
+- Semantic CSS that responds to content flow rather than physical directions
 
 ## Responsive Layout Controller
 
