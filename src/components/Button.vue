@@ -174,29 +174,32 @@ const handleClick = (event: MouseEvent) => {
 
 /* Button Sizes */
 
-/* Small Size */
+/* Small Size - Mobile First */
 .button--sm {
   padding-block: var(--space-2);
   padding-inline: var(--space-3);
   font-size: var(--font-size-sm);
+  min-block-size: 40px; /* iOS minimum touch target */
   border-start-start-radius: var(--radius-base);
   border-start-end-radius: var(--radius-base);
   border-end-start-radius: var(--radius-base);
   border-end-end-radius: var(--radius-base);
 }
 
-/* Medium Size (Default) */
+/* Medium Size (Default) - Mobile First */
 .button--md {
   padding-block: var(--space-3);
   padding-inline: var(--space-4);
   font-size: var(--font-size-base);
+  min-block-size: 44px; /* iOS minimum touch target */
 }
 
-/* Large Size */
+/* Large Size - Mobile First */
 .button--lg {
   padding-block: var(--space-4);
   padding-inline: var(--space-6);
   font-size: var(--font-size-lg);
+  min-block-size: 48px; /* iOS minimum touch target */
   border-start-start-radius: var(--radius-lg);
   border-start-end-radius: var(--radius-lg);
   border-end-start-radius: var(--radius-lg);
@@ -210,19 +213,9 @@ const handleClick = (event: MouseEvent) => {
   inline-size: 100%;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 640px) {
-  .button {
-    min-block-size: 44px; /* iOS minimum touch target */
-  }
-
-  .button--sm {
-    min-block-size: 40px;
-  }
-
-  .button--lg {
-    min-block-size: 48px;
-  }
+/* Enhanced styling for larger screens */
+@media (min-width: 641px) {
+  /* Add any larger screen enhancements here if needed */
 }
 
 /* Focus visible for better accessibility */

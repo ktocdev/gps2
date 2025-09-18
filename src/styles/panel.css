@@ -2,15 +2,15 @@
 
 /* Panel Component - BEM Methodology */
 
-/* Base Panel */
+/* Base Panel - Mobile First */
 .panel {
   background-color: var(--color-bg-secondary);
   border: 1px solid var(--color-border-light);
-  border-start-start-radius: var(--radius-lg);
-  border-start-end-radius: var(--radius-lg);
-  border-end-start-radius: var(--radius-lg);
-  border-end-end-radius: var(--radius-lg);
-  padding: var(--space-6);
+  border-start-start-radius: var(--radius-md);
+  border-start-end-radius: var(--radius-md);
+  border-end-start-radius: var(--radius-md);
+  border-end-end-radius: var(--radius-md);
+  padding: var(--space-4);
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-normal);
   position: relative;
@@ -122,14 +122,15 @@
   margin-block-end: 0;
 }
 
-/* Panel Footer */
+/* Panel Footer - Mobile First */
 .panel__footer {
   margin-block-start: var(--space-4);
   padding-block-start: var(--space-3);
   border-block-start: 1px solid var(--color-border-light);
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: stretch;
+  flex-direction: column;
   flex-wrap: wrap;
   gap: var(--space-2);
 }
@@ -138,7 +139,7 @@
 
 /* Compact Panel */
 .panel--compact {
-  padding: var(--space-4);
+  padding: var(--space-3);
 }
 
 .panel--compact .panel__header {
@@ -153,7 +154,7 @@
 
 /* Large Panel */
 .panel--large {
-  padding: var(--space-8);
+  padding: var(--space-6);
 }
 
 .panel--large .panel__header {
@@ -205,27 +206,27 @@
   color: var(--color-success);
 }
 
-/* Responsive Panel Behavior */
-@media (max-width: 768px) {
+/* Enhanced styling for larger screens */
+@media (min-width: 769px) {
   .panel {
-    padding: var(--space-4);
-    border-start-start-radius: var(--radius-md);
-    border-start-end-radius: var(--radius-md);
-    border-end-start-radius: var(--radius-md);
-    border-end-end-radius: var(--radius-md);
+    padding: var(--space-6);
+    border-start-start-radius: var(--radius-lg);
+    border-start-end-radius: var(--radius-lg);
+    border-end-start-radius: var(--radius-lg);
+    border-end-end-radius: var(--radius-lg);
   }
 
   .panel__footer {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
   }
 
   .panel--large {
-    padding: var(--space-6);
+    padding: var(--space-8);
   }
 
   .panel--compact {
-    padding: var(--space-3);
+    padding: var(--space-4);
   }
 }
 
@@ -262,39 +263,40 @@
   }
 }
 
-/* Panel Grid for Layout */
+/* Panel Grid for Layout - Mobile First */
 .panel-grid {
   display: grid;
-  gap: var(--space-6);
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 769px) {
   .panel-grid {
-    gap: var(--space-4);
-    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 }
 
-/* Panel Flex for Horizontal Layout */
+/* Panel Flex for Horizontal Layout - Mobile First */
 .panel-row {
   display: flex;
-  gap: var(--space-6);
+  gap: var(--space-4);
+  flex-direction: column;
   flex-wrap: wrap;
 }
 
 .panel-row > .panel {
-  flex: 1;
-  min-inline-size: 280px;
+  min-inline-size: auto;
 }
 
-@media (max-width: 768px) {
+@media (min-width: 769px) {
   .panel-row {
-    gap: var(--space-4);
-    flex-direction: column;
+    gap: var(--space-6);
+    flex-direction: row;
   }
 
   .panel-row > .panel {
-    min-inline-size: auto;
+    flex: 1;
+    min-inline-size: 280px;
   }
 }
