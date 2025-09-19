@@ -1,7 +1,9 @@
 {
   "name": "gps2",
-  "private": true,
   "version": "0.0.1",
+  "description": "Guinea Pig Simulation Game - Virtual pet care simulator with personality discovery",
+  "author": "ktocdev",
+  "license": "UNLICENSED",
   "type": "module",
   "scripts": {
     "dev": "vite",

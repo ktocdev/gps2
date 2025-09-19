@@ -1,3 +1,10 @@
+<!--
+  Guinea Pig Simulation Game (GPS2)
+  Copyright (c) 2025 ktocdev. All Rights Reserved.
+
+  This file is part of the GPS2 proprietary software.
+  Unauthorized copying, modification, or distribution is strictly prohibited.
+-->
 <template>
   <div class="home-view">
     <div class="home-view__hero">
