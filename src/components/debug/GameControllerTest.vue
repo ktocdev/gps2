@@ -191,9 +191,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useGameController } from '../stores/gameController'
-import Button from './Button.vue'
-import Select from './Select.vue'
+import { useGameController } from '../../stores/gameController'
+import Button from '../basic/Button.vue'
+import Select from '../basic/Select.vue'
 
 const gameController = useGameController()
 const saveResult = ref<string>('')

@@ -13,6 +13,9 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 3. **[Logging System & Activity Feed](docs/systems/phase1/logging-activity-feed.md)** - Centralized logging and natural language activity generation (implement early!)
 4. **[Debug Menu System](docs/systems/phase1/debug-menu-system.md)** - Development debugging tools (implement early for testing needs!)
 
+### Phase 1.5: Error Tracking & System Monitoring
+5. **[Error Tracking System](docs/systems/phase1/error-tracking.md)** - Professional debugging interface with system monitoring, error analysis, and developer tools
+
 ### Key Deliverables
 - **Complete visual framework** using reusable component library
 - **Responsive layout controller** with container-query integration

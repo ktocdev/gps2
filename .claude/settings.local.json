@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(move \"phase1.5-error-tracking.md\" \"error-tracking.md\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
