@@ -27,6 +27,7 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 - **[Layout Component Framework](systems/phase1/layout-component-framework.md)** - Region-based development with responsive UI
 - **[Logging Activity Feed](systems/phase1/logging-activity-feed.md)** - Centralized logging and natural language activity generation
 - **[Debug Menu System](systems/phase1/debug-menu-system.md)** - Development debugging tools
+- **[Error Tracking System](systems/phase1/error-tracking.md)** - System monitoring and debugging interface
 
 ##### Phase 2: Core Entities & Timing
 - **[Guinea Pig Store](systems/phase2/guinea-pig-store.md)** - Central guinea pig state management

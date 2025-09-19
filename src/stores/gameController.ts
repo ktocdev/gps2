@@ -1,5 +1,14 @@
+/**
+ * Guinea Pig Simulation Game (GPS2)
+ * Copyright (c) 2025 ktocdev. All Rights Reserved.
+ *
+ * This file is part of the GPS2 proprietary software.
+ * Unauthorized copying, modification, or distribution is strictly prohibited.
+ */
+
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useLoggingStore } from './loggingStore'
 
 // TypeScript interfaces
 interface GameState {
@@ -30,10 +39,20 @@ interface GameSettings {
 interface SaveData {
   gameState: GameState
   settings: GameSettings
+  loggingState?: any // Optional for backwards compatibility
   version: string
 }
 
 export const useGameController = defineStore('gameController', () => {
+  // Get logging store (lazy initialization to avoid circular dependencies)
+  let loggingStore: any = null
+  const getLoggingStore = () => {
+    if (!loggingStore) {
+      loggingStore = useLoggingStore()
+    }
+    return loggingStore
+  }
+
   // Core state
   const gameState = ref<GameState>({
     currentState: 'intro',
@@ -89,9 +108,27 @@ export const useGameController = defineStore('gameController', () => {
       return false
     }
 
+    const previousState = gameState.value.currentState
     gameState.value.currentState = newState
     gameState.value.pauseReason = newState === 'paused' ? pauseReason : null
     gameState.value.lastSaveTimestamp = Date.now()
+
+    // Log state changes
+    const logging = getLoggingStore()
+    const stateMessages = {
+      intro: 'Game started - Welcome to Guinea Pig Simulator! 🎮',
+      playing: 'Game resumed - Your guinea pig is ready for care! 🐹',
+      paused: `Game paused${pauseReason ? ` (${pauseReason})` : ''} ⏸️`,
+      stopped: 'Game stopped - See you next time! 👋'
+    }
+
+    if (previousState !== newState) {
+      logging.addPlayerAction(
+        stateMessages[newState] || `Game state changed to ${newState}`,
+        '🎮',
+        { previousState, newState, pauseReason }
+      )
+    }
 
     return true
   }
@@ -139,13 +176,21 @@ export const useGameController = defineStore('gameController', () => {
     gameState.value.hasGuineaPig = true
     gameState.value.isFirstTimeUser = false
     settings.value.tutorial.isGlobalFirstTime = false
+
+    const logging = getLoggingStore()
+    logging.addAchievement('First Guinea Pig Created! 🐹', '🏆', {
+      isFirstTimeUser: true,
+      timestamp: Date.now()
+    })
   }
 
   // Save/Load functionality
   const createSaveData = (): SaveData => {
+    const logging = getLoggingStore()
     return {
       gameState: { ...gameState.value },
       settings: { ...settings.value },
+      loggingState: logging.getState(),
       version: '1.0.0'
     }
   }
@@ -155,9 +200,15 @@ export const useGameController = defineStore('gameController', () => {
       const saveData = createSaveData()
       localStorage.setItem('gps2-save', JSON.stringify(saveData))
       gameState.value.lastSaveTimestamp = Date.now()
+
+      const logging = getLoggingStore()
+      logging.logDebug('Game saved successfully', { timestamp: gameState.value.lastSaveTimestamp })
       return true
     } catch (error) {
       console.error('Failed to save game:', error)
+      const logging = getLoggingStore()
+      logging.logError(`Failed to save game: ${error}`, { error })
+
       if (settings.value.errorReporting.enabled) {
         // Error reporting would go here
       }
@@ -181,15 +232,30 @@ export const useGameController = defineStore('gameController', () => {
       gameState.value = { ...saveData.gameState }
       settings.value = { ...saveData.settings }
 
+      // Load logging state if available (backwards compatibility)
+      const logging = getLoggingStore()
+      if (saveData.loggingState) {
+        logging.loadState(saveData.loggingState)
+      }
+
       // State recovery validation
       if (!isValidCurrentState()) {
         console.warn('Invalid state detected, recovering...')
+        logging.logWarn('Invalid game state detected, attempting recovery')
         recoverFromInvalidState()
       }
+
+      logging.logInfo('Game loaded successfully', {
+        gameState: saveData.gameState.currentState,
+        hasGuineaPig: saveData.gameState.hasGuineaPig
+      })
 
       return true
     } catch (error) {
       console.error('Failed to load game:', error)
+      const logging = getLoggingStore()
+      logging.logError(`Failed to load game: ${error}`, { error })
+
       if (settings.value.errorReporting.enabled) {
         // Error reporting would go here
       }
@@ -284,18 +350,25 @@ export const useGameController = defineStore('gameController', () => {
 
   // Initialize store
   const initializeStore = () => {
+    const logging = getLoggingStore()
+    logging.logInfo('Game Controller initializing...')
+
     // Attempt to load existing save
     const loaded = loadGame()
 
     if (!loaded) {
       // No save found or corrupted, start fresh
+      logging.logInfo('No save data found, starting new game')
       newGame()
     }
 
     // Start auto-save if enabled
     if (settings.value.autoSave.enabled) {
       startAutoSave()
+      logging.logDebug(`Auto-save enabled with ${settings.value.autoSave.frequency}s frequency`)
     }
+
+    logging.logInfo('Game Controller initialized successfully')
   }
 
   return {

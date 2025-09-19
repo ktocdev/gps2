@@ -272,6 +272,10 @@ img {
   flex-direction: column;
 }
 
+.flex-col {
+  flex-direction: column;
+}
+
 .flex-column-reverse {
   flex-direction: column-reverse;
 }
@@ -453,3 +457,66 @@ img {
 .p-5 { padding: var(--space-5); }
 .p-6 { padding: var(--space-6); }
 .p-8 { padding: var(--space-8); }
+
+/* Button Group Utilities */
+.button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.button-group--compact {
+  gap: var(--space-1);
+}
+
+.button-group--spacious {
+  gap: var(--space-3);
+}
+
+.button-group--vertical {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.button-group--center {
+  justify-content: center;
+}
+
+.button-group--end {
+  justify-content: flex-end;
+}
+
+.button-group--start {
+  justify-content: flex-start;
+}
+
+/* Button Group Container - for multiple button groups with vertical spacing */
+.button-group-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.button-group-container--compact {
+  gap: var(--space-2);
+}
+
+.button-group-container--spacious {
+  gap: var(--space-4);
+}
+
+/* Responsive Gap Utilities */
+@media (max-width: 640px) {
+  .gap-responsive { gap: var(--space-1); }
+  .gap-2-responsive { gap: var(--space-1); }
+  .gap-3-responsive { gap: var(--space-2); }
+  .gap-4-responsive { gap: var(--space-2); }
+}
+
+@media (min-width: 641px) {
+  .gap-responsive { gap: var(--space-2); }
+  .gap-2-responsive { gap: var(--space-2); }
+  .gap-3-responsive { gap: var(--space-3); }
+  .gap-4-responsive { gap: var(--space-4); }
+}
