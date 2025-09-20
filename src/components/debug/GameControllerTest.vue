@@ -45,13 +45,55 @@
         </div>
         <div class="panel__content">
           <div class="button-grid">
-            <Button @click="gameController.startGame()" variant="primary">Start Game</Button>
-            <Button @click="gameController.pauseGame('manual')" variant="secondary">Pause (Manual)</Button>
-            <Button @click="gameController.pauseGame('orientation')" variant="tertiary">Pause (Orientation)</Button>
-            <Button @click="gameController.resumeGame()" variant="primary">Resume Game</Button>
-            <Button @click="gameController.stopGame()" variant="danger">Stop Game</Button>
-            <Button @click="gameController.newGame()" variant="tertiary">New Game</Button>
-            <Button @click="gameController.setGuineaPigCreated()" variant="secondary">Create Guinea Pig</Button>
+            <Button
+              @click="gameController.startGame()"
+              variant="primary"
+              :disabled="!canStartGame"
+            >
+              Start Game
+            </Button>
+            <Button
+              @click="gameController.pauseGame('manual')"
+              variant="secondary"
+              :disabled="!canPauseGame"
+            >
+              Pause (Manual)
+            </Button>
+            <Button
+              @click="gameController.pauseGame('orientation')"
+              variant="tertiary"
+              :disabled="!canPauseGame"
+            >
+              Pause (Orientation)
+            </Button>
+            <Button
+              @click="gameController.resumeGame()"
+              variant="primary"
+              :disabled="!canResumeGame"
+            >
+              Resume Game
+            </Button>
+            <Button
+              @click="gameController.stopGame()"
+              variant="danger"
+              :disabled="!canStopGame"
+            >
+              Stop Game
+            </Button>
+            <Button
+              @click="gameController.newGame()"
+              variant="tertiary"
+              :disabled="!canStartNewGame"
+            >
+              New Game
+            </Button>
+            <Button
+              @click="gameController.setGuineaPigCreated()"
+              variant="secondary"
+              :disabled="!canCreateGuineaPig"
+            >
+              Create Guinea Pig
+            </Button>
           </div>
         </div>
       </div>
@@ -231,6 +273,37 @@ const tutorialMode = computed({
 const performanceMode = computed({
   get: () => gameController.settings.performance.mode,
   set: (value: string) => gameController.setPerformanceMode(value as 'standard' | 'reduced')
+})
+
+// Button state computations based on valid transitions
+const canStartGame = computed(() => {
+  const currentState = gameController.gameState.currentState
+  return currentState === 'intro' || currentState === 'stopped'
+})
+
+const canPauseGame = computed(() => {
+  const currentState = gameController.gameState.currentState
+  return currentState === 'playing'
+})
+
+const canResumeGame = computed(() => {
+  const currentState = gameController.gameState.currentState
+  return currentState === 'paused'
+})
+
+const canStopGame = computed(() => {
+  const currentState = gameController.gameState.currentState
+  return currentState === 'playing' || currentState === 'paused'
+})
+
+const canStartNewGame = computed(() => {
+  const currentState = gameController.gameState.currentState
+  return currentState === 'stopped' || currentState === 'intro'
+})
+
+const canCreateGuineaPig = computed(() => {
+  const currentState = gameController.gameState.currentState
+  return currentState === 'playing' || currentState === 'paused'
 })
 
 onMounted(() => {

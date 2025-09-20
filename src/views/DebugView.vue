@@ -18,6 +18,10 @@
       <template #logging>
         <LoggingSystemView />
       </template>
+
+      <template #error-tracking>
+        <SystemMonitorView />
+      </template>
     </TabContainer>
   </div>
 </template>
@@ -27,6 +31,7 @@ import { ref } from 'vue'
 import TabContainer, { type Tab } from '../components/layout/TabContainer.vue'
 import GameControllerView from './GameControllerView.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
+import SystemMonitorView from './SystemMonitorView.vue'
 
 // State
 const activeTab = ref('controller')
@@ -42,6 +47,11 @@ const debugTabs: Tab[] = [
     id: 'logging',
     label: 'Logging System',
     icon: '📝',
+  },
+  {
+    id: 'error-tracking',
+    label: 'Error Tracking',
+    icon: '🐛',
   }
 ]
 
