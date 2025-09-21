@@ -9,6 +9,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
+import { useGuineaPigStore } from './guineaPigStore'
 
 // TypeScript interfaces
 interface GameState {
@@ -40,17 +41,27 @@ interface SaveData {
   gameState: GameState
   settings: GameSettings
   loggingState?: any // Optional for backwards compatibility
+  guineaPigState?: any // Optional for backwards compatibility
   version: string
 }
 
 export const useGameController = defineStore('gameController', () => {
-  // Get logging store (lazy initialization to avoid circular dependencies)
+  // Get stores (lazy initialization to avoid circular dependencies)
   let loggingStore: any = null
+  let guineaPigStore: any = null
+
   const getLoggingStore = () => {
     if (!loggingStore) {
       loggingStore = useLoggingStore()
     }
     return loggingStore
+  }
+
+  const getGuineaPigStore = () => {
+    if (!guineaPigStore) {
+      guineaPigStore = useGuineaPigStore()
+    }
+    return guineaPigStore
   }
 
   // Core state
@@ -89,6 +100,17 @@ export const useGameController = defineStore('gameController', () => {
   const isOrientationPaused = computed(() =>
     gameState.value.currentState === 'paused' && gameState.value.pauseReason === 'orientation'
   )
+
+  // Guinea pig related computed properties
+  const hasGuineaPig = computed(() => {
+    const guineaPigStore = getGuineaPigStore()
+    return guineaPigStore.hasGuineaPigs
+  })
+
+  const activeGuineaPig = computed(() => {
+    const guineaPigStore = getGuineaPigStore()
+    return guineaPigStore.activeGuineaPig
+  })
 
   // State transition validation
   const isValidTransition = (from: string, to: string): boolean => {
@@ -141,7 +163,7 @@ export const useGameController = defineStore('gameController', () => {
   }
 
   const startGame = () => {
-    if (gameState.value.hasGuineaPig) {
+    if (hasGuineaPig.value) {
       setState('playing')
     } else {
       console.error('Cannot start game without guinea pig')
@@ -177,6 +199,12 @@ export const useGameController = defineStore('gameController', () => {
       isFirstTimeUser: settings.value.tutorial.isGlobalFirstTime,
       lastSaveTimestamp: Date.now()
     }
+
+    // Clear guinea pig store for new game
+    const guineaPigStore = getGuineaPigStore()
+    guineaPigStore.collection.guineaPigs = {}
+    guineaPigStore.collection.activeGuineaPigId = null
+    guineaPigStore.collection.lastUpdated = Date.now()
   }
 
   const setGuineaPigCreated = () => {
@@ -196,13 +224,28 @@ export const useGameController = defineStore('gameController', () => {
     })
   }
 
+  // Guinea pig creation helper that integrates with both stores
+  const createGuineaPig = (name: string, gender: 'male' | 'female', breed: string): string => {
+    const guineaPigStore = getGuineaPigStore()
+    const guineaPigId = guineaPigStore.createGuineaPig(name, gender, breed)
+
+    // Update game state to reflect guinea pig creation
+    if (!hasGuineaPig.value) {
+      setGuineaPigCreated()
+    }
+
+    return guineaPigId
+  }
+
   // Save/Load functionality
   const createSaveData = (): SaveData => {
     const logging = getLoggingStore()
+    const guineaPigStore = getGuineaPigStore()
     return {
       gameState: { ...gameState.value },
       settings: { ...settings.value },
       loggingState: logging.getState(),
+      guineaPigState: guineaPigStore.getState(),
       version: '1.0.0'
     }
   }
@@ -248,6 +291,12 @@ export const useGameController = defineStore('gameController', () => {
       const logging = getLoggingStore()
       if (saveData.loggingState) {
         logging.loadState(saveData.loggingState)
+      }
+
+      // Load guinea pig state if available (backwards compatibility)
+      const guineaPigStore = getGuineaPigStore()
+      if (saveData.guineaPigState) {
+        guineaPigStore.loadState(saveData.guineaPigState)
       }
 
       // State recovery validation
@@ -363,7 +412,12 @@ export const useGameController = defineStore('gameController', () => {
   // Initialize store
   const initializeStore = () => {
     const logging = getLoggingStore()
+    const guineaPigStore = getGuineaPigStore()
+
     logging.logInfo('Game Controller initializing...')
+
+    // Initialize guinea pig store first
+    guineaPigStore.initializeStore()
 
     // Attempt to load existing save
     const loaded = loadGame()
@@ -393,6 +447,8 @@ export const useGameController = defineStore('gameController', () => {
     isPaused,
     isManuallyPaused,
     isOrientationPaused,
+    hasGuineaPig,
+    activeGuineaPig,
 
     // Actions
     setState,
@@ -402,6 +458,7 @@ export const useGameController = defineStore('gameController', () => {
     stopGame,
     newGame,
     setGuineaPigCreated,
+    createGuineaPig,
 
     // Save/Load
     saveGame,

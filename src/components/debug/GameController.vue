@@ -269,6 +269,245 @@
       </div>
     </div>
 
+    <!-- Guinea Pig Store Debug -->
+    <div class="mb-8">
+      <h2>Guinea Pig Store</h2>
+      <div class="panel-row">
+        <!-- Guinea Pig Collection -->
+        <div class="panel panel--border-primary">
+          <div class="panel__header">
+            <h3>Collection</h3>
+          </div>
+          <div class="panel__content">
+            <div class="stats-grid mb-4">
+              <div class="stat-item">
+                <span class="stat-label">Count:</span>
+                <span class="stat-value">{{ guineaPigStore.guineaPigCount }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Has Guinea Pigs:</span>
+                <span class="stat-value">{{ guineaPigStore.hasGuineaPigs }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Can Add More:</span>
+                <span class="stat-value">{{ guineaPigStore.canAddMoreGuineaPigs }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Active Guinea Pig:</span>
+                <span class="stat-value">{{ guineaPigStore.activeGuineaPig?.name || 'None' }}</span>
+              </div>
+            </div>
+
+            <!-- Guinea Pig List -->
+            <div v-if="guineaPigStore.hasGuineaPigs" class="mb-4">
+              <h4>Guinea Pigs:</h4>
+              <div class="guinea-pig-list">
+                <div
+                  v-for="guineaPig in guineaPigStore.allGuineaPigs"
+                  :key="guineaPig.id"
+                  class="guinea-pig-item"
+                  :class="{ 'guinea-pig-item--active': guineaPig.id === guineaPigStore.activeGuineaPig?.id }"
+                >
+                  <div class="guinea-pig-info">
+                    <strong>{{ guineaPig.name }}</strong>
+                    <span class="guinea-pig-details">
+                      {{ guineaPig.gender }} • {{ guineaPig.breed }} • Level {{ guineaPig.stats.level }}
+                    </span>
+                  </div>
+                  <div class="guinea-pig-actions">
+                    <Button
+                      @click="setActiveGuineaPig(guineaPig.id)"
+                      variant="tertiary"
+                      size="sm"
+                      :disabled="guineaPig.id === guineaPigStore.activeGuineaPig?.id"
+                    >
+                      Set Active
+                    </Button>
+                    <Button
+                      @click="deleteGuineaPig(guineaPig.id)"
+                      variant="danger"
+                      size="sm"
+                    >
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Store Actions -->
+            <div class="flex flex-column gap-3">
+              <Button @click="createTestGuineaPig" variant="primary">
+                Create Test Guinea Pig
+              </Button>
+              <Button @click="clearAllGuineaPigs" variant="danger">
+                Clear All Guinea Pigs
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Guinea Pig Details -->
+        <div class="panel panel--border-secondary">
+          <div class="panel__header">
+            <h3>{{ guineaPigStore.activeGuineaPig?.name || 'Guinea Pig' }} Details</h3>
+          </div>
+          <div class="panel__content">
+            <div v-if="guineaPigStore.activeGuineaPig" class="guinea-pig-details-grid">
+              <!-- Basic Info -->
+              <div class="detail-section">
+                <h4>Basic Info</h4>
+                <div class="stats-grid">
+                  <div class="stat-item">
+                    <span class="stat-label">ID:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.id.slice(-8) }}...</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Days in Game:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.stats.age }} days</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Weight:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.stats.weight }}g</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stats -->
+              <div class="detail-section">
+                <h4>Stats</h4>
+                <div class="stats-grid">
+                  <div class="stat-item">
+                    <span class="stat-label">Wellness:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.stats.wellness }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Overall Mood:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.stats.overallMood }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Level:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.stats.level }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Needs (All 7 Categories) -->
+              <div class="detail-section detail-section--wide">
+                <h4>Needs (7 Categories)</h4>
+                <div class="stats-grid stats-grid--needs">
+                  <div class="stat-item">
+                    <span class="stat-label">Hunger:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.needs.hunger }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Thirst:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.needs.thirst }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Happiness:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.needs.happiness }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Cleanliness:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.needs.cleanliness }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Health:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.needs.health }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Energy:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.needs.energy }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Social:</span>
+                    <span class="stat-value">{{ guineaPigStore.activeGuineaPig.needs.social }}/100</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Placeholder when no guinea pig exists -->
+            <div v-else class="guinea-pig-details-grid">
+              <!-- Basic Info Placeholder -->
+              <div class="detail-section">
+                <h4>Basic Info</h4>
+                <div class="stats-grid">
+                  <div class="stat-item">
+                    <span class="stat-label">ID:</span>
+                    <span class="stat-value stat-value--placeholder">--</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Days in Game:</span>
+                    <span class="stat-value stat-value--placeholder">-- days</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Weight:</span>
+                    <span class="stat-value stat-value--placeholder">--g</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stats Placeholder -->
+              <div class="detail-section">
+                <h4>Stats</h4>
+                <div class="stats-grid">
+                  <div class="stat-item">
+                    <span class="stat-label">Wellness:</span>
+                    <span class="stat-value stat-value--placeholder">--/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Overall Mood:</span>
+                    <span class="stat-value stat-value--placeholder">--/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Level:</span>
+                    <span class="stat-value stat-value--placeholder">--</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Needs Placeholder (All 7 Categories) -->
+              <div class="detail-section detail-section--wide">
+                <h4>Needs (7 Categories)</h4>
+                <div class="stats-grid stats-grid--needs">
+                  <div class="stat-item">
+                    <span class="stat-label">Hunger:</span>
+                    <span class="stat-value stat-value--placeholder">--/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Thirst:</span>
+                    <span class="stat-value stat-value--placeholder">--/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Happiness:</span>
+                    <span class="stat-value stat-value--placeholder">--/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Cleanliness:</span>
+                    <span class="stat-value stat-value--placeholder">--/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Health:</span>
+                    <span class="stat-value stat-value--placeholder">--/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Energy:</span>
+                    <span class="stat-value stat-value--placeholder">--/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Social:</span>
+                    <span class="stat-value stat-value--placeholder">--/100</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Raw Store Data -->
     <div class="mb-8">
       <h2>Raw Store Data (Debug)</h2>
@@ -289,6 +528,14 @@
             <pre>{{ JSON.stringify(gameController.settings, null, 2) }}</pre>
           </div>
         </div>
+        <div class="panel panel--accent">
+          <div class="panel__header">
+            <h3>Guinea Pig Store</h3>
+          </div>
+          <div class="panel__content">
+            <pre>{{ JSON.stringify(guineaPigStore.collection, null, 2) }}</pre>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -297,10 +544,12 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useGameController } from '../../stores/gameController'
+import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
 
 const gameController = useGameController()
+const guineaPigStore = useGuineaPigStore()
 const saveResult = ref<string>('')
 const loadResult = ref<string>('')
 
@@ -390,6 +639,7 @@ const loadGame = () => {
 const clearSave = () => {
   localStorage.removeItem('gps2-save')
   localStorage.removeItem('gps2-game-controller')
+  localStorage.removeItem('gps2-guinea-pig-store')
   saveResult.value = 'Save data cleared'
   loadResult.value = ''
 }
@@ -419,6 +669,47 @@ const resetFirstTimeUser = () => {
       isGlobalFirstTime: true
     }
   })
+}
+
+// Guinea pig store debug functions
+const createTestGuineaPig = () => {
+  const testNames = ['Peanut', 'Oreo', 'Cocoa', 'Ginger', 'Butterscotch']
+  const testBreeds = ['american', 'abyssinian', 'peruvian', 'silkie', 'teddy']
+  const testGenders = ['male', 'female'] as const
+
+  const randomName = testNames[Math.floor(Math.random() * testNames.length)]
+  const randomBreed = testBreeds[Math.floor(Math.random() * testBreeds.length)]
+  const randomGender = testGenders[Math.floor(Math.random() * testGenders.length)]
+
+  try {
+    const id = gameController.createGuineaPig(randomName, randomGender, randomBreed)
+    console.log('Created test guinea pig:', id)
+  } catch (error) {
+    console.error('Failed to create test guinea pig:', error)
+  }
+}
+
+const setActiveGuineaPig = (id: string) => {
+  guineaPigStore.setActiveGuineaPig(id)
+}
+
+const deleteGuineaPig = (id: string) => {
+  const guineaPig = guineaPigStore.getGuineaPig(id)
+  if (guineaPig && confirm(`Are you sure you want to delete ${guineaPig.name}?`)) {
+    guineaPigStore.deleteGuineaPig(id)
+  }
+}
+
+const clearAllGuineaPigs = () => {
+  if (confirm('Are you sure you want to delete all guinea pigs? This cannot be undone.')) {
+    // Clear all guinea pigs from the store
+    guineaPigStore.collection.guineaPigs = {}
+    guineaPigStore.collection.activeGuineaPigId = null
+    guineaPigStore.collection.lastUpdated = Date.now()
+
+    // Update game controller state
+    gameController.gameState.hasGuineaPig = false
+  }
 }
 </script>
 
@@ -476,5 +767,91 @@ const resetFirstTimeUser = () => {
 
 .status-item strong {
   color: var(--color-text-primary);
+}
+
+/* Guinea Pig Debug Styles */
+.guinea-pig-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.guinea-pig-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3);
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.guinea-pig-item--active {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-bg);
+}
+
+.guinea-pig-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.guinea-pig-details {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.guinea-pig-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.guinea-pig-details-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .guinea-pig-details-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+.detail-section {
+  padding: var(--space-3);
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+}
+
+.detail-section h4 {
+  margin: 0 0 var(--space-3) 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.detail-section--wide {
+  grid-column: 1 / -1;
+}
+
+.stats-grid--needs {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+@media (min-width: 768px) {
+  .stats-grid--needs {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+/* Placeholder styles */
+.stat-value--placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+  opacity: 0.7;
 }
 </style>

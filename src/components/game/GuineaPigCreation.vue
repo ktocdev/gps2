@@ -45,17 +45,17 @@
             aria-labelledby="gender-selection"
           >
             <Button
-              @click="formData.gender = 'sow'"
+              @click="formData.gender = 'female'"
               variant="segmented"
-              :selected="formData.gender === 'sow'"
+              :selected="formData.gender === 'female'"
               size="sm"
             >
               🐹 Sow (Female)
             </Button>
             <Button
-              @click="formData.gender = 'boar'"
+              @click="formData.gender = 'male'"
               variant="segmented"
-              :selected="formData.gender === 'boar'"
+              :selected="formData.gender === 'male'"
               size="sm"
             >
               🐹 Boar (Male)
@@ -113,7 +113,7 @@
           </div>
           <div class="stat-item">
             <span class="stat-label">Gender:</span>
-            <span class="stat-value">{{ formData.gender === 'sow' ? 'Sow (Female)' : 'Boar (Male)' }}</span>
+            <span class="stat-value">{{ formData.gender === 'female' ? 'Sow (Female)' : 'Boar (Male)' }}</span>
           </div>
           <div class="stat-item">
             <span class="stat-label">Coat:</span>
@@ -172,7 +172,7 @@ const router = useRouter()
 // Form data interface
 interface GuineaPigFormData {
   name: string
-  gender: 'sow' | 'boar'
+  gender: 'female' | 'male' // Updated to match store interface
   coatType: string
   birthdate: string
 }
@@ -180,7 +180,7 @@ interface GuineaPigFormData {
 // Form state
 const formData = ref<GuineaPigFormData>({
   name: '',
-  gender: 'sow',
+  gender: 'female',
   coatType: 'american',
   birthdate: ''
 })
@@ -286,7 +286,7 @@ const getCoatTypeLabel = (value: string): string => {
 
 const generateRandomData = (logAction: boolean = false) => {
   formData.value.name = generateRandomName()
-  formData.value.gender = Math.random() > 0.5 ? 'sow' : 'boar'
+  formData.value.gender = Math.random() > 0.5 ? 'female' : 'male'
   formData.value.coatType = coatTypeOptions[Math.floor(Math.random() * coatTypeOptions.length)].value
 
   // Random birthdate (1 month to 2 years old)
@@ -314,56 +314,6 @@ const setRandomProperties = () => {
   generateRandomData(true)
 }
 
-// Hidden preference generation (fixed to prevent duplicates)
-const generateHiddenPreferences = () => {
-  // Food preferences
-  const hayTypes = ['timothy', 'orchard_grass', 'meadow_hay', 'alfalfa', 'oat_hay', 'botanical_hay', 'western_timothy', 'eastern_timothy']
-  const vegetables = ['bell_pepper', 'carrot', 'cucumber', 'leafy_greens', 'broccoli', 'celery', 'tomato', 'zucchini', 'cauliflower', 'peas', 'corn', 'parsley']
-  const fruits = ['apple', 'banana', 'strawberry', 'blueberry', 'grape', 'orange', 'pear', 'watermelon', 'cantaloupe', 'kiwi']
-
-  // Activity preferences
-  const interactions = ['gentle_petting', 'brushing', 'holding', 'talking', 'singing', 'hand_feeding', 'lap_time', 'floor_time']
-  const toys = ['tunnels', 'chew_toys', 'balls', 'hideouts', 'climbing_structures', 'foraging_toys', 'puzzle_feeders', 'bells']
-  const environments = ['quiet_spaces', 'social_areas', 'elevated_spots', 'ground_level', 'covered_areas', 'open_spaces']
-
-  // Generate random preferences (shuffle each array once to prevent duplicates)
-  const shuffleArray = (array: string[]) => [...array].sort(() => Math.random() - 0.5)
-
-  // Shuffle each array once to prevent duplicates
-  const shuffledHay = shuffleArray(hayTypes)
-  const shuffledVegetables = shuffleArray(vegetables)
-  const shuffledFruits = shuffleArray(fruits)
-  const shuffledInteractions = shuffleArray(interactions)
-  const shuffledToys = shuffleArray(toys)
-  const shuffledEnvironments = shuffleArray(environments)
-
-  return {
-    foodPreferences: {
-      hay: {
-        preferred: shuffledHay[0],
-        disliked: shuffledHay[1]
-      },
-      vegetables: {
-        preferred: shuffledVegetables[0],
-        disliked: shuffledVegetables[1]
-      },
-      fruits: {
-        preferred: shuffledFruits[0],
-        disliked: shuffledFruits[1]
-      }
-    },
-    activityPreferences: {
-      interactions: shuffledInteractions.slice(0, 3), // First 3 interactions
-      toys: shuffledToys.slice(0, 2), // First 2 toys
-      environments: shuffledEnvironments.slice(0, 2) // First 2 environments
-    },
-    dislikedActivities: {
-      interactions: shuffledInteractions.slice(3, 5), // Next 2 interactions (no overlap)
-      toys: shuffledToys.slice(2, 3), // Next 1 toy (no overlap)
-      environments: shuffledEnvironments.slice(2, 3) // Next 1 environment (no overlap)
-    }
-  }
-}
 
 // Generate random name helper
 const generateRandomName = () => {
@@ -391,67 +341,67 @@ const createGuineaPig = () => {
 
   if (!isFormValid.value) return
 
-  // Generate hidden preferences
-  const preferences = generateHiddenPreferences()
+  try {
+    // Create guinea pig using the integrated store method
+    const guineaPigId = gameController.createGuineaPig(
+      formData.value.name,
+      formData.value.gender,
+      formData.value.coatType
+    )
 
-  // Log creation event
-  loggingStore.addAchievement(
-    `Welcome ${formData.value.name}! Your guinea pig adventure begins! 🐹`,
-    '🎉',
-    {
-      guineaPig: {
-        name: formData.value.name,
-        gender: formData.value.gender,
-        coatType: formData.value.coatType,
-        age: calculateAge(formData.value.birthdate)
-      },
-      isFirstTimeUser: gameController.gameState.isFirstTimeUser
+    // Log creation event
+    loggingStore.addAchievement(
+      `Welcome ${formData.value.name}! Your guinea pig adventure begins! 🐹`,
+      '🎉',
+      {
+        guineaPigId,
+        guineaPig: {
+          name: formData.value.name,
+          gender: formData.value.gender,
+          breed: formData.value.coatType,
+          age: calculateAge(formData.value.birthdate)
+        },
+        isFirstTimeUser: gameController.gameState.isFirstTimeUser
+      }
+    )
+
+    // Welcome messages based on tutorial settings
+    if (showTutorialHints.value) {
+      setTimeout(() => {
+        loggingStore.addGuineaPigReaction(
+          `${formData.value.name} looks around curiously at their new home`,
+          '👀',
+          { firstMeeting: true, guineaPigId }
+        )
+      }, 500)
+
+      setTimeout(() => {
+        loggingStore.addPlayerAction(
+          'Try interacting with your guinea pig to start building friendship!',
+          '💡',
+          { tutorial: true }
+        )
+      }, 1500)
+    } else {
+      setTimeout(() => {
+        loggingStore.addGuineaPigReaction(
+          `${formData.value.name} is ready to be cared for!`,
+          '🐹',
+          { greeting: true, guineaPigId }
+        )
+      }, 500)
     }
-  )
 
-  // Log preference generation (for debug purposes, not shown to player)
-  loggingStore.logDebug('Guinea pig preferences generated', {
-    preferences,
-    hidden: true
-  })
+    // Navigate to main game
+    router.push('/home')
 
-  // Update game controller state
-  gameController.setGuineaPigCreated()
-
-  // Only transition to playing if not already playing
-  if (gameController.gameState.currentState !== 'playing') {
-    gameController.setState('playing')
+  } catch (error) {
+    console.error('Failed to create guinea pig:', error)
+    loggingStore.logError(`Failed to create guinea pig: ${error}`, {
+      formData: formData.value,
+      error: error instanceof Error ? error.message : String(error)
+    })
   }
-
-  // Welcome messages based on tutorial settings
-  if (showTutorialHints.value) {
-    setTimeout(() => {
-      loggingStore.addGuineaPigReaction(
-        `${formData.value.name} looks around curiously at their new home`,
-        '👀',
-        { firstMeeting: true }
-      )
-    }, 500)
-
-    setTimeout(() => {
-      loggingStore.addPlayerAction(
-        'Try interacting with your guinea pig to start building friendship!',
-        '💡',
-        { tutorial: true }
-      )
-    }, 1500)
-  } else {
-    setTimeout(() => {
-      loggingStore.addGuineaPigReaction(
-        `${formData.value.name} is ready to be cared for!`,
-        '🐹',
-        { greeting: true }
-      )
-    }, 500)
-  }
-
-  // Navigate to main game
-  router.push('/home')
 }
 
 // Initialize form
