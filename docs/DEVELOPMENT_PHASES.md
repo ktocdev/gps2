@@ -100,6 +100,9 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 - **Strategic purchasing decisions** balancing happiness items vs necessities
 - **Currency earning** through guinea pig care and achievement milestones
 
+### Integration Reminders
+- **Update Guinea Pig Creation Form** - Replace hardcoded toy/item preferences with actual items from Inventory Store system (System 13) once item database is established
+
 ---
 
 ## Phase 4: Interactions & Behaviors (Systems 15-16)
