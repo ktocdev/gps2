@@ -97,7 +97,7 @@ const handleClick = (event: MouseEvent) => {
 .button--primary {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .button--primary:hover:not(:disabled) {
@@ -118,7 +118,7 @@ const handleClick = (event: MouseEvent) => {
 .button--secondary {
   background-color: var(--color-secondary);
   border-color: var(--color-secondary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .button--secondary:hover:not(:disabled) {
@@ -158,7 +158,7 @@ const handleClick = (event: MouseEvent) => {
 .button--danger {
   background-color: var(--color-error);
   border-color: var(--color-error);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .button--danger:hover:not(:disabled) {
@@ -179,7 +179,7 @@ const handleClick = (event: MouseEvent) => {
 .button--warning {
   background-color: #ea580c; /* Orange with good contrast */
   border-color: #ea580c;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .button--warning:hover:not(:disabled) {
@@ -281,7 +281,7 @@ const handleClick = (event: MouseEvent) => {
 
 .button--segmented.button--selected {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
   font-weight: var(--font-weight-semibold);
 }
 

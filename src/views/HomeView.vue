@@ -90,7 +90,7 @@
   padding-block: var(--space-3);
   padding-inline: var(--space-6);
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
   text-decoration: none;
   font-weight: var(--font-weight-medium);
   border-radius: var(--radius-lg);
@@ -100,7 +100,7 @@
 
 .home-view__button:hover {
   background-color: var(--color-primary-hover);
-  color: white;
+  color: var(--color-text-inverse);
   text-decoration: none;
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
