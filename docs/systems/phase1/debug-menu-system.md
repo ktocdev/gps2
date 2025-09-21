@@ -1,19 +1,33 @@
-# Debug Menu System - System 4
+# Debug Menu System - Distributed Implementation
 
-**Phase 1: Foundation & Infrastructure**
+**Phases 2-5: Built Incrementally with Each System**
 
 ## Overview
-Development-only debug interface providing comprehensive testing and monitoring capabilities for all game systems during development.
+Development-only debug interface providing comprehensive testing and monitoring capabilities for all game systems. Debug panels are built incrementally alongside each system to ensure complete knowledge of actual implementations, with final consolidation into a unified Debug Menu tab in Phase 5.
 
-## Debug System Architecture
+## Implementation Strategy
 
-### Modular Debug Panels
-- **Needs System Panel:** Real-time need values, decay rates, and manual adjustment controls
-- **Wellness System Panel:** Wellness calculation breakdown and penalty testing
-- **Preferences Panel:** View/edit guinea pig preferences, test preference discovery
-- **Reactions Panel:** Trigger specific guinea pig reactions for testing
-- **Habitat Panel:** Manipulate habitat conditions (cleanliness, bedding, water)
-- **Activity Feed Panel:** Message filtering, history viewing, and manual message injection
+### Incremental Development Approach
+Debug panels are built alongside each system to ensure complete understanding of actual implementations:
+
+**Phase 2 Debug Panels (Built with Core Systems):**
+- **Needs System Panel:** Real-time need values, decay rates, and manual adjustment controls (built with Needs System)
+- **Wellness System Panel:** Wellness calculation breakdown and penalty testing (built with Needs Controller)
+- **Preferences Panel:** View/edit guinea pig preferences, test preference discovery (built with Guinea Pig Store)
+- **Habitat Panel:** Manipulate habitat conditions (cleanliness, bedding, water) (built with Habitat Conditions)
+
+**Phase 3 Debug Panels (Built with Game World Systems):**
+- **Inventory Debug Panel:** Item management, currency manipulation, store testing (built with Inventory System)
+- **Item Interaction Panel:** Habitat item placement and interaction testing (built with Habitat Item System)
+- **Maintenance Debug Panel:** Hygiene system testing, poop generation, cleanliness controls (built with Maintenance System)
+
+**Phase 4 Debug Panels (Built with Interaction Systems):**
+- **Interaction Debug Panel:** Direct interaction testing, reaction triggers, preference discovery (built with Direct Interaction System)
+- **AI Behavior Panel:** Autonomy testing, pathfinding visualization, behavior triggers (built with Autonomy System)
+
+**Phase 5 Consolidation:**
+- **Unified Debug Menu Tab:** All debug panels integrated into single interface
+- **Advanced Features:** Performance monitoring, stress testing, integration validation
 
 ### Real-Time Monitoring
 - **System Status Indicators:** Live monitoring of all game systems
@@ -27,36 +41,54 @@ Development-only debug interface providing comprehensive testing and monitoring 
 - **Edge Case Simulation:** Test boundary conditions and error scenarios
 - **Integration Validation:** Cross-system interaction testing
 
-## Debug Components (from Layout Framework)
+## Debug Component Development Timeline
 
-### Core Debug Components
-- **DebugPanel:** Collapsible debug interface with tabbed sections
-- **NeedControl:** Individual need manipulation controls with sliders
-- **WellnessDebugger:** Wellness calculation breakdown and penalty testing
-- **HabitatDebugger:** Habitat condition manipulation and testing controls
-- **LogViewer:** Scrollable log display with filtering capabilities
-- **ValueAdjuster:** Debug slider/input for numeric values
-- **FeatureToggle:** Enable/disable feature flags for testing
+### Phase 2 Components (Built with Core Systems)
+- **NeedsDebugPanel:** Individual need manipulation controls with sliders (built with Needs System)
+- **WellnessDebugger:** Wellness calculation breakdown and penalty testing (built with Needs Controller)
+- **PreferencesDebugger:** Guinea pig preference viewing and editing (built with Guinea Pig Store)
+- **HabitatDebugger:** Habitat condition manipulation and testing controls (built with Habitat Conditions)
+- **ValueAdjuster:** Debug slider/input for numeric values (reusable component)
 
-### Monitoring Components
-- **ResponsiveDetector:** Service component for viewport monitoring
-- **DeviceTypeIndicator:** Debug component showing current device/orientation state
-- **PerformanceMonitor:** Real-time performance metrics display
-- **StateInspector:** Live game state visualization and editing
+### Phase 3 Components (Built with Game World Systems)
+- **InventoryDebugger:** Item and currency manipulation tools (built with Inventory System)
+- **ItemPlacementDebugger:** Habitat item testing and placement tools (built with Habitat Item System)
+- **MaintenanceDebugger:** Hygiene and cleanliness testing controls (built with Maintenance System)
 
-## Integration Points
+### Phase 4 Components (Built with Interaction Systems)
+- **InteractionDebugger:** Direct interaction testing and reaction triggers (built with Direct Interaction System)
+- **AIBehaviorDebugger:** Autonomy testing and pathfinding visualization (built with Autonomy System)
 
-### Component Library Connection
-- All debug components defined in Section 2 (Layout & Component Framework)
-- **Centralized debug state management** via DebugPanel component
-- **Consistent styling** with main game UI but clearly marked as debug-only
-- **Responsive design** adapts to different screen sizes during development
+### Phase 5 Components (Consolidation and Advanced Features)
+- **UnifiedDebugPanel:** Main container for all debug panels with tabbed/accordion interface
+- **PerformanceMonitor:** Real-time performance metrics display across all systems
+- **StateInspector:** Live game state visualization and editing for all stores
+- **StressTester:** Advanced testing tools for performance and edge cases
+
+### Existing Components (Available Throughout)
+- **ResponsiveDetector:** Service component for viewport monitoring (from Phase 1)
+- **DeviceTypeIndicator:** Debug component showing current device/orientation state (from Phase 1)
+- **FeatureToggle:** Enable/disable feature flags for testing (reusable component)
+
+## Integration Strategy
+
+### Current Debug Infrastructure (Phase 1)
+- **GPS2 Debug Dashboard** with Game Controller and Logging System tabs
+- **Error Tracking System** (Phase 1.5) for professional debugging
+- **TabContainer component** ready for additional debug panels
+- **Responsive design framework** supporting debug interfaces
+
+### Incremental Integration Approach
+- **Build debug panels alongside systems** to ensure accurate implementation knowledge
+- **Add to dedicated locations** within each system's development (not GPS2 Debug Dashboard initially)
+- **Test immediately** as each system is developed with its companion debug panel
+- **Consolidate in Phase 5** into unified Debug Menu tab in GPS2 Debug Dashboard
 
 ### System Integration Hooks
 - **Each game system includes debug integration hooks** for manipulation and monitoring
-- **Standardized debug interfaces** for consistent debugging experience
-- **Hot-swappable debug modules** for focused testing of specific systems
-- **Cross-system debugging** capabilities for integration testing
+- **Standardized debug interfaces** for consistent debugging experience across phases
+- **Reusable debug components** like ValueAdjuster and FeatureToggle
+- **Cross-system debugging** capabilities developed incrementally
 
 ## Development Features
 
@@ -92,20 +124,27 @@ Development-only debug interface providing comprehensive testing and monitoring 
 - **Event system validation:** Verify proper event propagation and handling
 - **API integration testing:** Mock external services and test responses
 
-## Debug Workflow Integration
+## Debug Development Workflow
 
-### Development Process
-1. **System Development:** Build with debug hooks from the start
-2. **Testing Phase:** Use debug panels to validate functionality
-3. **Integration Testing:** Cross-system validation with debug monitoring
-4. **Bug Investigation:** Use recorded sessions and state inspection
-5. **Performance Optimization:** Identify bottlenecks with monitoring tools
+### Phase-by-Phase Development Process
+1. **System Development:** Build each system with debug hooks from the start
+2. **Debug Panel Creation:** Build debug panel immediately alongside each system
+3. **Immediate Testing:** Validate system functionality using its debug panel
+4. **Integration Testing:** Test interactions between systems using multiple debug panels
+5. **Bug Investigation:** Use debug panels and error tracking for issue diagnosis
+6. **Performance Optimization:** Use debug monitoring to identify bottlenecks
 
-### Team Collaboration
-- **Shared debug configurations** for consistent testing environments
-- **Bug reproduction tools** for clear issue reporting
-- **Development metrics** for tracking system performance over time
-- **Knowledge sharing** through debug session recordings
+### Benefits of Incremental Approach
+- **Complete system knowledge** when building debug interfaces
+- **Immediate testing capability** for each system as it's developed
+- **No guesswork** about store interfaces, methods, or data structures
+- **Faster development cycle** with instant debug feedback
+- **Better integration testing** with system-specific debug tools
+
+### Final Consolidation (Phase 5)
+- **Unified interface creation** when all systems and debug panels exist
+- **Advanced cross-system features** like performance monitoring and stress testing
+- **Professional debugging experience** with complete system coverage
 
 ## Future Enhancements
 - **Automated test generation** from debug interactions

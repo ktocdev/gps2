@@ -1,15 +1,15 @@
 <template>
-  <div class="logging-system-view">
-    <LoggingSystem />
+  <div class="system-monitor-view">
+    <SystemMonitor />
   </div>
 </template>
 
 <script setup lang="ts">
-import LoggingSystem from '../components/debug/LoggingSystem.vue'
+import SystemMonitor from '../components/debug/SystemMonitor.vue'
 </script>
 
 <style>
-.logging-system-view {
+.system-monitor-view {
   inline-size: 100%;
   block-size: 100%;
   overflow-y: auto;

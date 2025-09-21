@@ -104,7 +104,14 @@ export const useGameController = defineStore('gameController', () => {
   // State management actions
   const setState = (newState: GameState['currentState'], pauseReason?: GameState['pauseReason']) => {
     if (!isValidTransition(gameState.value.currentState, newState)) {
+      // Log to both console and error tracking system
       console.error(`Invalid state transition: ${gameState.value.currentState} -> ${newState}`)
+      const logging = getLoggingStore()
+      logging.logError(`Invalid state transition: ${gameState.value.currentState} -> ${newState}`, {
+        from: gameState.value.currentState,
+        to: newState,
+        source: 'gameController'
+      })
       return false
     }
 

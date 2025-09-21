@@ -13,7 +13,7 @@
 import { computed } from 'vue'
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger'
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger' | 'warning'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
   type?: 'button' | 'submit' | 'reset'
@@ -168,6 +168,27 @@ const handleClick = (event: MouseEvent) => {
 .button--danger:active:not(:disabled) {
   background-color: #b91c1c;
   border-color: #b91c1c;
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Warning Variant - Orange */
+.button--warning {
+  background-color: #ea580c; /* Orange with good contrast */
+  border-color: #ea580c;
+  color: white;
+}
+
+.button--warning:hover:not(:disabled) {
+  background-color: #c2410c; /* Darker orange on hover */
+  border-color: #c2410c;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.button--warning:active:not(:disabled) {
+  background-color: #9a3412; /* Darkest orange on active */
+  border-color: #9a3412;
   transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }

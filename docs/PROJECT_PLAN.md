@@ -26,8 +26,11 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 - **[Game Controller Store](systems/phase1/game-controller-store.md)** - Central control system with save/load ✅ **Completed** (September 17, 2025 | Branch: GPS2-3)
 - **[Layout Component Framework](systems/phase1/layout-component-framework.md)** - Region-based development with responsive UI
 - **[Logging Activity Feed](systems/phase1/logging-activity-feed.md)** - Centralized logging and natural language activity generation
-- **[Debug Menu System](systems/phase1/debug-menu-system.md)** - Development debugging tools
-- **[Error Tracking System](systems/phase1/error-tracking.md)** - System monitoring and debugging interface
+
+##### Phase 1.5: Developer Tools
+- **[Error Tracking System](systems/phase1/error-tracking.md)** - Professional debugging interface with system monitoring, error analysis, and developer tools ✅ **Completed** (September 20, 2025 | Branch: GPS2-7)
+
+**Note:** Debug Menu panels for specific game systems (Needs, Wellness, Habitat, etc.) are built incrementally alongside each system in subsequent phases, with final consolidation into a unified Debug Menu tab in Phase 5.
 
 ##### Phase 2: Core Entities & Timing
 - **[Guinea Pig Store](systems/phase2/guinea-pig-store.md)** - Central guinea pig state management
