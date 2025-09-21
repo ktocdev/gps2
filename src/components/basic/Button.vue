@@ -88,7 +88,6 @@ const handleClick = (event: MouseEvent) => {
 .button--disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
 /* Button Variants */

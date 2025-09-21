@@ -21,7 +21,7 @@
       <div class="panel__content">
         <!-- Name Input -->
         <div class="form-group">
-          <label for="guinea-pig-name">Name (optional - will auto-generate if empty)</label>
+          <label for="guinea-pig-name">Name</label>
           <input
             id="guinea-pig-name"
             v-model="formData.name"
@@ -94,7 +94,7 @@
         <!-- Random Generation -->
         <div class="form-group--action">
           <Button @click="setRandomProperties" variant="tertiary" size="md">
-            🎲 Set Random Properties
+            🎲 Generate New Random Properties
           </Button>
         </div>
       </div>
@@ -126,7 +126,13 @@
         </div>
 
         <div class="button-group" style="margin-block-start: var(--space-4);">
-          <Button @click="createGuineaPig" variant="primary" size="lg">
+          <Button
+            @click="createGuineaPig"
+            variant="primary"
+            size="lg"
+            :disabled="!canStartGame"
+            :title="!canStartGame ? 'Add name to start game' : 'Start the game with your new guinea pig'"
+          >
             🚀 Start Game
           </Button>
         </div>
@@ -215,6 +221,10 @@ const isFormValid = computed(() => {
          !birthdateError.value
 })
 
+const canStartGame = computed(() => {
+  return formData.value.name.trim() && isFormValid.value
+})
+
 // Validation functions
 const validateName = () => {
   const name = formData.value.name.trim()
@@ -274,7 +284,7 @@ const getCoatTypeLabel = (value: string): string => {
   return option ? option.label : value
 }
 
-const setRandomProperties = () => {
+const generateRandomData = (logAction: boolean = false) => {
   formData.value.name = generateRandomName()
   formData.value.gender = Math.random() > 0.5 ? 'sow' : 'boar'
   formData.value.coatType = coatTypeOptions[Math.floor(Math.random() * coatTypeOptions.length)].value
@@ -290,12 +300,18 @@ const setRandomProperties = () => {
   validateName()
   validateBirthdate()
 
-  loggingStore.addPlayerAction('Generated random guinea pig properties 🎲', '🎲', {
-    name: formData.value.name,
-    gender: formData.value.gender,
-    coatType: formData.value.coatType,
-    age: calculateAge(formData.value.birthdate)
-  })
+  if (logAction) {
+    loggingStore.addPlayerAction('Generated new random guinea pig properties 🎲', '🎲', {
+      name: formData.value.name,
+      gender: formData.value.gender,
+      coatType: formData.value.coatType,
+      age: calculateAge(formData.value.birthdate)
+    })
+  }
+}
+
+const setRandomProperties = () => {
+  generateRandomData(true)
 }
 
 // Hidden preference generation (fixed to prevent duplicates)
@@ -440,13 +456,13 @@ const createGuineaPig = () => {
 
 // Initialize form
 onMounted(() => {
-  // Set default birthdate (6 months old)
-  const defaultAge = new Date(today.getTime() - (180 * 24 * 60 * 60 * 1000))
-  formData.value.birthdate = defaultAge.toISOString().split('T')[0]
+  // Auto-populate form with random data
+  generateRandomData(false)
 
-  loggingStore.addPlayerAction('Guinea pig creation started', '🐹', {
+  loggingStore.addPlayerAction('Guinea pig creation started with pre-filled data', '🐹', {
     tutorialMode: gameController.settings.tutorial.mode,
-    isFirstTime: gameController.settings.tutorial.isGlobalFirstTime
+    isFirstTime: gameController.settings.tutorial.isGlobalFirstTime,
+    prePopulated: true
   })
 })
 </script>

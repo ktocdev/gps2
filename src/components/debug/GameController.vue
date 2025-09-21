@@ -212,13 +212,18 @@
                 <span class="stat-value">{{ gameController.settings.tutorial.isGlobalFirstTime }}</span>
               </div>
             </div>
-            <Select
-              v-model="tutorialMode"
-              @change="updateTutorialMode"
-              :options="tutorialOptions"
-              label="Tutorial Mode"
-              size="sm"
-            />
+            <div class="flex flex-column gap-3">
+              <Select
+                v-model="tutorialMode"
+                @change="updateTutorialMode"
+                :options="tutorialOptions"
+                label="Tutorial Mode"
+                size="sm"
+              />
+              <Button @click="resetFirstTimeUser" variant="tertiary" size="sm">
+                Reset First Time User
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -405,6 +410,15 @@ const updatePerformanceMode = (value: string | number) => {
   if (typeof value === 'string') {
     gameController.setPerformanceMode(value as 'standard' | 'reduced')
   }
+}
+
+const resetFirstTimeUser = () => {
+  gameController.updateSettings({
+    tutorial: {
+      ...gameController.settings.tutorial,
+      isGlobalFirstTime: true
+    }
+  })
 }
 </script>
 
