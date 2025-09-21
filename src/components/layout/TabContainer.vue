@@ -265,7 +265,7 @@ defineExpose({
   padding-block: var(--space-1);
   padding-inline: var(--space-2);
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
   border-radius: var(--radius-full);
   min-inline-size: 18px;
   text-align: center;
@@ -320,7 +320,7 @@ defineExpose({
 
 .tab-container__tab--pills.tab-container__tab--active {
   background-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 /* Position: Bottom */

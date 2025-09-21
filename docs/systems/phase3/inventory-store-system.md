@@ -354,3 +354,8 @@ interface ResourceStack {
 - **Group purchases** for community items
 - **Economic competitions** and leaderboards
 - **Charity systems** supporting in-game community causes
+
+## Implementation Reminders
+
+### Phase 2 Integration Updates
+- **Update Guinea Pig Creation System** - Once this inventory system is implemented, replace the hardcoded preference items (toys, chew items, beds, etc.) in `generateHiddenPreferences()` function with actual item IDs from the item database to ensure consistency between preferences and purchasable items

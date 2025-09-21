@@ -270,6 +270,10 @@
   grid-template-columns: 1fr;
 }
 
+.panel-grid--padded {
+  padding: var(--space-4);
+}
+
 @media (min-width: 769px) {
   .panel-grid {
     gap: var(--space-6);

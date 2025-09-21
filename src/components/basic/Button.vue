@@ -13,11 +13,12 @@
 import { computed } from 'vue'
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger' | 'warning'
+  variant?: 'primary' | 'secondary' | 'tertiary' | 'danger' | 'warning' | 'segmented'
   size?: 'sm' | 'md' | 'lg'
   disabled?: boolean
   type?: 'button' | 'submit' | 'reset'
   fullWidth?: boolean
+  selected?: boolean
 }
 
 interface Emits {
@@ -29,7 +30,8 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'md',
   disabled: false,
   type: 'button',
-  fullWidth: false
+  fullWidth: false,
+  selected: false
 })
 
 const emit = defineEmits<Emits>()
@@ -40,8 +42,9 @@ const buttonClasses = computed(() => {
   const size = `button--${props.size}`
   const fullWidth = props.fullWidth ? 'button--full-width' : ''
   const disabled = props.disabled ? 'button--disabled' : ''
+  const selected = props.selected && props.variant === 'segmented' ? 'button--selected' : ''
 
-  return [base, variant, size, fullWidth, disabled].filter(Boolean).join(' ')
+  return [base, variant, size, fullWidth, disabled, selected].filter(Boolean).join(' ')
 })
 
 const handleClick = (event: MouseEvent) => {
@@ -85,7 +88,6 @@ const handleClick = (event: MouseEvent) => {
 .button--disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  pointer-events: none;
 }
 
 /* Button Variants */
@@ -94,7 +96,7 @@ const handleClick = (event: MouseEvent) => {
 .button--primary {
   background-color: var(--color-primary);
   border-color: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .button--primary:hover:not(:disabled) {
@@ -115,7 +117,7 @@ const handleClick = (event: MouseEvent) => {
 .button--secondary {
   background-color: var(--color-secondary);
   border-color: var(--color-secondary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .button--secondary:hover:not(:disabled) {
@@ -155,7 +157,7 @@ const handleClick = (event: MouseEvent) => {
 .button--danger {
   background-color: var(--color-error);
   border-color: var(--color-error);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .button--danger:hover:not(:disabled) {
@@ -176,7 +178,7 @@ const handleClick = (event: MouseEvent) => {
 .button--warning {
   background-color: #ea580c; /* Orange with good contrast */
   border-color: #ea580c;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .button--warning:hover:not(:disabled) {
@@ -250,6 +252,44 @@ const handleClick = (event: MouseEvent) => {
   .button {
     border-width: 2px;
   }
+}
+
+/* Segmented Variant - for exclusive selection button groups */
+.button--segmented {
+  background-color: var(--color-bg-secondary);
+  border: none;
+  border-radius: 0;
+  color: var(--color-text-secondary);
+  border-inline-end: 1px solid var(--color-border-medium);
+}
+
+.button--segmented:last-child {
+  border-inline-end: none;
+}
+
+.button--segmented:hover:not(:disabled) {
+  background-color: var(--color-bg-tertiary);
+  transform: none;
+  box-shadow: none;
+}
+
+.button--segmented:active:not(:disabled) {
+  background-color: var(--color-bg-tertiary);
+  transform: none;
+}
+
+.button--segmented.button--selected {
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-weight: var(--font-weight-semibold);
+}
+
+.button--segmented.button--selected:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+}
+
+.button--segmented.button--selected:active:not(:disabled) {
+  background-color: var(--color-primary-active);
 }
 
 /* Reduced motion support */
