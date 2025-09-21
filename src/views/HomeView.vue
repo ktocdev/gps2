@@ -100,6 +100,8 @@
 
 .home-view__button:hover {
   background-color: var(--color-primary-hover);
+  color: white;
+  text-decoration: none;
   transform: translateY(-2px);
   box-shadow: var(--shadow-lg);
 }

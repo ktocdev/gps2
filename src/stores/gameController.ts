@@ -96,7 +96,7 @@ export const useGameController = defineStore('gameController', () => {
       intro: ['playing'],
       playing: ['paused', 'stopped'],
       paused: ['playing', 'stopped'],
-      stopped: ['intro']
+      stopped: ['intro', 'playing']
     }
     return validTransitions[from]?.includes(to) || false
   }
@@ -183,6 +183,11 @@ export const useGameController = defineStore('gameController', () => {
     gameState.value.hasGuineaPig = true
     gameState.value.isFirstTimeUser = false
     settings.value.tutorial.isGlobalFirstTime = false
+
+    // Transition to playing state after creating guinea pig
+    if (gameState.value.currentState === 'intro') {
+      setState('playing')
+    }
 
     const logging = getLoggingStore()
     logging.addAchievement('First Guinea Pig Created! 🐹', '🏆', {

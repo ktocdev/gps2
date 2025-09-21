@@ -15,6 +15,10 @@
         <GameControllerView />
       </template>
 
+      <template #guinea-pig-creation>
+        <GuineaPigCreationDebugView />
+      </template>
+
       <template #logging>
         <LoggingSystemView />
       </template>
@@ -32,6 +36,7 @@ import TabContainer, { type Tab } from '../components/layout/TabContainer.vue'
 import GameControllerView from './GameControllerView.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
+import GuineaPigCreationDebugView from './GuineaPigCreationDebugView.vue'
 
 // State
 const activeTab = ref('controller')
@@ -42,6 +47,11 @@ const debugTabs: Tab[] = [
     id: 'controller',
     label: 'Game Controller',
     icon: '🎮',
+  },
+  {
+    id: 'guinea-pig-creation',
+    label: 'Guinea Pig Creation',
+    icon: '🐹',
   },
   {
     id: 'logging',

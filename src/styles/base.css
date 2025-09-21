@@ -491,6 +491,16 @@ img {
   justify-content: flex-start;
 }
 
+.button-group--segmented {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  width: min-content;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--color-border-medium);
+}
+
 /* Button Group Container - for multiple button groups with vertical spacing */
 .button-group-container {
   display: flex;

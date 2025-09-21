@@ -76,6 +76,7 @@
               @click="gameController.startGame()"
               variant="primary"
               :disabled="!canStartGame"
+              :title="!canStartGame ? 'Requires guinea pig to be created first' : 'Start the game'"
             >
               Start Game
             </Button>
@@ -83,6 +84,7 @@
               @click="gameController.pauseGame('manual')"
               variant="secondary"
               :disabled="!canPauseGame"
+              :title="!canPauseGame ? 'Game must be playing to pause' : 'Pause the game manually'"
             >
               Pause (Manual)
             </Button>
@@ -90,6 +92,7 @@
               @click="gameController.pauseGame('orientation')"
               variant="tertiary"
               :disabled="!canPauseGame"
+              :title="!canPauseGame ? 'Game must be playing to pause' : 'Pause due to orientation change'"
             >
               Pause (Orientation)
             </Button>
@@ -97,6 +100,7 @@
               @click="gameController.resumeGame()"
               variant="primary"
               :disabled="!canResumeGame"
+              :title="!canResumeGame ? 'Game must be paused to resume' : 'Resume the game'"
             >
               Resume Game
             </Button>
@@ -104,6 +108,7 @@
               @click="gameController.stopGame()"
               variant="danger"
               :disabled="!canStopGame"
+              :title="!canStopGame ? 'Game must be active to stop' : 'Stop the game'"
             >
               Stop Game
             </Button>
@@ -111,6 +116,7 @@
               @click="gameController.newGame()"
               variant="tertiary"
               :disabled="!canStartNewGame"
+              :title="!canStartNewGame ? 'Game must be stopped to start new' : 'Start a new game'"
             >
               New Game
             </Button>
@@ -118,8 +124,9 @@
               @click="gameController.setGuineaPigCreated()"
               variant="secondary"
               :disabled="!canCreateGuineaPig"
+              :title="!canCreateGuineaPig ? 'Guinea pig already exists' : 'Create guinea pig and start game'"
             >
-              Create Guinea Pig
+              Create Guinea Pig & Start
             </Button>
           </div>
         </div>
@@ -329,22 +336,26 @@ const performanceMode = computed({
 // Button state computations based on valid transitions
 const canStartGame = computed(() => {
   const currentState = gameController.gameState.currentState
-  return currentState === 'intro' || currentState === 'stopped'
+  const hasGuineaPig = gameController.gameState.hasGuineaPig
+  return (currentState === 'intro' || currentState === 'stopped') && hasGuineaPig
 })
 
 const canPauseGame = computed(() => {
   const currentState = gameController.gameState.currentState
-  return currentState === 'playing'
+  const hasGuineaPig = gameController.gameState.hasGuineaPig
+  return currentState === 'playing' && hasGuineaPig
 })
 
 const canResumeGame = computed(() => {
   const currentState = gameController.gameState.currentState
-  return currentState === 'paused'
+  const hasGuineaPig = gameController.gameState.hasGuineaPig
+  return currentState === 'paused' && hasGuineaPig
 })
 
 const canStopGame = computed(() => {
   const currentState = gameController.gameState.currentState
-  return currentState === 'playing' || currentState === 'paused'
+  const hasGuineaPig = gameController.gameState.hasGuineaPig
+  return (currentState === 'playing' || currentState === 'paused') && hasGuineaPig
 })
 
 const canStartNewGame = computed(() => {
@@ -353,8 +364,7 @@ const canStartNewGame = computed(() => {
 })
 
 const canCreateGuineaPig = computed(() => {
-  const currentState = gameController.gameState.currentState
-  return currentState === 'playing' || currentState === 'paused'
+  return !gameController.gameState.hasGuineaPig
 })
 
 onMounted(() => {
