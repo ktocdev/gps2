@@ -1,0 +1,47 @@
+/* Stats Component Styles */
+
+.stats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+}
+
+.stat-item:nth-child(odd) {
+  background-color: var(--color-bg-tertiary);
+}
+
+.stat-item:nth-child(even) {
+  background-color: var(--color-bg-secondary);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.stat-value {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.stat-value--error {
+  color: var(--color-error);
+}
+
+.stat-value--warning {
+  color: var(--color-warning);
+}
+
+.stat-value--muted {
+  color: var(--color-text-muted);
+}

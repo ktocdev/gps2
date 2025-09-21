@@ -1,11 +1,11 @@
 <template>
   <div class="logging-system-view">
-    <LoggingSystemTest />
+    <LoggingSystem />
   </div>
 </template>
 
 <script setup lang="ts">
-import LoggingSystemTest from '../components/debug/LoggingSystemTest.vue'
+import LoggingSystem from '../components/debug/LoggingSystem.vue'
 </script>
 
 <style>

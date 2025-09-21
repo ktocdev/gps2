@@ -24,7 +24,7 @@ A comprehensive virtual guinea pig care simulator featuring individual personali
 
 ### Prerequisites
 - Node.js (LTS version recommended)
-- npm or yarn package manager
+- npm package manager
 
 ### Installation
 ```bash
@@ -37,13 +37,6 @@ npm install
 
 # Start development server
 npm run dev
-```
-
-### Available Scripts
-```bash
-npm run dev      # Start development server with hot reload
-npm run build    # Build for production (includes TypeScript check)
-npm run preview  # Preview production build locally
 ```
 
 ## 📁 Project Structure
@@ -86,15 +79,6 @@ This project includes extensive documentation organized by development phases:
 - **CSS**: Mobile-first responsive design with BEM methodology
 - **TypeScript**: Strict configuration with explicit types
 - **State**: Pinia stores with persistence enabled
-
-## 🎯 Current Status
-
-**Phase 1** - Foundation started
-- ✅ Game Controller Store with save/load functionality
-- 🚀 Unified Layout & Component Framework (Started)
-- ✅ Logging System & Activity Feed
-
-**Next**: Phase 1.4 Debug Menu System
 
 ## ⚖️ License
 

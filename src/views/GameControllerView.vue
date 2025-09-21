@@ -1,11 +1,11 @@
 <template>
   <div class="game-controller-view">
-    <GameControllerTest />
+    <GameController />
   </div>
 </template>
 
 <script setup lang="ts">
-import GameControllerTest from '../components/debug/GameControllerTest.vue'
+import GameController from '../components/debug/GameController.vue'
 </script>
 
 <style>

@@ -10,12 +10,27 @@
           <h2>Current State</h2>
         </div>
         <div class="panel__content">
-          <div class="flex flex-column gap-2">
-            <p><span class="text-label">Game State:</span> {{ gameController.gameState.currentState }}</p>
-            <p><span class="text-label">Pause Reason:</span> {{ gameController.gameState.pauseReason || 'None' }}</p>
-            <p><span class="text-label">Has Guinea Pig:</span> {{ gameController.gameState.hasGuineaPig }}</p>
-            <p><span class="text-label">First Time User:</span> {{ gameController.gameState.isFirstTimeUser }}</p>
-            <p><span class="text-label">Last Save:</span> {{ new Date(gameController.gameState.lastSaveTimestamp).toLocaleString() }}</p>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">Game State:</span>
+              <span class="stat-value">{{ gameController.gameState.currentState }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Pause Reason:</span>
+              <span class="stat-value">{{ gameController.gameState.pauseReason || 'None' }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Has Guinea Pig:</span>
+              <span class="stat-value">{{ gameController.gameState.hasGuineaPig }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">First Time User:</span>
+              <span class="stat-value">{{ gameController.gameState.isFirstTimeUser }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Last Save:</span>
+              <span class="stat-value">{{ new Date(gameController.gameState.lastSaveTimestamp).toLocaleString() }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -26,11 +41,23 @@
           <h2>Computed States</h2>
         </div>
         <div class="panel__content">
-          <div class="flex flex-column gap-2">
-            <p><span class="text-label">Is Game Active:</span> {{ gameController.isGameActive }}</p>
-            <p><span class="text-label">Is Paused:</span> {{ gameController.isPaused }}</p>
-            <p><span class="text-label">Is Manually Paused:</span> {{ gameController.isManuallyPaused }}</p>
-            <p><span class="text-label">Is Orientation Paused:</span> {{ gameController.isOrientationPaused }}</p>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">Is Game Active:</span>
+              <span class="stat-value">{{ gameController.isGameActive }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Is Paused:</span>
+              <span class="stat-value">{{ gameController.isPaused }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Is Manually Paused:</span>
+              <span class="stat-value">{{ gameController.isManuallyPaused }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Is Orientation Paused:</span>
+              <span class="stat-value">{{ gameController.isOrientationPaused }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -113,9 +140,15 @@
           </div>
         </div>
         <div class="panel__footer">
-          <div class="flex flex-column gap-1">
-            <p><span class="text-label">Save Result:</span> {{ saveResult }}</p>
-            <p><span class="text-label">Load Result:</span> {{ loadResult }}</p>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">Save Result:</span>
+              <span class="stat-value">{{ saveResult }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Load Result:</span>
+              <span class="stat-value">{{ loadResult }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -131,9 +164,15 @@
             <h3>Auto-Save</h3>
           </div>
           <div class="panel__content">
-            <div class="flex flex-column gap-2 mb-4">
-              <p><span class="text-label">Enabled:</span> {{ gameController.settings.autoSave.enabled }}</p>
-              <p><span class="text-label">Frequency:</span> {{ gameController.settings.autoSave.frequency }} seconds</p>
+            <div class="stats-grid mb-4">
+              <div class="stat-item">
+                <span class="stat-label">Enabled:</span>
+                <span class="stat-value">{{ gameController.settings.autoSave.enabled }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Frequency:</span>
+                <span class="stat-value">{{ gameController.settings.autoSave.frequency }} seconds</span>
+              </div>
             </div>
             <div class="flex flex-column gap-3">
               <Select
@@ -156,9 +195,15 @@
             <h3>Tutorial</h3>
           </div>
           <div class="panel__content">
-            <div class="flex flex-column gap-2 mb-4">
-              <p><span class="text-label">Mode:</span> {{ gameController.settings.tutorial.mode }}</p>
-              <p><span class="text-label">Global First Time:</span> {{ gameController.settings.tutorial.isGlobalFirstTime }}</p>
+            <div class="stats-grid mb-4">
+              <div class="stat-item">
+                <span class="stat-label">Mode:</span>
+                <span class="stat-value">{{ gameController.settings.tutorial.mode }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Global First Time:</span>
+                <span class="stat-value">{{ gameController.settings.tutorial.isGlobalFirstTime }}</span>
+              </div>
             </div>
             <Select
               v-model="tutorialMode"
@@ -178,8 +223,11 @@
           <div class="panel__content">
             <div class="mb-6">
               <h4>Performance</h4>
-              <div class="flex flex-column gap-2 mb-4">
-                <p><span class="text-label">Mode:</span> {{ gameController.settings.performance.mode }}</p>
+              <div class="stats-grid mb-4">
+                <div class="stat-item">
+                  <span class="stat-label">Mode:</span>
+                  <span class="stat-value">{{ gameController.settings.performance.mode }}</span>
+                </div>
               </div>
               <Select
                 v-model="performanceMode"
@@ -193,8 +241,11 @@
             <div class="flex flex-column gap-3">
               <div>
                 <h4>Error Reporting</h4>
-                <div class="flex flex-column gap-2 mb-4">
-                  <p><span class="text-label">Enabled:</span> {{ gameController.settings.errorReporting.enabled }}</p>
+                <div class="stats-grid mb-4">
+                  <div class="stat-item">
+                    <span class="stat-label">Enabled:</span>
+                    <span class="stat-value">{{ gameController.settings.errorReporting.enabled }}</span>
+                  </div>
                 </div>
               </div>
               <Button @click="gameController.toggleErrorReporting()" variant="tertiary" size="sm">
