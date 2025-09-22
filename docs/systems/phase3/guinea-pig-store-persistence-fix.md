@@ -1,11 +1,17 @@
-# Guinea Pig Store Persistence Fix - System Documentation
+# Guinea Pig Store Persistence Fix + Save Game System - System Documentation
 
 **Phase:** Phase 3 (Immediate Priority - Phase 2 Continuation)
 **Status:** ⚡ **Immediate Priority** - Blocks further Phase 2 development
 **Created:** September 21, 2025 | Branch: GPS2-7
 
 ## Overview
-Critical fix for guinea pig data persistence issues preventing data from saving on app refresh. The guinea pig store core implementation is complete, but data doesn't persist due to conflicting persistence systems and missing global store initialization.
+Critical fix for guinea pig data persistence issues preventing data from saving on app refresh, plus implementation of a save game slot system (up to 3 saved games) with support for multiple guinea pigs per game (max 2 per cage). The guinea pig store core implementation is complete, but needs enhanced persistence architecture and save game management.
+
+### Save Game Architecture
+- **Multiple Save Slots**: Players can maintain up to 3 separate saved games
+- **Multiple Guinea Pigs Per Game**: Each saved game supports up to 2 guinea pigs in the same cage
+- **Independent Game States**: Each save slot maintains separate guinea pig collections, game progress, and settings
+- **Save/Load UI**: New components for game slot management and switching between saved games
 
 ## Problem Analysis
 
@@ -14,6 +20,9 @@ Critical fix for guinea pig data persistence issues preventing data from saving 
 - ✅ **Debug panel integration**: Full debug interface with placeholder states
 - ✅ **GameController integration**: Store coordination and creation workflow
 - ⚠️ **Data persistence**: Not working - data lost on page refresh
+- ❌ **Save game slot system**: Not implemented - need multiple save slots
+- ❌ **Save/Load UI components**: Not implemented - need game management interface
+- ⚠️ **Guinea pig limit**: Currently allows 6 guinea pigs - need to limit to 2 per cage
 
 ### Root Causes Identified
 
@@ -73,9 +82,11 @@ const initializeStore = () => {
 ## Solution Architecture
 
 ### Persistence Strategy
-- **Guinea Pig Store**: Use Pinia persist plugin for automatic persistence
-- **GameController**: Manual save/load for coordinated state and settings only
-- **Coordination**: Sync `hasGuineaPig` flag with actual guinea pig count
+- **Save Game Slots**: Each slot persists independently with separate localStorage keys
+- **Guinea Pig Store**: Use Pinia persist plugin with slot-specific keys
+- **GameController**: Enhanced save/load system for slot management and coordination
+- **UI Integration**: Save/Load components for game slot selection and management
+- **Guinea Pig Limits**: Enforce max 2 guinea pigs per cage/save slot
 
 ### Global Initialization
 ```typescript
@@ -120,7 +131,18 @@ const initializeStore = () => {
 
 ## Implementation Steps
 
-### Phase 1: Global Store Initialization
+### Phase 1: Enhanced Architecture Planning
+1. **Update guinea pig store limits**
+   - Change maxGuineaPigs from 6 to 2 per save slot
+   - Add validation for guinea pig creation limits
+   - Update debug panel to reflect 2-guinea pig limit
+
+2. **Design save game slot system**
+   - Define SaveGameSlot interface with metadata
+   - Plan slot-specific localStorage key strategy
+   - Design save/load UI component architecture
+
+### Phase 2: Global Store Initialization
 1. **Add App.vue store initialization**
    - Import both stores in App.vue
    - Initialize on app mount in correct order
@@ -153,7 +175,24 @@ const initializeStore = () => {
    - Ensure GameController state stays consistent
    - Test state persistence across operations
 
-### Phase 4: Testing & Validation
+### Phase 4: Save Game Slot Implementation
+1. **Save game slot management**
+   - Create SaveGameManager store for slot coordination
+   - Implement slot-specific persistence keys
+   - Add save slot metadata (creation date, guinea pig names, progress)
+
+2. **Save/Load UI components**
+   - Create SaveGameSlot component for slot display
+   - Create LoadGameModal for slot selection
+   - Create SaveGameModal for saving to specific slots
+   - Integrate with main navigation and GameController
+
+3. **Guinea pig limit enforcement**
+   - Update guinea pig store maxGuineaPigs to 2
+   - Add validation in creation workflow
+   - Update debug panel guinea pig creation controls
+
+### Phase 5: Testing & Validation
 1. **Persistence testing**
    - Create guinea pig → refresh page → verify data persists
    - Test navigation between pages → data preserved
@@ -164,6 +203,28 @@ const initializeStore = () => {
    - Multiple guinea pigs → refresh → verify all data
    - Mix of guinea pig operations → verify consistency
 
+### Phase 6: Navigation-Based Game Control
+1. **Add navigation pause reason**
+   - Extend GameController pause reasons with `'navigation'`
+   - Update pause priority logic: manual > navigation > orientation
+   - Ensure navigation pause can be manually resumed
+
+2. **Implement router navigation guards**
+   - Add beforeEach guard to pause game when leaving game pages
+   - Add afterEach guard to auto-pause when entering game pages
+   - Identify game pages: `/` (debug panel) and `/home` (main game)
+
+3. **Page lifecycle management**
+   - Update DebugView with onMounted/onUnmounted pause logic
+   - Update HomeView with automatic pause on entry/exit
+   - Preserve game state between page navigations
+
+4. **User experience enhancement**
+   - Game starts paused when entering game pages
+   - User must manually click play to resume
+   - Clear visual indication of pause state
+   - Activity feed shows navigation pause events
+
 ## Expected Outcomes
 
 ### Before Fix
@@ -173,18 +234,31 @@ const initializeStore = () => {
 - ❌ State coordination issues
 
 ### After Fix
-- ✅ Guinea pig data persists automatically
+- ✅ Guinea pig data persists automatically per save slot
 - ✅ Stores initialize on app startup
-- ✅ Clean persistence architecture
-- ✅ Consistent state coordination
+- ✅ Clean persistence architecture with slot management
+- ✅ Consistent state coordination across save slots
+- ✅ Up to 3 independent saved games
+- ✅ Max 2 guinea pigs per cage/save slot
+- ✅ Save/Load UI for game management
+- ✅ Automatic game pause on page navigation
+- ✅ User-controlled game resume requirement
+- ✅ Consistent pause behavior across game pages
 
 ## Testing Strategy
 
 ### Manual Testing
-1. **Basic Persistence**
-   - Create guinea pig → refresh page → verify data preserved
-   - Delete guinea pig → refresh page → verify deletion preserved
-   - Switch active guinea pig → refresh page → verify active selection preserved
+1. **Basic Persistence per Save Slot**
+   - Create guinea pig in slot 1 → refresh page → verify data preserved
+   - Create guinea pig in slot 2 → refresh page → verify slot independence
+   - Delete guinea pig from slot 1 → verify slot 2 unaffected
+   - Switch active guinea pig within slot → refresh page → verify active selection preserved
+
+2. **Save Slot Management**
+   - Create 3 save slots → verify all persist independently
+   - Switch between save slots → verify correct data loads
+   - Save over existing slot → verify data overwrites correctly
+   - Load empty slot → verify clean initialization
 
 2. **Navigation Testing**
    - Create guinea pig → navigate between pages → data preserved
@@ -196,6 +270,13 @@ const initializeStore = () => {
    - Full guinea pig collection → refresh → verify all data
    - Browser storage cleared → verify graceful empty state
 
+4. **Navigation Flow Testing**
+   - Enter debug panel → verify game starts paused
+   - Enter main game view → verify game starts paused
+   - Leave game page while playing → verify auto-pause
+   - Return to game page → verify paused state preserved
+   - Manual resume after navigation pause → verify user control
+
 ### Debug Verification
 - Debug panel shows correct data immediately on load
 - No delay or initialization issues
@@ -206,52 +287,166 @@ const initializeStore = () => {
 
 ### Dependencies
 - **Requires**: Pinia persist plugin (already installed)
+- **New Components**: SaveGameSlot, LoadGameModal, SaveGameModal, SaveGameManager store
 - **Blocks**: All Phase 2 systems that depend on guinea pig data
-- **Enables**: Reliable foundation for needs system, timing, habitat conditions
+- **Enables**:
+  - Reliable foundation for needs system, timing, habitat conditions
+  - Multiple save game experimentation
+  - Multi-guinea pig cage dynamics (up to 2 per cage)
+  - Player progression tracking across save slots
 
 ### Future Considerations
 - This fix enables Phase 2 continuation with confidence in data persistence
-- Needs system can build on reliable guinea pig data
-- Habitat conditions can reference persistent guinea pig state
-- Debug panels for other systems can assume guinea pig data exists
+- Save game slots enable experimentation with different game scenarios
+- Multi-guinea pig dynamics (2 per cage) create social interaction opportunities
+- Needs system can build on reliable guinea pig data with slot independence
+- Habitat conditions can reference persistent guinea pig state per save slot
+- Debug panels for other systems can assume guinea pig data exists within active slot
+- **Navigation pause system** provides foundation for proper game state management
+- **User control requirement** ensures intentional game interaction on each page visit
+- **Consistent behavior** across debug and main game interfaces improves user experience
+- Future expansion: More guinea pigs per cage, additional save slots, save slot sharing
+- Navigation pause integration with upcoming Phase 2 main game interface
 
 ## Technical Notes
 
-### Pinia Persist Plugin
+### Save Game Slot Interfaces
 ```typescript
-// Already configured in main.ts
-import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
-const pinia = createPinia()
-pinia.use(piniaPluginPersistedstate)
+// New save game slot interfaces
+interface SaveGameSlot {
+  id: string
+  name: string
+  createdAt: number
+  lastPlayed: number
+  guineaPigCount: number
+  guineaPigNames: string[]
+  gameProgress: {
+    totalPlayTime: number
+    achievementsUnlocked: number
+    daysPlayed: number
+  }
+}
+
+interface SaveGameManager {
+  currentSlotId: string | null
+  slots: Record<string, SaveGameSlot>
+  maxSlots: 3
+}
 ```
 
-### Store Persist Configuration
+### Slot-Specific Persistence
 ```typescript
-// Guinea pig store persist config
+// Guinea pig store with slot-specific persistence
+export const useGuineaPigStore = defineStore('guineaPigStore', () => {
+  // Store implementation
 }, {
   persist: {
-    key: 'gps2-guinea-pig-store',
+    key: () => {
+      const saveGameManager = useSaveGameManager()
+      return `gps2-guinea-pig-store-${saveGameManager.currentSlotId || 'default'}`
+    },
+    storage: localStorage
+  }
+})
+
+// GameController with slot coordination
+export const useGameController = defineStore('gameController', () => {
+  // Store implementation
+}, {
+  persist: {
+    key: () => {
+      const saveGameManager = useSaveGameManager()
+      return `gps2-game-controller-${saveGameManager.currentSlotId || 'default'}`
+    },
     storage: localStorage
   }
 })
 ```
 
-### GameController Save Integration
+### Save Game UI Components
 ```typescript
-// Updated save data structure
-interface SaveData {
-  gameState: GameState
-  settings: GameSettings
-  loggingState?: any
-  // NOTE: guineaPigState handled by persist plugin
-  version: string
+// SaveGameSlot.vue - Individual slot display
+interface SaveGameSlotProps {
+  slot: SaveGameSlot
+  isActive: boolean
+  isEmpty: boolean
+}
+
+// LoadGameModal.vue - Slot selection interface
+interface LoadGameModalProps {
+  isVisible: boolean
+}
+
+// SaveGameModal.vue - Save to slot interface
+interface SaveGameModalProps {
+  isVisible: boolean
+  currentSlotId?: string
 }
 ```
 
+### Guinea Pig Limit Updates
+```typescript
+// Updated guinea pig store settings
+const settings = ref<GuineaPigSettings>({
+  autoNeedsDecay: true,
+  needsDecayRate: 1.0,
+  maxGuineaPigs: 2, // Changed from 6 to 2 per cage
+  enableBreeding: false
+})
+```
+
+### Navigation-Based Game Control
+```typescript
+// Enhanced pause reasons in GameController
+type PauseReason = 'manual' | 'orientation' | 'navigation'
+
+// Router navigation guards
+router.beforeEach((to, from) => {
+  const gameController = useGameController()
+
+  // Auto-pause when leaving game pages
+  if (isGamePage(from.path) && gameController.isGameActive) {
+    gameController.pauseGame('navigation')
+  }
+})
+
+router.afterEach((to) => {
+  const gameController = useGameController()
+
+  // Auto-pause when entering game pages
+  if (isGamePage(to.path)) {
+    gameController.pauseGame('navigation')
+  }
+})
+
+// Page lifecycle management
+// DebugView.vue and HomeView.vue
+onMounted(() => {
+  const gameController = useGameController()
+  gameController.pauseGame('navigation')
+})
+
+onUnmounted(() => {
+  const gameController = useGameController()
+  if (gameController.isGameActive) {
+    gameController.pauseGame('navigation')
+  }
+})
+```
+
 ## Success Criteria
-- [ ] Guinea pig data persists across page refreshes
+- [ ] Guinea pig data persists across page refreshes per save slot
 - [ ] Stores initialize on app startup without debug panel
 - [ ] No conflicts between persistence systems
 - [ ] State remains consistent across all operations
 - [ ] Debug panel works immediately on page load
 - [ ] Empty state handling works correctly
+- [ ] Save game slots work independently (up to 3 slots)
+- [ ] Guinea pig limit enforced (max 2 per cage/slot)
+- [ ] Save/Load UI provides clear game management
+- [ ] Slot switching preserves all game state correctly
+- [ ] Game auto-pauses when entering game pages (debug panel, main game)
+- [ ] User must manually resume game after navigation pause
+- [ ] Game auto-pauses when leaving game pages
+- [ ] Navigation pause can be manually overridden by user
+- [ ] Activity feed shows navigation pause events clearly

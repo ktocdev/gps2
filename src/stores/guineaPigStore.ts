@@ -33,6 +33,9 @@ export interface GuineaPigNeeds {
   health: number        // 0-100: How much health care they need (100 = very sick)
   energy: number        // 0-100: How much rest/energy they need (100 = exhausted)
   social: number        // 0-100: How much they need social interaction (100 = lonely)
+  nails: number         // 0-100: How much they need nail trimming (100 = overgrown)
+  chew: number          // 0-100: How much they need chew items (100 = dental problems)
+  shelter: number       // 0-100: How much they need security/shelter (100 = anxious)
 }
 
 export interface GuineaPigStats {
@@ -109,7 +112,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   const settings = ref<GuineaPigSettings>({
     autoNeedsDecay: true,
     needsDecayRate: 1.0,
-    maxGuineaPigs: 6, // Reasonable limit for Phase 2
+    maxGuineaPigs: 2, // Maximum 2 guinea pigs per cage/save slot
     enableBreeding: false // Disabled for now
   })
 
@@ -152,7 +155,10 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     cleanliness: Math.floor(Math.random() * 15) + 5, // Start fairly clean (5-20)
     health: Math.floor(Math.random() * 10) + 5, // Start fairly healthy (5-15)
     energy: Math.floor(Math.random() * 35) + 25, // Start somewhat tired (25-60)
-    social: Math.floor(Math.random() * 40) + 30 // Start needing some social interaction (30-70)
+    social: Math.floor(Math.random() * 40) + 30, // Start needing some social interaction (30-70)
+    nails: Math.floor(Math.random() * 20) + 10, // Start with moderate nail growth (10-30)
+    chew: Math.floor(Math.random() * 30) + 20, // Start needing some chew items (20-50)
+    shelter: Math.floor(Math.random() * 15) + 5 // Start feeling fairly secure (5-20)
   })
 
   const createDefaultStats = (): GuineaPigStats => ({

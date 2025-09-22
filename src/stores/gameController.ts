@@ -14,7 +14,7 @@ import { useGuineaPigStore } from './guineaPigStore'
 // TypeScript interfaces
 interface GameState {
   currentState: 'intro' | 'playing' | 'paused' | 'stopped'
-  pauseReason?: 'manual' | 'orientation' | null
+  pauseReason?: 'manual' | 'orientation' | 'navigation' | null
   hasGuineaPig: boolean
   isFirstTimeUser: boolean
   lastSaveTimestamp: number
@@ -170,12 +170,16 @@ export const useGameController = defineStore('gameController', () => {
     }
   }
 
-  const pauseGame = (reason: 'manual' | 'orientation' = 'manual') => {
+  const pauseGame = (reason: 'manual' | 'orientation' | 'navigation' = 'manual') => {
     if (gameState.value.currentState === 'playing') {
       setState('paused', reason)
-    } else if (gameState.value.currentState === 'paused' && reason === 'manual') {
-      // Manual pause overrides orientation pause
-      gameState.value.pauseReason = 'manual'
+    } else if (gameState.value.currentState === 'paused') {
+      // Pause reason priority: manual > navigation > orientation
+      const currentReason = gameState.value.pauseReason
+      if (reason === 'manual' ||
+          (reason === 'navigation' && currentReason === 'orientation')) {
+        gameState.value.pauseReason = reason
+      }
     }
   }
 
@@ -191,7 +195,7 @@ export const useGameController = defineStore('gameController', () => {
     }
   }
 
-  const newGame = () => {
+  const newGame = (clearGuineaPigs: boolean = true) => {
     gameState.value = {
       currentState: 'intro',
       pauseReason: null,
@@ -200,11 +204,13 @@ export const useGameController = defineStore('gameController', () => {
       lastSaveTimestamp: Date.now()
     }
 
-    // Clear guinea pig store for new game
-    const guineaPigStore = getGuineaPigStore()
-    guineaPigStore.collection.guineaPigs = {}
-    guineaPigStore.collection.activeGuineaPigId = null
-    guineaPigStore.collection.lastUpdated = Date.now()
+    // Only clear guinea pig store if explicitly requested (for true new game)
+    if (clearGuineaPigs) {
+      const guineaPigStore = getGuineaPigStore()
+      guineaPigStore.collection.guineaPigs = {}
+      guineaPigStore.collection.activeGuineaPigId = null
+      guineaPigStore.collection.lastUpdated = Date.now()
+    }
   }
 
   const setGuineaPigCreated = () => {
@@ -234,7 +240,22 @@ export const useGameController = defineStore('gameController', () => {
       setGuineaPigCreated()
     }
 
+    // Sync game state with guinea pig data
+    syncGameStateWithGuineaPigs()
+
     return guineaPigId
+  }
+
+  // State synchronization helpers
+  const syncGameStateWithGuineaPigs = () => {
+    const guineaPigStore = getGuineaPigStore()
+    gameState.value.hasGuineaPig = guineaPigStore.hasGuineaPigs
+  }
+
+  // For future implementation of save game manager integration
+  const syncGameStateWithSaveManager = () => {
+    // This will be implemented when we add UI integration
+    syncGameStateWithGuineaPigs()
   }
 
   // Save/Load functionality
@@ -419,13 +440,23 @@ export const useGameController = defineStore('gameController', () => {
     // Initialize guinea pig store first
     guineaPigStore.initializeStore()
 
+    // Sync state with guinea pig store
+    syncGameStateWithGuineaPigs()
+
     // Attempt to load existing save
     const loaded = loadGame()
 
     if (!loaded) {
-      // No save found or corrupted, start fresh
-      logging.logInfo('No save data found, starting new game')
-      newGame()
+      // Check if guinea pig store has data (from persistence)
+      if (guineaPigStore.hasGuineaPigs) {
+        // Guinea pig data exists, sync state but don't clear
+        logging.logInfo('Guinea pig data found, syncing state')
+        syncGameStateWithGuineaPigs()
+      } else {
+        // No save and no guinea pig data, start fresh
+        logging.logInfo('No save data found, starting new game')
+        newGame(true) // Clear everything for fresh start
+      }
     }
 
     // Start auto-save if enabled
@@ -477,7 +508,11 @@ export const useGameController = defineStore('gameController', () => {
     stopAutoSave,
 
     // Initialization
-    initializeStore
+    initializeStore,
+
+    // State synchronization
+    syncGameStateWithGuineaPigs,
+    syncGameStateWithSaveManager
   }
 }, {
   persist: {
