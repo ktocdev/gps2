@@ -81,7 +81,7 @@ export interface GuineaPig {
 // Store state interfaces
 interface GuineaPigCollection {
   guineaPigs: Record<string, GuineaPig>
-  activeGuineaPigId: string | null
+  activeGuineaPigIds: string[]  // Array to support up to 2 active guinea pigs
   lastUpdated: number
 }
 
@@ -105,26 +105,48 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   // Core state
   const collection = ref<GuineaPigCollection>({
     guineaPigs: {},
-    activeGuineaPigId: null,
+    activeGuineaPigIds: [],
     lastUpdated: Date.now()
   })
 
   const settings = ref<GuineaPigSettings>({
     autoNeedsDecay: true,
     needsDecayRate: 1.0,
-    maxGuineaPigs: 2, // Maximum 2 guinea pigs per cage/save slot
+    maxGuineaPigs: 10, // Allow creating multiple guinea pigs in collection
     enableBreeding: false // Disabled for now
   })
 
   // Computed properties
-  const allGuineaPigs = computed(() => Object.values(collection.value.guineaPigs))
-  const guineaPigCount = computed(() => allGuineaPigs.value.length)
+  const allGuineaPigs = computed(() => {
+    const activeIds = collection.value.activeGuineaPigIds || []
+    return Object.values(collection.value.guineaPigs).map(gp => ({
+      ...gp,
+      isActive: activeIds.includes(gp.id)
+    }))
+  })
+  const guineaPigCount = computed(() => Object.keys(collection.value.guineaPigs).length)
   const hasGuineaPigs = computed(() => guineaPigCount.value > 0)
   const canAddMoreGuineaPigs = computed(() => guineaPigCount.value < settings.value.maxGuineaPigs)
 
+  const activeGuineaPigs = computed(() => {
+    const activeIds = collection.value.activeGuineaPigIds || []
+    return activeIds
+      .map(id => collection.value.guineaPigs[id])
+      .filter(Boolean)
+  })
+
   const activeGuineaPig = computed(() => {
-    if (!collection.value.activeGuineaPigId) return null
-    return collection.value.guineaPigs[collection.value.activeGuineaPigId] || null
+    // For backward compatibility - returns the first active guinea pig
+    return activeGuineaPigs.value[0] || null
+  })
+
+  const activeGuineaPigPair = computed(() => {
+    return activeGuineaPigs.value.length === 2 ? activeGuineaPigs.value : null
+  })
+
+  const canAddActiveGuineaPig = computed(() => {
+    const activeIds = collection.value.activeGuineaPigIds || []
+    return activeIds.length < 2
   })
 
   // Default values and generators
@@ -184,11 +206,72 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     }
   }
 
+  // Validation helper functions
+  const validateGuineaPigName = (name: string): void => {
+    const trimmedName = name.trim()
+
+    // Check for empty name
+    if (!trimmedName) {
+      throw new Error('Guinea pig name cannot be empty')
+    }
+
+    // Check length limits
+    if (trimmedName.length < 2) {
+      throw new Error('Guinea pig name must be at least 2 characters long')
+    }
+
+    if (trimmedName.length > 50) {
+      throw new Error('Guinea pig name cannot exceed 50 characters')
+    }
+
+    // Check for valid characters (letters, numbers, spaces, apostrophes, hyphens)
+    const validNamePattern = /^[a-zA-Z0-9\s'\-]+$/
+    if (!validNamePattern.test(trimmedName)) {
+      throw new Error('Guinea pig name contains invalid characters. Only letters, numbers, spaces, apostrophes, and hyphens are allowed')
+    }
+
+    // Check for newlines and control characters
+    if (/[\n\r\t\f\v]/.test(trimmedName)) {
+      throw new Error('Guinea pig name cannot contain line breaks or control characters')
+    }
+
+    // Check for names that are only numbers
+    if (/^\d+$/.test(trimmedName)) {
+      throw new Error('Guinea pig name cannot be only numbers')
+    }
+
+    // Check for names that are only special characters
+    if (/^[\s'\-]+$/.test(trimmedName)) {
+      throw new Error('Guinea pig name must contain at least one letter or number')
+    }
+  }
+
+  const validateGuineaPigData = (name: string, gender: 'male' | 'female', breed: string): void => {
+    validateGuineaPigName(name)
+
+    // Validate gender
+    if (!gender || (gender !== 'male' && gender !== 'female')) {
+      throw new Error('Guinea pig gender must be either "male" or "female"')
+    }
+
+    // Validate breed
+    if (!breed || !breed.trim()) {
+      throw new Error('Guinea pig breed cannot be empty')
+    }
+
+    if (breed.trim().length > 30) {
+      throw new Error('Guinea pig breed cannot exceed 30 characters')
+    }
+  }
+
   // CRUD Operations
-  const createGuineaPig = (name: string, gender: 'male' | 'female', breed: string): string => {
+  const createGuineaPig = (name: string, gender: 'male' | 'female', breed: string, silent: boolean = false): string => {
     if (!canAddMoreGuineaPigs.value) {
       throw new Error(`Cannot create more guinea pigs. Maximum limit of ${settings.value.maxGuineaPigs} reached.`)
     }
+
+    // Validate all input data
+    validateGuineaPigData(name, gender, breed)
 
     const id = generateGuineaPigId()
     const now = Date.now()
@@ -214,24 +297,29 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     collection.value.guineaPigs[id] = newGuineaPig
     collection.value.lastUpdated = now
 
-    // Set as active guinea pig if it's the first one
-    if (guineaPigCount.value === 1) {
-      collection.value.activeGuineaPigId = id
+    // Auto-add to active pair if there's space (up to 2 active guinea pigs)
+    if (!collection.value.activeGuineaPigIds) {
+      collection.value.activeGuineaPigIds = []
+    }
+    if (collection.value.activeGuineaPigIds.length < 2) {
+      collection.value.activeGuineaPigIds.push(id)
     }
 
-    // Log the creation
-    const logging = getLoggingStore()
-    logging.addPlayerAction(
-      `Created ${name} the ${breed}! 🐹`,
-      '🎉',
-      {
-        guineaPigId: id,
-        gender,
-        breed,
-        personality: newGuineaPig.personality,
-        appearance: newGuineaPig.appearance
-      }
-    )
+    // Log the creation (unless in silent mode)
+    if (!silent) {
+      const logging = getLoggingStore()
+      logging.addPlayerAction(
+        `Created ${name} the ${breed}! 🐹`,
+        '🎉',
+        {
+          guineaPigId: id,
+          gender,
+          breed,
+          personality: newGuineaPig.personality,
+          appearance: newGuineaPig.appearance
+        }
+      )
+    }
 
     return id
   }
@@ -259,45 +347,99 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const guineaPig = collection.value.guineaPigs[id]
     delete collection.value.guineaPigs[id]
 
-    // Update active guinea pig if needed
-    if (collection.value.activeGuineaPigId === id) {
-      const remaining = Object.keys(collection.value.guineaPigs)
-      collection.value.activeGuineaPigId = remaining.length > 0 ? remaining[0] : null
+    // Remove from active guinea pigs if needed
+    if (!collection.value.activeGuineaPigIds) {
+      collection.value.activeGuineaPigIds = []
+    }
+    const activeIndex = collection.value.activeGuineaPigIds.indexOf(id)
+    if (activeIndex !== -1) {
+      collection.value.activeGuineaPigIds.splice(activeIndex, 1)
     }
 
     collection.value.lastUpdated = Date.now()
 
-    // Log the deletion
+    // Debug message for deletion (debug mode only)
+    console.log(`[DEBUG] Deleted guinea pig: ${guineaPig.name} (ID: ${id})`)
+
+    return true
+  }
+
+  // Active guinea pig pair management
+  const addToActivePair = (id: string): boolean => {
+    if (!collection.value.guineaPigs[id]) return false
+    if (!collection.value.activeGuineaPigIds) {
+      collection.value.activeGuineaPigIds = []
+    }
+    if (collection.value.activeGuineaPigIds.includes(id)) return false
+    if (collection.value.activeGuineaPigIds.length >= 2) return false
+
+    collection.value.activeGuineaPigIds.push(id)
+    collection.value.lastUpdated = Date.now()
+
     const logging = getLoggingStore()
+    const guineaPig = collection.value.guineaPigs[id]
     logging.addPlayerAction(
-      `Said goodbye to ${guineaPig.name} 😢`,
-      '👋',
+      `Added ${guineaPig.name} to active pair 🐹`,
+      '➕',
       { guineaPigId: id, name: guineaPig.name }
     )
 
     return true
   }
 
-  // Active guinea pig management
-  const setActiveGuineaPig = (id: string | null): boolean => {
-    if (id && !collection.value.guineaPigs[id]) {
-      return false
+  const removeFromActivePair = (id: string): boolean => {
+    if (!collection.value.activeGuineaPigIds) {
+      collection.value.activeGuineaPigIds = []
     }
+    const index = collection.value.activeGuineaPigIds.indexOf(id)
+    if (index === -1) return false
 
-    collection.value.activeGuineaPigId = id
+    collection.value.activeGuineaPigIds.splice(index, 1)
     collection.value.lastUpdated = Date.now()
 
-    if (id) {
-      const logging = getLoggingStore()
-      const guineaPig = collection.value.guineaPigs[id]
+    const logging = getLoggingStore()
+    const guineaPig = collection.value.guineaPigs[id]
+    logging.addPlayerAction(
+      `Removed ${guineaPig.name} from active pair 🐹`,
+      '➖',
+      { guineaPigId: id, name: guineaPig.name }
+    )
+
+    return true
+  }
+
+  const setActivePair = (ids: string[]): boolean => {
+    if (ids.length > 2) return false
+
+    // Validate all IDs exist
+    for (const id of ids) {
+      if (!collection.value.guineaPigs[id]) return false
+    }
+
+    collection.value.activeGuineaPigIds = [...ids]
+    collection.value.lastUpdated = Date.now()
+
+    const logging = getLoggingStore()
+    if (ids.length === 0) {
+      logging.addPlayerAction('Cleared active guinea pig pair', '🔄', {})
+    } else {
+      const names = ids.map(id => collection.value.guineaPigs[id].name).join(' & ')
       logging.addPlayerAction(
-        `Switched to caring for ${guineaPig.name} 🔄`,
-        '🐹',
-        { guineaPigId: id, name: guineaPig.name }
+        `Set active pair: ${names} 🐹🐹`,
+        '🔄',
+        { guineaPigIds: ids, names }
       )
     }
 
     return true
+  }
+
+  // Backward compatibility function
+  const setActiveGuineaPig = (id: string | null): boolean => {
+    if (id === null) {
+      return setActivePair([])
+    }
+    return setActivePair([id])
   }
 
   // Utility functions
@@ -334,18 +476,40 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   }
 
   const validateCollection = () => {
-    // Ensure active guinea pig exists
-    if (collection.value.activeGuineaPigId && !collection.value.guineaPigs[collection.value.activeGuineaPigId]) {
-      console.warn('Active guinea pig not found, resetting')
-      const remaining = Object.keys(collection.value.guineaPigs)
-      collection.value.activeGuineaPigId = remaining.length > 0 ? remaining[0] : null
+    // Ensure activeGuineaPigIds is always initialized
+    if (!collection.value.activeGuineaPigIds) {
+      collection.value.activeGuineaPigIds = []
     }
+
+    // Migrate from old single active guinea pig to new pair system
+    if ((collection.value as any).activeGuineaPigId) {
+      const oldActiveId = (collection.value as any).activeGuineaPigId
+      if (oldActiveId && collection.value.guineaPigs[oldActiveId]) {
+        collection.value.activeGuineaPigIds = [oldActiveId]
+      }
+      delete (collection.value as any).activeGuineaPigId
+      console.log('Migrated from single active guinea pig to pair system')
+    }
+
+    // Ensure active guinea pigs exist and clean up invalid IDs
+    collection.value.activeGuineaPigIds = collection.value.activeGuineaPigIds.filter(id => {
+      if (!collection.value.guineaPigs[id]) {
+        console.warn(`Active guinea pig ${id} not found, removing from active list`)
+        return false
+      }
+      return true
+    })
 
     // Validate guinea pig data integrity
     for (const [id, guineaPig] of Object.entries(collection.value.guineaPigs)) {
       if (!guineaPig.id || !guineaPig.name || !guineaPig.birthDate) {
         console.warn(`Invalid guinea pig data for ${id}, removing`)
         delete collection.value.guineaPigs[id]
+        // Also remove from active list if present
+        const activeIndex = collection.value.activeGuineaPigIds.indexOf(id)
+        if (activeIndex !== -1) {
+          collection.value.activeGuineaPigIds.splice(activeIndex, 1)
+        }
       }
     }
   }
@@ -360,7 +524,10 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPigCount,
     hasGuineaPigs,
     canAddMoreGuineaPigs,
-    activeGuineaPig,
+    activeGuineaPig,        // For backward compatibility
+    activeGuineaPigs,       // New: Array of active guinea pigs
+    activeGuineaPigPair,    // New: Pair when exactly 2 are active
+    canAddActiveGuineaPig,  // New: Can add more to active pair
 
     // CRUD Operations
     createGuineaPig,
@@ -369,10 +536,17 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     deleteGuineaPig,
 
     // Active management
-    setActiveGuineaPig,
+    setActiveGuineaPig,     // For backward compatibility
+    addToActivePair,        // New: Add guinea pig to active pair
+    removeFromActivePair,   // New: Remove guinea pig from active pair
+    setActivePair,          // New: Set the entire active pair
 
     // Utility
     generateGuineaPigId,
+
+    // Validation
+    validateGuineaPigName,
+    validateGuineaPigData,
 
     // Save/Load
     getState,

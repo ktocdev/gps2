@@ -1,82 +1,80 @@
 <template>
-  <div class="container">
-    <h1>Game Controller Store Test</h1>
-
-    <!-- State Information Section -->
-    <div class="panel-row mb-8">
-      <!-- Current State Display -->
-      <div class="panel panel--border-primary">
-        <div class="panel__header">
-          <h2>Current State</h2>
+  <div class="game-controller">
+    <!-- Game State Display -->
+    <div class="mb-8">
+      <h2>Game State</h2>
+      <div class="panel-row">
+        <!-- Current State -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Current State</h3>
+          </div>
+          <div class="panel__content">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Game State:</span>
+                <span class="stat-value">{{ gameController.gameState.currentState }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Pause Reason:</span>
+                <span class="stat-value">{{ gameController.gameState.pauseReason || 'None' }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Has Guinea Pig:</span>
+                <span class="stat-value">{{ gameController.gameState.hasGuineaPig }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">First Time User:</span>
+                <span class="stat-value">{{ gameController.gameState.isFirstTimeUser }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Last Save:</span>
+                <span class="stat-value">{{ new Date(gameController.gameState.lastSaveTimestamp).toLocaleString() }}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="panel__content">
-          <div class="stats-grid">
-            <div class="stat-item">
-              <span class="stat-label">Game State:</span>
-              <span class="stat-value">{{ gameController.gameState.currentState }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Pause Reason:</span>
-              <span class="stat-value">{{ gameController.gameState.pauseReason || 'None' }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Has Guinea Pig:</span>
-              <span class="stat-value">{{ gameController.gameState.hasGuineaPig }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">First Time User:</span>
-              <span class="stat-value">{{ gameController.gameState.isFirstTimeUser }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Last Save:</span>
-              <span class="stat-value">{{ new Date(gameController.gameState.lastSaveTimestamp).toLocaleString() }}</span>
+
+        <!-- Computed Properties -->
+        <div class="panel panel--border-secondary">
+          <div class="panel__header">
+            <h3>Computed Properties</h3>
+          </div>
+          <div class="panel__content">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Is Game Active:</span>
+                <span class="stat-value">{{ gameController.isGameActive }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Is Paused:</span>
+                <span class="stat-value">{{ gameController.isPaused }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Is Manually Paused:</span>
+                <span class="stat-value">{{ gameController.isManuallyPaused }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Is Orientation Paused:</span>
+                <span class="stat-value">{{ gameController.isOrientationPaused }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Computed Properties -->
-      <div class="panel panel--border-secondary">
-        <div class="panel__header">
-          <h2>Computed States</h2>
-        </div>
-        <div class="panel__content">
-          <div class="stats-grid">
-            <div class="stat-item">
-              <span class="stat-label">Is Game Active:</span>
-              <span class="stat-value">{{ gameController.isGameActive }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Is Paused:</span>
-              <span class="stat-value">{{ gameController.isPaused }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Is Manually Paused:</span>
-              <span class="stat-value">{{ gameController.isManuallyPaused }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Is Orientation Paused:</span>
-              <span class="stat-value">{{ gameController.isOrientationPaused }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Controls Section -->
-    <div class="panel-row mb-8">
-      <!-- State Control Buttons -->
+      <!-- Controls Section -->
       <div class="panel">
         <div class="panel__header">
-          <h2>State Controls</h2>
+          <h2>Game Controls</h2>
         </div>
         <div class="panel__content">
-          <div class="button-wrap">
+          <div class="controls-grid">
             <Button
               @click="gameController.startGame()"
               variant="primary"
               :disabled="!canStartGame"
-              :title="!canStartGame ? 'Requires guinea pig to be created first' : 'Start the game'"
+              :title="!canStartGame ? 'Need guinea pig to start game' : 'Start the game'"
             >
               Start Game
             </Button>
@@ -84,21 +82,13 @@
               @click="gameController.pauseGame('manual')"
               variant="secondary"
               :disabled="!canPauseGame"
-              :title="!canPauseGame ? 'Game must be playing to pause' : 'Pause the game manually'"
+              :title="!canPauseGame ? 'Game must be active to pause' : 'Pause the game'"
             >
-              Pause (Manual)
-            </Button>
-            <Button
-              @click="gameController.pauseGame('orientation')"
-              variant="tertiary"
-              :disabled="!canPauseGame"
-              :title="!canPauseGame ? 'Game must be playing to pause' : 'Pause due to orientation change'"
-            >
-              Pause (Orientation)
+              Pause Game
             </Button>
             <Button
               @click="gameController.resumeGame()"
-              variant="primary"
+              variant="secondary"
               :disabled="!canResumeGame"
               :title="!canResumeGame ? 'Game must be paused to resume' : 'Resume the game'"
             >
@@ -112,42 +102,6 @@
             >
               Stop Game
             </Button>
-            <Button
-              @click="gameController.newGame()"
-              variant="tertiary"
-              :disabled="!canStartNewGame"
-              :title="!canStartNewGame ? 'Game must be stopped to start new' : 'Start a new game'"
-            >
-              New Game
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Save/Load Controls -->
-      <div class="panel">
-        <div class="panel__header">
-          <h2>Save/Load Controls</h2>
-        </div>
-        <div class="panel__content">
-          <div class="flex flex-column gap-3">
-            <div class="flex flex-row gap-3 flex-wrap">
-              <Button @click="saveGame" variant="primary">Save Game</Button>
-              <Button @click="loadGame" variant="secondary">Load Game</Button>
-              <Button @click="clearSave" variant="danger">Clear Save Data</Button>
-            </div>
-          </div>
-        </div>
-        <div class="panel__footer">
-          <div class="stats-grid">
-            <div class="stat-item">
-              <span class="stat-label">Save Result:</span>
-              <span class="stat-value">{{ saveResult }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Load Result:</span>
-              <span class="stat-value">{{ loadResult }}</span>
-            </div>
           </div>
         </div>
       </div>
@@ -261,8 +215,7 @@
       </div>
     </div>
 
-
-    <!-- Raw Store Data -->
+    <!-- Raw Store Data (Debug) -->
     <div class="mb-8">
       <h2>Raw Store Data (Debug)</h2>
       <div class="panel-row">
@@ -288,34 +241,53 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useGameController } from '../../stores/gameController'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
 
+// Stores
 const gameController = useGameController()
-const saveResult = ref<string>('')
-const loadResult = ref<string>('')
 
-// Select options
+// Game Control State
+const canStartGame = computed(() => {
+  const currentState = gameController.gameState.currentState
+  const hasGuineaPig = gameController.gameState.hasGuineaPig
+  return (currentState === 'intro' || currentState === 'stopped') && hasGuineaPig
+})
+
+const canPauseGame = computed(() => {
+  return gameController.gameState.currentState === 'playing'
+})
+
+const canResumeGame = computed(() => {
+  return gameController.gameState.currentState === 'paused'
+})
+
+const canStopGame = computed(() => {
+  const currentState = gameController.gameState.currentState
+  return currentState === 'playing' || currentState === 'paused'
+})
+
+// Settings Management
 const autoSaveOptions = [
-  { label: '30 seconds', value: 30 },
-  { label: '60 seconds', value: 60 },
-  { label: '120 seconds', value: 120 }
+  { value: 30, label: '30 seconds' },
+  { value: 60, label: '1 minute' },
+  { value: 300, label: '5 minutes' },
+  { value: 600, label: '10 minutes' }
 ]
 
 const tutorialOptions = [
-  { label: 'Auto', value: 'auto' },
-  { label: 'Always Show', value: 'always_show' },
-  { label: 'Never Show', value: 'never_show' }
+  { value: 'auto', label: 'Auto' },
+  { value: 'always_show', label: 'Always Show' },
+  { value: 'never_show', label: 'Never Show' }
 ]
 
 const performanceOptions = [
-  { label: 'Standard', value: 'standard' },
-  { label: 'Reduced', value: 'reduced' }
+  { value: 'standard', label: 'Standard' },
+  { value: 'reduced', label: 'Reduced' }
 ]
 
-// Computed values for two-way binding
 const autoSaveFreq = computed({
   get: () => gameController.settings.autoSave.frequency,
   set: (value: number) => gameController.updateAutoSaveFrequency(value as 30 | 60 | 120)
@@ -331,72 +303,17 @@ const performanceMode = computed({
   set: (value: string) => gameController.setPerformanceMode(value as 'standard' | 'reduced')
 })
 
-// Button state computations based on valid transitions
-const canStartGame = computed(() => {
-  const currentState = gameController.gameState.currentState
-  const hasGuineaPig = gameController.gameState.hasGuineaPig
-  return (currentState === 'intro' || currentState === 'stopped') && hasGuineaPig
-})
-
-const canPauseGame = computed(() => {
-  const currentState = gameController.gameState.currentState
-  const hasGuineaPig = gameController.gameState.hasGuineaPig
-  return currentState === 'playing' && hasGuineaPig
-})
-
-const canResumeGame = computed(() => {
-  const currentState = gameController.gameState.currentState
-  const hasGuineaPig = gameController.gameState.hasGuineaPig
-  return currentState === 'paused' && hasGuineaPig
-})
-
-const canStopGame = computed(() => {
-  const currentState = gameController.gameState.currentState
-  const hasGuineaPig = gameController.gameState.hasGuineaPig
-  return (currentState === 'playing' || currentState === 'paused') && hasGuineaPig
-})
-
-const canStartNewGame = computed(() => {
-  const currentState = gameController.gameState.currentState
-  return currentState === 'stopped' || currentState === 'intro'
-})
-
-
-// Note: Store initialization moved to App.vue for global initialization
-
-const saveGame = () => {
-  const result = gameController.saveGame()
-  saveResult.value = result ? 'Success' : 'Failed'
+// Settings Methods
+const updateAutoSaveFreq = () => {
+  // Reactive value already updated through computed setter
 }
 
-const loadGame = () => {
-  const result = gameController.loadGame()
-  loadResult.value = result ? 'Success' : 'Failed'
+const updateTutorialMode = () => {
+  // Reactive value already updated through computed setter
 }
 
-const clearSave = () => {
-  localStorage.removeItem('gps2-save')
-  localStorage.removeItem('gps2-game-controller')
-  saveResult.value = 'Save data cleared'
-  loadResult.value = ''
-}
-
-const updateAutoSaveFreq = (value: string | number) => {
-  if (typeof value === 'number') {
-    gameController.updateAutoSaveFrequency(value as 30 | 60 | 120)
-  }
-}
-
-const updateTutorialMode = (value: string | number) => {
-  if (typeof value === 'string') {
-    gameController.setTutorialMode(value as 'auto' | 'always_show' | 'never_show')
-  }
-}
-
-const updatePerformanceMode = (value: string | number) => {
-  if (typeof value === 'string') {
-    gameController.setPerformanceMode(value as 'standard' | 'reduced')
-  }
+const updatePerformanceMode = () => {
+  // Reactive value already updated through computed setter
 }
 
 const resetFirstTimeUser = () => {
@@ -411,121 +328,96 @@ const resetFirstTimeUser = () => {
 </script>
 
 <style>
-/* Button Grid Layout */
-.button-grid {
+/* Game Controller Styles */
+.game-controller {
+  padding: var(--space-4);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.panel-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: var(--space-3);
-  margin-top: var(--space-3);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
 }
 
-@media (min-width: 640px) {
-  .button-grid {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: var(--space-4);
-  }
-}
-
-/* Full-width button grid variation for content-heavy buttons */
-.button-grid--full-width {
-  grid-template-columns: 1fr;
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: var(--space-3);
 }
 
-@media (min-width: 768px) {
-  .button-grid--full-width {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-3);
 }
 
-@media (min-width: 1024px) {
-  .button-grid--full-width {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* Button wrap layout - natural width with flex wrap */
-.button-wrap {
+.stat-item {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.stat-value {
+  font-size: var(--font-size-base);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-column {
+  flex-direction: column;
+}
+
+.gap-3 {
   gap: var(--space-3);
-  align-items: center;
-  margin-top: var(--space-3);
 }
 
-/* Section spacing */
-.test-section {
-  margin-bottom: var(--space-8);
-  padding: var(--space-6);
-  background-color: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--color-border-light);
-}
-
-.test-section h2 {
-  color: var(--color-primary);
-  border-bottom: 2px solid var(--color-primary);
-  padding-bottom: var(--space-2);
+.mb-4 {
   margin-bottom: var(--space-4);
 }
 
-.test-section h3 {
-  color: var(--color-secondary);
-  margin-top: var(--space-4);
+.mb-6 {
+  margin-bottom: var(--space-6);
 }
 
-/* Status displays */
-.status-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-4);
-  margin-top: var(--space-4);
+.mb-8 {
+  margin-bottom: var(--space-8);
 }
 
-.status-item {
-  background-color: var(--color-bg-primary);
+pre {
+  background-color: var(--color-background-tertiary);
   padding: var(--space-3);
   border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-light);
-}
-
-.status-item strong {
-  color: var(--color-text-primary);
-}
-
-
-.detail-section {
-  padding: var(--space-3);
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-light);
-}
-
-.detail-section h4 {
-  margin: 0 0 var(--space-3) 0;
-  color: var(--color-text-primary);
+  overflow-x: auto;
   font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
+  line-height: 1.4;
 }
 
-.detail-section--wide {
-  grid-column: 1 / -1;
+h2 {
+  margin-bottom: var(--space-4);
+  color: var(--color-text-primary);
 }
 
-.stats-grid--needs {
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+h3 {
+  margin: 0;
+  color: var(--color-text-primary);
 }
 
-@media (min-width: 768px) {
-  .stats-grid--needs {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  }
-}
-
-/* Placeholder styles */
-.stat-value--placeholder {
-  color: var(--color-text-muted);
-  font-style: italic;
-  opacity: 0.7;
+h4 {
+  margin: 0 0 var(--space-2) 0;
+  color: var(--color-text-primary);
+  font-size: var(--font-size-base);
 }
 </style>

@@ -271,14 +271,17 @@ export const useGameController = defineStore('gameController', () => {
     }
   }
 
-  const saveGame = (): boolean => {
+  const saveGame = (slotIndex: number = 0): boolean => {
     try {
       const saveData = createSaveData()
-      localStorage.setItem('gps2-save', JSON.stringify(saveData))
+      localStorage.setItem(`gps2-save-slot-${slotIndex}`, JSON.stringify(saveData))
       gameState.value.lastSaveTimestamp = Date.now()
 
       const logging = getLoggingStore()
-      logging.logDebug('Game saved successfully', { timestamp: gameState.value.lastSaveTimestamp })
+      logging.logDebug(`Game saved successfully to slot ${slotIndex + 1}`, {
+        slotIndex,
+        timestamp: gameState.value.lastSaveTimestamp
+      })
       return true
     } catch (error) {
       console.error('Failed to save game:', error)
@@ -292,9 +295,9 @@ export const useGameController = defineStore('gameController', () => {
     }
   }
 
-  const loadGame = (): boolean => {
+  const loadGame = (slotIndex: number = 0): boolean => {
     try {
-      const savedData = localStorage.getItem('gps2-save')
+      const savedData = localStorage.getItem(`gps2-save-slot-${slotIndex}`)
       if (!savedData) return false
 
       const saveData: SaveData = JSON.parse(savedData)
@@ -327,7 +330,8 @@ export const useGameController = defineStore('gameController', () => {
         recoverFromInvalidState()
       }
 
-      logging.logInfo('Game loaded successfully', {
+      logging.logInfo(`Game loaded successfully from slot ${slotIndex + 1}`, {
+        slotIndex,
         gameState: saveData.gameState.currentState,
         hasGuineaPig: saveData.gameState.hasGuineaPig
       })
@@ -468,6 +472,166 @@ export const useGameController = defineStore('gameController', () => {
     logging.logInfo('Game Controller initialized successfully')
   }
 
+  // Save slot management functions
+  const getSaveSlotInfo = (slotIndex: number) => {
+    const savedData = localStorage.getItem(`gps2-save-slot-${slotIndex}`)
+    if (!savedData) return null
+
+    try {
+      const saveData: SaveData = JSON.parse(savedData)
+
+      // Extract guinea pig collection data
+      const guineaPigs = saveData.guineaPigState?.collection?.guineaPigs || {}
+      const guineaPigList = Object.values(guineaPigs)
+
+      // Handle both old single active and new pairs format
+      let activeGuineaPigIds: string[] = []
+      if (saveData.guineaPigState?.collection?.activeGuineaPigIds) {
+        // New pairs format
+        activeGuineaPigIds = saveData.guineaPigState.collection.activeGuineaPigIds
+      } else if (saveData.guineaPigState?.collection?.activeGuineaPigId) {
+        // Old single active format
+        activeGuineaPigIds = [saveData.guineaPigState.collection.activeGuineaPigId]
+      }
+
+      return {
+        slotNumber: slotIndex + 1, // Display number (1-based)
+        slotIndex, // Internal index (0-based)
+        exists: true,
+        timestamp: saveData.gameState.lastSaveTimestamp,
+        gameState: saveData.gameState.currentState,
+        hasGuineaPig: saveData.gameState.hasGuineaPig,
+        lastSave: new Date(saveData.gameState.lastSaveTimestamp).toLocaleString(),
+        guineaPigCount: guineaPigList.length,
+        activePairCount: activeGuineaPigIds.length,
+        isPair: activeGuineaPigIds.length === 2,
+        guineaPigs: guineaPigList.map((gp: any) => ({
+          id: gp.id,
+          name: gp.name,
+          gender: gp.gender,
+          breed: gp.breed,
+          level: gp.stats?.level || 1,
+          wellness: gp.stats?.wellness || 0,
+          isActive: activeGuineaPigIds.includes(gp.id)
+        }))
+      }
+    } catch {
+      return null
+    }
+  }
+
+  const getAllSaveSlots = () => {
+    const slots = []
+    const maxSlots = 5 // Maximum number of save slots
+
+    // Find all existing save slots
+    for (let i = 0; i < maxSlots; i++) {
+      const slotInfo = getSaveSlotInfo(i)
+      if (slotInfo) {
+        slots.push(slotInfo)
+      } else {
+        break // No more slots exist
+      }
+    }
+
+    return slots
+  }
+
+  const getAllSaveSlotsWithEmpty = () => {
+    const existingSlots = getAllSaveSlots()
+    const guineaPigStore = getGuineaPigStore()
+
+    // Get available guinea pigs (not in any save)
+    const allSlots = existingSlots
+    const usedGuineaPigIds = new Set<string>()
+    allSlots.forEach(slot => {
+      if (slot.exists && slot.guineaPigs) {
+        slot.guineaPigs.forEach((gp: any) => usedGuineaPigIds.add(gp.id))
+      }
+    })
+
+    const availableGuineaPigs = guineaPigStore.allGuineaPigs.filter((gp: any) => !usedGuineaPigIds.has(gp.id))
+    const hasAvailableGuineaPigs = availableGuineaPigs.length > 0
+
+    // Add empty slot if we have existing saves and available guinea pigs
+    if (existingSlots.length > 0 && hasAvailableGuineaPigs && existingSlots.length < 5) {
+      existingSlots.push({
+        slotNumber: existingSlots.length + 1,
+        slotIndex: existingSlots.length,
+        exists: false,
+        timestamp: 0,
+        gameState: 'intro' as const,
+        hasGuineaPig: false,
+        lastSave: 'Empty',
+        guineaPigCount: 0,
+        activePairCount: 0,
+        isPair: false,
+        guineaPigs: []
+      })
+    }
+
+    // If no existing slots, always show first slot
+    if (existingSlots.length === 0) {
+      existingSlots.push({
+        slotNumber: 1,
+        slotIndex: 0,
+        exists: false,
+        timestamp: 0,
+        gameState: 'intro' as const,
+        hasGuineaPig: false,
+        lastSave: 'Empty',
+        guineaPigCount: 0,
+        activePairCount: 0,
+        isPair: false,
+        guineaPigs: []
+      })
+    }
+
+    return existingSlots
+  }
+
+  const deleteSaveSlot = (slotIndex: number): boolean => {
+    try {
+      // Remove the slot
+      localStorage.removeItem(`gps2-save-slot-${slotIndex}`)
+
+      // Compact remaining slots by shifting them down
+      const maxSlots = 5
+
+      // Remove all slots after the deleted one
+      for (let i = slotIndex + 1; i < maxSlots; i++) {
+        const slotData = localStorage.getItem(`gps2-save-slot-${i}`)
+        if (slotData) {
+          localStorage.removeItem(`gps2-save-slot-${i}`)
+        }
+      }
+
+      // Re-save the remaining slots in consecutive order
+      const remainingSlots = []
+      for (let i = 0; i < maxSlots; i++) {
+        if (i === slotIndex) continue // Skip the deleted slot
+
+        const slotData = localStorage.getItem(`gps2-save-slot-${i}`)
+        if (slotData) {
+          remainingSlots.push(slotData)
+          localStorage.removeItem(`gps2-save-slot-${i}`)
+        }
+      }
+
+      // Re-save in consecutive order starting from 0
+      remainingSlots.forEach((slotData, index) => {
+        localStorage.setItem(`gps2-save-slot-${index}`, slotData)
+      })
+
+      const logging = getLoggingStore()
+      logging.logInfo(`Save slot ${slotIndex + 1} deleted and slots compacted`)
+      return true
+    } catch (error) {
+      console.error(`Failed to delete save slot ${slotIndex + 1}:`, error)
+      return false
+    }
+  }
+
   return {
     // State
     gameState,
@@ -494,6 +658,10 @@ export const useGameController = defineStore('gameController', () => {
     // Save/Load
     saveGame,
     loadGame,
+    getSaveSlotInfo,
+    getAllSaveSlots,
+    getAllSaveSlotsWithEmpty,
+    deleteSaveSlot,
 
     // Settings
     updateSettings,

@@ -15,8 +15,8 @@
                 <span class="stat-value stat-value--primary">{{ guineaPigStore.guineaPigCount }}/{{ guineaPigStore.settings.maxGuineaPigs }}</span>
               </div>
               <div class="stat-card">
-                <span class="stat-label">Active Guinea Pig</span>
-                <span class="stat-value">{{ guineaPigStore.activeGuineaPig?.name || 'None' }}</span>
+                <span class="stat-label">Active Guinea Pigs</span>
+                <span class="stat-value">{{ guineaPigStore.activeGuineaPigs.length }}/2</span>
               </div>
               <div class="stat-card">
                 <span class="stat-label">Can Add More</span>
@@ -46,8 +46,8 @@
                 v-for="guineaPig in guineaPigStore.allGuineaPigs"
                 :key="guineaPig.id"
                 class="guinea-pig-card"
-                :class="{ 'guinea-pig-card--active': guineaPig.id === guineaPigStore.activeGuineaPig?.id }"
-                @click="setActiveGuineaPig(guineaPig.id)"
+                :class="{ 'guinea-pig-card--selected': selectedGuineaPigForViewing === guineaPig.id }"
+                @click="selectGuineaPigForViewing(guineaPig.id)"
               >
                 <div class="guinea-pig-card__info">
                   <h4 class="guinea-pig-card__name">{{ guineaPig.name }}</h4>
@@ -69,17 +69,11 @@
                 </div>
                 <div class="guinea-pig-card__actions">
                   <Button
-                    @click.stop="setActiveGuineaPig(guineaPig.id)"
-                    variant="tertiary"
-                    size="sm"
-                    :disabled="guineaPig.id === guineaPigStore.activeGuineaPig?.id"
-                  >
-                    {{ guineaPig.id === guineaPigStore.activeGuineaPig?.id ? 'Active' : 'Set Active' }}
-                  </Button>
-                  <Button
                     @click.stop="deleteGuineaPig(guineaPig.id)"
                     variant="danger"
                     size="sm"
+                    :disabled="isGuineaPigInSaveGame(guineaPig.id)"
+                    :title="isGuineaPigInSaveGame(guineaPig.id) ? 'Cannot delete guinea pig that is in a save game' : 'Delete guinea pig'"
                   >
                     Delete
                   </Button>
@@ -89,17 +83,19 @@
             <div v-else class="empty-state">
               <span class="empty-state__icon">🐹</span>
               <p class="empty-state__text">No guinea pigs in collection</p>
+              <p class="empty-state__subtext">Create guinea pigs to start managing your collection</p>
               <Button @click="createTestGuineaPig" variant="primary">Create Your First Guinea Pig</Button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Right Column: Active Guinea Pig Details -->
+      <!-- Right Column: Selected Guinea Pig Details -->
       <div class="debug-section debug-section--details">
-        <div class="panel" v-if="guineaPigStore.activeGuineaPig">
+        <div class="panel" v-if="selectedGuineaPigForViewing && guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)">
           <div class="panel__header">
-            <h3>📊 {{ guineaPigStore.activeGuineaPig.name }} Details</h3>
+            <h3>📊 {{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.name }} Details</h3>
+            <span class="view-indicator">Viewing</span>
           </div>
           <div class="panel__content">
             <div class="detail-grid">
@@ -108,15 +104,15 @@
                 <div class="detail-items">
                   <div class="detail-item">
                     <span class="detail-item__label">ID</span>
-                    <span class="detail-item__value">{{ guineaPigStore.activeGuineaPig.id.slice(-8) }}...</span>
+                    <span class="detail-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.id.slice(-8) }}...</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-item__label">Age</span>
-                    <span class="detail-item__value">{{ guineaPigStore.activeGuineaPig.stats.age }} days</span>
+                    <span class="detail-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.stats.age }} days</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-item__label">Weight</span>
-                    <span class="detail-item__value">{{ guineaPigStore.activeGuineaPig.stats.weight }}g</span>
+                    <span class="detail-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.stats.weight }}g</span>
                   </div>
                 </div>
               </div>
@@ -126,15 +122,15 @@
                 <div class="detail-items">
                   <div class="detail-item">
                     <span class="detail-item__label">Wellness</span>
-                    <span class="detail-item__value detail-item__value--progress">{{ guineaPigStore.activeGuineaPig.stats.wellness }}/100</span>
+                    <span class="detail-item__value detail-item__value--progress">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.stats.wellness }}/100</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-item__label">Mood</span>
-                    <span class="detail-item__value detail-item__value--progress">{{ guineaPigStore.activeGuineaPig.stats.overallMood }}/100</span>
+                    <span class="detail-item__value detail-item__value--progress">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.stats.overallMood }}/100</span>
                   </div>
                   <div class="detail-item">
                     <span class="detail-item__label">Level</span>
-                    <span class="detail-item__value">{{ guineaPigStore.activeGuineaPig.stats.level }}</span>
+                    <span class="detail-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.stats.level }}</span>
                   </div>
                 </div>
               </div>
@@ -144,43 +140,43 @@
                 <div class="needs-grid">
                   <div class="need-item">
                     <span class="need-item__label">🍎 Hunger</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.hunger }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.hunger }}/100</span>
                   </div>
                   <div class="need-item">
                     <span class="need-item__label">💧 Thirst</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.thirst }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.thirst }}/100</span>
                   </div>
                   <div class="need-item">
                     <span class="need-item__label">😊 Happiness</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.happiness }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.happiness }}/100</span>
                   </div>
                   <div class="need-item">
                     <span class="need-item__label">🧼 Cleanliness</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.cleanliness }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.cleanliness }}/100</span>
                   </div>
                   <div class="need-item">
                     <span class="need-item__label">❤️ Health</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.health }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.health }}/100</span>
                   </div>
                   <div class="need-item">
                     <span class="need-item__label">⚡ Energy</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.energy }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.energy }}/100</span>
                   </div>
                   <div class="need-item">
                     <span class="need-item__label">👥 Social</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.social }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.social }}/100</span>
                   </div>
                   <div class="need-item">
                     <span class="need-item__label">💅 Nails</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.nails }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.nails }}/100</span>
                   </div>
                   <div class="need-item">
                     <span class="need-item__label">🦷 Chew</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.chew }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.chew }}/100</span>
                   </div>
                   <div class="need-item">
                     <span class="need-item__label">🏠 Shelter</span>
-                    <span class="need-item__value">{{ guineaPigStore.activeGuineaPig.needs.shelter }}/100</span>
+                    <span class="need-item__value">{{ guineaPigStore.getGuineaPig(selectedGuineaPigForViewing)?.needs.shelter }}/100</span>
                   </div>
                 </div>
               </div>
@@ -194,14 +190,78 @@
           <div class="panel__content">
             <div class="empty-state empty-state--small">
               <span class="empty-state__icon">🐹</span>
-              <p class="empty-state__text">No active guinea pig selected</p>
+              <div v-if="guineaPigStore.hasGuineaPigs">
+                <p class="empty-state__text">Click on a guinea pig card to view details</p>
+                <div v-if="guineaPigStore.activeGuineaPigs.length > 0" class="active-indicator">
+                  <p class="active-summary">Active Guinea Pigs: {{ guineaPigStore.activeGuineaPigs.map(gp => gp.name).join(', ') }}</p>
+                </div>
+              </div>
+              <div v-else class="no-data-placeholder">
+                <p class="empty-state__text">No guinea pigs to display</p>
+                <p class="empty-state__subtext">Guinea pig details will appear here once you create some</p>
+                <div class="placeholder-content">
+                  <div class="placeholder-section">
+                    <h4 class="placeholder-title">Basic Info</h4>
+                    <div class="placeholder-items">
+                      <div class="placeholder-item">ID: ---</div>
+                      <div class="placeholder-item">Age: --- days</div>
+                      <div class="placeholder-item">Weight: ---g</div>
+                    </div>
+                  </div>
+                  <div class="placeholder-section">
+                    <h4 class="placeholder-title">Core Stats</h4>
+                    <div class="placeholder-items">
+                      <div class="placeholder-item">Wellness: ---/100</div>
+                      <div class="placeholder-item">Mood: ---/100</div>
+                      <div class="placeholder-item">Level: ---</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Bottom Left: Creation & Testing -->
-      <div class="debug-section debug-section--creation">
+      <!-- Validation Output Panel (Left side of bottom row) -->
+      <div class="debug-section debug-section--validation-output">
+        <div class="panel">
+          <div class="panel__header">
+            <h3>📊 Validation Output</h3>
+            <Button
+              v-if="validationResults.length > 0"
+              @click="clearValidationResults"
+              variant="tertiary"
+              size="sm"
+            >
+              Clear
+            </Button>
+          </div>
+          <div class="panel__content">
+            <div v-if="validationResults.length > 0" class="validation-output">
+              <div class="validation-list">
+                <div
+                  v-for="(result, index) in validationResults"
+                  :key="index"
+                  class="validation-result"
+                  :class="`validation-result--${result.type}`"
+                >
+                  <span class="validation-message">{{ result.message }}</span>
+                  <span class="validation-test">{{ result.test }}</span>
+                </div>
+              </div>
+            </div>
+            <div v-else class="empty-validation-output">
+              <span class="empty-validation-icon">🧪</span>
+              <p class="empty-validation-text">No validation tests run yet</p>
+              <p class="empty-validation-subtext">Results will appear here when you run validation tests</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Validation Testing Controls (Right side of bottom row) -->
+      <div class="debug-section debug-section--validation-controls">
         <div class="panel">
           <div class="panel__header">
             <h3>🧪 Validation Testing</h3>
@@ -210,9 +270,9 @@
             <div class="action-groups">
               <div class="action-group">
                 <h4 class="action-group__title">Input Validation Tests</h4>
-                <div class="button-grid">
+                <div class="button-wrap">
                   <Button @click="testValidation('empty')" variant="warning" size="sm">📝 Empty Names</Button>
-                  <Button @click="testValidation('invalid_name')" variant="warning" size="sm">❌ Invalid Names</Button>
+                  <Button @click="testValidation('invalid_name')" variant="warning" size="sm">✖ Invalid Names</Button>
                   <Button @click="testValidation('future_date')" variant="warning" size="sm">📅 Future Dates</Button>
                   <Button @click="testValidation('too_old')" variant="warning" size="sm">🕰️ Age Limits</Button>
                 </div>
@@ -222,7 +282,7 @@
         </div>
       </div>
 
-      <!-- Bottom Right: Data Management -->
+      <!-- Data Management (Bottom, 50% width) -->
       <div class="debug-section debug-section--data">
         <div class="panel">
           <div class="panel__header">
@@ -232,13 +292,13 @@
             <div class="action-groups">
               <div class="action-group">
                 <h4 class="action-group__title">Store Actions</h4>
-                <div class="button-grid">
+                <div class="button-wrap">
                   <Button @click="clearAllGuineaPigs" variant="danger" size="sm">🗑️ Clear All</Button>
                 </div>
               </div>
               <div class="action-group">
                 <h4 class="action-group__title">Data Operations</h4>
-                <div class="button-grid">
+                <div class="button-wrap">
                   <Button @click="exportGuineaPigData" variant="secondary" size="sm">📤 Export</Button>
                   <Button @click="showImportDialog = true" variant="secondary" size="sm">📥 Import</Button>
                   <Button @click="copyStoreState" variant="tertiary" size="sm">📋 Copy</Button>
@@ -246,7 +306,7 @@
               </div>
               <div class="action-group">
                 <h4 class="action-group__title">System</h4>
-                <div class="button-grid">
+                <div class="button-wrap">
                   <Button @click="clearLocalStorage" variant="danger" size="sm">🗑️ Clear Storage</Button>
                   <Button @click="resetStoreSettings" variant="warning" size="sm">⚙️ Reset Settings</Button>
                   <Button @click="validateStoreIntegrity" variant="tertiary" size="sm">✅ Validate</Button>
@@ -271,7 +331,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from '../components/basic/Button.vue'
 import { useGuineaPigStore } from '../stores/guineaPigStore'
@@ -283,14 +343,49 @@ const gameController = useGameController()
 
 // State
 const showImportDialog = ref(false)
+const selectedGuineaPigForViewing = ref<string | null>(null)
+const validationResults = ref<Array<{ type: 'success' | 'error' | 'warning', message: string, test: string }>>([])
+
+// Auto-select first guinea pig when list changes
+watch(() => guineaPigStore.allGuineaPigs, (newGuineaPigs) => {
+  if (newGuineaPigs.length > 0) {
+    // If no guinea pig is selected, or the selected one no longer exists, select the first one
+    if (!selectedGuineaPigForViewing.value || !guineaPigStore.getGuineaPig(selectedGuineaPigForViewing.value)) {
+      selectedGuineaPigForViewing.value = newGuineaPigs[0].id
+    }
+  } else {
+    // Clear selection if no guinea pigs exist
+    selectedGuineaPigForViewing.value = null
+  }
+}, { immediate: true })
+
+// Initialize on mount
+onMounted(() => {
+  if (guineaPigStore.allGuineaPigs.length > 0 && !selectedGuineaPigForViewing.value) {
+    selectedGuineaPigForViewing.value = guineaPigStore.allGuineaPigs[0].id
+  }
+})
 
 
 // Guinea Pig Management Methods
-const setActiveGuineaPig = (id: string) => {
-  guineaPigStore.setActiveGuineaPig(id)
+const selectGuineaPigForViewing = (id: string) => {
+  selectedGuineaPigForViewing.value = id
+}
+
+// Helper function to check if guinea pig is in any save game
+const isGuineaPigInSaveGame = (guineaPigId: string): boolean => {
+  const allSaveSlots = gameController.getAllSaveSlots()
+  return allSaveSlots.some(slot => {
+    return slot.guineaPigs && slot.guineaPigs.some(gp => gp.id === guineaPigId)
+  })
 }
 
 const deleteGuineaPig = (id: string) => {
+  if (isGuineaPigInSaveGame(id)) {
+    alert('Cannot delete this guinea pig because it is used in a save game. Remove it from save games first.')
+    return
+  }
+
   const guineaPig = guineaPigStore.getGuineaPig(id)
   if (guineaPig && confirm(`Are you sure you want to delete ${guineaPig.name}?`)) {
     guineaPigStore.deleteGuineaPig(id)
@@ -300,7 +395,7 @@ const deleteGuineaPig = (id: string) => {
 const clearAllGuineaPigs = () => {
   if (confirm('Are you sure you want to delete all guinea pigs? This cannot be undone.')) {
     guineaPigStore.collection.guineaPigs = {}
-    guineaPigStore.collection.activeGuineaPigId = null
+    guineaPigStore.collection.activeGuineaPigIds = []
     guineaPigStore.collection.lastUpdated = Date.now()
     gameController.gameState.hasGuineaPig = false
   }
@@ -309,7 +404,6 @@ const clearAllGuineaPigs = () => {
 // Creation Methods
 const createTestGuineaPig = () => {
   if (!guineaPigStore.canAddMoreGuineaPigs) {
-    console.warn('Cannot create more guinea pigs - limit reached')
     return
   }
 
@@ -331,8 +425,201 @@ const formatTimestamp = (timestamp: number): string => {
 
 
 const testValidation = (type: 'empty' | 'invalid_name' | 'future_date' | 'too_old') => {
-  console.log(`Testing validation: ${type}`)
-  // This would trigger various validation scenarios
+  validationResults.value = []
+
+  try {
+    switch (type) {
+      case 'empty':
+        testEmptyNameValidation()
+        break
+      case 'invalid_name':
+        testInvalidNameValidation()
+        break
+      case 'future_date':
+        testFutureDateValidation()
+        break
+      case 'too_old':
+        testAgeLimitValidation()
+        break
+    }
+  } catch (error) {
+    validationResults.value.push({
+      type: 'error',
+      test: type,
+      message: `Test failed with error: ${error}`
+    })
+  }
+}
+
+const testEmptyNameValidation = () => {
+  validationResults.value.push({
+    type: 'warning',
+    test: 'empty_names',
+    message: 'Testing empty name validation...'
+  })
+
+  try {
+    // Test empty string
+    guineaPigStore.createGuineaPig('', 'male', 'American', true)
+    validationResults.value.push({
+      type: 'error',
+      test: 'empty_names',
+      message: '❌ Empty name was accepted (should be rejected)'
+    })
+  } catch (error) {
+    validationResults.value.push({
+      type: 'success',
+      test: 'empty_names',
+      message: '✅ Empty name properly rejected'
+    })
+  }
+
+  try {
+    // Test whitespace-only string
+    guineaPigStore.createGuineaPig('   ', 'female', 'Peruvian', true)
+    validationResults.value.push({
+      type: 'error',
+      test: 'empty_names',
+      message: '❌ Whitespace-only name was accepted (should be rejected)'
+    })
+  } catch (error) {
+    validationResults.value.push({
+      type: 'success',
+      test: 'empty_names',
+      message: '✅ Whitespace-only name properly rejected'
+    })
+  }
+}
+
+const testInvalidNameValidation = () => {
+  validationResults.value.push({
+    type: 'warning',
+    test: 'invalid_names',
+    message: 'Testing invalid name validation...'
+  })
+
+  const invalidNames = [
+    { name: '123', description: 'numbers only' },
+    { name: '@#$%^&*()', description: 'special chars' },
+    { name: 'A'.repeat(51), description: 'too long (51 chars)' },
+    { name: 'Name\nWith\nNewlines', description: 'with newlines' },
+    { name: '', description: 'empty string' },
+    { name: '   ', description: 'whitespace only' },
+    { name: 'Name🐹WithEmoji', description: 'with emoji' }
+  ]
+
+  invalidNames.forEach(({ name, description }) => {
+    try {
+      const id = guineaPigStore.createGuineaPig(name, 'male', 'American', true)
+      validationResults.value.push({
+        type: 'error',
+        test: 'invalid_names',
+        message: `❌ Invalid name (${description}) was accepted`
+      })
+      // Clean up the guinea pig that shouldn't have been created
+      guineaPigStore.deleteGuineaPig(id)
+    } catch (error) {
+      validationResults.value.push({
+        type: 'success',
+        test: 'invalid_names',
+        message: `✅ Invalid name (${description}) properly rejected: ${error}`
+      })
+    }
+  })
+}
+
+const testFutureDateValidation = () => {
+  validationResults.value.push({
+    type: 'warning',
+    test: 'future_dates',
+    message: 'Testing future date validation...'
+  })
+
+  // Test if we can create guinea pigs with future birth dates
+
+  try {
+    const id = guineaPigStore.createGuineaPig('FutureTest', 'male', 'American', true)
+    const guineaPig = guineaPigStore.getGuineaPig(id)
+
+    if (guineaPig && guineaPig.birthDate > Date.now()) {
+      validationResults.value.push({
+        type: 'warning',
+        test: 'future_dates',
+        message: '⚠️ Guinea pig created with future birth date (may be intentional for testing)'
+      })
+    } else {
+      validationResults.value.push({
+        type: 'success',
+        test: 'future_dates',
+        message: '✅ Guinea pig created with current timestamp'
+      })
+    }
+
+    // Clean up test guinea pig
+    guineaPigStore.deleteGuineaPig(id)
+  } catch (error) {
+    validationResults.value.push({
+      type: 'error',
+      test: 'future_dates',
+      message: `❌ Error during future date test: ${error}`
+    })
+  }
+}
+
+const testAgeLimitValidation = () => {
+  validationResults.value.push({
+    type: 'warning',
+    test: 'age_limits',
+    message: 'Testing age limit validation...'
+  })
+
+  // Create a test guinea pig and artificially age it
+  try {
+    const id = guineaPigStore.createGuineaPig('AgeTest', 'female', 'Skinny', true)
+    const guineaPig = guineaPigStore.getGuineaPig(id)
+
+    if (guineaPig) {
+      // Test extremely old age (10 years = 3650 days)
+      const updates = {
+        stats: {
+          ...guineaPig.stats,
+          age: 3650 // 10 years old
+        }
+      }
+
+      const updated = guineaPigStore.updateGuineaPig(id, updates)
+
+      if (updated) {
+        const updatedGP = guineaPigStore.getGuineaPig(id)
+        if (updatedGP && updatedGP.stats.age > 3000) {
+          validationResults.value.push({
+            type: 'warning',
+            test: 'age_limits',
+            message: '⚠️ Guinea pig can be aged beyond realistic limits (3650 days)'
+          })
+        } else {
+          validationResults.value.push({
+            type: 'success',
+            test: 'age_limits',
+            message: '✅ Age limits properly enforced'
+          })
+        }
+      }
+
+      // Clean up test guinea pig
+      guineaPigStore.deleteGuineaPig(id)
+    }
+  } catch (error) {
+    validationResults.value.push({
+      type: 'error',
+      test: 'age_limits',
+      message: `❌ Error during age limit test: ${error}`
+    })
+  }
+}
+
+const clearValidationResults = () => {
+  validationResults.value = []
 }
 
 // Navigation Methods
@@ -379,8 +666,10 @@ const validateStoreIntegrity = () => {
   const issues = []
 
   // Check for orphaned active guinea pig references
-  if (guineaPigStore.collection.activeGuineaPigId && !guineaPigStore.collection.guineaPigs[guineaPigStore.collection.activeGuineaPigId]) {
-    issues.push('Active guinea pig ID references non-existent guinea pig')
+  for (const id of guineaPigStore.collection.activeGuineaPigIds) {
+    if (!guineaPigStore.collection.guineaPigs[id]) {
+      issues.push(`Active guinea pig ID ${id} references non-existent guinea pig`)
+    }
   }
 
   if (issues.length === 0) {
@@ -420,8 +709,8 @@ const validateStoreIntegrity = () => {
 /* Main Grid Layout */
 .guinea-pig-debug-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto 1fr 1fr;
+  grid-template-columns: 27.5% 27.5% 1fr;
+  grid-template-rows: auto 1fr auto;
   gap: var(--space-4);
   padding: var(--space-6);
   flex: 1;
@@ -429,27 +718,36 @@ const validateStoreIntegrity = () => {
 
 .debug-section--stats {
   grid-column: 1 / -1;
+  grid-row: 1;
 }
 
 .debug-section--list {
   grid-column: 1;
-  grid-row: 2 / 4;
-}
-
-.debug-section--details {
-  grid-column: 2;
   grid-row: 2;
 }
 
-.debug-section--creation {
+.debug-section--details {
+  grid-column: 2 / -1;
+  grid-row: 2;
+}
+
+/* Bottom Row: Three-column layout for Data Management, Validation Testing, Validation Output */
+.debug-section--data {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.debug-section--validation-controls {
   grid-column: 2;
   grid-row: 3;
 }
 
-.debug-section--data {
-  grid-column: 1 / -1;
-  grid-row: 4;
+.debug-section--validation-output {
+  grid-column: 3;
+  grid-row: 3;
 }
+
+/* Old CSS rules removed - using the new three-column layout above */
 
 /* Stats Row */
 .stats-row {
@@ -528,12 +826,12 @@ const validateStoreIntegrity = () => {
   cursor: pointer;
 }
 
-.guinea-pig-card:hover:not(.guinea-pig-card--active) {
+.guinea-pig-card:hover:not(.guinea-pig-card--selected) {
   border-color: var(--color-border-dark);
   background-color: var(--color-bg-tertiary);
 }
 
-.guinea-pig-card--active {
+.guinea-pig-card--selected {
   border-color: var(--color-primary);
   background-color: var(--color-primary-bg);
 }
@@ -707,6 +1005,185 @@ const validateStoreIntegrity = () => {
   gap: var(--space-2);
 }
 
+/* View Indicator */
+.view-indicator {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  background-color: var(--color-bg-tertiary);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--font-weight-medium);
+}
+
+/* Active Summary in Empty State */
+.active-summary {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: var(--space-2) 0 0 0;
+  padding: var(--space-2);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-light);
+}
+
+.active-indicator {
+  margin-block-start: var(--space-3);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border-light);
+}
+
+/* Placeholder Content */
+.no-data-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.placeholder-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  inline-size: 100%;
+  max-inline-size: 300px;
+}
+
+.placeholder-section {
+  padding: var(--space-3);
+  background-color: var(--color-bg-secondary);
+  border: 1px dashed var(--color-border-light);
+  border-radius: var(--radius-md);
+  opacity: 0.6;
+}
+
+.placeholder-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-2) 0;
+  text-align: center;
+}
+
+.placeholder-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.placeholder-item {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  font-family: var(--font-family-mono);
+}
+
+/* Validation Results */
+.validation-results {
+  margin-block-start: var(--space-4);
+  padding: var(--space-3);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.validation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-end: var(--space-3);
+}
+
+.validation-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+
+.validation-list {
+  max-block-size: 300px;
+  overflow-y: auto;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-secondary);
+}
+
+.validation-result {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--space-3);
+  margin-block-end: var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  gap: var(--space-2);
+}
+
+.validation-result--success {
+  background-color: var(--color-success-bg);
+  border: 1px solid var(--color-success);
+  color: var(--color-success-text, var(--color-text-primary));
+}
+
+.validation-result--error {
+  background-color: var(--color-error-bg);
+  border: 1px solid var(--color-error);
+  color: var(--color-error-text, var(--color-text-primary));
+}
+
+.validation-result--warning {
+  background-color: var(--color-warning-bg);
+  border: 1px solid var(--color-warning);
+  color: var(--color-warning-text, var(--color-text-primary));
+}
+
+.validation-message {
+  flex: 1;
+  word-break: break-word;
+}
+
+.validation-test {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-family: var(--font-family-mono);
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Empty Validation Output */
+.empty-validation-output {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  text-align: center;
+}
+
+.empty-validation-icon {
+  font-size: 2rem;
+  opacity: 0.6;
+}
+
+.empty-validation-text {
+  font-size: var(--font-size-base);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.empty-validation-subtext {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  opacity: 0.8;
+}
+
 /* Empty State */
 .empty-state {
   display: flex;
@@ -733,10 +1210,18 @@ const validateStoreIntegrity = () => {
   margin: 0;
 }
 
+.empty-state__subtext {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin: var(--space-2) 0;
+  opacity: 0.8;
+}
+
 /* Compact Panel */
 .panel--compact .panel__content {
   padding: var(--space-3);
 }
+
 
 /* Panel Header with Action */
 .panel__header--with-action {
@@ -746,6 +1231,17 @@ const validateStoreIntegrity = () => {
 }
 
 .panel__header--with-action h3 {
+  margin: 0;
+}
+
+/* Panel Header with Indicator */
+.panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel__header h3 {
   margin: 0;
 }
 
@@ -770,10 +1266,10 @@ const validateStoreIntegrity = () => {
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
+@media (max-width: 1400px) {
   .guinea-pig-debug-grid {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto auto auto auto;
+    grid-template-rows: auto auto auto auto auto auto;
   }
 
   .debug-section--stats {
@@ -791,14 +1287,20 @@ const validateStoreIntegrity = () => {
     grid-row: 3;
   }
 
-  .debug-section--creation {
-    grid-column: 1;
-    grid-row: 4;
-  }
-
   .debug-section--data {
     grid-column: 1;
+    grid-row: 4;
+    max-inline-size: 100%;
+  }
+
+  .debug-section--validation-controls {
+    grid-column: 1;
     grid-row: 5;
+  }
+
+  .debug-section--validation-output {
+    grid-column: 1;
+    grid-row: 6;
   }
 
   .guinea-pig-list {
@@ -829,5 +1331,12 @@ const validateStoreIntegrity = () => {
   .button-grid {
     grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   }
+}
+
+/* Button wrap layout */
+.button-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 </style>
