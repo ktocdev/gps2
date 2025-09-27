@@ -254,13 +254,6 @@ const autoSaveFreq = computed({
   set: (value: number) => gameController.updateAutoSaveFrequency(value as 30 | 60 | 120)
 })
 
-const autoSaveFreqDisplay = computed(() => {
-  const seconds = gameController.settings.autoSave.frequency
-  if (seconds < 60) return `${seconds} seconds`
-  const minutes = seconds / 60
-  return `${minutes} minute${minutes > 1 ? 's' : ''}`
-})
-
 const tutorialMode = computed({
   get: () => gameController.settings.tutorial.mode,
   set: (value: string) => gameController.setTutorialMode(value as 'auto' | 'always_show' | 'never_show')
