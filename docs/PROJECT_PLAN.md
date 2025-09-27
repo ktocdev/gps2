@@ -35,14 +35,14 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 ##### Phase 2: Core Entities & Timing
 - **[Guinea Pig Store](systems/phase2/guinea-pig-store.md)** - Central guinea pig state management ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
 - **[Guinea Pig Creation](systems/phase2/guinea-pig-creation.md)** - Character creation with enhanced forms, accessibility, and segmented button groups ✅ **Completed** (September 20, 2025 | Branch: GPS2-7)
-- **[Save Game Manager System](systems/phase2/save-game-manager-plan.md)** - Multiple save slots with guinea pig assignment and availability management 📋 **Planned** (September 22, 2025)
+- **[Pet Store & Game Session Manager](systems/phase2/save-game-manager-plan.md)** - Single-session pet store system with 10 random guinea pigs, persistent progression, and session management 📋 **Planned** (September 27, 2025 | Branch: GPS2-9)
 - **[Needs System](systems/phase2/needs-system.md)** - Seven fundamental needs with decay and satisfaction
 - **[Needs Controller Store](systems/phase2/needs-controller-store.md)** - Centralized needs management
 - **[Habitat Conditions](systems/phase2/habitat-conditions.md)** - Environmental state tracking
 - **[Game Timing](systems/phase2/game-timing.md)** - Game loop and time management
 
 ##### Phase 3: Game World & Environment
-- **[Guinea Pig Store Persistence Fix](systems/phase2/guinea-pig-store-persistence-fix.md)** - Guinea pig persistence and save game system documentation ✅ **Completed** (September 22, 2025 | Branch: GPS2-7)
+- **[Guinea Pig Store Persistence Fix](systems/phase2/guinea-pig-store-persistence-fix.md)** - Guinea pig persistence and save game system documentation ✅ **Completed** (September 27, 2025 | Branch: GPS2-9)
 - **[Inventory Store System](systems/phase3/inventory-store-system.md)** - Item management and purchasing
 - **[Habitat Item System](systems/phase3/habitat-item-system.md)** - Interactive environment objects
 - **[Habitat Maintenance Hygiene](systems/phase3/habitat-maintenance-hygiene-system.md)** - Environmental care and cleanliness
@@ -91,20 +91,22 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 **Branch:** GPS2-7 | **Updated:** September 22, 2025
 
 ### Recently Completed ✅
-- **Guinea Pig Store Core**: Data persistence issues resolved, reliable guinea pig creation and management
-- **GameController TypeScript Fixes**: All TypeScript errors resolved, clean component state
-- **Documentation Updates**: Guinea pig persistence fix documentation updated to include save game planning
+- **Guinea Pig Store Persistence Fix**: Resolved data persistence issues, documented guinea pig store architecture
+- **Pet Store Architecture Design**: New single-session system with 10-guinea pig pet store replacing multi-slot saves
+- **Codebase Cleanup**: Removed old save/load game system, guinea pig creation flow, and unused code
+- **TypeScript Error Resolution**: All build errors fixed, clean compilation
+- **UI Improvements**: Enhanced stats display with Roboto font, improved layout and styling
 
 ### Next Phase Priority 📋
-**Save Game Manager System Implementation**
-- Create SaveGameManager store with slot management logic
-- Design SaveGameSlot interface and guinea pig selection system
-- Implement guinea pig availability filtering (exclude used guinea pigs)
-- Create SaveGameSlot component with guinea pig selection UI
-- Implement Create Game functionality with validation
-- Add delete saved game functionality with guinea pig cleanup
-- Integrate Save Game Manager into GameController panel
-- Test save game creation, deletion, and guinea pig management
+**Pet Store & Game Session Manager Implementation**
+- Create PetStoreManager store with 10-guinea pig generation
+- Create PlayerProgression store for persistent currency and items
+- Implement pet store selection UI (1-2 guinea pig selection)
+- Create end game flow with guinea pig return and penalties
+- Add guinea pig swap functionality with 1-hour cooldown
+- Build PetStoreSelection component
+- Implement session state management
+- Add debug panel for pet store testing
 
 ### Phase 2 Foundation Complete ✅
 Core guinea pig functionality is stable and ready for:
