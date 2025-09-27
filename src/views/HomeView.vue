@@ -31,6 +31,25 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted, onUnmounted } from 'vue'
+import { useGameController } from '../stores/gameController'
+
+const gameController = useGameController()
+
+// Page lifecycle management for automatic pause
+onMounted(() => {
+  // Auto-pause game when entering main game view
+  // User must manually resume if they want the game to run
+  gameController.pauseGame('navigation')
+})
+
+onUnmounted(() => {
+  // Auto-pause when leaving main game view if game is active
+  if (gameController.isGameActive) {
+    gameController.pauseGame('navigation')
+  }
+})
+
 // Future game interface will be implemented here
 </script>
 

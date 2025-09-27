@@ -9,11 +9,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
+import { useGuineaPigStore } from './guineaPigStore'
 
 // TypeScript interfaces
 interface GameState {
   currentState: 'intro' | 'playing' | 'paused' | 'stopped'
-  pauseReason?: 'manual' | 'orientation' | null
+  pauseReason?: 'manual' | 'orientation' | 'navigation' | null
   hasGuineaPig: boolean
   isFirstTimeUser: boolean
   lastSaveTimestamp: number
@@ -36,21 +37,24 @@ interface GameSettings {
   }
 }
 
-interface SaveData {
-  gameState: GameState
-  settings: GameSettings
-  loggingState?: any // Optional for backwards compatibility
-  version: string
-}
 
 export const useGameController = defineStore('gameController', () => {
-  // Get logging store (lazy initialization to avoid circular dependencies)
+  // Get stores (lazy initialization to avoid circular dependencies)
   let loggingStore: any = null
+  let guineaPigStore: any = null
+
   const getLoggingStore = () => {
     if (!loggingStore) {
       loggingStore = useLoggingStore()
     }
     return loggingStore
+  }
+
+  const getGuineaPigStore = () => {
+    if (!guineaPigStore) {
+      guineaPigStore = useGuineaPigStore()
+    }
+    return guineaPigStore
   }
 
   // Core state
@@ -89,6 +93,17 @@ export const useGameController = defineStore('gameController', () => {
   const isOrientationPaused = computed(() =>
     gameState.value.currentState === 'paused' && gameState.value.pauseReason === 'orientation'
   )
+
+  // Guinea pig related computed properties
+  const hasGuineaPig = computed(() => {
+    const guineaPigStore = getGuineaPigStore()
+    return guineaPigStore.hasGuineaPigs
+  })
+
+  const activeGuineaPig = computed(() => {
+    const guineaPigStore = getGuineaPigStore()
+    return guineaPigStore.activeGuineaPig
+  })
 
   // State transition validation
   const isValidTransition = (from: string, to: string): boolean => {
@@ -141,19 +156,23 @@ export const useGameController = defineStore('gameController', () => {
   }
 
   const startGame = () => {
-    if (gameState.value.hasGuineaPig) {
+    if (hasGuineaPig.value) {
       setState('playing')
     } else {
       console.error('Cannot start game without guinea pig')
     }
   }
 
-  const pauseGame = (reason: 'manual' | 'orientation' = 'manual') => {
+  const pauseGame = (reason: 'manual' | 'orientation' | 'navigation' = 'manual') => {
     if (gameState.value.currentState === 'playing') {
       setState('paused', reason)
-    } else if (gameState.value.currentState === 'paused' && reason === 'manual') {
-      // Manual pause overrides orientation pause
-      gameState.value.pauseReason = 'manual'
+    } else if (gameState.value.currentState === 'paused') {
+      // Pause reason priority: manual > navigation > orientation
+      const currentReason = gameState.value.pauseReason
+      if (reason === 'manual' ||
+          (reason === 'navigation' && currentReason === 'orientation')) {
+        gameState.value.pauseReason = reason
+      }
     }
   }
 
@@ -169,13 +188,21 @@ export const useGameController = defineStore('gameController', () => {
     }
   }
 
-  const newGame = () => {
+  const newGame = (clearGuineaPigs: boolean = true) => {
     gameState.value = {
       currentState: 'intro',
       pauseReason: null,
       hasGuineaPig: false,
       isFirstTimeUser: settings.value.tutorial.isGlobalFirstTime,
       lastSaveTimestamp: Date.now()
+    }
+
+    // Only clear guinea pig store if explicitly requested (for true new game)
+    if (clearGuineaPigs) {
+      const guineaPigStore = getGuineaPigStore()
+      guineaPigStore.collection.guineaPigs = {}
+      guineaPigStore.collection.activeGuineaPigId = null
+      guineaPigStore.collection.lastUpdated = Date.now()
     }
   }
 
@@ -196,146 +223,59 @@ export const useGameController = defineStore('gameController', () => {
     })
   }
 
-  // Save/Load functionality
-  const createSaveData = (): SaveData => {
-    const logging = getLoggingStore()
-    return {
-      gameState: { ...gameState.value },
-      settings: { ...settings.value },
-      loggingState: logging.getState(),
-      version: '1.0.0'
-    }
-  }
+  // Guinea pig creation helper that integrates with both stores
+  const createGuineaPig = (name: string, gender: 'male' | 'female', breed: string): string => {
+    const guineaPigStore = getGuineaPigStore()
+    const guineaPigId = guineaPigStore.createGuineaPig(name, gender, breed)
 
-  const saveGame = (): boolean => {
-    try {
-      const saveData = createSaveData()
-      localStorage.setItem('gps2-save', JSON.stringify(saveData))
-      gameState.value.lastSaveTimestamp = Date.now()
-
-      const logging = getLoggingStore()
-      logging.logDebug('Game saved successfully', { timestamp: gameState.value.lastSaveTimestamp })
-      return true
-    } catch (error) {
-      console.error('Failed to save game:', error)
-      const logging = getLoggingStore()
-      logging.logError(`Failed to save game: ${error}`, { error })
-
-      if (settings.value.errorReporting.enabled) {
-        // Error reporting would go here
-      }
-      return false
-    }
-  }
-
-  const loadGame = (): boolean => {
-    try {
-      const savedData = localStorage.getItem('gps2-save')
-      if (!savedData) return false
-
-      const saveData: SaveData = JSON.parse(savedData)
-
-      // Validate save data structure
-      if (!saveData.gameState || !saveData.settings) {
-        throw new Error('Corrupted save data: missing required fields')
-      }
-
-      // Load state
-      gameState.value = { ...saveData.gameState }
-      settings.value = { ...saveData.settings }
-
-      // Load logging state if available (backwards compatibility)
-      const logging = getLoggingStore()
-      if (saveData.loggingState) {
-        logging.loadState(saveData.loggingState)
-      }
-
-      // State recovery validation
-      if (!isValidCurrentState()) {
-        console.warn('Invalid state detected, recovering...')
-        logging.logWarn('Invalid game state detected, attempting recovery')
-        recoverFromInvalidState()
-      }
-
-      logging.logInfo('Game loaded successfully', {
-        gameState: saveData.gameState.currentState,
-        hasGuineaPig: saveData.gameState.hasGuineaPig
-      })
-
-      return true
-    } catch (error) {
-      console.error('Failed to load game:', error)
-      const logging = getLoggingStore()
-      logging.logError(`Failed to load game: ${error}`, { error })
-
-      if (settings.value.errorReporting.enabled) {
-        // Error reporting would go here
-      }
-      handleCorruptedSave()
-      return false
-    }
-  }
-
-  const isValidCurrentState = (): boolean => {
-    const state = gameState.value
-
-    // Check for invalid state combinations
-    if (state.currentState === 'playing' && !state.hasGuineaPig) {
-      return false
+    // Update game state to reflect guinea pig creation
+    if (!hasGuineaPig.value) {
+      setGuineaPigCreated()
     }
 
-    if (state.currentState === 'paused' && !state.pauseReason) {
-      return false
-    }
+    // Sync game state with guinea pig data
+    syncGameStateWithGuineaPigs()
 
-    return true
+    return guineaPigId
   }
 
-  const recoverFromInvalidState = () => {
-    if (gameState.value.hasGuineaPig) {
-      gameState.value.currentState = 'playing'
-      gameState.value.pauseReason = null
-    } else {
-      gameState.value.currentState = 'intro'
-      gameState.value.pauseReason = null
-    }
+  // State synchronization helpers
+  const syncGameStateWithGuineaPigs = () => {
+    const guineaPigStore = getGuineaPigStore()
+    gameState.value.hasGuineaPig = guineaPigStore.hasGuineaPigs
   }
 
-  const handleCorruptedSave = () => {
-    console.warn('Corrupted save detected, starting fresh game')
-    newGame()
-    // Could show user notification here
+  // For future implementation of save game manager integration
+  const syncGameStateWithSaveManager = () => {
+    // This will be implemented when we add UI integration
+    syncGameStateWithGuineaPigs()
   }
+
+
 
   // Settings management
   const updateSettings = (newSettings: Partial<GameSettings>) => {
     settings.value = { ...settings.value, ...newSettings }
-    saveGame() // Auto-save settings changes
   }
 
   const updateAutoSaveFrequency = (frequency: 30 | 60 | 120) => {
     settings.value.autoSave.frequency = frequency
-    saveGame()
   }
 
   const toggleAutoSave = () => {
     settings.value.autoSave.enabled = !settings.value.autoSave.enabled
-    saveGame()
   }
 
   const setTutorialMode = (mode: 'auto' | 'always_show' | 'never_show') => {
     settings.value.tutorial.mode = mode
-    saveGame()
   }
 
   const setPerformanceMode = (mode: 'standard' | 'reduced') => {
     settings.value.performance.mode = mode
-    saveGame()
   }
 
   const toggleErrorReporting = () => {
     settings.value.errorReporting.enabled = !settings.value.errorReporting.enabled
-    saveGame()
   }
 
   // Auto-save functionality
@@ -346,10 +286,9 @@ export const useGameController = defineStore('gameController', () => {
 
     stopAutoSave() // Clear any existing interval
 
+    // Auto-save functionality can be implemented with pet store manager
     autoSaveInterval = setInterval(() => {
-      if (isGameActive.value) {
-        saveGame()
-      }
+      // Will be implemented when pet store manager is added
     }, settings.value.autoSave.frequency * 1000)
   }
 
@@ -363,15 +302,25 @@ export const useGameController = defineStore('gameController', () => {
   // Initialize store
   const initializeStore = () => {
     const logging = getLoggingStore()
+    const guineaPigStore = getGuineaPigStore()
+
     logging.logInfo('Game Controller initializing...')
 
-    // Attempt to load existing save
-    const loaded = loadGame()
+    // Initialize guinea pig store first
+    guineaPigStore.initializeStore()
 
-    if (!loaded) {
-      // No save found or corrupted, start fresh
-      logging.logInfo('No save data found, starting new game')
-      newGame()
+    // Sync state with guinea pig store
+    syncGameStateWithGuineaPigs()
+
+    // Sync state with guinea pig store
+    if (guineaPigStore.hasGuineaPigs) {
+      // Guinea pig data exists, sync state
+      logging.logInfo('Guinea pig data found, syncing state')
+      syncGameStateWithGuineaPigs()
+    } else {
+      // No guinea pig data, start fresh
+      logging.logInfo('No guinea pig data found, starting new game')
+      newGame(true)
     }
 
     // Start auto-save if enabled
@@ -383,6 +332,7 @@ export const useGameController = defineStore('gameController', () => {
     logging.logInfo('Game Controller initialized successfully')
   }
 
+
   return {
     // State
     gameState,
@@ -393,6 +343,8 @@ export const useGameController = defineStore('gameController', () => {
     isPaused,
     isManuallyPaused,
     isOrientationPaused,
+    hasGuineaPig,
+    activeGuineaPig,
 
     // Actions
     setState,
@@ -402,10 +354,8 @@ export const useGameController = defineStore('gameController', () => {
     stopGame,
     newGame,
     setGuineaPigCreated,
+    createGuineaPig,
 
-    // Save/Load
-    saveGame,
-    loadGame,
 
     // Settings
     updateSettings,
@@ -420,7 +370,11 @@ export const useGameController = defineStore('gameController', () => {
     stopAutoSave,
 
     // Initialization
-    initializeStore
+    initializeStore,
+
+    // State synchronization
+    syncGameStateWithGuineaPigs,
+    syncGameStateWithSaveManager
   }
 }, {
   persist: {

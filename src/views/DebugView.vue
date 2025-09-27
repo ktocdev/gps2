@@ -15,10 +15,6 @@
         <GameControllerView />
       </template>
 
-      <template #guinea-pig-creation>
-        <GuineaPigCreationDebugView />
-      </template>
-
       <template #logging>
         <LoggingSystemView />
       </template>
@@ -31,12 +27,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import TabContainer, { type Tab } from '../components/layout/TabContainer.vue'
 import GameControllerView from './GameControllerView.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
-import GuineaPigCreationDebugView from './GuineaPigCreationDebugView.vue'
+import { useGameController } from '../stores/gameController'
+
+const gameController = useGameController()
 
 // State
 const activeTab = ref('controller')
@@ -47,11 +45,6 @@ const debugTabs: Tab[] = [
     id: 'controller',
     label: 'Game Controller',
     icon: '🎮',
-  },
-  {
-    id: 'guinea-pig-creation',
-    label: 'Guinea Pig Creation',
-    icon: '🐹',
   },
   {
     id: 'logging',
@@ -69,6 +62,20 @@ const debugTabs: Tab[] = [
 const onTabChange = (tabId: string, previousTabId: string | null) => {
   console.log(`Tab changed from ${previousTabId || 'none'} to ${tabId}`)
 }
+
+// Page lifecycle management for automatic pause
+onMounted(() => {
+  // Auto-pause game when entering debug panel
+  // User must manually resume if they want the game to run
+  gameController.pauseGame('navigation')
+})
+
+onUnmounted(() => {
+  // Auto-pause when leaving debug panel if game is active
+  if (gameController.isGameActive) {
+    gameController.pauseGame('navigation')
+  }
+})
 </script>
 
 <style>

@@ -131,9 +131,9 @@ const handleChange = (event: Event) => {
 }
 
 .select__label {
-  font-family: var(--font-family-body);
+  font-family: 'Gaegu', var(--font-family-body);
   font-weight: var(--font-weight-medium);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xl);
   color: var(--color-text-primary);
   margin-block-end: var(--space-2);
   line-height: var(--line-height-tight);

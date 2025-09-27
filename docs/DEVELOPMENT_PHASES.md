@@ -41,7 +41,8 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ### Systems
 5. **[Guinea Pig Creation System](docs/systems/phase2/guinea-pig-creation.md)** - Intro screen with enhanced forms, accessibility, and segmented button groups ✅ **UI Completed** (September 20, 2025 | Branch: GPS2-7)
-6. **[Guinea Pig Store](docs/systems/phase2/guinea-pig-store.md)** - Entity management (connect to stats display placeholders)
+6. **[Guinea Pig Store](docs/systems/phase2/guinea-pig-store.md)** - Entity management with data persistence ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
+6.5. **[Save Game Manager System](docs/systems/phase2/save-game-manager-plan.md)** - Multiple save slots (max 3) with guinea pig assignment and availability management 📋 **Planned** (September 22, 2025)
 7. **[Needs System Architecture](docs/systems/phase2/needs-system.md)** - Core game mechanics with internal wellness system (connect to needs bars, enhanced friendship meter)
 8. **[Needs Controller Store](docs/systems/phase2/needs-controller-store.md)** - Centralized need processing with wellness calculation and friendship penalties (connect to live needs display, enhanced friendship feedback)
 9. **[Habitat Conditions Store](docs/systems/phase2/habitat-conditions.md)** - Environmental condition tracking (cleanliness, bedding freshness, water level) with resource management
@@ -50,13 +51,14 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ### Debug Panel Development (Phase 2)
 - **Needs System Debug Panel** - Built alongside Needs System (System 7)
-- **Guinea Pig Debug Panel** - Built alongside Guinea Pig Store (System 6)
+- **Guinea Pig Debug Panel** - Built alongside Guinea Pig Store (System 6) ✅ **Completed** (September 21, 2025 | Branch: GPS2-7)
 - **Wellness Debug Panel** - Built alongside Needs Controller (System 8)
 - **Habitat Debug Panel** - Built alongside Habitat Conditions (System 9)
 
 ### Key Deliverables
 - **Enhanced guinea pig creation** with improved form UX, accessibility features, and segmented button groups ✅ **UI Completed**
-- **Functional guinea pig creation** with hidden preference generation
+- **Guinea pig store implementation** with complete data structure, CRUD operations, and debug panel ✅ **Core Completed**
+- **Functional guinea pig creation** with hidden preference generation ✅ **Completed**
 - **Complete needs system** with all 7 needs categories and interdependencies
 - **Wellness calculation system** (internal only) with friendship penalties
 - **Habitat conditions** separate from guinea pig needs with resource management
