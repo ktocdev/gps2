@@ -206,123 +206,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     }
   }
 
-  // Validation helper functions
-  const validateGuineaPigName = (name: string): void => {
-    const trimmedName = name.trim()
 
-    // Check for empty name
-    if (!trimmedName) {
-      throw new Error('Guinea pig name cannot be empty')
-    }
-
-    // Check length limits
-    if (trimmedName.length < 2) {
-      throw new Error('Guinea pig name must be at least 2 characters long')
-    }
-
-    if (trimmedName.length > 50) {
-      throw new Error('Guinea pig name cannot exceed 50 characters')
-    }
-
-    // Check for valid characters (letters, numbers, spaces, apostrophes, hyphens)
-    const validNamePattern = /^[a-zA-Z0-9\s'\-]+$/
-    if (!validNamePattern.test(trimmedName)) {
-      throw new Error('Guinea pig name contains invalid characters. Only letters, numbers, spaces, apostrophes, and hyphens are allowed')
-    }
-
-    // Check for newlines and control characters
-    if (/[\n\r\t\f\v]/.test(trimmedName)) {
-      throw new Error('Guinea pig name cannot contain line breaks or control characters')
-    }
-
-    // Check for names that are only numbers
-    if (/^\d+$/.test(trimmedName)) {
-      throw new Error('Guinea pig name cannot be only numbers')
-    }
-
-    // Check for names that are only special characters
-    if (/^[\s'\-]+$/.test(trimmedName)) {
-      throw new Error('Guinea pig name must contain at least one letter or number')
-    }
-  }
-
-  const validateGuineaPigData = (name: string, gender: 'male' | 'female', breed: string): void => {
-    validateGuineaPigName(name)
-
-    // Validate gender
-    if (!gender || (gender !== 'male' && gender !== 'female')) {
-      throw new Error('Guinea pig gender must be either "male" or "female"')
-    }
-
-    // Validate breed
-    if (!breed || !breed.trim()) {
-      throw new Error('Guinea pig breed cannot be empty')
-    }
-
-    if (breed.trim().length > 30) {
-      throw new Error('Guinea pig breed cannot exceed 30 characters')
-    }
-  }
-
-  // CRUD Operations
-  const createGuineaPig = (name: string, gender: 'male' | 'female', breed: string, silent: boolean = false): string => {
-    if (!canAddMoreGuineaPigs.value) {
-      throw new Error(`Cannot create more guinea pigs. Maximum limit of ${settings.value.maxGuineaPigs} reached.`)
-    }
-
-    // Validate all input data
-    validateGuineaPigData(name, gender, breed)
-
-    const id = generateGuineaPigId()
-    const now = Date.now()
-
-    const newGuineaPig: GuineaPig = {
-      id,
-      name: name.trim(),
-      gender,
-      breed,
-      birthDate: now,
-      lastInteraction: now,
-      personality: createDefaultPersonality(),
-      preferences: createDefaultPreferences(),
-      needs: createDefaultNeeds(),
-      stats: createDefaultStats(),
-      appearance: createDefaultAppearance(),
-      relationships: {},
-      totalInteractions: 0,
-      lifetimeHappiness: 75, // Start with baseline happiness
-      achievementsUnlocked: []
-    }
-
-    collection.value.guineaPigs[id] = newGuineaPig
-    collection.value.lastUpdated = now
-
-    // Auto-add to active pair if there's space (up to 2 active guinea pigs)
-    if (!collection.value.activeGuineaPigIds) {
-      collection.value.activeGuineaPigIds = []
-    }
-    if (collection.value.activeGuineaPigIds.length < 2) {
-      collection.value.activeGuineaPigIds.push(id)
-    }
-
-    // Log the creation (unless in silent mode)
-    if (!silent) {
-      const logging = getLoggingStore()
-      logging.addPlayerAction(
-        `Created ${name} the ${breed}! 🐹`,
-        '🎉',
-        {
-          guineaPigId: id,
-          gender,
-          breed,
-          personality: newGuineaPig.personality,
-          appearance: newGuineaPig.appearance
-        }
-      )
-    }
-
-    return id
-  }
 
   const getGuineaPig = (id: string): GuineaPig | null => {
     return collection.value.guineaPigs[id] || null
@@ -530,7 +414,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     canAddActiveGuineaPig,  // New: Can add more to active pair
 
     // CRUD Operations
-    createGuineaPig,
     getGuineaPig,
     updateGuineaPig,
     deleteGuineaPig,
@@ -543,10 +426,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
     // Utility
     generateGuineaPigId,
-
-    // Validation
-    validateGuineaPigName,
-    validateGuineaPigData,
 
     // Save/Load
     getState,

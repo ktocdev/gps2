@@ -286,11 +286,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useLoggingStore, type LogLevel } from '../../stores/loggingStore'
-import { useGameController } from '../../stores/gameController'
 import Button from '../basic/Button.vue'
 
 const loggingStore = useLoggingStore()
-const gameController = useGameController()
 
 // Filter state
 const levelFilter = ref<LogLevel | 'all'>('all')
@@ -475,9 +473,6 @@ const clearSystemMessages = () => {
   // Remove only system messages
   loggingStore.state.messages = loggingStore.state.messages.filter(msg => msg.category !== 'system')
   loggingStore.logInfo('System messages cleared')
-
-  // Trigger save to persist the changes
-  gameController.saveGame()
 }
 
 const toggleDebugMessages = () => {

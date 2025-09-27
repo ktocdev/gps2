@@ -15,10 +15,6 @@
         <GameControllerView />
       </template>
 
-      <template #guinea-pig-debug>
-        <GuineaPigDebugView />
-      </template>
-
       <template #logging>
         <LoggingSystemView />
       </template>
@@ -36,7 +32,6 @@ import TabContainer, { type Tab } from '../components/layout/TabContainer.vue'
 import GameControllerView from './GameControllerView.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
-import GuineaPigDebugView from './GuineaPigDebugView.vue'
 import { useGameController } from '../stores/gameController'
 
 const gameController = useGameController()
@@ -50,11 +45,6 @@ const debugTabs: Tab[] = [
     id: 'controller',
     label: 'Game Controller',
     icon: '🎮',
-  },
-  {
-    id: 'guinea-pig-debug',
-    label: 'Guinea Pig Debug',
-    icon: '🐹',
   },
   {
     id: 'logging',
