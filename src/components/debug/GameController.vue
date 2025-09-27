@@ -4,6 +4,49 @@
     <div class="mb-8">
       <h2>Game State</h2>
       <div class="panel-row">
+        <!-- Game Controls -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Game Controls</h3>
+          </div>
+          <div class="panel__content">
+            <div class="controls-grid">
+              <Button
+                @click="gameController.startGame()"
+                variant="primary"
+                :disabled="!canStartGame"
+                :title="!canStartGame ? 'Need guinea pig to start game' : 'Start the game'"
+              >
+                Start Game
+              </Button>
+              <Button
+                @click="gameController.pauseGame('manual')"
+                variant="secondary"
+                :disabled="!canPauseGame"
+                :title="!canPauseGame ? 'Game must be active to pause' : 'Pause the game'"
+              >
+                Pause Game
+              </Button>
+              <Button
+                @click="gameController.resumeGame()"
+                variant="secondary"
+                :disabled="!canResumeGame"
+                :title="!canResumeGame ? 'Game must be paused to resume' : 'Resume the game'"
+              >
+                Resume Game
+              </Button>
+              <Button
+                @click="gameController.stopGame()"
+                variant="danger"
+                :disabled="!canStopGame"
+                :title="!canStopGame ? 'Game must be active to stop' : 'Stop the game'"
+              >
+                Stop Game
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <!-- Current State -->
         <div class="panel panel--compact">
           <div class="panel__header">
@@ -62,49 +105,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Controls Section -->
-      <div class="panel">
-        <div class="panel__header">
-          <h2>Game Controls</h2>
-        </div>
-        <div class="panel__content">
-          <div class="controls-grid">
-            <Button
-              @click="gameController.startGame()"
-              variant="primary"
-              :disabled="!canStartGame"
-              :title="!canStartGame ? 'Need guinea pig to start game' : 'Start the game'"
-            >
-              Start Game
-            </Button>
-            <Button
-              @click="gameController.pauseGame('manual')"
-              variant="secondary"
-              :disabled="!canPauseGame"
-              :title="!canPauseGame ? 'Game must be active to pause' : 'Pause the game'"
-            >
-              Pause Game
-            </Button>
-            <Button
-              @click="gameController.resumeGame()"
-              variant="secondary"
-              :disabled="!canResumeGame"
-              :title="!canResumeGame ? 'Game must be paused to resume' : 'Resume the game'"
-            >
-              Resume Game
-            </Button>
-            <Button
-              @click="gameController.stopGame()"
-              variant="danger"
-              :disabled="!canStopGame"
-              :title="!canStopGame ? 'Game must be active to stop' : 'Stop the game'"
-            >
-              Stop Game
-            </Button>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- Settings Display -->
@@ -117,16 +117,6 @@
             <h3>Auto-Save</h3>
           </div>
           <div class="panel__content">
-            <div class="stats-grid mb-4">
-              <div class="stat-item">
-                <span class="stat-label">Enabled:</span>
-                <span class="stat-value">{{ gameController.settings.autoSave.enabled }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Frequency:</span>
-                <span class="stat-value">{{ gameController.settings.autoSave.frequency }} seconds</span>
-              </div>
-            </div>
             <div class="flex flex-column gap-3">
               <Select
                 v-model="autoSaveFreq"
@@ -136,7 +126,7 @@
                 size="sm"
               />
               <Button @click="gameController.toggleAutoSave()" variant="tertiary" size="sm">
-                Toggle Auto-Save
+                {{ gameController.settings.autoSave.enabled ? 'Disable' : 'Enable' }} Auto-Save
               </Button>
             </div>
           </div>
@@ -148,16 +138,6 @@
             <h3>Tutorial</h3>
           </div>
           <div class="panel__content">
-            <div class="stats-grid mb-4">
-              <div class="stat-item">
-                <span class="stat-label">Mode:</span>
-                <span class="stat-value">{{ gameController.settings.tutorial.mode }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Global First Time:</span>
-                <span class="stat-value">{{ gameController.settings.tutorial.isGlobalFirstTime }}</span>
-              </div>
-            </div>
             <div class="flex flex-column gap-3">
               <Select
                 v-model="tutorialMode"
@@ -179,14 +159,7 @@
             <h3>System Settings</h3>
           </div>
           <div class="panel__content">
-            <div class="mb-6">
-              <h4>Performance</h4>
-              <div class="stats-grid mb-4">
-                <div class="stat-item">
-                  <span class="stat-label">Mode:</span>
-                  <span class="stat-value">{{ gameController.settings.performance.mode }}</span>
-                </div>
-              </div>
+            <div class="flex flex-column gap-3">
               <Select
                 v-model="performanceMode"
                 @change="updatePerformanceMode"
@@ -194,20 +167,8 @@
                 label="Performance Mode"
                 size="sm"
               />
-            </div>
-
-            <div class="flex flex-column gap-3">
-              <div>
-                <h4>Error Reporting</h4>
-                <div class="stats-grid mb-4">
-                  <div class="stat-item">
-                    <span class="stat-label">Enabled:</span>
-                    <span class="stat-value">{{ gameController.settings.errorReporting.enabled }}</span>
-                  </div>
-                </div>
-              </div>
               <Button @click="gameController.toggleErrorReporting()" variant="tertiary" size="sm">
-                Toggle Error Reporting
+                {{ gameController.settings.errorReporting.enabled ? 'Disable' : 'Enable' }} Error Reporting
               </Button>
             </div>
           </div>
@@ -293,6 +254,13 @@ const autoSaveFreq = computed({
   set: (value: number) => gameController.updateAutoSaveFrequency(value as 30 | 60 | 120)
 })
 
+const autoSaveFreqDisplay = computed(() => {
+  const seconds = gameController.settings.autoSave.frequency
+  if (seconds < 60) return `${seconds} seconds`
+  const minutes = seconds / 60
+  return `${minutes} minute${minutes > 1 ? 's' : ''}`
+})
+
 const tutorialMode = computed({
   get: () => gameController.settings.tutorial.mode,
   set: (value: string) => gameController.setTutorialMode(value as 'auto' | 'always_show' | 'never_show')
@@ -346,30 +314,6 @@ const resetFirstTimeUser = () => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: var(--space-3);
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-3);
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.stat-label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-medium);
-}
-
-.stat-value {
-  font-size: var(--font-size-base);
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-medium);
 }
 
 .flex {
