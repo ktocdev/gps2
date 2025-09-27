@@ -71,7 +71,14 @@ interface GuineaPigPreferences {
 
 ### State Management Interfaces
 
-Design consistent state patterns across all Pinia stores:
+Design consistent state patterns across all Pinia stores.
+
+**Architecture Note:** The game uses a **single-session model** with separate session and persistent state:
+- **Session State**: Resets on game end (guinea pig needs, habitat conditions, activity feed)
+- **Persistent State**: Survives sessions (currency, owned items, achievements, pet store inventory)
+- **Pet Store**: 10 guinea pig pool with swap cooldown management
+
+See `docs/systems/phase2/save-game-manager-plan.md` for implementation details.
 
 ```typescript
 // Base store state interface
@@ -115,20 +122,20 @@ interface NeedsControllerState extends BaseStoreState {
 interface StoreActions {
   // Initialization
   initialize(): Promise<StoreActionResult>;
-  reset(): StoreActionResult;
+  resetSessionState(): StoreActionResult;  // Reset session-only data
+  resetAll(): StoreActionResult;           // Complete reset
 
   // State updates
   updateState(updates: Partial<StoreState>): StoreActionResult;
   batchUpdate(updates: BatchUpdate[]): StoreActionResult;
 
-  // Persistence
-  save(): Promise<StoreActionResult>;
-  load(): Promise<StoreActionResult>;
-
   // Validation
   validate(): ValidationResult;
   sanitize(): StoreActionResult;
 }
+
+// Note: Persistence is handled automatically by Pinia persist plugin
+// Stores configure persistence in their defineStore options
 ```
 
 ### Component Interface Standards
@@ -254,33 +261,19 @@ export const useExampleStore = defineStore('example', () => {
     }
   }
 
-  // 4. Persistence
-  async function save(): Promise<StoreActionResult> {
-    try {
-      const serializedState = JSON.stringify(state);
-      localStorage.setItem('example-store', serializedState);
-      return { success: true, timestamp: Date.now() };
-    } catch (error) {
-      const errorMsg = 'Failed to save state';
-      state.error = errorMsg;
-      return { success: false, error: errorMsg, timestamp: Date.now() };
-    }
-  }
+  // 4. Getters for session vs persistent data
+  const sessionState = computed(() => ({
+    // Data that resets each game session
+    // Example: guinea pig needs, habitat conditions
+  }));
 
-  async function load(): Promise<StoreActionResult> {
-    try {
-      const saved = localStorage.getItem('example-store');
-      if (saved) {
-        const parsedState = JSON.parse(saved);
-        Object.assign(state, parsedState);
-      }
-      return { success: true, timestamp: Date.now() };
-    } catch (error) {
-      const errorMsg = 'Failed to load state';
-      state.error = errorMsg;
-      return { success: false, error: errorMsg, timestamp: Date.now() };
-    }
-  }
+  const persistentState = computed(() => ({
+    // Data that survives sessions
+    // Example: currency, owned items, achievements
+  }));
+
+  // Note: Actual persistence handled by Pinia persist plugin
+  // See store configuration at bottom of file
 
   // 5. Validation and cleanup
   function validate(): ValidationResult {
@@ -298,8 +291,13 @@ export const useExampleStore = defineStore('example', () => {
     };
   }
 
-  function cleanup(): void {
-    // Reset to initial state
+  function resetSessionState(): void {
+    // Reset only session-specific state
+    // Persistent state remains unchanged
+  }
+
+  function resetAll(): void {
+    // Complete reset including persistent state
     Object.assign(state, {
       isInitialized: false,
       lastUpdated: 0,
@@ -316,18 +314,27 @@ export const useExampleStore = defineStore('example', () => {
     // Getters
     isReady,
     hasRecentUpdate,
+    sessionState,
+    persistentState,
 
     // Actions
     initialize,
     updateState,
-    save,
-    load,
     validate,
-    cleanup,
+    resetSessionState,
+    resetAll,
 
     // For debugging only
     $dev: import.meta.env.DEV ? { state } : undefined
   };
+}, {
+  // Pinia persist plugin configuration
+  persist: {
+    key: 'gps2-example-store',
+    storage: localStorage,
+    // Optional: specify which paths to persist
+    // paths: ['persistentData', 'settings']
+  }
 });
 ```
 
@@ -449,23 +456,20 @@ export function useStoreBase<T extends BaseStoreState>(
     }
   }
 
-  async function saveToStorage(): Promise<StoreActionResult> {
-    try {
-      const serialized = JSON.stringify(state);
-      localStorage.setItem(`${storeName}-state`, serialized);
-      return { success: true, timestamp: Date.now() };
-    } catch (error) {
-      const errorMsg = 'Failed to save state';
-      state.error = errorMsg;
-      return { success: false, error: errorMsg, timestamp: Date.now() };
-    }
+  function resetBase(): void {
+    Object.assign(state, {
+      isInitialized: false,
+      lastUpdated: 0,
+      error: null,
+      isLoading: false
+    });
   }
 
   return {
     state,
     isReady,
     initializeBase,
-    saveToStorage
+    resetBase
   };
 }
 
