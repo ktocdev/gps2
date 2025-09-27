@@ -294,7 +294,6 @@ import { useRouter } from 'vue-router'
 import { useGameController } from '../../stores/gameController'
 import { useLoggingStore } from '../../stores/loggingStore'
 import Button from '../basic/Button.vue'
-import Select from '../basic/Select.vue'
 
 // Store instances
 const gameController = useGameController()
@@ -425,8 +424,6 @@ const createTestPig = (type: 'young' | 'adult' | 'senior' | 'random') => {
       break
   }
 
-  const today = new Date()
-  const birthdate = new Date(today.getTime() - (age * 24 * 60 * 60 * 1000))
   const gender = Math.random() > 0.5 ? 'sow' : 'boar'
   const coatType = coatTypes[Math.floor(Math.random() * coatTypes.length)]
 

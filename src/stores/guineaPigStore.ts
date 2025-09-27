@@ -149,63 +149,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return activeIds.length < 2
   })
 
-  // Default values and generators
-  const createDefaultPersonality = (): GuineaPigPersonality => ({
-    friendliness: Math.floor(Math.random() * 10) + 1,
-    playfulness: Math.floor(Math.random() * 10) + 1,
-    curiosity: Math.floor(Math.random() * 10) + 1,
-    independence: Math.floor(Math.random() * 10) + 1
-  })
-
-  const createDefaultPreferences = (): GuineaPigPreferences => {
-    const foods = ['hay', 'pellets', 'carrots', 'lettuce', 'bell_peppers', 'cucumber', 'apple']
-    const activities = ['tunneling', 'running', 'exploring', 'socializing', 'foraging', 'resting']
-    const habitats = ['cozy_corner', 'open_space', 'multi_level', 'hiding_spots', 'window_view']
-
-    return {
-      favoriteFood: [foods[Math.floor(Math.random() * foods.length)]],
-      favoriteActivity: [activities[Math.floor(Math.random() * activities.length)]],
-      socialPreference: ['solitary', 'social', 'mixed'][Math.floor(Math.random() * 3)] as 'solitary' | 'social' | 'mixed',
-      habitatPreference: [habitats[Math.floor(Math.random() * habitats.length)]]
-    }
-  }
-
-  const createDefaultNeeds = (): GuineaPigNeeds => ({
-    hunger: Math.floor(Math.random() * 30) + 20, // Start somewhat hungry (20-50)
-    thirst: Math.floor(Math.random() * 20) + 10, // Start slightly thirsty (10-30)
-    happiness: Math.floor(Math.random() * 25) + 15, // Start needing some happiness (15-40)
-    cleanliness: Math.floor(Math.random() * 15) + 5, // Start fairly clean (5-20)
-    health: Math.floor(Math.random() * 10) + 5, // Start fairly healthy (5-15)
-    energy: Math.floor(Math.random() * 35) + 25, // Start somewhat tired (25-60)
-    social: Math.floor(Math.random() * 40) + 30, // Start needing some social interaction (30-70)
-    nails: Math.floor(Math.random() * 20) + 10, // Start with moderate nail growth (10-30)
-    chew: Math.floor(Math.random() * 30) + 20, // Start needing some chew items (20-50)
-    shelter: Math.floor(Math.random() * 15) + 5 // Start feeling fairly secure (5-20)
-  })
-
-  const createDefaultStats = (): GuineaPigStats => ({
-    weight: Math.floor(Math.random() * 400) + 600, // 600-1000g (realistic range)
-    age: 0, // New guinea pig
-    level: 1,
-    experience: 0,
-    wellness: 75, // Start with good wellness (will be calculated later)
-    overallMood: Math.floor(Math.random() * 30) + 60 // Start with good mood (60-90)
-  })
-
-  const createDefaultAppearance = (): GuineaPigAppearance => {
-    const furColors = ['brown', 'black', 'white', 'golden', 'grey', 'cream', 'chocolate']
-    const furPatterns = ['solid', 'spotted', 'striped', 'patched', 'brindle', 'roan']
-    const eyeColors = ['brown', 'black', 'red', 'blue']
-    const sizes = ['small', 'medium', 'large']
-
-    return {
-      furColor: furColors[Math.floor(Math.random() * furColors.length)],
-      furPattern: furPatterns[Math.floor(Math.random() * furPatterns.length)],
-      eyeColor: eyeColors[Math.floor(Math.random() * eyeColors.length)],
-      size: sizes[Math.floor(Math.random() * sizes.length)] as 'small' | 'medium' | 'large'
-    }
-  }
-
 
 
   const getGuineaPig = (id: string): GuineaPig | null => {
