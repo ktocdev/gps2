@@ -345,9 +345,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     playerProgression.incrementGameSessions()
     playerProgression.incrementGuineaPigsAdopted()
 
-    // Reset and start the game for the new session
+    // Start the game for the new session
     const gameController = useGameController()
-    gameController.stopGame() // Reset any previous game state
     gameController.startGame()
 
     const logging = getLoggingStore()

@@ -19,6 +19,10 @@
         <PetStoreDebugView />
       </template>
 
+      <template #inventory>
+        <InventoryDebugView />
+      </template>
+
       <template #logging>
         <LoggingSystemView />
       </template>
@@ -35,6 +39,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import TabContainer, { type Tab } from '../components/layout/TabContainer.vue'
 import GameControllerView from './GameControllerView.vue'
 import PetStoreDebugView from './PetStoreDebugView.vue'
+import InventoryDebugView from './InventoryDebugView.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
 import { useGameController } from '../stores/gameController'
@@ -55,6 +60,11 @@ const debugTabs: Tab[] = [
     id: 'pet-store',
     label: 'Pet Store',
     icon: '🏪',
+  },
+  {
+    id: 'inventory',
+    label: 'Inventory',
+    icon: '🎒',
   },
   {
     id: 'logging',
