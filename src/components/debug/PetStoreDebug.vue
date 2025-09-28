@@ -784,6 +784,53 @@ const handleRefresh = () => {
   margin-block: 1rem;
 }
 
+/* === Preference Row Layout === */
+/* Preference row layout - category on top, likes/dislikes below */
+.preference-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  border: none;
+  padding-inline: 0;
+  margin-inline: 0;
+  min-inline-size: 0;
+}
+
+.preference-row__label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  padding-inline: 0;
+  margin-block-end: 0;
+}
+
+.preference-row__controls {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.preference-row__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.preference-row__group-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.preference-row__selects {
+  display: flex;
+  gap: var(--space-2);
+}
+
 /* === Responsive Layout === */
 @media (min-width: 768px) {
   .pet-store-debug {

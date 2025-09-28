@@ -469,33 +469,6 @@ const resetFirstTimeUser = () => {
   gap: var(--space-3);
 }
 
-.flex {
-  display: flex;
-}
-
-.flex-column {
-  flex-direction: column;
-}
-
-.gap-3 {
-  gap: var(--space-3);
-}
-
-.mt-3 {
-  margin-top: var(--space-3);
-}
-
-.mb-4 {
-  margin-bottom: var(--space-4);
-}
-
-.mb-6 {
-  margin-bottom: var(--space-6);
-}
-
-.mb-8 {
-  margin-bottom: var(--space-8);
-}
 
 pre {
   background-color: var(--color-background-tertiary);

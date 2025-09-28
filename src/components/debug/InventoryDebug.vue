@@ -188,19 +188,4 @@ const resetCurrency = () => {
   margin-bottom: var(--space-1);
 }
 
-.text-center {
-  text-align: center;
-}
-
-.text-muted {
-  color: var(--color-text-muted);
-}
-
-.mb-2 {
-  margin-bottom: var(--space-2);
-}
-
-.mb-4 {
-  margin-bottom: var(--space-4);
-}
 </style>
