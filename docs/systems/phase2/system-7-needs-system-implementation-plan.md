@@ -210,8 +210,8 @@ export interface GuineaPigNeeds {
 ---
 
 ### Phase 2: Need Decay System
-**Duration:** 3-4 days
-**Goal:** Implement time-based need decay with individual characteristics
+**Duration:** 2-3 days
+**Goal:** Implement time-based need decay with health-based modifiers
 
 #### Tasks
 1. **Define Need Decay Configuration**
@@ -220,14 +220,7 @@ export interface GuineaPigNeeds {
      needType: keyof GuineaPigNeeds
      baseDecayRate: number        // Points per hour
      criticalThreshold: number    // Below this = urgent
-     modifiers: {
-       age: {
-         young: number    // < 1 year multiplier
-         adult: number    // 1-5 years multiplier
-         senior: number   // > 5 years multiplier
-       }
-       health: number     // Multiplier when health is low
-     }
+     healthModifier: number       // Multiplier when health is low
    }
 
    const needDecayConfigs: Record<string, NeedDecayConfig> = {
@@ -235,91 +228,61 @@ export interface GuineaPigNeeds {
        needType: 'hunger',
        baseDecayRate: 5.0,  // 5 points per hour
        criticalThreshold: 25,
-       modifiers: {
-         age: { young: 1.2, adult: 1.0, senior: 0.8 },
-         health: 1.1
-       }
+       healthModifier: 1.1
      },
      thirst: {
        needType: 'thirst',
        baseDecayRate: 6.0,  // Faster than hunger
        criticalThreshold: 20,
-       modifiers: {
-         age: { young: 1.2, adult: 1.0, senior: 0.9 },
-         health: 1.15
-       }
+       healthModifier: 1.15
      },
      energy: {
        needType: 'energy',
        baseDecayRate: 4.0,
        criticalThreshold: 25,
-       modifiers: {
-         age: { young: 1.3, adult: 1.0, senior: 1.1 },
-         health: 1.2
-       }
+       healthModifier: 1.2
      },
      happiness: {
        needType: 'happiness',
        baseDecayRate: 3.0,  // Slower decay
        criticalThreshold: 30,
-       modifiers: {
-         age: { young: 1.0, adult: 1.0, senior: 1.0 },
-         health: 0.9
-       }
+       healthModifier: 0.9
      },
      cleanliness: {
        needType: 'cleanliness',
        baseDecayRate: 2.5,
        criticalThreshold: 30,
-       modifiers: {
-         age: { young: 1.0, adult: 1.0, senior: 1.0 },
-         health: 1.0
-       }
+       healthModifier: 1.0
      },
      social: {
        needType: 'social',
        baseDecayRate: 3.5,
        criticalThreshold: 30,
-       modifiers: {
-         age: { young: 1.1, adult: 1.0, senior: 0.9 },
-         health: 1.0
-       }
+       healthModifier: 1.0
      },
      shelter: {
        needType: 'shelter',
        baseDecayRate: 2.0,
        criticalThreshold: 35,
-       modifiers: {
-         age: { young: 1.1, adult: 1.0, senior: 1.0 },
-         health: 1.0
-       }
+       healthModifier: 1.0
      },
      nails: {
        needType: 'nails',
        baseDecayRate: 0.8,  // Very slow growth
        criticalThreshold: 25,
-       modifiers: {
-         age: { young: 1.3, adult: 1.0, senior: 0.7 },
-         health: 1.0
-       }
+       healthModifier: 1.0
      },
      chew: {
        needType: 'chew',
        baseDecayRate: 3.0,
        criticalThreshold: 30,
-       modifiers: {
-         age: { young: 1.2, adult: 1.0, senior: 0.9 },
-         health: 1.0
-       }
+       healthModifier: 1.0
      },
      health: {
        needType: 'health',
        baseDecayRate: 1.0,  // Very slow unless sick
        criticalThreshold: 40,
-       modifiers: {
-         age: { young: 0.8, adult: 1.0, senior: 1.2 },
-         health: 1.0
-       }
+       healthModifier: 1.0
      }
    }
    ```
@@ -331,10 +294,6 @@ export interface GuineaPigNeeds {
      const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
      if (!guineaPig) return
 
-     // Calculate age multiplier
-     const ageInYears = (Date.now() - guineaPig.birthDate) / (1000 * 60 * 60 * 24 * 365)
-     const ageMultiplier = getAgeMultiplier(ageInYears)
-
      // Process each need
      Object.entries(needDecayConfigs).forEach(([needType, config]) => {
        const currentValue = guineaPig.needs[needType as keyof GuineaPigNeeds]
@@ -343,12 +302,9 @@ export interface GuineaPigNeeds {
        const hoursPassed = deltaTime / (1000 * 60 * 60)
        let decay = config.baseDecayRate * hoursPassed
 
-       // Apply age modifier
-       decay *= ageMultiplier[needType as keyof GuineaPigNeeds]
-
        // Apply health modifier if health is low
        if (guineaPig.needs.health < 50) {
-         decay *= config.modifiers.health
+         decay *= config.healthModifier
        }
 
        // Apply decay
@@ -411,13 +367,12 @@ export interface GuineaPigNeeds {
 #### Deliverables
 - ✅ Need decay configuration for all 10 needs
 - ✅ Time-based decay processing
-- ✅ Age-based decay modifiers
 - ✅ Health-based decay modifiers
 - ✅ Need interdependency system
 
 #### Testing
 - Test each need's decay rate over time
-- Verify age modifiers work correctly
+- Test health modifier impact on decay rates
 - Test health impact on other needs
 - Verify interdependencies (cleanliness → health)
 - Test critical threshold detection
