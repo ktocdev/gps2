@@ -35,13 +35,12 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ---
 
-## Phase 2: Core Game Entities & Timing (Systems 5-11)
+## Phase 2: Core Game Entities & Timing (Systems 6-11)
 **Duration:** 3-4 weeks
 **Goal:** Implement core guinea pig simulation with needs, preferences, and timing systems
 
 ### Systems
-5. **[Guinea Pig Creation System](docs/systems/phase2/system-5-guinea-pig-creation.md)** - Intro screen with enhanced forms, accessibility, and segmented button groups ✅ **UI Completed** (September 20, 2025 | Branch: GPS2-7)
-6. **[Guinea Pig Store](docs/systems/phase2/system-6-guinea-pig-store.md)** - Entity management with data persistence ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
+6. **[Guinea Pig Store](docs/systems/phase2/system-6-guinea-pig-store.md)** - Entity management with data persistence ✅ **Completed including System 6.8** (September 28, 2025 | Branch: GPS2-11)
 6.5. **[Pet Store & Game Session Manager](docs/systems/phase2/system-6.5-pet-store-manager.md)** - Single-session game with 10-guinea pig pet store, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-10)
 7. **[Needs System Architecture](docs/systems/phase2/system-7-needs-system.md)** - Core game mechanics with internal wellness system (connect to needs bars, enhanced friendship meter)
 8. **[Needs Controller Store](docs/systems/phase2/system-8-needs-controller-store.md)** - Centralized need processing with wellness calculation and friendship penalties (connect to live needs display, enhanced friendship feedback)
@@ -51,14 +50,13 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ### Debug Panel Development (Phase 2)
 - **Needs System Debug Panel** - Built alongside Needs System (System 7)
-- **Guinea Pig Debug Panel** - Built alongside Guinea Pig Store (System 6) ✅ **Completed** (September 21, 2025 | Branch: GPS2-7)
+- **Guinea Pig Debug Panel** - Built alongside Guinea Pig Store (System 6) ✅ **Enhanced** (September 28, 2025 | Branch: GPS2-11) - Accessibility improvements, fieldset/legend structure, horizontal dividers
 - **Wellness Debug Panel** - Built alongside Needs Controller (System 8)
 - **Habitat Debug Panel** - Built alongside Habitat Conditions (System 9)
+- **Inventory Debug Panel** - ✅ **Partially Implemented Early** (September 28, 2025 | Branch: GPS2-11) - Currency controls only, full implementation planned for Phase 3
 
 ### Key Deliverables
-- **Enhanced guinea pig creation** with improved form UX, accessibility features, and segmented button groups ✅ **UI Completed**
-- **Guinea pig store implementation** with complete data structure, CRUD operations, and debug panel ✅ **Core Completed**
-- **Functional guinea pig creation** with hidden preference generation ✅ **Completed**
+- **Guinea pig store implementation** with complete data structure, CRUD operations, and enhanced debug panel ✅ **Fully Completed including System 6.8**
 - **Complete needs system** with all 7 needs categories and interdependencies
 - **Wellness calculation system** (internal only) with friendship penalties
 - **Habitat conditions** separate from guinea pig needs with resource management
@@ -85,7 +83,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ### Debug Panel Development (Phase 3)
 - **Habitat Item Debug Panel** - Built alongside Habitat Item System (System 12)
-- **Inventory Debug Panel** - Built alongside Inventory & Store System (System 13)
+- **Inventory Debug Panel** - Built alongside Inventory & Store System (System 13) ⚡ **Currency controls implemented early** (September 28, 2025 | Branch: GPS2-11)
 - **Maintenance Debug Panel** - Built alongside Habitat Maintenance System (System 14)
 
 ### Key Deliverables
@@ -101,9 +99,6 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 - **Item effectiveness system** with newness bonuses and familiarity decay
 - **Strategic purchasing decisions** balancing happiness items vs necessities
 - **Currency earning** through guinea pig care and achievement milestones
-
-### Integration Reminders
-- **Update Guinea Pig Creation Form** - Replace hardcoded toy/item preferences with actual items from Inventory Store system (System 13) once item database is established
 
 ---
 
@@ -192,3 +187,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 - **Phase 5:** Polished experience with unified Debug Menu and optional enhancements
 
 This phased approach ensures steady progress with continuous validation, early risk mitigation, and a complete playable game by Phase 4, with Phase 5 focused purely on enhancement and polish.
+
+## Archived Systems
+
+- **System 5: Guinea Pig Creation** - Character creation system archived to `docs/archive/system-5-guinea-pig-creation.md` (September 28, 2025)

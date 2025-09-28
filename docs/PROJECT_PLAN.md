@@ -33,7 +33,6 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 **Note:** Debug Menu panels for specific game systems (Needs, Wellness, Habitat, etc.) are built incrementally alongside each system in subsequent phases, with final consolidation into a unified Debug Menu tab in Phase 5.
 
 ##### Phase 2: Core Entities & Timing
-- **[System 5: Guinea Pig Creation](systems/phase2/system-5-guinea-pig-creation.md)** - Character creation with enhanced forms, accessibility, and segmented button groups ✅ **Completed** (September 20, 2025 | Branch: GPS2-7)
 - **[System 6: Guinea Pig Store](systems/phase2/system-6-guinea-pig-store.md)** - Central guinea pig state management ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
 - **[System 6.5: Pet Store & Game Session Manager](systems/phase2/system-6.5-pet-store-manager.md)** - Single-session pet store system with 10 random guinea pigs, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-11)
 - **[System 7: Needs System](systems/phase2/system-7-needs-system.md)** - Seven fundamental needs with decay and satisfaction
@@ -68,6 +67,7 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 #### Archive
 **[archive/](archive/)** - Reference materials
 - **[PROJECT_PLAN_FULL.md](archive/PROJECT_PLAN_FULL.md)** - Complete original monolithic documentation (archived 9/14/2025)
+- **[system-5-guinea-pig-creation.md](archive/system-5-guinea-pig-creation.md)** - Character creation system documentation (archived 9/28/2025)
 
 ## Quick Start Guide
 
@@ -88,13 +88,15 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 3. Dive into specific system documentation as needed
 
 ## Current Development Status
-**Branch:** GPS2-11 | **Updated:** September 27, 2025
+**Branch:** GPS2-11 | **Updated:** September 28, 2025
 
 ### Recently Completed ✅
 - **Pet Store & Game Session Manager**: Complete implementation with PetStoreManager store, pet store debug panel, GameController integration, and 10-guinea pig generation system
-- **Debug Interface**: Mobile-first responsive 3-panel layout with guinea pig selection, editing, and real-time state synchronization
-- **Session Management**: Game session lifecycle with auto-start, currency penalties, and guinea pig return flow
-- **Form System**: Created reusable Slider component and form utility styles
+- **System 6.8 Preference Randomization**: Natural variation in guinea pig preferences with guaranteed 1-2 items per category and no overlap between likes/dislikes
+- **Enhanced Debug Interface**: Accessibility improvements with fieldset/legend structure, horizontal dividers, and improved form organization
+- **Early Inventory Debug Panel**: Phase 3 Inventory tab implemented early with currency controls (add/deduct, quick actions, reset functionality)
+- **Session Management**: Game session lifecycle with refined controls, simplified UI, and clear "Return Guinea Pigs & End Session" functionality
+- **Enhanced Form System**: Slider component with prefix/suffix support for currency display, improved accessibility
 - **Guinea Pig Store Persistence Fix**: Resolved data persistence issues, documented guinea pig store architecture
 
 ### Next Phase Priority 📋
