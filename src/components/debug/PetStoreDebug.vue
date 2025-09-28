@@ -11,7 +11,7 @@
             <span class="stat-value">{{ petStoreManager.canRefreshPetStore ? 'Yes' : 'No' }}</span>
           </div>
         </div>
-        <div class="flex-col gap-4 mt-4">
+        <div class="flex flex-col gap-4 mt-4">
           <label class="checkbox-label">
             <input
               type="checkbox"
@@ -79,96 +79,110 @@
       </div>
       <div class="panel__content">
         <div v-if="selectedGuineaPig" class="pet-store-debug__editor">
+          <div v-if="isSelectedGuineaPigActive" class="pet-store-debug__warning">
+            ⚠️ Cannot edit active guinea pig in game session
+          </div>
           <div class="panel__header">
             <h4>Basic Info</h4>
           </div>
-          <label class="form-field-inline">
-            Name:
-            <input
-              type="text"
-              v-model="selectedGuineaPig.name"
-              class="input"
-            />
-          </label>
-          <label class="form-field-inline">
-            Gender:
-            <select v-model="selectedGuineaPig.gender" class="input">
-              <option value="male">Neutered Boar</option>
-              <option value="female">Sow</option>
-            </select>
-          </label>
-          <label class="form-field-inline">
-            Breed:
-            <select v-model="selectedGuineaPig.breed" class="input">
-              <option v-if="!breedOptions.includes(selectedGuineaPig.breed)" :value="selectedGuineaPig.breed">{{ capitalize(selectedGuineaPig.breed) }}</option>
-              <option v-for="breed in breedOptions" :key="breed" :value="breed">{{ capitalize(breed) }}</option>
-            </select>
-          </label>
+          <div class="flex flex-col gap-3">
+            <label class="form-field-inline">
+              Name:
+              <input
+                type="text"
+                v-model="selectedGuineaPig.name"
+                class="input"
+                :disabled="isSelectedGuineaPigActive"
+              />
+            </label>
+            <label class="form-field-inline">
+              Gender:
+              <select v-model="selectedGuineaPig.gender" class="input" :disabled="isSelectedGuineaPigActive">
+                <option value="male">Neutered Boar</option>
+                <option value="female">Sow</option>
+              </select>
+            </label>
+            <label class="form-field-inline">
+              Breed:
+              <select v-model="selectedGuineaPig.breed" class="input" :disabled="isSelectedGuineaPigActive">
+                <option v-if="!breedOptions.includes(selectedGuineaPig.breed)" :value="selectedGuineaPig.breed">{{ capitalize(selectedGuineaPig.breed) }}</option>
+                <option v-for="breed in breedOptions" :key="breed" :value="breed">{{ capitalize(breed) }}</option>
+              </select>
+            </label>
+          </div>
 
           <div class="panel__header">
             <h4>Personality</h4>
           </div>
-          <Slider
-            v-model="selectedGuineaPig.personality.friendliness"
-            :min="1"
-            :max="10"
-            label="Friendliness"
-            size="sm"
-          />
-          <Slider
-            v-model="selectedGuineaPig.personality.playfulness"
-            :min="1"
-            :max="10"
-            label="Playfulness"
-            size="sm"
-          />
-          <Slider
-            v-model="selectedGuineaPig.personality.curiosity"
-            :min="1"
-            :max="10"
-            label="Curiosity"
-            size="sm"
-          />
-          <Slider
-            v-model="selectedGuineaPig.personality.independence"
-            :min="1"
-            :max="10"
-            label="Independence"
-            size="sm"
-          />
+          <div class="flex flex-col gap-3">
+            <Slider
+              v-model="selectedGuineaPig.personality.friendliness"
+              :min="1"
+              :max="10"
+              label="Friendliness"
+              size="sm"
+              :disabled="isSelectedGuineaPigActive"
+            />
+            <Slider
+              v-model="selectedGuineaPig.personality.playfulness"
+              :min="1"
+              :max="10"
+              label="Playfulness"
+              size="sm"
+              :disabled="isSelectedGuineaPigActive"
+            />
+            <Slider
+              v-model="selectedGuineaPig.personality.curiosity"
+              :min="1"
+              :max="10"
+              label="Curiosity"
+              size="sm"
+              :disabled="isSelectedGuineaPigActive"
+            />
+            <Slider
+              v-model="selectedGuineaPig.personality.independence"
+              :min="1"
+              :max="10"
+              label="Independence"
+              size="sm"
+              :disabled="isSelectedGuineaPigActive"
+            />
+          </div>
 
           <div class="panel__header">
             <h4>Appearance</h4>
           </div>
-          <label class="form-field-inline">
-            Fur Color:
-            <select v-model="selectedGuineaPig.appearance.furColor" class="input">
-              <option v-if="!furColorOptions.includes(selectedGuineaPig.appearance.furColor)" :value="selectedGuineaPig.appearance.furColor">{{ capitalize(selectedGuineaPig.appearance.furColor) }}</option>
-              <option v-for="color in furColorOptions" :key="color" :value="color">{{ capitalize(color) }}</option>
-            </select>
-          </label>
-          <label class="form-field-inline">
-            Fur Pattern:
-            <select v-model="selectedGuineaPig.appearance.furPattern" class="input">
-              <option v-if="!furPatternOptions.includes(selectedGuineaPig.appearance.furPattern)" :value="selectedGuineaPig.appearance.furPattern">{{ capitalize(selectedGuineaPig.appearance.furPattern) }}</option>
-              <option v-for="pattern in furPatternOptions" :key="pattern" :value="pattern">{{ capitalize(pattern) }}</option>
-            </select>
-          </label>
-          <label class="form-field-inline">
-            Eye Color:
-            <select v-model="selectedGuineaPig.appearance.eyeColor" class="input">
-              <option v-if="!eyeColorOptions.includes(selectedGuineaPig.appearance.eyeColor)" :value="selectedGuineaPig.appearance.eyeColor">{{ capitalize(selectedGuineaPig.appearance.eyeColor) }}</option>
-              <option v-for="eyeColor in eyeColorOptions" :key="eyeColor" :value="eyeColor">{{ capitalize(eyeColor) }}</option>
-            </select>
-          </label>
-          <label class="form-field-inline">
-            Size:
-            <select v-model="selectedGuineaPig.appearance.size" class="input">
-              <option value="small">Small</option>
-              <option value="medium">Medium</option>
-              <option value="large">Large</option>
-            </select>
-          </label>
+          <div class="flex flex-col gap-3">
+            <label class="form-field-inline">
+              Fur Color:
+              <select v-model="selectedGuineaPig.appearance.furColor" class="input" :disabled="isSelectedGuineaPigActive">
+                <option v-if="!furColorOptions.includes(selectedGuineaPig.appearance.furColor)" :value="selectedGuineaPig.appearance.furColor">{{ capitalize(selectedGuineaPig.appearance.furColor) }}</option>
+                <option v-for="color in furColorOptions" :key="color" :value="color">{{ capitalize(color) }}</option>
+              </select>
+            </label>
+            <label class="form-field-inline">
+              Fur Pattern:
+              <select v-model="selectedGuineaPig.appearance.furPattern" class="input" :disabled="isSelectedGuineaPigActive">
+                <option v-if="!furPatternOptions.includes(selectedGuineaPig.appearance.furPattern)" :value="selectedGuineaPig.appearance.furPattern">{{ capitalize(selectedGuineaPig.appearance.furPattern) }}</option>
+                <option v-for="pattern in furPatternOptions" :key="pattern" :value="pattern">{{ capitalize(pattern) }}</option>
+              </select>
+            </label>
+            <label class="form-field-inline">
+              Eye Color:
+              <select v-model="selectedGuineaPig.appearance.eyeColor" class="input" :disabled="isSelectedGuineaPigActive">
+                <option v-if="!eyeColorOptions.includes(selectedGuineaPig.appearance.eyeColor)" :value="selectedGuineaPig.appearance.eyeColor">{{ capitalize(selectedGuineaPig.appearance.eyeColor) }}</option>
+                <option v-for="eyeColor in eyeColorOptions" :key="eyeColor" :value="eyeColor">{{ capitalize(eyeColor) }}</option>
+              </select>
+            </label>
+            <label class="form-field-inline">
+              Size:
+              <select v-model="selectedGuineaPig.appearance.size" class="input" :disabled="isSelectedGuineaPigActive">
+                <option value="small">Small</option>
+                <option value="medium">Medium</option>
+                <option value="large">Large</option>
+              </select>
+            </label>
+          </div>
         </div>
         <p v-else class="pet-store-debug__empty-message">Click a guinea pig to edit</p>
       </div>
@@ -190,6 +204,11 @@ const selectedGuineaPig = ref<GuineaPig | null>(null)
 const isGuineaPigActive = (guineaPigId: string): boolean => {
   return petStoreManager.activeGameSession?.guineaPigIds.includes(guineaPigId) ?? false
 }
+
+const isSelectedGuineaPigActive = computed(() => {
+  if (!selectedGuineaPig.value) return false
+  return isGuineaPigActive(selectedGuineaPig.value.id)
+})
 
 // Dynamic option arrays from pet store manager
 const furColorOptions = petStoreManager.furColors
@@ -245,11 +264,11 @@ const handleRefresh = () => {
 .pet-store-debug__guinea-pig-item {
   padding-block: 0.75rem;
   padding-inline: 1rem;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  background-color: var(--color-bg-secondary);
+  border: 2px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
 }
 
 .pet-store-debug__guinea-pig-item:hover {
@@ -299,11 +318,36 @@ const handleRefresh = () => {
   flex-wrap: wrap;
 }
 
+/* === Editor Warning === */
+.pet-store-debug__warning {
+  padding: var(--space-3);
+  background-color: var(--color-warning-bg);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-base);
+  margin-block-end: var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
 /* === Editor Section === */
 .pet-store-debug__editor {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+}
+
+.pet-store-debug__editor .panel__header:not(:first-child) {
+  margin-block-start: var(--space-6);
+}
+
+/* === Disabled Form Controls === */
+.pet-store-debug__editor .input:disabled,
+.pet-store-debug__editor select:disabled {
+  background-color: var(--color-neutral-600);
+  color: var(--color-neutral-200);
+  border-color: var(--color-neutral-500);
+  cursor: not-allowed;
+  opacity: 0.9;
 }
 
 .pet-store-debug__empty-message {
