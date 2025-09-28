@@ -831,6 +831,30 @@ const handleRefresh = () => {
   gap: var(--space-2);
 }
 
+/* === Preference Checkboxes Layout === */
+/* Grouped Checkboxes - For preference lists */
+.preference-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-inline-start: var(--space-2);
+}
+
+.preference-category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.preference-category-label {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-block-end: var(--space-1);
+}
+
 /* === Responsive Layout === */
 @media (min-width: 768px) {
   .pet-store-debug {
