@@ -40,14 +40,14 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 **Goal:** Implement core guinea pig simulation with needs, preferences, and timing systems
 
 ### Systems
-5. **[Guinea Pig Creation System](docs/systems/phase2/guinea-pig-creation.md)** - Intro screen with enhanced forms, accessibility, and segmented button groups ✅ **UI Completed** (September 20, 2025 | Branch: GPS2-7)
-6. **[Guinea Pig Store](docs/systems/phase2/guinea-pig-store.md)** - Entity management with data persistence ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
-6.5. **[Pet Store & Game Session Manager](docs/systems/phase2/save-game-manager-plan.md)** - Single-session game with 10-guinea pig pet store, persistent progression, and session management 📋 **Planned** (September 27, 2025 | Branch: GPS2-9)
-7. **[Needs System Architecture](docs/systems/phase2/needs-system.md)** - Core game mechanics with internal wellness system (connect to needs bars, enhanced friendship meter)
-8. **[Needs Controller Store](docs/systems/phase2/needs-controller-store.md)** - Centralized need processing with wellness calculation and friendship penalties (connect to live needs display, enhanced friendship feedback)
-9. **[Habitat Conditions Store](docs/systems/phase2/habitat-conditions.md)** - Environmental condition tracking (cleanliness, bedding freshness, water level) with resource management
-10. **[Interval Management System](docs/systems/phase2/game-timing.md)** - Game timing that drives needs decay, friendship penalties, and habitat condition changes
-11. **[Game Loop Integration](docs/systems/phase2/game-timing.md)** - Connect needs system with timing for core functionality including wellness-to-friendship feedback and habitat-to-needs integration
+5. **[Guinea Pig Creation System](docs/systems/phase2/system-5-guinea-pig-creation.md)** - Intro screen with enhanced forms, accessibility, and segmented button groups ✅ **UI Completed** (September 20, 2025 | Branch: GPS2-7)
+6. **[Guinea Pig Store](docs/systems/phase2/system-6-guinea-pig-store.md)** - Entity management with data persistence ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
+6.5. **[Pet Store & Game Session Manager](docs/systems/phase2/system-6.5-pet-store-manager.md)** - Single-session game with 10-guinea pig pet store, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-10)
+7. **[Needs System Architecture](docs/systems/phase2/system-7-needs-system.md)** - Core game mechanics with internal wellness system (connect to needs bars, enhanced friendship meter)
+8. **[Needs Controller Store](docs/systems/phase2/system-8-needs-controller-store.md)** - Centralized need processing with wellness calculation and friendship penalties (connect to live needs display, enhanced friendship feedback)
+9. **[Habitat Conditions Store](docs/systems/phase2/system-9-habitat-conditions.md)** - Environmental condition tracking (cleanliness, bedding freshness, water level) with resource management
+10. **[Interval Management System](docs/systems/phase2/system-10-11-game-timing.md)** - Game timing that drives needs decay, friendship penalties, and habitat condition changes
+11. **[Game Loop Integration](docs/systems/phase2/system-10-11-game-timing.md)** - Connect needs system with timing for core functionality including wellness-to-friendship feedback and habitat-to-needs integration
 
 ### Debug Panel Development (Phase 2)
 - **Needs System Debug Panel** - Built alongside Needs System (System 7)

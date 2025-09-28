@@ -10,7 +10,7 @@
 
 Implementation plan for the Pet Store Debug Panel - a comprehensive testing interface for the pet store and game session management system. This debug panel enables testing of all pet store features before building the player-facing game UI.
 
-**Parent Documentation:** See `save-game-manager-plan.md` for complete pet store architecture.
+**Parent Documentation:** See `system-6.5-pet-store-manager.md` for complete pet store architecture.
 
 ## Readiness Assessment
 

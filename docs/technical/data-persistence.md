@@ -11,7 +11,7 @@ Core browser storage patterns and utilities for implementing robust data persist
 - **Persistent State**: Survives sessions (currency, owned items, achievements, statistics)
 - **Pet Store State**: 10 guinea pig pool with swap cooldown management
 
-See [Pet Store & Game Session Manager](../systems/phase2/save-game-manager-plan.md) for implementation-specific state management details.
+See [Pet Store & Game Session Manager](../systems/phase2/system-6.5-pet-store-manager.md) for implementation-specific state management details.
 
 ## Storage Technology Detection
 
@@ -583,4 +583,4 @@ class AutoSaveManager {
 5. **Handle beforeunload** - Save on page exit attempts
 6. **Test degradation** - App should work with memory-only storage
 
-See [Pet Store & Game Session Manager](../systems/phase2/save-game-manager-plan.md) for specific implementation details of state persistence in the current architecture.
+See [Pet Store & Game Session Manager](../systems/phase2/system-6.5-pet-store-manager.md) for specific implementation details of state persistence in the current architecture.

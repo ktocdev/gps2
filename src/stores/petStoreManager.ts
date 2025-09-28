@@ -206,6 +206,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         size: ['small', 'medium', 'large'][Math.floor(Math.random() * 3)] as 'small' | 'medium' | 'large'
       },
 
+      friendship: 50,
       relationships: {},
       totalInteractions: 0,
       lifetimeHappiness: 100,

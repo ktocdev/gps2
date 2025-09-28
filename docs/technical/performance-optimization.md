@@ -12,7 +12,7 @@ This guide provides performance optimization strategies specifically designed fo
 - **Automatic Persistence**: Pinia persist plugin handles all data persistence
 - **Performance Focus**: Optimize reactive updates and game loop efficiency
 
-See `docs/systems/phase2/save-game-manager-plan.md` for architecture details.
+See [Pet Store & Game Session Manager](../systems/phase2/system-6.5-pet-store-manager.md) for architecture details.
 
 ## Game Loop Optimization
 

@@ -69,7 +69,8 @@ export interface GuineaPig {
   stats: GuineaPigStats
   appearance: GuineaPigAppearance
 
-  // Relationship data (for future friendship system)
+  // Relationship data
+  friendship: number          // 0-100: Relationship with player
   relationships: Record<string, number> // guinea pig ID -> friendship level (0-100)
 
   // Tracking data
@@ -381,6 +382,30 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return true
   }
 
+  const adjustFriendship = (id: string, amount: number): boolean => {
+    const guineaPig = collection.value.guineaPigs[id]
+    if (!guineaPig) return false
+
+    const oldFriendship = guineaPig.friendship
+    guineaPig.friendship = Math.max(0, Math.min(100, guineaPig.friendship + amount))
+    collection.value.lastUpdated = Date.now()
+
+    if (Math.abs(amount) > 0.1) {
+      getLoggingStore().logActivity({
+        category: 'relationship',
+        action: amount > 0 ? 'friendship_increased' : 'friendship_decreased',
+        details: {
+          guineaPigId: id,
+          oldFriendship,
+          newFriendship: guineaPig.friendship,
+          change: amount
+        }
+      })
+    }
+
+    return true
+  }
+
   return {
     // State
     collection,
@@ -419,7 +444,10 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
     // Pet store integration
     resetGuineaPigNeeds,
-    returnToStore
+    returnToStore,
+
+    // Relationship management
+    adjustFriendship
   }
 }, {
   persist: {

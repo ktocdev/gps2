@@ -78,7 +78,7 @@ Design consistent state patterns across all Pinia stores.
 - **Persistent State**: Survives sessions (currency, owned items, achievements, pet store inventory)
 - **Pet Store**: 10 guinea pig pool with swap cooldown management
 
-See `docs/systems/phase2/save-game-manager-plan.md` for implementation details.
+See `docs/systems/phase2/system-6.5-pet-store-manager.md` for implementation details.
 
 ```typescript
 // Base store state interface
