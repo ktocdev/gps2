@@ -142,15 +142,6 @@ const clearFeed = () => {
   loggingStore.clearMessages()
 }
 
-const toggleCategory = (category: MessageCategory) => {
-  const index = selectedCategories.value.indexOf(category)
-  if (index > -1) {
-    selectedCategories.value.splice(index, 1)
-  } else {
-    selectedCategories.value.push(category)
-  }
-}
-
 const loadMoreMessages = async () => {
   isLoadingMore.value = true
   await nextTick()
@@ -185,30 +176,6 @@ const getMessageClasses = (message: ActivityMessage): string => {
   const level = `activity-feed__message--${message.level}`
 
   return [base, category, level].join(' ')
-}
-
-const getCategoryEmoji = (category: MessageCategory): string => {
-  const emojis: Record<MessageCategory, string> = {
-    player_action: '👆',
-    guinea_pig_reaction: '🐹',
-    autonomous_behavior: '🎯',
-    environmental: '🌿',
-    system: '⚙️',
-    achievement: '🏆'
-  }
-  return emojis[category] || '💭'
-}
-
-const getCategoryLabel = (category: MessageCategory): string => {
-  const labels: Record<MessageCategory, string> = {
-    player_action: 'Actions',
-    guinea_pig_reaction: 'Reactions',
-    autonomous_behavior: 'Behavior',
-    environmental: 'Environment',
-    system: 'System',
-    achievement: 'Achievements'
-  }
-  return labels[category] || category
 }
 
 // Watch for new messages and auto-scroll

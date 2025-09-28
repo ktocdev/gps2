@@ -6,6 +6,14 @@
 
 This guide provides performance optimization strategies specifically designed for the guinea pig simulation game, focusing on efficient game loop management, responsive UI performance, and resource optimization for web-based pet simulation gameplay.
 
+**Architecture Context:** The game uses a **single-session model** with automatic persistence:
+- **Session State**: Active game data that resets on game end (guinea pig needs, habitat conditions)
+- **Persistent State**: Data that survives sessions (currency, items, pet store inventory)
+- **Automatic Persistence**: Pinia persist plugin handles all data persistence
+- **Performance Focus**: Optimize reactive updates and game loop efficiency
+
+See `docs/systems/phase2/save-game-manager-plan.md` for architecture details.
+
 ## Game Loop Optimization
 
 ### setInterval Best Practices
@@ -707,6 +715,146 @@ class PerformanceMonitor {
 }
 ```
 
+## Session State Management Performance
+
+### End Game Performance
+
+Efficient state reset when ending game sessions:
+
+```typescript
+// Pet Store Manager - Efficient session cleanup
+class PetStoreManager {
+  async endGameSession(): Promise<void> {
+    if (!this.activeGameSession) return;
+
+    // Batch all cleanup operations
+    const cleanupTasks = [
+      // Reset guinea pig needs (session state)
+      this.resetGuineaPigNeeds(),
+
+      // Clear habitat conditions (session state)
+      this.clearHabitatConditions(),
+
+      // Clear activity feed (session state)
+      this.clearActivityFeed(),
+
+      // Update progression (persistent state)
+      this.updatePlayerProgression()
+    ];
+
+    // Execute all cleanup in parallel
+    await Promise.all(cleanupTasks);
+
+    // Single state update for session end
+    this.activeGameSession = null;
+
+    // Pinia persist plugin automatically saves persistent state
+  }
+
+  private resetGuineaPigNeeds(): Promise<void> {
+    const guineaPigStore = useGuineaPigStore();
+
+    // Batch reset all needs for active guinea pigs
+    const resetPromises = this.activeGameSession!.guineaPigIds.map(id =>
+      guineaPigStore.resetNeedsForGuineaPig(id)
+    );
+
+    return Promise.all(resetPromises).then(() => {});
+  }
+}
+```
+
+### Pet Store Refresh Performance
+
+Optimize guinea pig generation and replacement:
+
+```typescript
+// Efficient pet store refresh with 10 guinea pigs
+class PetStoreManager {
+  async refreshPetStore(): Promise<void> {
+    // Generate all 10 guinea pigs in parallel
+    const newGuineaPigs = await Promise.all(
+      Array.from({ length: 10 }, () =>
+        this.generateRandomGuineaPig()
+      )
+    );
+
+    // Single reactive update with all new guinea pigs
+    this.availableGuineaPigs = newGuineaPigs;
+    this.lastRefreshTimestamp = Date.now();
+
+    // Pinia persist plugin automatically persists the change
+  }
+
+  private async generateRandomGuineaPig(): Promise<GuineaPig> {
+    // Efficient random generation with minimal allocations
+    return {
+      id: this.generateId(),
+      name: this.randomName(),
+      breed: this.randomBreed(),
+      // ... other properties
+      preferences: this.generateRandomPreferences()
+    };
+  }
+}
+```
+
+### Persistent vs Session State Optimization
+
+Separate concerns for optimal performance:
+
+```typescript
+// PlayerProgression Store - Only persistent data
+export const usePlayerProgression = defineStore('playerProgression', () => {
+  // Persistent state (survives sessions)
+  const currency = ref(1000);
+  const ownedItems = ref(new Map<string, OwnedItem>());
+  const achievements = ref<string[]>([]);
+
+  // Efficient updates with minimal reactivity
+  function updateCurrency(amount: number): void {
+    currency.value += amount;
+    // Pinia persist automatically saves
+  }
+
+  return { currency, ownedItems, achievements, updateCurrency };
+}, {
+  persist: {
+    key: 'gps2-player-progression',
+    storage: localStorage
+    // All properties persist by default
+  }
+});
+
+// Guinea Pig Store - Mix of session and persistent
+export const useGuineaPigStore = defineStore('guineaPig', () => {
+  // All data persists, but needs reset on game end (manual reset)
+  const collection = ref<GuineaPigCollection>({
+    guineaPigs: {},
+    activeGuineaPigIds: [],
+    lastUpdated: Date.now()
+  });
+
+  function resetSessionData(): void {
+    // Only reset session-specific data (needs, wellness)
+    collection.value.activeGuineaPigIds.forEach(id => {
+      const gp = collection.value.guineaPigs[id];
+      if (gp) {
+        gp.needs = getDefaultNeeds();
+        gp.stats.wellness = 100;
+      }
+    });
+  }
+
+  return { collection, resetSessionData };
+}, {
+  persist: {
+    key: 'gps2-guinea-pig-store',
+    storage: localStorage
+  }
+});
+```
+
 ## Best Practices Summary
 
 1. **Always clean up intervals** - Use proper cleanup in component unmount
@@ -717,5 +865,9 @@ class PerformanceMonitor {
 6. **Pool objects** - Reuse objects for frequently created/destroyed items
 7. **Monitor performance** - Track metrics to identify bottlenecks early
 8. **Optimize for mobile** - Consider battery and performance constraints on mobile devices
+9. **Separate state concerns** - Keep session and persistent state in appropriate stores
+10. **Leverage automatic persistence** - Trust Pinia persist plugin, avoid manual save/load operations
+11. **Batch session cleanup** - Use parallel operations when ending game sessions
+12. **Optimize pet store refresh** - Generate all guinea pigs concurrently
 
-These optimization strategies ensure the guinea pig simulation maintains smooth, responsive performance across all devices while providing rich, real-time pet simulation gameplay.
+These optimization strategies ensure the guinea pig simulation maintains smooth, responsive performance across all devices while providing rich, real-time pet simulation gameplay with efficient state management.

@@ -13,6 +13,8 @@ Comprehensive architecture documentation covering store communication patterns, 
 - **Guinea Pig Store** ↔ Needs Controller Store (entity data, preference discovery)
 - **Guinea Pig Store** ↔ Habitat Conditions Store (habitat impact on guinea pig)
 - **Needs Controller Store** ↔ Habitat Conditions Store (cross-condition effects)
+- **PetStoreManager Store** ↔ Guinea Pig Store (pet store inventory, active guinea pigs, session management)
+- **PlayerProgression Store** (persistent currency, items, achievements across sessions)
 
 ### Data Flow Principles
 - **Reactive updates** through Pinia store connections
@@ -48,13 +50,14 @@ Game Controller → UI Framework → Component Library → Logging System
 - Component library setup with debug system integration
 - Logging system preparation for all subsequent events
 
-### 2. Guinea Pig Creation Flow
+### 2. Pet Store & Game Session Flow
 ```
-Creation System → Guinea Pig Store → Preferences Generation → Activity Feed
+Pet Store Generation → Pet Store Selection → Game Session Start → Guinea Pig Store → Activity Feed
 ```
-- User input collection and validation
-- Entity creation with hidden preference assignment
-- Initial activity messages for onboarding
+- 10 random guinea pigs generated on first launch with hidden preferences
+- Player selects 1-2 guinea pigs to start game session
+- Session state initialized, persistent progression loaded
+- Initial activity messages for session start
 
 ### 3. Game Loop Flow
 ```
@@ -85,7 +88,10 @@ Autonomy System → Pathfinding → Guinea Pig Store → Activity Feed
 
 ### Pinia Store Management
 - **Centralized state management** with reactive updates
-- **Persistent state** with localStorage integration
+- **Session-based state** with localStorage integration:
+  - **Session State**: Resets each game (guinea pig needs, habitat conditions, activity feed history)
+  - **Persistent State**: Survives sessions (currency, owned items, achievements, statistics)
+  - **Pet Store State**: Fixed pool of 10 guinea pigs with swap cooldown (1 hour)
 - **Type-safe interfaces** with TypeScript definitions
 - **Performance optimization** through efficient state updates
 
@@ -118,7 +124,9 @@ Autonomy System → Pathfinding → Guinea Pig Store → Activity Feed
 ### Phase 2 Dependencies (Core Entities)
 - **Requires:** Complete Phase 1 foundation
 - **Depends on:** Game Controller Store, UI framework, debug systems
-- **Provides:** Core game entities and timing for subsequent phases
+- **Provides:** Core game entities, pet store system, session management, and timing for subsequent phases
+- **Session Model:** Single-session gameplay with pet store selection (1-2 guinea pigs from pool of 10)
+- **Progression System:** Persistent player progression (currency, items) across game sessions
 
 ### Phase 3 Dependencies (Game World)
 - **Requires:** Guinea pig entity and needs framework from Phase 2
@@ -166,6 +174,11 @@ Autonomy System → Pathfinding → Guinea Pig Store → Activity Feed
 - **Development tool integration** for efficient debugging and testing
 
 #### State Management Strategy
+- **Session-based persistence model**:
+  - **Session State**: Guinea pig needs, habitat conditions, activity feed (clears on game end)
+  - **Persistent State**: Player currency, owned items, achievements, statistics (survives sessions)
+  - **Pet Store State**: 10 guinea pig pool with swap cooldown management
+  - **End Game Penalty**: Currency deduction when returning guinea pigs to store
 - **Performance optimization for frequent updates** - The game's continuous loop creates multiple performance challenges:
   - **Wellness recalculation** happens every game tick (1-5 seconds) to check friendship penalties
   - **Habitat condition monitoring** tracks cleanliness decay, bedding freshness, and water consumption on different schedules
@@ -173,7 +186,6 @@ Autonomy System → Pathfinding → Guinea Pig Store → Activity Feed
   - **Mitigation strategies**: Batch calculations, throttle non-critical updates, cache frequently accessed values, optimize reactive subscriptions
 - **Efficient reactivity** through targeted state observations
 - **Memory management** for long-running game sessions
-- **Save/load optimization** for complex game state persistence
 
 ## Integration Testing Strategy
 
