@@ -11,16 +11,14 @@
             <span class="stat-value">{{ petStoreManager.canRefreshPetStore ? 'Yes' : 'No' }}</span>
           </div>
         </div>
-        <div class="pet-store-debug__settings">
-          <div class="pet-store-debug__setting">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                v-model="petStoreManager.settings.allowUnlimitedRefresh"
-              />
-              <span>Allow Unlimited Refresh (Debug)</span>
-            </label>
-          </div>
+        <div class="flex-col gap-4 mt-4">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              v-model="petStoreManager.settings.allowUnlimitedRefresh"
+            />
+            <span>Allow Unlimited Refresh (Debug)</span>
+          </label>
           <Slider
             v-model="petStoreManager.settings.endGamePenalty"
             :min="0"
@@ -31,7 +29,7 @@
           />
         </div>
       </div>
-      <div class="panel__footer" style="margin-block-start: var(--space-4);">
+      <div class="panel__footer mt-4">
         <Button
           @click="handleRefresh"
           :disabled="!petStoreManager.canRefreshPetStore"
@@ -52,17 +50,23 @@
             v-for="guineaPig in petStoreManager.availableGuineaPigs"
             :key="guineaPig.id"
             class="pet-store-debug__guinea-pig-item"
-            :class="{ 'pet-store-debug__guinea-pig-item--selected': selectedGuineaPig?.id === guineaPig.id }"
+            :class="{
+              'pet-store-debug__guinea-pig-item--selected': selectedGuineaPig?.id === guineaPig.id,
+              'pet-store-debug__guinea-pig-item--active': isGuineaPigActive(guineaPig.id)
+            }"
             @click="selectedGuineaPig = guineaPig"
           >
             <div class="pet-store-debug__guinea-pig-header">
-              <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
+              <div class="pet-store-debug__guinea-pig-name-wrapper">
+                <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
+                <Badge v-if="isGuineaPigActive(guineaPig.id)" variant="success" size="sm">ACTIVE</Badge>
+              </div>
               <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
             </div>
             <div class="pet-store-debug__guinea-pig-details">
-              <span>{{ guineaPig.gender }}</span>
-              <span>{{ guineaPig.appearance.furColor }}</span>
-              <span>{{ guineaPig.appearance.furPattern }}</span>
+              <Badge variant="secondary" size="sm">{{ guineaPig.gender }}</Badge>
+              <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furColor }}</Badge>
+              <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furPattern }}</Badge>
             </div>
           </div>
         </div>
@@ -173,14 +177,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { usePetStoreManager } from '../../stores/petStoreManager'
 import type { GuineaPig } from '../../stores/guineaPigStore'
 import Slider from '../basic/Slider.vue'
 import Button from '../basic/Button.vue'
+import Badge from '../basic/Badge.vue'
 
 const petStoreManager = usePetStoreManager()
 const selectedGuineaPig = ref<GuineaPig | null>(null)
+
+const isGuineaPigActive = (guineaPigId: string): boolean => {
+  return petStoreManager.activeGameSession?.guineaPigIds.includes(guineaPigId) ?? false
+}
 
 // Dynamic option arrays from pet store manager
 const furColorOptions = petStoreManager.furColors
@@ -225,14 +234,6 @@ const handleRefresh = () => {
   padding-block: 1rem;
 }
 
-/* === Settings Section === */
-.pet-store-debug__settings {
-  margin-block-start: 1rem;
-}
-
-.pet-store-debug__setting {
-  margin-block-end: 1rem;
-}
 
 /* === Guinea Pig List Section === */
 .pet-store-debug__guinea-pig-list {
@@ -262,11 +263,22 @@ const handleRefresh = () => {
   box-shadow: 0 0 0 2px var(--color-primary);
 }
 
+.pet-store-debug__guinea-pig-item--active {
+  border-inline-start: 4px solid var(--color-success);
+  padding-inline-start: calc(1rem - 3px);
+}
+
 .pet-store-debug__guinea-pig-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-block-end: 0.5rem;
+}
+
+.pet-store-debug__guinea-pig-name-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .pet-store-debug__guinea-pig-name {
@@ -274,6 +286,7 @@ const handleRefresh = () => {
   font-size: 1.1rem;
   color: var(--color-text);
 }
+
 
 .pet-store-debug__guinea-pig-breed {
   font-size: 0.9rem;
@@ -283,8 +296,7 @@ const handleRefresh = () => {
 .pet-store-debug__guinea-pig-details {
   display: flex;
   gap: 0.5rem;
-  font-size: 0.85rem;
-  color: var(--color-text-muted);
+  flex-wrap: wrap;
 }
 
 /* === Editor Section === */
