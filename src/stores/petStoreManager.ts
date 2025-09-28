@@ -116,6 +116,32 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     'satin', 'himalayan', 'broken', 'pied', 'magpie'
   ]
 
+  const vegetables = [
+    'bell_pepper', 'carrot', 'cucumber', 'leafy_greens',
+    'broccoli', 'celery', 'cherry_tomatoes', 'zucchini',
+    'parsley', 'cilantro', 'sweet_potato', 'snap_peas'
+  ]
+
+  const fruits = [
+    'apple', 'banana', 'strawberry', 'blueberry',
+    'grape', 'orange', 'pear', 'melon', 'kiwi', 'raspberry'
+  ]
+
+  const hayTypes = [
+    'timothy', 'orchard_grass', 'meadow', 'alfalfa',
+    'botanical', 'oat', 'bermuda_grass', 'western_timothy'
+  ]
+
+  const activities = [
+    'tunnels', 'climbing', 'hiding_games', 'chewing',
+    'exploring', 'puzzle_solving', 'foraging'
+  ]
+
+  const habitatFeatures = [
+    'quiet_spaces', 'open_spaces', 'multi_level',
+    'cozy_corners', 'viewing_platforms'
+  ]
+
   function randomName(): string {
     return guineaPigNames[Math.floor(Math.random() * guineaPigNames.length)]
   }
@@ -136,20 +162,50 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     return furPatterns[Math.floor(Math.random() * furPatterns.length)]
   }
 
-  function generateRandomPreferences() {
-    const vegetables = ['bell_pepper', 'carrot', 'cucumber', 'leafy_greens', 'broccoli', 'celery']
-    const fruits = ['apple', 'banana', 'strawberry', 'blueberry', 'grape', 'orange']
+  function pickRandomPreferences(items: string[], alreadyPicked: string[] = []): string[] {
+    const available = items.filter(item => !alreadyPicked.includes(item))
 
+    if (available.length === 0) return []
+
+    const count = Math.random() < 0.5 ? 1 : 2
+
+    const shuffled = [...available].sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, Math.min(count, available.length))
+  }
+
+  function generateRandomPreferences() {
     const shuffleArray = (array: string[]) => [...array].sort(() => Math.random() - 0.5)
 
     const shuffledVegetables = shuffleArray(vegetables)
+    const vegLikes = pickRandomPreferences(shuffledVegetables)
+    const vegDislikes = pickRandomPreferences(shuffledVegetables, vegLikes)
+
     const shuffledFruits = shuffleArray(fruits)
+    const fruitLikes = pickRandomPreferences(shuffledFruits)
+    const fruitDislikes = pickRandomPreferences(shuffledFruits, fruitLikes)
+
+    const shuffledHay = shuffleArray(hayTypes)
+    const hayLikes = pickRandomPreferences(shuffledHay)
+    const hayDislikes = pickRandomPreferences(shuffledHay, hayLikes)
+
+    const favoriteFood = [...vegLikes, ...fruitLikes, ...hayLikes]
+    const dislikedFood = [...vegDislikes, ...fruitDislikes, ...hayDislikes]
+
+    const shuffledActivities = shuffleArray(activities)
+    const favoriteActivity = pickRandomPreferences(shuffledActivities)
+    const dislikedActivity = pickRandomPreferences(shuffledActivities, favoriteActivity)
+
+    const shuffledHabitat = shuffleArray(habitatFeatures)
+    const habitatPreference = pickRandomPreferences(shuffledHabitat)
+    const dislikedHabitat = pickRandomPreferences(shuffledHabitat, habitatPreference)
 
     return {
-      favoriteFood: [shuffledVegetables[0], shuffledFruits[0]],
-      favoriteActivity: ['tunnels', 'chew_toys'],
-      socialPreference: ['solitary', 'social', 'mixed'][Math.floor(Math.random() * 3)] as 'solitary' | 'social' | 'mixed',
-      habitatPreference: ['quiet_spaces', 'open_spaces']
+      favoriteFood,
+      dislikedFood,
+      favoriteActivity,
+      dislikedActivity,
+      habitatPreference,
+      dislikedHabitat
     }
   }
 
@@ -362,6 +418,11 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     furPatterns,
     breeds,
     eyeColors: ['brown', 'black', 'red', 'blue'],
+    vegetables,
+    fruits,
+    hayTypes,
+    activities,
+    habitatFeatures,
 
     generateRandomGuineaPigs,
     refreshPetStore,
