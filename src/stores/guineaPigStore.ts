@@ -341,6 +341,46 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     }
   }
 
+  // Pet store integration methods
+  const resetGuineaPigNeeds = (id: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[id]
+    if (!guineaPig) return false
+
+    guineaPig.needs = {
+      hunger: 0,
+      thirst: 0,
+      happiness: 0,
+      cleanliness: 0,
+      health: 0,
+      energy: 0,
+      social: 0,
+      nails: 0,
+      chew: 0,
+      shelter: 0
+    }
+
+    guineaPig.stats.wellness = 100
+    guineaPig.stats.overallMood = 100
+
+    collection.value.lastUpdated = Date.now()
+
+    const logging = getLoggingStore()
+    logging.logInfo(`Reset needs for guinea pig: ${guineaPig.name}`)
+
+    return true
+  }
+
+  const returnToStore = (id: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[id]
+    if (!guineaPig) return false
+
+    // Guinea pigs are always in the collection, this is just for metadata/logging
+    const logging = getLoggingStore()
+    logging.logInfo(`Guinea pig ${guineaPig.name} returned to store`)
+
+    return true
+  }
+
   return {
     // State
     collection,
@@ -375,7 +415,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     loadState,
 
     // Initialization
-    initializeStore
+    initializeStore,
+
+    // Pet store integration
+    resetGuineaPigNeeds,
+    returnToStore
   }
 }, {
   persist: {

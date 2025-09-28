@@ -1,5 +1,96 @@
 <template>
   <div class="game-controller">
+    <!-- Pet Store Game Session -->
+    <div class="mb-8">
+      <h2>Pet Store Game Session</h2>
+      <div class="panel-row">
+        <!-- Session Controls -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Session Controls</h3>
+          </div>
+          <div class="panel__content">
+            <div class="controls-grid">
+              <Button
+                @click="handleStartSession"
+                variant="primary"
+                :disabled="!canStartSession"
+                :title="!canStartSession ? 'Select 1-2 guinea pigs from pet store' : 'Start game session'"
+              >
+                Start Session
+              </Button>
+              <Button
+                @click="handleEndSession"
+                variant="danger"
+                :disabled="!canEndSession"
+                :title="!canEndSession ? 'No active session to end' : 'End game session'"
+              >
+                End Session
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session Status -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Session Status</h3>
+          </div>
+          <div class="panel__content">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Active Session:</span>
+                <span class="stat-value">{{ petStoreManager.activeGameSession ? 'Yes' : 'No' }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Active Guinea Pigs:</span>
+                <span class="stat-value">{{ guineaPigStore.activeGuineaPigs.length }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Session Started:</span>
+                <span class="stat-value">
+                  {{ petStoreManager.activeGameSession
+                    ? new Date(petStoreManager.activeGameSession.startedAt).toLocaleString()
+                    : 'N/A' }}
+                </span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Currency:</span>
+                <span class="stat-value">{{ playerProgression.formattedCurrency }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Guinea Pig Selection -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Select Guinea Pigs</h3>
+          </div>
+          <div class="panel__content">
+            <div class="guinea-pig-selection">
+              <Select
+                v-model="selectedGuineaPig1"
+                :options="guineaPigOptions"
+                label="Guinea Pig 1"
+                placeholder="Select first guinea pig"
+                :disabled="!!petStoreManager.activeGameSession"
+                size="sm"
+              />
+              <Select
+                v-model="selectedGuineaPig2"
+                :options="guineaPig2Options"
+                label="Guinea Pig 2 (Optional)"
+                placeholder="Select second guinea pig"
+                :disabled="!!petStoreManager.activeGameSession"
+                size="sm"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Game State Display -->
     <div class="mb-8">
       <h2>Game State</h2>
@@ -202,32 +293,132 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useGameController } from '../../stores/gameController'
+import { usePetStoreManager } from '../../stores/petStoreManager'
+import { useGuineaPigStore } from '../../stores/guineaPigStore'
+import { usePlayerProgression } from '../../stores/playerProgression'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
 
 // Stores
 const gameController = useGameController()
+const petStoreManager = usePetStoreManager()
+const guineaPigStore = useGuineaPigStore()
+const playerProgression = usePlayerProgression()
+
+// Pet Store Session State
+const selectedGuineaPig1 = ref<string | number>('')
+const selectedGuineaPig2 = ref<string | number>('')
+
+// Restore guinea pig selection from active session
+watch([() => petStoreManager.activeGameSession, () => petStoreManager.availableGuineaPigs], ([session, availableGuineaPigs]) => {
+  if (session && availableGuineaPigs.length > 0) {
+    // Restore selection from active session
+    const sessionGuineaPigIds = session.guineaPigIds || []
+
+    // Clear current selections
+    selectedGuineaPig1.value = ''
+    selectedGuineaPig2.value = ''
+
+    // Set guinea pig 1 if it exists in available guinea pigs
+    if (sessionGuineaPigIds[0]) {
+      const gp1Exists = availableGuineaPigs.find(gp => gp.id === sessionGuineaPigIds[0])
+      if (gp1Exists) {
+        selectedGuineaPig1.value = sessionGuineaPigIds[0]
+      }
+    }
+
+    // Set guinea pig 2 if it exists in available guinea pigs
+    if (sessionGuineaPigIds[1]) {
+      const gp2Exists = availableGuineaPigs.find(gp => gp.id === sessionGuineaPigIds[1])
+      if (gp2Exists) {
+        selectedGuineaPig2.value = sessionGuineaPigIds[1]
+      }
+    }
+  } else if (!session) {
+    // No active session, clear selections
+    selectedGuineaPig1.value = ''
+    selectedGuineaPig2.value = ''
+  }
+}, { immediate: true })
+
+const getGenderEmoji = (gender: 'male' | 'female') => {
+  return gender === 'male' ? '♂️' : '♀️'
+}
+
+const guineaPigOptions = computed(() => {
+  return [
+    { label: 'None', value: '' },
+    ...petStoreManager.availableGuineaPigs.map(gp => ({
+      label: `${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
+      value: gp.id
+    }))
+  ]
+})
+
+const guineaPig2Options = computed(() => {
+  return [
+    { label: 'None', value: '' },
+    ...petStoreManager.availableGuineaPigs
+      .filter(gp => gp.id !== selectedGuineaPig1.value)
+      .map(gp => ({
+        label: `${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
+        value: gp.id
+      }))
+  ]
+})
+
+const canStartSession = computed(() => {
+  return !petStoreManager.activeGameSession && selectedGuineaPig1.value !== ''
+})
+
+const canEndSession = computed(() => {
+  return petStoreManager.activeGameSession !== null
+})
+
+const handleStartSession = () => {
+  const guineaPigIds: string[] = []
+  if (selectedGuineaPig1.value && selectedGuineaPig1.value !== '') {
+    guineaPigIds.push(String(selectedGuineaPig1.value))
+  }
+  if (selectedGuineaPig2.value && selectedGuineaPig2.value !== '') {
+    guineaPigIds.push(String(selectedGuineaPig2.value))
+  }
+
+  if (guineaPigIds.length > 0) {
+    petStoreManager.startGameSession(guineaPigIds)
+  }
+}
+
+const handleEndSession = () => {
+  petStoreManager.endGameSession()
+  selectedGuineaPig1.value = ''
+  selectedGuineaPig2.value = ''
+}
 
 // Game Control State
 const canStartGame = computed(() => {
   const currentState = gameController.gameState.currentState
   const hasGuineaPig = gameController.gameState.hasGuineaPig
-  return (currentState === 'intro' || currentState === 'stopped') && hasGuineaPig
+  const hasActiveSession = petStoreManager.activeGameSession !== null
+  return (currentState === 'intro' || currentState === 'stopped') && hasGuineaPig && hasActiveSession
 })
 
 const canPauseGame = computed(() => {
-  return gameController.gameState.currentState === 'playing'
+  const hasActiveSession = petStoreManager.activeGameSession !== null
+  return gameController.gameState.currentState === 'playing' && hasActiveSession
 })
 
 const canResumeGame = computed(() => {
-  return gameController.gameState.currentState === 'paused'
+  const hasActiveSession = petStoreManager.activeGameSession !== null
+  return gameController.gameState.currentState === 'paused' && hasActiveSession
 })
 
 const canStopGame = computed(() => {
   const currentState = gameController.gameState.currentState
-  return currentState === 'playing' || currentState === 'paused'
+  const hasActiveSession = petStoreManager.activeGameSession !== null
+  return (currentState === 'playing' || currentState === 'paused') && hasActiveSession
 })
 
 // Settings Management
@@ -356,5 +547,11 @@ h4 {
   margin: 0 0 var(--space-2) 0;
   color: var(--color-text-primary);
   font-size: var(--font-size-base);
+}
+
+.guinea-pig-selection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 </style>
