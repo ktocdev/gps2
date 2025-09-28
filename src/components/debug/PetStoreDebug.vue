@@ -96,14 +96,8 @@
           <label class="form-field-inline">
             Breed:
             <select v-model="selectedGuineaPig.breed" class="input">
-              <option value="Abyssinian">Abyssinian</option>
-              <option value="American">American</option>
-              <option value="Coronet">Coronet</option>
-              <option value="Peruvian">Peruvian</option>
-              <option value="Silkie">Silkie</option>
-              <option value="Skinny">Skinny</option>
-              <option value="Teddy">Teddy</option>
-              <option value="Texel">Texel</option>
+              <option v-if="!breedOptions.includes(selectedGuineaPig.breed)" :value="selectedGuineaPig.breed">{{ capitalize(selectedGuineaPig.breed) }}</option>
+              <option v-for="breed in breedOptions" :key="breed" :value="breed">{{ capitalize(breed) }}</option>
             </select>
           </label>
 
@@ -146,37 +140,21 @@
             Fur Color:
             <select v-model="selectedGuineaPig.appearance.furColor" class="input">
               <option v-if="!furColorOptions.includes(selectedGuineaPig.appearance.furColor)" :value="selectedGuineaPig.appearance.furColor">{{ capitalize(selectedGuineaPig.appearance.furColor) }}</option>
-              <option value="Black">Black</option>
-              <option value="White">White</option>
-              <option value="Brown">Brown</option>
-              <option value="Cream">Cream</option>
-              <option value="Golden">Golden</option>
-              <option value="Red">Red</option>
-              <option value="Gray">Gray</option>
-              <option value="Chocolate">Chocolate</option>
+              <option v-for="color in furColorOptions" :key="color" :value="color">{{ capitalize(color) }}</option>
             </select>
           </label>
           <label class="form-field-inline">
             Fur Pattern:
             <select v-model="selectedGuineaPig.appearance.furPattern" class="input">
               <option v-if="!furPatternOptions.includes(selectedGuineaPig.appearance.furPattern)" :value="selectedGuineaPig.appearance.furPattern">{{ capitalize(selectedGuineaPig.appearance.furPattern) }}</option>
-              <option value="Solid">Solid</option>
-              <option value="Agouti">Agouti</option>
-              <option value="Brindle">Brindle</option>
-              <option value="Dutch">Dutch</option>
-              <option value="Himalayan">Himalayan</option>
-              <option value="Roan">Roan</option>
-              <option value="Tortoiseshell">Tortoiseshell</option>
-              <option value="Tricolor">Tricolor</option>
+              <option v-for="pattern in furPatternOptions" :key="pattern" :value="pattern">{{ capitalize(pattern) }}</option>
             </select>
           </label>
           <label class="form-field-inline">
             Eye Color:
             <select v-model="selectedGuineaPig.appearance.eyeColor" class="input">
               <option v-if="!eyeColorOptions.includes(selectedGuineaPig.appearance.eyeColor)" :value="selectedGuineaPig.appearance.eyeColor">{{ capitalize(selectedGuineaPig.appearance.eyeColor) }}</option>
-              <option value="Dark Brown">Dark Brown</option>
-              <option value="Brown">Brown</option>
-              <option value="Black">Black</option>
+              <option v-for="eyeColor in eyeColorOptions" :key="eyeColor" :value="eyeColor">{{ capitalize(eyeColor) }}</option>
             </select>
           </label>
           <label class="form-field-inline">
@@ -204,10 +182,11 @@ import Button from '../basic/Button.vue'
 const petStoreManager = usePetStoreManager()
 const selectedGuineaPig = ref<GuineaPig | null>(null)
 
-// Option arrays for appearance selects
-const furColorOptions = ['Black', 'White', 'Brown', 'Cream', 'Golden', 'Red', 'Gray', 'Chocolate']
-const furPatternOptions = ['Solid', 'Agouti', 'Brindle', 'Dutch', 'Himalayan', 'Roan', 'Tortoiseshell', 'Tricolor']
-const eyeColorOptions = ['Dark Brown', 'Brown', 'Black']
+// Dynamic option arrays from pet store manager
+const furColorOptions = petStoreManager.furColors
+const furPatternOptions = petStoreManager.furPatterns
+const breedOptions = petStoreManager.breeds
+const eyeColorOptions = petStoreManager.eyeColors
 
 // Helper function to capitalize first letter
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
@@ -232,14 +211,13 @@ watch(() => petStoreManager.availableGuineaPigs, (guineaPigs) => {
 }, { immediate: true })
 
 const handleRefresh = () => {
-  // Store the currently selected guinea pig ID before refresh
-  const selectedId = selectedGuineaPig.value?.id
   petStoreManager.refreshPetStore()
   // The watcher will handle re-selecting the guinea pig after refresh
 }
 </script>
 
 <style>
+/* === Base Layout === */
 .pet-store-debug {
   display: grid;
   grid-template-columns: 1fr;
@@ -247,27 +225,16 @@ const handleRefresh = () => {
   padding-block: 1rem;
 }
 
+/* === Settings Section === */
 .pet-store-debug__settings {
   margin-block-start: 1rem;
-}
-
-@media (min-width: 768px) {
-  .pet-store-debug {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .pet-store-debug {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 .pet-store-debug__setting {
   margin-block-end: 1rem;
 }
 
-
+/* === Guinea Pig List Section === */
 .pet-store-debug__guinea-pig-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
@@ -320,6 +287,7 @@ const handleRefresh = () => {
   color: var(--color-text-muted);
 }
 
+/* === Editor Section === */
 .pet-store-debug__editor {
   display: flex;
   flex-direction: column;
@@ -331,5 +299,18 @@ const handleRefresh = () => {
   font-style: italic;
   text-align: center;
   margin-block: 1rem;
+}
+
+/* === Responsive Layout === */
+@media (min-width: 768px) {
+  .pet-store-debug {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .pet-store-debug {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 </style>

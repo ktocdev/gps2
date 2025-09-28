@@ -356,6 +356,12 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     formattedCooldown,
     activeSessionGuineaPigs,
 
+    // Data arrays for UI components
+    furColors,
+    furPatterns,
+    breeds,
+    eyeColors: ['brown', 'black', 'red', 'blue'],
+
     generateRandomGuineaPigs,
     refreshPetStore,
     startGameSession,
