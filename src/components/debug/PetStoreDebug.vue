@@ -253,7 +253,6 @@ const handleRefresh = () => {
   padding-block: 1rem;
 }
 
-
 /* === Guinea Pig List Section === */
 .pet-store-debug__guinea-pig-list {
   display: grid;
@@ -305,7 +304,6 @@ const handleRefresh = () => {
   font-size: 1.1rem;
   color: var(--color-text);
 }
-
 
 .pet-store-debug__guinea-pig-breed {
   font-size: 0.9rem;
