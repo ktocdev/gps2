@@ -248,6 +248,14 @@ img {
   color: var(--color-primary);
 }
 
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
 /* Flex Utilities - BEM Components */
 
 /* Flex Container */

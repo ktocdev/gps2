@@ -2,7 +2,7 @@
   <div :class="sliderWrapperClasses">
     <label v-if="label" :for="sliderId" class="slider__label">
       {{ label }}
-      <span v-if="showValue" class="slider__value">{{ modelValue }}</span>
+      <span v-if="showValue" class="slider__value">{{ prefix }}{{ modelValue }}{{ suffix }}</span>
     </label>
     <input
       :id="sliderId"
@@ -35,6 +35,8 @@ interface Props {
   showValue?: boolean
   showMinMax?: boolean
   size?: 'sm' | 'md' | 'lg'
+  prefix?: string
+  suffix?: string
 }
 
 interface Emits {
@@ -49,7 +51,9 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   showValue: true,
   showMinMax: false,
-  size: 'md'
+  size: 'md',
+  prefix: '',
+  suffix: ''
 })
 
 const emit = defineEmits<Emits>()

@@ -19,10 +19,12 @@ export interface GuineaPigPersonality {
 }
 
 export interface GuineaPigPreferences {
-  favoriteFood: string[]     // Array of food items they prefer
-  favoriteActivity: string[] // Array of activities they enjoy
-  socialPreference: 'solitary' | 'social' | 'mixed' // How they like to interact
-  habitatPreference: string[] // Preferred habitat features
+  favoriteFood: string[]     // Array of food items they prefer (up to 2 per category)
+  dislikedFood: string[]     // Array of food items they dislike (up to 2 per category)
+  favoriteActivity: string[] // Array of activities they enjoy (up to 2)
+  dislikedActivity: string[] // Array of activities they dislike (up to 2)
+  habitatPreference: string[] // Preferred habitat features (up to 2)
+  dislikedHabitat: string[]   // Disliked habitat features (up to 2)
 }
 
 export interface GuineaPigNeeds {

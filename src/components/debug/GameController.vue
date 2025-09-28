@@ -19,15 +19,17 @@
               >
                 Start Session
               </Button>
-              <Button
-                @click="handleEndSession"
-                variant="danger"
-                :disabled="!canEndSession"
-                :title="!canEndSession ? 'No active session to end' : 'End game session'"
-              >
-                End Session
-              </Button>
             </div>
+            <Button
+              @click="handleEndSession"
+              variant="secondary"
+              full-width
+              class="mt-3"
+              :disabled="!petStoreManager.activeGameSession"
+              :title="!petStoreManager.activeGameSession ? 'No active session' : 'Return guinea pigs to store and end session'"
+            >
+              Return Guinea Pigs & End Session
+            </Button>
           </div>
         </div>
 
@@ -103,14 +105,6 @@
           <div class="panel__content">
             <div class="controls-grid">
               <Button
-                @click="gameController.startGame()"
-                variant="primary"
-                :disabled="!canStartGame"
-                :title="!canStartGame ? 'Need guinea pig to start game' : 'Start the game'"
-              >
-                Start Game
-              </Button>
-              <Button
                 @click="gameController.pauseGame('manual')"
                 variant="secondary"
                 :disabled="!canPauseGame"
@@ -125,14 +119,6 @@
                 :title="!canResumeGame ? 'Game must be paused to resume' : 'Resume the game'"
               >
                 Resume Game
-              </Button>
-              <Button
-                @click="gameController.stopGame()"
-                variant="danger"
-                :disabled="!canStopGame"
-                :title="!canStopGame ? 'Game must be active to stop' : 'Stop the game'"
-              >
-                Stop Game
               </Button>
             </div>
           </div>
@@ -373,10 +359,6 @@ const canStartSession = computed(() => {
   return !petStoreManager.activeGameSession && selectedGuineaPig1.value !== ''
 })
 
-const canEndSession = computed(() => {
-  return petStoreManager.activeGameSession !== null
-})
-
 const handleStartSession = () => {
   const guineaPigIds: string[] = []
   if (selectedGuineaPig1.value && selectedGuineaPig1.value !== '') {
@@ -398,13 +380,6 @@ const handleEndSession = () => {
 }
 
 // Game Control State
-const canStartGame = computed(() => {
-  const currentState = gameController.gameState.currentState
-  const hasGuineaPig = gameController.gameState.hasGuineaPig
-  const hasActiveSession = petStoreManager.activeGameSession !== null
-  return (currentState === 'intro' || currentState === 'stopped') && hasGuineaPig && hasActiveSession
-})
-
 const canPauseGame = computed(() => {
   const hasActiveSession = petStoreManager.activeGameSession !== null
   return gameController.gameState.currentState === 'playing' && hasActiveSession
@@ -413,12 +388,6 @@ const canPauseGame = computed(() => {
 const canResumeGame = computed(() => {
   const hasActiveSession = petStoreManager.activeGameSession !== null
   return gameController.gameState.currentState === 'paused' && hasActiveSession
-})
-
-const canStopGame = computed(() => {
-  const currentState = gameController.gameState.currentState
-  const hasActiveSession = petStoreManager.activeGameSession !== null
-  return (currentState === 'playing' || currentState === 'paused') && hasActiveSession
 })
 
 // Settings Management
@@ -500,29 +469,6 @@ const resetFirstTimeUser = () => {
   gap: var(--space-3);
 }
 
-.flex {
-  display: flex;
-}
-
-.flex-column {
-  flex-direction: column;
-}
-
-.gap-3 {
-  gap: var(--space-3);
-}
-
-.mb-4 {
-  margin-bottom: var(--space-4);
-}
-
-.mb-6 {
-  margin-bottom: var(--space-6);
-}
-
-.mb-8 {
-  margin-bottom: var(--space-8);
-}
 
 pre {
   background-color: var(--color-background-tertiary);
