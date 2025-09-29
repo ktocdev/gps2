@@ -35,13 +35,13 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 ##### Phase 2: Core Entities & Timing
 - **[System 6: Guinea Pig Store](systems/phase2/system-6-guinea-pig-store.md)** - Central guinea pig state management ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
 - **[System 6.5: Pet Store & Game Session Manager](systems/phase2/system-6.5-pet-store-manager.md)** - Single-session pet store system with 10 guinea pigs featuring weighted rarity system, smart eye color genetics, 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-11)
+- **[System 6.9: Guinea Pig Favorites](systems/phase2/system-6.9-guinea-pig-favorites.md)** - Save beloved guinea pigs permanently with purchasable slots and store refresh protection
 - **[System 7: Needs System](systems/phase2/system-7-needs-system.md)** - Seven fundamental needs with decay and satisfaction
 - **[System 8: Needs Controller Store](systems/phase2/system-8-needs-controller-store.md)** - Centralized needs management
-- **[System 9: Habitat Conditions](systems/phase2/system-9-habitat-conditions.md)** - Environmental state tracking
-- **[Systems 10-11: Game Timing](systems/phase2/system-10-11-game-timing.md)** - Game loop and time management
+- **[Systems 9-10: Game Timing](systems/phase2/system-9-10-game-timing.md)** - Game loop and time management
 
 ##### Phase 3: Game World & Environment
-- **[System 6: Guinea Pig Store Persistence Fix](systems/phase2/system-6-guinea-pig-store-persistence-fix.md)** - Guinea pig persistence and save game system documentation ✅ **Completed** (September 27, 2025 | Branch: GPS2-9)
+- **[System 11: Habitat Conditions](systems/phase3/system-11-habitat-conditions.md)** - Environmental state tracking with resource management
 - **[Inventory Store System](systems/phase3/inventory-store-system.md)** - Item management and purchasing
 - **[Habitat Item System](systems/phase3/habitat-item-system.md)** - Interactive environment objects
 - **[Habitat Maintenance Hygiene](systems/phase3/habitat-maintenance-hygiene-system.md)** - Environmental care and cleanliness

@@ -12,7 +12,7 @@ Comprehensive architecture documentation covering store communication patterns, 
 ### Core Entity Management
 - **Guinea Pig Store** ↔ Needs Controller Store (entity data, preference discovery)
 - **Guinea Pig Store** ↔ Habitat Conditions Store (habitat impact on guinea pig)
-- **Needs Controller Store** ↔ Habitat Conditions Store (cross-condition effects)
+- **Needs Controller Store** ↔ Habitat Conditions Store (cross-condition effects, Phase 3 integration)
 - **PetStoreManager Store** ↔ Guinea Pig Store (pet store inventory, active guinea pigs, session management)
 - **PlayerProgression Store** (persistent currency, items, achievements across sessions)
 
@@ -103,6 +103,16 @@ Pet Store Selection → Personality Hints → Guinea Pig Store → Bonding Syste
 - Enhanced social need processing based on bonding level (neutral/friends/bonded)
 - Natural bonding discovery through activity feed messages
 
+### 8. Guinea Pig Favorites Flow
+```
+Pet Store Selection → Favorites Storage → Pet Store Manager → Player Progression → Persistence
+```
+- Heart/star button integration on guinea pig cards during selection
+- Favorites storage with slot management (3 initial, up to 10 purchasable)
+- Currency-based slot purchases with escalating costs (100, 250, 625...)
+- Store refresh protection (favorites preserved during pet store refresh)
+- Move favorites back to store for flexibility and experimentation
+
 ## Data Flow Architecture
 
 ### Pinia Store Management
@@ -146,11 +156,15 @@ Pet Store Selection → Personality Hints → Guinea Pig Store → Bonding Syste
 - **Provides:** Core game entities, pet store system, session management, and timing for subsequent phases
 - **Session Model:** Single-session gameplay with pet store selection (1-2 guinea pigs from pool of 10)
 - **Progression System:** Persistent player progression (currency, items) across game sessions
+- **Favorites System:** Emotional attachment benefits with up to 10 purchasable slots for preserving beloved guinea pigs
+- **Store Refresh Protection:** Favorites survive pet store refresh cycles, maintaining player investment while encouraging experimentation
 
 ### Phase 3 Dependencies (Game World)
 - **Requires:** Guinea pig entity and needs framework from Phase 2
 - **Depends on:** Complete timing system and state management
-- **Provides:** Interactive environment for Phase 4 behaviors
+- **Provides:** Interactive environment with habitat conditions, resource management, and inventory systems for Phase 4 behaviors
+- **Habitat Integration:** Environmental conditions (cleanliness, bedding, water, hay) that affect guinea pig needs
+- **Resource Economy:** Bedding and hay as consumable resources creating ongoing economic gameplay
 
 ### Phase 4 Dependencies (Interactions)
 - **Requires:** Complete game world and habitat system from Phase 3

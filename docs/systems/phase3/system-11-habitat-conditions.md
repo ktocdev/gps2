@@ -1,6 +1,6 @@
-# Habitat Conditions Store (Pinia) - System 9
+# Habitat Conditions Store (Pinia) - System 11
 
-**Phase 2: Core Game Entities & State**
+**Phase 3: Game World & Environment**
 
 ## Overview
 Environmental condition tracking system managing cleanliness, bedding freshness, and water levels with resource management and guinea pig need integration.
