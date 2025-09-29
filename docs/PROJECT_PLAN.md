@@ -34,7 +34,7 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 
 ##### Phase 2: Core Entities & Timing
 - **[System 6: Guinea Pig Store](systems/phase2/system-6-guinea-pig-store.md)** - Central guinea pig state management ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
-- **[System 6.5: Pet Store & Game Session Manager](systems/phase2/system-6.5-pet-store-manager.md)** - Single-session pet store system with 10 random guinea pigs, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-11)
+- **[System 6.5: Pet Store & Game Session Manager](systems/phase2/system-6.5-pet-store-manager.md)** - Single-session pet store system with 10 guinea pigs featuring weighted rarity system, smart eye color genetics, 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-11)
 - **[System 7: Needs System](systems/phase2/system-7-needs-system.md)** - Seven fundamental needs with decay and satisfaction
 - **[System 8: Needs Controller Store](systems/phase2/system-8-needs-controller-store.md)** - Centralized needs management
 - **[System 9: Habitat Conditions](systems/phase2/system-9-habitat-conditions.md)** - Environmental state tracking
@@ -92,6 +92,9 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 
 ### Recently Completed ✅
 - **Pet Store & Game Session Manager**: Complete implementation with PetStoreManager store, pet store debug panel, GameController integration, and 10-guinea pig generation system
+- **Weighted Rarity System**: Breeds range from common (American, Abyssinian) to ultra-rare (Baldwin, Skinny Pig) with realistic distribution percentages and rarity badge UI
+- **Smart Eye Color Genetics**: Pink/red eyes only appear with light-colored guinea pigs (white, cream, beige, gray, lilac, buff) creating realistic albino/leucistic appearances
+- **24-Hour Auto-Refresh**: Guinea pig store automatically refreshes daily with live countdown timer, persistent across sessions, and startup checks for overdue refreshes
 - **System 6.8 Preference Randomization**: Natural variation in guinea pig preferences with guaranteed 1-2 items per category and no overlap between likes/dislikes
 - **Enhanced Debug Interface**: Accessibility improvements with fieldset/legend structure, horizontal dividers, and improved form organization
 - **Early Inventory Debug Panel**: Phase 3 Inventory tab implemented early with currency controls (add/deduct, quick actions, reset functionality)

@@ -24,6 +24,8 @@ export interface GameSession {
 interface PetStoreSettings {
   endGamePenalty: number
   allowUnlimitedRefresh: boolean
+  autoRefreshEnabled: boolean
+  autoRefreshIntervalMs: number
 }
 
 export const usePetStoreManager = defineStore('petStoreManager', () => {
@@ -39,11 +41,17 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const lastRefreshTimestamp = ref<number>(0)
   const refreshCooldownMs = ref<number>(3600000)
   const activeGameSession = ref<GameSession | null>(null)
+  const nextAutoRefreshTime = ref<number>(0)
 
   const settings = ref<PetStoreSettings>({
     endGamePenalty: 50,
-    allowUnlimitedRefresh: false
+    allowUnlimitedRefresh: false,
+    autoRefreshEnabled: false,
+    autoRefreshIntervalMs: 86400000 // 24 hours in milliseconds
   })
+
+  // Auto-refresh interval reference
+  let autoRefreshInterval: ReturnType<typeof setInterval> | null = null
 
   const canRefreshPetStore = computed(() => {
     if (settings.value.allowUnlimitedRefresh) return true
@@ -61,6 +69,29 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const formattedCooldown = computed(() => {
     const ms = remainingCooldownMs.value
     if (ms === 0) return 'Ready'
+
+    const hours = Math.floor(ms / (1000 * 60 * 60))
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000)
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`
+    } else {
+      return `${seconds}s`
+    }
+  })
+
+  const timeUntilAutoRefresh = computed(() => {
+    if (!settings.value.autoRefreshEnabled || nextAutoRefreshTime.value === 0) return 0
+    const remaining = nextAutoRefreshTime.value - Date.now()
+    return Math.max(0, remaining)
+  })
+
+  const formattedAutoRefreshTime = computed(() => {
+    const ms = timeUntilAutoRefresh.value
+    if (ms === 0) return 'Disabled'
 
     const hours = Math.floor(ms / (1000 * 60 * 60))
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
@@ -103,7 +134,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     'Hazel', 'Maple', 'Cedar', 'Fern', 'Sage', 'Basil'
   ]
 
-  const breeds = ['American', 'Abyssinian', 'Peruvian', 'Silkie', 'Teddy', 'Rex', 'Texel', 'Coronet']
+  // Simple arrays for UI exports
+  const breeds = ['American', 'Abyssinian', 'Peruvian', 'Silkie', 'Teddy', 'Rex', 'Texel', 'Coronet', 'Alpaca', 'Baldwin', 'Merino', 'Skinny Pig', 'White Crested']
 
   const furColors = [
     'white', 'black', 'brown', 'cream', 'orange', 'gray',
@@ -113,13 +145,75 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
   const furPatterns = [
     'self', 'agouti', 'dutch', 'brindle', 'roan',
-    'satin', 'himalayan', 'broken', 'pied', 'magpie'
+    'satin', 'himalayan'
+  ]
+
+  // Weighted arrays for rarity system
+  interface WeightedItem {
+    value: string
+    weight: number
+    rarity?: 'common' | 'uncommon' | 'rare' | 'very-rare' | 'ultra-rare'
+  }
+
+  const weightedBreeds: WeightedItem[] = [
+    // Common breeds (weight 100)
+    { value: 'American', weight: 100, rarity: 'common' },
+    { value: 'Abyssinian', weight: 100, rarity: 'common' },
+    // Uncommon breeds (weight 50)
+    { value: 'Peruvian', weight: 50, rarity: 'uncommon' },
+    { value: 'Teddy', weight: 50, rarity: 'uncommon' },
+    { value: 'Rex', weight: 50, rarity: 'uncommon' },
+    // Rare breeds (weight 20)
+    { value: 'Silkie', weight: 20, rarity: 'rare' },
+    { value: 'Texel', weight: 20, rarity: 'rare' },
+    { value: 'Coronet', weight: 20, rarity: 'rare' },
+    { value: 'White Crested', weight: 20, rarity: 'rare' },
+    // Very rare breeds (weight 5)
+    { value: 'Alpaca', weight: 5, rarity: 'very-rare' },
+    { value: 'Merino', weight: 5, rarity: 'very-rare' },
+    // Ultra rare breeds (weight 2)
+    { value: 'Baldwin', weight: 2, rarity: 'ultra-rare' },
+    { value: 'Skinny Pig', weight: 2, rarity: 'ultra-rare' }
+  ]
+
+  const weightedFurColors: WeightedItem[] = [
+    // Common colors (weight 100)
+    { value: 'black', weight: 100, rarity: 'common' },
+    { value: 'white', weight: 100, rarity: 'common' },
+    { value: 'brown', weight: 100, rarity: 'common' },
+    { value: 'cream', weight: 100, rarity: 'common' },
+    { value: 'tortoiseshell', weight: 100, rarity: 'common' },
+    { value: 'tricolor', weight: 100, rarity: 'common' },
+    // Uncommon colors (weight 80)
+    { value: 'orange', weight: 80, rarity: 'uncommon' },
+    { value: 'gray', weight: 80, rarity: 'uncommon' },
+    { value: 'red', weight: 80, rarity: 'uncommon' },
+    { value: 'gold', weight: 80, rarity: 'uncommon' },
+    { value: 'beige', weight: 80, rarity: 'uncommon' },
+    // Rare colors (weight 50)
+    { value: 'chocolate', weight: 50, rarity: 'rare' },
+    { value: 'lilac', weight: 50, rarity: 'rare' },
+    { value: 'buff', weight: 50, rarity: 'rare' },
+    { value: 'dalmatian', weight: 50, rarity: 'rare' }
+  ]
+
+  const weightedFurPatterns: WeightedItem[] = [
+    // Common patterns (weight 100)
+    { value: 'self', weight: 100, rarity: 'common' },
+    { value: 'agouti', weight: 100, rarity: 'common' },
+    // Uncommon patterns (weight 50)
+    { value: 'dutch', weight: 50, rarity: 'uncommon' },
+    { value: 'brindle', weight: 50, rarity: 'uncommon' },
+    // Rare patterns (weight 20)
+    { value: 'roan', weight: 20, rarity: 'rare' },
+    { value: 'satin', weight: 20, rarity: 'rare' },
+    { value: 'himalayan', weight: 20, rarity: 'rare' }
   ]
 
   const vegetables = [
     'bell_pepper', 'carrot', 'cucumber', 'leafy_greens',
     'broccoli', 'celery', 'cherry_tomatoes', 'zucchini',
-    'parsley', 'cilantro', 'sweet_potato', 'snap_peas'
+    'parsley', 'cilantro', 'sweet_potato', 'snap_peas', 'dill'
   ]
 
   const fruits = [
@@ -142,12 +236,34 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     'cozy_corners', 'viewing_platforms'
   ]
 
+  // Weighted random selection function
+  function weightedRandom(items: WeightedItem[]): string {
+    const totalWeight = items.reduce((sum, item) => sum + item.weight, 0)
+    let random = Math.random() * totalWeight
+
+    for (const item of items) {
+      random -= item.weight
+      if (random <= 0) {
+        return item.value
+      }
+    }
+
+    // Fallback (should never reach here)
+    return items[0].value
+  }
+
+  // Helper function to get rarity of a trait
+  function getRarity(value: string, weightedArray: WeightedItem[]): string | undefined {
+    const item = weightedArray.find(i => i.value === value)
+    return item?.rarity
+  }
+
   function randomName(): string {
     return guineaPigNames[Math.floor(Math.random() * guineaPigNames.length)]
   }
 
   function randomBreed(): string {
-    return breeds[Math.floor(Math.random() * breeds.length)]
+    return weightedRandom(weightedBreeds)
   }
 
   function randomGender(): 'male' | 'female' {
@@ -155,11 +271,41 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   }
 
   function randomFurColor(): string {
-    return furColors[Math.floor(Math.random() * furColors.length)]
+    return weightedRandom(weightedFurColors)
   }
 
   function randomFurPattern(): string {
-    return furPatterns[Math.floor(Math.random() * furPatterns.length)]
+    return weightedRandom(weightedFurPatterns)
+  }
+
+  function randomEyeColor(furColor: string): string {
+    // Light colors that are appropriate for pink/red eyes
+    const lightColors = ['white', 'cream', 'beige', 'gray', 'lilac', 'buff']
+
+    if (lightColors.includes(furColor)) {
+      // Light colors: 25% pink/red, 20% blue, 55% brown/black
+      const random = Math.random()
+
+      if (random < 0.25) {
+        // 25% chance of pink/red eyes
+        return Math.random() < 0.5 ? 'pink' : 'red'
+      } else if (random < 0.45) {
+        // 20% chance of blue eyes (25% + 20% = 45%)
+        return 'blue'
+      } else {
+        // 55% chance of brown/black eyes
+        return Math.random() < 0.5 ? 'brown' : 'black'
+      }
+    } else {
+      // Dark colors: 10% blue, 90% brown/black, no pink/red
+      if (Math.random() < 0.1) {
+        // 10% chance of blue eyes (rare)
+        return 'blue'
+      } else {
+        // 90% chance of brown/black eyes
+        return Math.random() < 0.5 ? 'brown' : 'black'
+      }
+    }
   }
 
   function pickRandomPreferences(items: string[], alreadyPicked: string[] = []): string[] {
@@ -258,7 +404,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       appearance: {
         furColor: color,
         furPattern: pattern,
-        eyeColor: ['brown', 'black', 'red', 'blue'][Math.floor(Math.random() * 4)],
+        eyeColor: randomEyeColor(color),  // Now uses fur color-aware eye color selection
         size: ['small', 'medium', 'large'][Math.floor(Math.random() * 3)] as 'small' | 'medium' | 'large'
       },
 
@@ -287,8 +433,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     )
   }
 
-  function refreshPetStore(): void {
-    if (!canRefreshPetStore.value) {
+  function refreshPetStore(isAutoRefresh: boolean = false): void {
+    if (!isAutoRefresh && !canRefreshPetStore.value) {
       const logging = getLoggingStore()
       logging.logWarning('Pet store refresh on cooldown')
       return
@@ -302,8 +448,17 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     generateRandomGuineaPigs(10)
     lastRefreshTimestamp.value = Date.now()
 
+    // Reset auto-refresh timer whenever any refresh occurs (manual or auto)
+    if (settings.value.autoRefreshEnabled) {
+      nextAutoRefreshTime.value = Date.now() + settings.value.autoRefreshIntervalMs
+    }
+
     const logging = getLoggingStore()
-    logging.addPlayerAction('Refreshed pet store with new guinea pigs 🔄', '🔄', {})
+    const refreshType = isAutoRefresh ? 'Auto-refreshed' : 'Refreshed'
+    logging.addPlayerAction(`${refreshType} pet store with new guinea pigs 🔄`, '🔄', {
+      isAutoRefresh,
+      nextAutoRefresh: nextAutoRefreshTime.value
+    })
   }
 
   function startGameSession(guineaPigIds: string[]): void {
@@ -388,6 +543,51 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     activeGameSession.value = null
   }
 
+  function startAutoRefresh(): void {
+    if (!settings.value.autoRefreshEnabled) return
+
+    // Clear any existing interval
+    stopAutoRefresh()
+
+    // Set next refresh time if not already set
+    if (nextAutoRefreshTime.value === 0) {
+      nextAutoRefreshTime.value = Date.now() + settings.value.autoRefreshIntervalMs
+    }
+
+    // Check every minute if it's time to refresh
+    autoRefreshInterval = setInterval(() => {
+      if (Date.now() >= nextAutoRefreshTime.value) {
+        refreshPetStore(true)
+      }
+    }, 60000) // Check every minute
+
+    const logging = getLoggingStore()
+    logging.logInfo('Auto-refresh started for pet store', {
+      interval: settings.value.autoRefreshIntervalMs,
+      nextRefresh: nextAutoRefreshTime.value
+    })
+  }
+
+  function stopAutoRefresh(): void {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval)
+      autoRefreshInterval = null
+    }
+  }
+
+  function toggleAutoRefresh(): void {
+    settings.value.autoRefreshEnabled = !settings.value.autoRefreshEnabled
+
+    if (settings.value.autoRefreshEnabled) {
+      startAutoRefresh()
+    } else {
+      stopAutoRefresh()
+      nextAutoRefreshTime.value = 0
+      const logging = getLoggingStore()
+      logging.logInfo('Auto-refresh stopped for pet store')
+    }
+  }
+
   function initializeStore(): void {
     const logging = getLoggingStore()
     logging.logInfo('Pet Store Manager initializing...')
@@ -395,6 +595,16 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     if (availableGuineaPigs.value.length === 0) {
       generateRandomGuineaPigs(10)
       logging.logInfo('Generated initial pet store with 10 guinea pigs')
+    }
+
+    // Check if an auto-refresh is due (in case app was closed and reopened)
+    if (settings.value.autoRefreshEnabled && nextAutoRefreshTime.value > 0) {
+      if (Date.now() >= nextAutoRefreshTime.value) {
+        logging.logInfo('Auto-refresh was due, refreshing pet store')
+        refreshPetStore(true)
+      }
+      // Restart the auto-refresh interval
+      startAutoRefresh()
     }
 
     logging.logInfo(`Pet Store Manager initialized with ${availableGuineaPigs.value.length} guinea pigs`)
@@ -406,28 +616,40 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     refreshCooldownMs,
     activeGameSession,
     settings,
+    nextAutoRefreshTime,
 
     canRefreshPetStore,
     remainingCooldownMs,
     formattedCooldown,
     activeSessionGuineaPigs,
+    timeUntilAutoRefresh,
+    formattedAutoRefreshTime,
 
     // Data arrays for UI components
     furColors,
     furPatterns,
     breeds,
-    eyeColors: ['brown', 'black', 'red', 'blue'],
+    eyeColors: ['brown', 'black', 'red', 'blue', 'pink'],
     vegetables,
     fruits,
     hayTypes,
     activities,
     habitatFeatures,
 
+    // Weighted arrays for rarity display
+    weightedBreeds,
+    weightedFurColors,
+    weightedFurPatterns,
+    getRarity,
+
     generateRandomGuineaPigs,
     refreshPetStore,
     startGameSession,
     endGameSession,
-    initializeStore
+    initializeStore,
+    startAutoRefresh,
+    stopAutoRefresh,
+    toggleAutoRefresh
   }
 }, {
   persist: {
