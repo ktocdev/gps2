@@ -10,16 +10,35 @@
             <span class="stat-label">Can Refresh:</span>
             <span class="stat-value">{{ petStoreManager.canRefreshPetStore ? 'Yes' : 'No' }}</span>
           </div>
+          <div class="stat-item">
+            <span class="stat-label">Cooldown:</span>
+            <span class="stat-value">{{ petStoreManager.formattedCooldown }}</span>
+          </div>
+          <div class="stat-item" v-if="petStoreManager.settings.autoRefreshEnabled">
+            <span class="stat-label">Auto-refresh in:</span>
+            <span class="stat-value">{{ liveAutoRefreshCountdown }}</span>
+          </div>
         </div>
         <div class="flex flex-col gap-4 mt-4">
           <label class="checkbox-label">
             <input
-              class="mt-4 mb-2"
               type="checkbox"
               v-model="petStoreManager.settings.allowUnlimitedRefresh"
             />
             <span>Allow Unlimited Refresh (Debug)</span>
           </label>
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              :checked="petStoreManager.settings.autoRefreshEnabled"
+              @change="handleAutoRefreshToggle"
+            />
+            <span>Enable 24-Hour Auto-Refresh</span>
+          </label>
+          <div v-if="petStoreManager.settings.autoRefreshEnabled" class="auto-refresh-info">
+            <Badge variant="info" size="sm">Auto-refresh Active</Badge>
+            <span class="auto-refresh-info__text">Next refresh: {{ liveAutoRefreshCountdown }}</span>
+          </div>
           <hr class="divider">
           <Slider
             v-model="petStoreManager.settings.endGamePenalty"
@@ -424,7 +443,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { usePetStoreManager } from '../../stores/petStoreManager'
 import type { GuineaPig } from '../../stores/guineaPigStore'
 import Slider from '../basic/Slider.vue'
@@ -434,6 +453,25 @@ import Badge from '../basic/Badge.vue'
 const petStoreManager = usePetStoreManager()
 const selectedGuineaPig = ref<GuineaPig | null>(null)
 
+// Reactive time ref to trigger updates
+const currentTime = ref(Date.now())
+
+// Update timer display every second
+let timerInterval: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  // Update the current time every second to trigger reactivity
+  timerInterval = setInterval(() => {
+    currentTime.value = Date.now()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+  }
+})
+
 const isGuineaPigActive = (guineaPigId: string): boolean => {
   return petStoreManager.activeGameSession?.guineaPigIds.includes(guineaPigId) ?? false
 }
@@ -441,6 +479,33 @@ const isGuineaPigActive = (guineaPigId: string): boolean => {
 const isSelectedGuineaPigActive = computed(() => {
   if (!selectedGuineaPig.value) return false
   return isGuineaPigActive(selectedGuineaPig.value.id)
+})
+
+// Computed property that uses currentTime to trigger reactivity
+const liveAutoRefreshCountdown = computed(() => {
+  // Access currentTime.value to establish reactive dependency
+  const now = currentTime.value
+
+  if (!petStoreManager.settings.autoRefreshEnabled || petStoreManager.nextAutoRefreshTime === 0) {
+    return 'Disabled'
+  }
+
+  const remaining = petStoreManager.nextAutoRefreshTime - now
+  const ms = Math.max(0, remaining)
+
+  if (ms === 0) return 'Refreshing...'
+
+  const hours = Math.floor(ms / (1000 * 60 * 60))
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((ms % (1000 * 60)) / 1000)
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m ${seconds}s`
+  } else if (minutes > 0) {
+    return `${minutes}m ${seconds}s`
+  } else {
+    return `${seconds}s`
+  }
 })
 
 // Dynamic option arrays from pet store manager
@@ -671,6 +736,10 @@ const handleRefresh = () => {
   petStoreManager.refreshPetStore()
   // The watcher will handle re-selecting the guinea pig after refresh
 }
+
+const handleAutoRefreshToggle = () => {
+  petStoreManager.toggleAutoRefresh()
+}
 </script>
 
 <style>
@@ -853,6 +922,23 @@ const handleRefresh = () => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-block-end: var(--space-1);
+}
+
+/* === Auto-refresh Info === */
+.auto-refresh-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-info-bg);
+  border: 1px solid var(--color-info);
+  border-radius: var(--radius-base);
+  margin-block-start: var(--space-2);
+}
+
+.auto-refresh-info__text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
 }
 
 /* === Responsive Layout === */

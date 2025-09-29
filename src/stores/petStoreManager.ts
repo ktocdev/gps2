@@ -24,6 +24,8 @@ export interface GameSession {
 interface PetStoreSettings {
   endGamePenalty: number
   allowUnlimitedRefresh: boolean
+  autoRefreshEnabled: boolean
+  autoRefreshIntervalMs: number
 }
 
 export const usePetStoreManager = defineStore('petStoreManager', () => {
@@ -39,11 +41,17 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const lastRefreshTimestamp = ref<number>(0)
   const refreshCooldownMs = ref<number>(3600000)
   const activeGameSession = ref<GameSession | null>(null)
+  const nextAutoRefreshTime = ref<number>(0)
 
   const settings = ref<PetStoreSettings>({
     endGamePenalty: 50,
-    allowUnlimitedRefresh: false
+    allowUnlimitedRefresh: false,
+    autoRefreshEnabled: false,
+    autoRefreshIntervalMs: 86400000 // 24 hours in milliseconds
   })
+
+  // Auto-refresh interval reference
+  let autoRefreshInterval: ReturnType<typeof setInterval> | null = null
 
   const canRefreshPetStore = computed(() => {
     if (settings.value.allowUnlimitedRefresh) return true
@@ -61,6 +69,29 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const formattedCooldown = computed(() => {
     const ms = remainingCooldownMs.value
     if (ms === 0) return 'Ready'
+
+    const hours = Math.floor(ms / (1000 * 60 * 60))
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000)
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${seconds}s`
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds}s`
+    } else {
+      return `${seconds}s`
+    }
+  })
+
+  const timeUntilAutoRefresh = computed(() => {
+    if (!settings.value.autoRefreshEnabled || nextAutoRefreshTime.value === 0) return 0
+    const remaining = nextAutoRefreshTime.value - Date.now()
+    return Math.max(0, remaining)
+  })
+
+  const formattedAutoRefreshTime = computed(() => {
+    const ms = timeUntilAutoRefresh.value
+    if (ms === 0) return 'Disabled'
 
     const hours = Math.floor(ms / (1000 * 60 * 60))
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
@@ -287,8 +318,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     )
   }
 
-  function refreshPetStore(): void {
-    if (!canRefreshPetStore.value) {
+  function refreshPetStore(isAutoRefresh: boolean = false): void {
+    if (!isAutoRefresh && !canRefreshPetStore.value) {
       const logging = getLoggingStore()
       logging.logWarning('Pet store refresh on cooldown')
       return
@@ -302,8 +333,17 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     generateRandomGuineaPigs(10)
     lastRefreshTimestamp.value = Date.now()
 
+    // Reset auto-refresh timer whenever any refresh occurs (manual or auto)
+    if (settings.value.autoRefreshEnabled) {
+      nextAutoRefreshTime.value = Date.now() + settings.value.autoRefreshIntervalMs
+    }
+
     const logging = getLoggingStore()
-    logging.addPlayerAction('Refreshed pet store with new guinea pigs 🔄', '🔄', {})
+    const refreshType = isAutoRefresh ? 'Auto-refreshed' : 'Refreshed'
+    logging.addPlayerAction(`${refreshType} pet store with new guinea pigs 🔄`, '🔄', {
+      isAutoRefresh,
+      nextAutoRefresh: nextAutoRefreshTime.value
+    })
   }
 
   function startGameSession(guineaPigIds: string[]): void {
@@ -388,6 +428,51 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     activeGameSession.value = null
   }
 
+  function startAutoRefresh(): void {
+    if (!settings.value.autoRefreshEnabled) return
+
+    // Clear any existing interval
+    stopAutoRefresh()
+
+    // Set next refresh time if not already set
+    if (nextAutoRefreshTime.value === 0) {
+      nextAutoRefreshTime.value = Date.now() + settings.value.autoRefreshIntervalMs
+    }
+
+    // Check every minute if it's time to refresh
+    autoRefreshInterval = setInterval(() => {
+      if (Date.now() >= nextAutoRefreshTime.value) {
+        refreshPetStore(true)
+      }
+    }, 60000) // Check every minute
+
+    const logging = getLoggingStore()
+    logging.logInfo('Auto-refresh started for pet store', {
+      interval: settings.value.autoRefreshIntervalMs,
+      nextRefresh: nextAutoRefreshTime.value
+    })
+  }
+
+  function stopAutoRefresh(): void {
+    if (autoRefreshInterval) {
+      clearInterval(autoRefreshInterval)
+      autoRefreshInterval = null
+    }
+  }
+
+  function toggleAutoRefresh(): void {
+    settings.value.autoRefreshEnabled = !settings.value.autoRefreshEnabled
+
+    if (settings.value.autoRefreshEnabled) {
+      startAutoRefresh()
+    } else {
+      stopAutoRefresh()
+      nextAutoRefreshTime.value = 0
+      const logging = getLoggingStore()
+      logging.logInfo('Auto-refresh stopped for pet store')
+    }
+  }
+
   function initializeStore(): void {
     const logging = getLoggingStore()
     logging.logInfo('Pet Store Manager initializing...')
@@ -395,6 +480,16 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     if (availableGuineaPigs.value.length === 0) {
       generateRandomGuineaPigs(10)
       logging.logInfo('Generated initial pet store with 10 guinea pigs')
+    }
+
+    // Check if an auto-refresh is due (in case app was closed and reopened)
+    if (settings.value.autoRefreshEnabled && nextAutoRefreshTime.value > 0) {
+      if (Date.now() >= nextAutoRefreshTime.value) {
+        logging.logInfo('Auto-refresh was due, refreshing pet store')
+        refreshPetStore(true)
+      }
+      // Restart the auto-refresh interval
+      startAutoRefresh()
     }
 
     logging.logInfo(`Pet Store Manager initialized with ${availableGuineaPigs.value.length} guinea pigs`)
@@ -406,11 +501,14 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     refreshCooldownMs,
     activeGameSession,
     settings,
+    nextAutoRefreshTime,
 
     canRefreshPetStore,
     remainingCooldownMs,
     formattedCooldown,
     activeSessionGuineaPigs,
+    timeUntilAutoRefresh,
+    formattedAutoRefreshTime,
 
     // Data arrays for UI components
     furColors,
@@ -427,7 +525,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     refreshPetStore,
     startGameSession,
     endGameSession,
-    initializeStore
+    initializeStore,
+    startAutoRefresh,
+    stopAutoRefresh,
+    toggleAutoRefresh
   }
 }, {
   persist: {

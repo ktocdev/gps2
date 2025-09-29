@@ -28,6 +28,11 @@ A streamlined single-game session system where guinea pigs are selected from a r
 - "Swap Guinea Pigs" button replaces entire pet store pool
 - 1-hour cooldown between swaps
 - Debug mode allows unlimited swaps for testing
+- **24-Hour Auto-Refresh:** Guinea pigs automatically refresh daily
+  - Timer resets to 24 hours after any refresh (manual or auto)
+  - Persistent across sessions - checks on startup if refresh is due
+  - Live countdown display showing time until next auto-refresh
+  - Can be toggled on/off in debug settings
 
 ## Architecture Overview
 
@@ -41,6 +46,7 @@ interface PetStoreState {
   availableGuineaPigs: GuineaPig[] // Always 10 guinea pigs
   lastRefreshTimestamp: number
   refreshCooldownMs: number // Default: 3600000 (1 hour)
+  nextAutoRefreshTime: number // Timestamp for next auto-refresh
 
   // Active game session
   activeGameSession: GameSession | null
@@ -48,6 +54,8 @@ interface PetStoreState {
   // Settings
   endGamePenalty: number // Currency fine for ending game
   allowUnlimitedRefresh: boolean // Debug mode flag
+  autoRefreshEnabled: boolean // Toggle 24-hour auto-refresh
+  autoRefreshIntervalMs: number // Default: 86400000 (24 hours)
 }
 
 interface GameSession {
@@ -147,6 +155,7 @@ interface OwnedItem {
 
 ### Refreshing Pet Store (Guinea Pig Swap)
 
+#### Manual Refresh
 1. User clicks "Swap Guinea Pigs" button
 2. Check cooldown:
    - If on cooldown: Show remaining time
@@ -159,7 +168,23 @@ interface OwnedItem {
    - Generate 10 new random guinea pigs
    - Replace entire availableGuineaPigs array
    - Set lastRefreshTimestamp to now
+   - Reset 24-hour auto-refresh timer (if enabled)
    - Show updated pet store
+
+#### 24-Hour Auto-Refresh
+1. System checks every minute if auto-refresh is due
+2. When `Date.now() >= nextAutoRefreshTime`:
+   - Automatically refresh guinea pig pool
+   - Set next auto-refresh time to 24 hours from now
+   - Log auto-refresh event
+3. On app startup:
+   - Check if auto-refresh was due while app was closed
+   - If due, refresh immediately
+   - Restart auto-refresh interval timer
+4. Timer behavior:
+   - Resets to 24 hours after ANY refresh (manual or auto)
+   - Live countdown display updates every second
+   - Persists across sessions
 
 ## Implementation Steps
 
@@ -321,7 +346,7 @@ function endGameSession() {
 }
 ```
 
-### Cooldown Management
+### Cooldown Management & Auto-Refresh
 
 ```typescript
 const canRefreshPetStore = computed(() => {
@@ -339,8 +364,14 @@ const remainingCooldownMs = computed(() => {
   return Math.max(0, remaining)
 })
 
-function refreshPetStore() {
-  if (!canRefreshPetStore.value) {
+const timeUntilAutoRefresh = computed(() => {
+  if (!settings.autoRefreshEnabled || nextAutoRefreshTime === 0) return 0
+  const remaining = nextAutoRefreshTime - Date.now()
+  return Math.max(0, remaining)
+})
+
+function refreshPetStore(isAutoRefresh = false) {
+  if (!isAutoRefresh && !canRefreshPetStore.value) {
     throw new Error('Pet store refresh on cooldown')
   }
 
@@ -348,7 +379,36 @@ function refreshPetStore() {
   availableGuineaPigs.value = generateRandomGuineaPigs(10)
   lastRefreshTimestamp.value = Date.now()
 
-  logActivity('pet_store_refreshed')
+  // Reset auto-refresh timer (24 hours from now)
+  if (settings.autoRefreshEnabled) {
+    nextAutoRefreshTime = Date.now() + settings.autoRefreshIntervalMs
+  }
+
+  const refreshType = isAutoRefresh ? 'auto_refresh' : 'manual_refresh'
+  logActivity('pet_store_refreshed', { type: refreshType })
+}
+
+function startAutoRefresh() {
+  if (!settings.autoRefreshEnabled) return
+
+  // Set next refresh time if not set
+  if (nextAutoRefreshTime === 0) {
+    nextAutoRefreshTime = Date.now() + settings.autoRefreshIntervalMs
+  }
+
+  // Check every minute if it's time to auto-refresh
+  autoRefreshInterval = setInterval(() => {
+    if (Date.now() >= nextAutoRefreshTime) {
+      refreshPetStore(true)
+    }
+  }, 60000) // Check every minute
+}
+
+function stopAutoRefresh() {
+  if (autoRefreshInterval) {
+    clearInterval(autoRefreshInterval)
+    autoRefreshInterval = null
+  }
 }
 ```
 
@@ -455,6 +515,8 @@ function refreshPetStore() {
 - `refreshCooldownMs`: 3600000 (1 hour default)
 - `endGamePenalty`: 50 (currency fine)
 - `allowUnlimitedRefresh`: false (debug mode)
+- `autoRefreshEnabled`: false (24-hour auto-refresh toggle)
+- `autoRefreshIntervalMs`: 86400000 (24 hours default)
 - `guineaPigsInStore`: 10 (fixed)
 - `maxGuineaPigsPerGame`: 2
 
@@ -497,6 +559,15 @@ function refreshPetStore() {
 - [ ] Cooldown timer displays remaining time
 - [ ] Debug mode allows unlimited swaps
 - [ ] Confirmation dialog prevents accidental swaps
+
+### 24-Hour Auto-Refresh
+- [x] Auto-refresh toggles on/off in debug settings
+- [x] Guinea pigs refresh automatically after 24 hours
+- [x] Timer resets to 24 hours after any refresh (manual or auto)
+- [x] Live countdown displays time until next auto-refresh
+- [x] Auto-refresh check runs on app startup if refresh was due
+- [x] Persistent state survives page refreshes
+- [x] Smooth countdown updates every second in UI
 
 ## Migration Notes
 
