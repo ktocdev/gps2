@@ -9,6 +9,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
+import { useGameTimingStore } from './gameTimingStore'
 import { useGuineaPigStore } from './guineaPigStore'
 
 // TypeScript interfaces
@@ -158,6 +159,10 @@ export const useGameController = defineStore('gameController', () => {
   const startGame = () => {
     if (hasGuineaPig.value) {
       setState('playing')
+
+      // Start the game timing system
+      const gameTimingStore = useGameTimingStore()
+      gameTimingStore.startGameLoop()
     } else {
       console.error('Cannot start game without guinea pig')
     }
@@ -166,6 +171,10 @@ export const useGameController = defineStore('gameController', () => {
   const pauseGame = (reason: 'manual' | 'orientation' | 'navigation' = 'manual') => {
     if (gameState.value.currentState === 'playing') {
       setState('paused', reason)
+
+      // Pause the game timing system
+      const gameTimingStore = useGameTimingStore()
+      gameTimingStore.pauseGameLoop()
     } else if (gameState.value.currentState === 'paused') {
       // Pause reason priority: manual > navigation > orientation
       const currentReason = gameState.value.pauseReason
@@ -179,12 +188,20 @@ export const useGameController = defineStore('gameController', () => {
   const resumeGame = () => {
     if (gameState.value.currentState === 'paused') {
       setState('playing')
+
+      // Resume the game timing system
+      const gameTimingStore = useGameTimingStore()
+      gameTimingStore.resumeGameLoop()
     }
   }
 
   const stopGame = () => {
     if (['playing', 'paused'].includes(gameState.value.currentState)) {
       setState('stopped')
+
+      // Stop the game timing system
+      const gameTimingStore = useGameTimingStore()
+      gameTimingStore.stopGameLoop()
     }
   }
 
