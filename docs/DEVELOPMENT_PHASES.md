@@ -103,17 +103,21 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ---
 
-## Phase 4: Interactions & Behaviors (Systems 15-16)
+## Phase 4: Interactions & Behaviors (Systems 15-18)
 **Duration:** 2-3 weeks
 **Goal:** Implement direct interactions and guinea pig AI for complete gameplay loop
 
 ### Systems
 15. **Direct Interaction System** - User-guinea pig interactions (connect to interaction menu placeholders)
 16. **Guinea Pig Autonomy System** - AI behavior and pathfinding (connect to behavior indicator placeholders)
+17. **Guinea Pig Social Interactions** - Guinea pig to guinea pig interactions for enhanced social need satisfaction (cute, positive interactions initially)
+18. **Guinea Pig Bonding System** - Hidden compatibility and bonding mechanics with personality hints during selection for authentic relationship development
 
 ### Debug Panel Development (Phase 4)
 - **Interaction Debug Panel** - Built alongside Direct Interaction System (System 15)
 - **AI Behavior Debug Panel** - Built alongside Guinea Pig Autonomy System (System 16)
+- **Social Interaction Debug Panel** - Built alongside Guinea Pig Social Interactions (System 17)
+- **Bonding Debug Panel** - Built alongside Guinea Pig Bonding System (System 18) - compatibility testing, bonding progression tracking, personality hint testing
 
 ### Key Deliverables
 - **Complete interaction system** with varied interaction types and effects
@@ -122,6 +126,10 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 - **Pathfinding system** for realistic guinea pig movement and item usage
 - **Interaction cooldowns** and need satisfaction logic
 - **Autonomous behavior coordination** with needs system and habitat conditions
+- **Guinea pig social interactions** including grooming, playing together, sharing food, sleeping together, and exploring as pairs
+- **Hidden bonding system** with research-based compatibility factors (gender, personality, breed) and natural relationship discovery
+- **Personality hint system** providing subtle selection guidance without revealing compatibility mechanics
+- **Three-tier bonding progression** (neutral/friends/bonded) with increasing social need benefits and interaction bonuses
 
 ### Gameplay Completion
 - **Full gameplay loop** from creation to advanced care and relationship building
@@ -131,15 +139,15 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ---
 
-## Phase 5: Polish & Enhancement (Systems 17-20)
+## Phase 5: Polish & Enhancement (Systems 19-22)
 **Duration:** 2-3 weeks
 **Goal:** Add polish, progression systems, and optional animation enhancements
 
 ### Systems
-17. **Achievement & Progression System** - Milestone tracking and rewards
-18. **Sound System** - Audio manager and interaction sound feedback
-19. **Settings & Preferences System** - User preferences and customization
-20. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement)
+19. **Achievement & Progression System** - Milestone tracking and rewards
+20. **Sound System** - Audio manager and interaction sound feedback
+21. **Settings & Preferences System** - User preferences and customization
+22. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement)
 
 ### Debug Panel Consolidation (Phase 5)
 - **Debug Menu Tab Creation** - Consolidate all debug panels into unified Debug Menu interface

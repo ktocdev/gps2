@@ -84,6 +84,25 @@ Autonomy System → Pathfinding → Guinea Pig Store → Activity Feed
 - Movement and interaction execution
 - State updates and activity message generation
 
+### 6. Guinea Pig Social Interaction Flow
+```
+Social Interaction System → Guinea Pig Store → Needs Processing → Activity Feed
+```
+- Guinea pig to guinea pig interaction triggers (proximity, needs, time-based)
+- Mutual need satisfaction for both participants
+- Enhanced social need processing with companionship bonuses
+- Activity feed messages for social interactions
+
+### 7. Guinea Pig Bonding Flow
+```
+Pet Store Selection → Personality Hints → Guinea Pig Store → Bonding System → Social Need Enhancement
+```
+- Hidden compatibility calculation based on gender, personality, and breed
+- Personality hint display during selection (3 hints per guinea pig)
+- Bonding progression through positive interactions and proximity
+- Enhanced social need processing based on bonding level (neutral/friends/bonded)
+- Natural bonding discovery through activity feed messages
+
 ## Data Flow Architecture
 
 ### Pinia Store Management
@@ -137,6 +156,9 @@ Autonomy System → Pathfinding → Guinea Pig Store → Activity Feed
 - **Requires:** Complete game world and habitat system from Phase 3
 - **Depends on:** All entity management and environmental systems
 - **Provides:** Complete gameplay loop for Phase 5 enhancements
+- **Social Interactions:** Guinea pig to guinea pig interactions enhance social need satisfaction when 2 guinea pigs are active
+- **Bonding System:** Hidden compatibility and relationship mechanics with research-based factors (gender, personality, breed)
+- **Pet Store Enhancement:** Personality hint system provides subtle selection guidance without revealing underlying compatibility mechanics
 
 ### Phase 5 Dependencies (Polish)
 - **Requires:** Complete core gameplay from Phases 1-4

@@ -49,6 +49,8 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 ##### Phase 4: Interactions & Behaviors
 - **[Direct Interaction System](systems/phase4/direct-interaction-system.md)** - Player-to-guinea pig interactions
 - **[Guinea Pig Autonomy System](systems/phase4/guinea-pig-autonomy-system.md)** - AI-driven autonomous behaviors
+- **[Guinea Pig Social Interactions](systems/phase2/system-7.5-needs-integration-plan.md#phase-4-guinea-pig-social-interactions-2-3-days)** - Guinea pig to guinea pig social interactions for enhanced social need satisfaction
+- **[Guinea Pig Bonding System](systems/phase4/guinea-pig-bonding-system.md)** - Hidden compatibility and bonding mechanics with personality hints for authentic relationship development
 
 ##### Phase 5: Polish & Enhancements
 - **[Achievement Progression System](systems/phase5/achievement-progression-system.md)** - Milestone tracking and rewards
@@ -104,12 +106,13 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 
 ### Next Phase Priority 📋
 **Needs System Implementation**
-- Implement seven fundamental needs (hunger, thirst, social, comfort, exercise, hygiene, enrichment)
+- Implement ten fundamental needs (hunger, thirst, happiness, cleanliness, health, energy, social, nails, chew, shelter)
 - Create needs decay system with timing integration
 - Build needs satisfaction mechanics
 - Implement wellness calculation (internal system)
 - Create needs debug panel
 - Connect needs display to UI placeholders
+- **NEW**: Guinea pig social interactions for enhanced social need satisfaction
 
 ### Phase 2 Foundation Complete ✅
 Core pet store and session management complete. Ready for:

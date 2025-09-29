@@ -22,7 +22,7 @@ Autonomous behaviors triggered automatically when specific need thresholds are r
 - **Cleanliness < 45%:** Self-grooming behaviors, avoid dirty areas
 
 #### Low Priority Needs (60-80% threshold)
-- **Social < 70%:** Watch player, approach interaction areas
+- **Social < 70%:** Watch player, approach interaction areas, seek companion guinea pig for social interactions
 - **Happiness < 75%:** Investigate new items, explore environment
 
 ### 2. Pathfinding and Movement System
@@ -65,6 +65,14 @@ Intelligent movement around the habitat grid:
 - **Stretching** - Comfort movements in safe spaces
 - **Hiding** - Retreat to shelter during stress or fear
 - **Sunbathing** - Rest in preferred habitat locations
+
+#### Social Actions (When 2+ Guinea Pigs Active)
+- **Approach Companion** - Move closer to other guinea pig for social interaction
+- **Grooming Partner** - Clean other guinea pig (satisfies cleanliness + social needs)
+- **Playing Together** - Engage in shared play activities (satisfies happiness + social needs)
+- **Sharing Food** - Eat together when food is available (satisfies hunger + social needs)
+- **Sleeping Together** - Rest in close proximity (satisfies energy + social needs)
+- **Exploring Together** - Move around habitat as a pair (satisfies social need)
 
 ## Friendship-Influenced Behavior System
 
