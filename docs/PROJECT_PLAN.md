@@ -35,13 +35,13 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 ##### Phase 2: Core Entities & Timing
 - **[System 6: Guinea Pig Store](systems/phase2/system-6-guinea-pig-store.md)** - Central guinea pig state management ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
 - **[System 6.5: Pet Store & Game Session Manager](systems/phase2/system-6.5-pet-store-manager.md)** - Single-session pet store system with 10 guinea pigs featuring weighted rarity system, smart eye color genetics, 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-11)
+- **[System 6.9: Guinea Pig Favorites](systems/phase2/system-6.9-guinea-pig-favorites.md)** - Save beloved guinea pigs permanently with purchasable slots and store refresh protection
 - **[System 7: Needs System](systems/phase2/system-7-needs-system.md)** - Seven fundamental needs with decay and satisfaction
-- **[System 8: Needs Controller Store](systems/phase2/system-8-needs-controller-store.md)** - Centralized needs management
-- **[System 9: Habitat Conditions](systems/phase2/system-9-habitat-conditions.md)** - Environmental state tracking
-- **[Systems 10-11: Game Timing](systems/phase2/system-10-11-game-timing.md)** - Game loop and time management
+- **[System 8: Needs Controller Store](systems/phase2/system-8-needs-controller-store.md)** - Centralized needs management ✅ **Implemented** (needsController.ts)
+- **[Systems 9-10: Game Timing](systems/phase2/system-9-10-game-timing.md)** - Game loop and time management ✅ **Implemented** (gameTimingStore.ts)
 
 ##### Phase 3: Game World & Environment
-- **[System 6: Guinea Pig Store Persistence Fix](systems/phase2/system-6-guinea-pig-store-persistence-fix.md)** - Guinea pig persistence and save game system documentation ✅ **Completed** (September 27, 2025 | Branch: GPS2-9)
+- **[System 11: Habitat Conditions](systems/phase3/system-11-habitat-conditions.md)** - Environmental state tracking with resource management
 - **[Inventory Store System](systems/phase3/inventory-store-system.md)** - Item management and purchasing
 - **[Habitat Item System](systems/phase3/habitat-item-system.md)** - Interactive environment objects
 - **[Habitat Maintenance Hygiene](systems/phase3/habitat-maintenance-hygiene-system.md)** - Environmental care and cleanliness
@@ -49,6 +49,8 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 ##### Phase 4: Interactions & Behaviors
 - **[Direct Interaction System](systems/phase4/direct-interaction-system.md)** - Player-to-guinea pig interactions
 - **[Guinea Pig Autonomy System](systems/phase4/guinea-pig-autonomy-system.md)** - AI-driven autonomous behaviors
+- **[Guinea Pig Social Interactions](systems/phase2/system-8.5-needs-integration-plan.md#phase-4-guinea-pig-social-interactions-2-3-days)** - Guinea pig to guinea pig social interactions for enhanced social need satisfaction
+- **[Guinea Pig Bonding System](systems/phase4/guinea-pig-bonding-system.md)** - Hidden compatibility and bonding mechanics with personality hints for authentic relationship development
 
 ##### Phase 5: Polish & Enhancements
 - **[Achievement Progression System](systems/phase5/achievement-progression-system.md)** - Milestone tracking and rewards
@@ -103,20 +105,20 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 - **Guinea Pig Store Persistence Fix**: Resolved data persistence issues, documented guinea pig store architecture
 
 ### Next Phase Priority 📋
-**Needs System Implementation**
-- Implement seven fundamental needs (hunger, thirst, social, comfort, exercise, hygiene, enrichment)
-- Create needs decay system with timing integration
-- Build needs satisfaction mechanics
-- Implement wellness calculation (internal system)
-- Create needs debug panel
+**Phase 2 Completion Tasks**
+- Complete needs system validation and testing
+- Implement Guinea Pig Favorites System (System 6.9)
+- Validate game timing system integration (Systems 9-10) ✅ **Core implemented**
 - Connect needs display to UI placeholders
+- Create comprehensive debug panels for all systems
+- **NEW**: Guinea pig social interactions for enhanced social need satisfaction (Phase 4)
 
 ### Phase 2 Foundation Complete ✅
-Core pet store and session management complete. Ready for:
-- Needs system development (immediate priority)
-- Habitat conditions tracking
-- Timing system integration
-- Game loop implementation
+Core pet store, session management, and timing systems complete. Ready for:
+- Needs system validation and testing (immediate priority)
+- Guinea Pig Favorites System implementation
+- Game timing system validation ✅ **Core implemented**
+- Phase 2 completion and transition to Phase 3
 
 ## Documentation Maintenance
 - Update specific system files rather than monolithic documents

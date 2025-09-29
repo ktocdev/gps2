@@ -314,8 +314,34 @@ interface NeedModifier {
 - **Threshold testing** capabilities for validation
 - **Performance monitoring** for optimization
 
+## Social Need Enhancements (System 17)
+
+### Guinea Pig to Guinea Pig Interactions
+With the current system supporting 2 active guinea pigs, social need satisfaction is enhanced through guinea pig interactions:
+
+#### Core Social Interactions
+- **Grooming** - Guinea pigs clean each other (satisfies cleanliness + social needs)
+- **Playing Together** - Shared play activities (satisfies happiness + social needs)
+- **Sharing Food** - Guinea pigs eat together (satisfies hunger + social needs)
+- **Sleeping Together** - Resting in close proximity (satisfies energy + social needs)
+- **Exploring Together** - Moving around habitat as a pair (satisfies social need)
+
+#### Enhanced Social Need Processing
+- **Companionship Bonus:** 30% slower social decay when 2 guinea pigs are active
+- **Proximity Bonus:** Additional 20% reduction when guinea pigs are near each other
+- **Loneliness Penalty:** 30% faster social decay when guinea pig is alone
+- **Interaction Satisfaction:** Enhanced social need satisfaction through guinea pig interactions
+
+#### Interaction Triggers
+- **Proximity-Based:** Guinea pigs near each other have increased interaction probability
+- **Need-Based:** High social needs increase interaction likelihood
+- **Time-Based:** Regular interaction intervals (every 10-15 minutes)
+- **Activity-Based:** Triggered by specific activities (eating, resting, playing)
+
 ## Future Enhancements
 - **Advanced interdependencies** with more complex need relationships
 - **Learning system** where guinea pig needs adapt to player care patterns
 - **Health system expansion** with specific medical conditions affecting needs
-- **Social needs expansion** for multiple guinea pig interactions
+- **Personality-based social interactions** with individual guinea pig preferences
+- **Bonding levels** between specific guinea pig pairs
+- **Group activities** involving all active guinea pigs simultaneously

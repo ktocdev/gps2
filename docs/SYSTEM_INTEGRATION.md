@@ -12,7 +12,7 @@ Comprehensive architecture documentation covering store communication patterns, 
 ### Core Entity Management
 - **Guinea Pig Store** ↔ Needs Controller Store (entity data, preference discovery)
 - **Guinea Pig Store** ↔ Habitat Conditions Store (habitat impact on guinea pig)
-- **Needs Controller Store** ↔ Habitat Conditions Store (cross-condition effects)
+- **Needs Controller Store** ✅ **Implemented** ↔ Habitat Conditions Store (cross-condition effects, Phase 3 integration)
 - **PetStoreManager Store** ↔ Guinea Pig Store (pet store inventory, active guinea pigs, session management)
 - **PlayerProgression Store** (persistent currency, items, achievements across sessions)
 
@@ -59,14 +59,14 @@ Pet Store Generation → Pet Store Selection → Game Session Start → Guinea P
 - Session state initialized, persistent progression loaded
 - Initial activity messages for session start
 
-### 3. Game Loop Flow
+### 3. Game Loop Flow ✅ **Core Implemented**
 ```
-Interval Management → Needs Controller → Habitat Conditions → Activity Generation → UI Updates
+Interval Management → Needs Controller → Activity Generation → UI Updates
 ```
-- Time-based processing coordination
-- Batch needs processing and wellness calculation
-- Habitat condition updates and resource management
-- Activity feed message generation and UI synchronization
+- Time-based processing coordination ✅ **Implemented** (gameTimingStore.ts)
+- Batch needs processing and wellness calculation ✅ **Implemented**
+- Activity feed message generation and UI synchronization ✅ **Implemented**
+- Habitat condition updates (Phase 3 integration)
 
 ### 4. Player Interaction Flow
 ```
@@ -83,6 +83,35 @@ Autonomy System → Pathfinding → Guinea Pig Store → Activity Feed
 - AI decision making based on needs and preferences
 - Movement and interaction execution
 - State updates and activity message generation
+
+### 6. Guinea Pig Social Interaction Flow
+```
+Social Interaction System → Guinea Pig Store → Needs Processing → Activity Feed
+```
+- Guinea pig to guinea pig interaction triggers (proximity, needs, time-based)
+- Mutual need satisfaction for both participants
+- Enhanced social need processing with companionship bonuses
+- Activity feed messages for social interactions
+
+### 7. Guinea Pig Bonding Flow
+```
+Pet Store Selection → Personality Hints → Guinea Pig Store → Bonding System → Social Need Enhancement
+```
+- Hidden compatibility calculation based on gender, personality, and breed
+- Personality hint display during selection (3 hints per guinea pig)
+- Bonding progression through positive interactions and proximity
+- Enhanced social need processing based on bonding level (neutral/friends/bonded)
+- Natural bonding discovery through activity feed messages
+
+### 8. Guinea Pig Favorites Flow
+```
+Pet Store Selection → Favorites Storage → Pet Store Manager → Player Progression → Persistence
+```
+- Heart/star button integration on guinea pig cards during selection
+- Favorites storage with slot management (3 initial, up to 10 purchasable)
+- Currency-based slot purchases with escalating costs (100, 250, 625...)
+- Store refresh protection (favorites preserved during pet store refresh)
+- Move favorites back to store for flexibility and experimentation
 
 ## Data Flow Architecture
 
@@ -124,19 +153,26 @@ Autonomy System → Pathfinding → Guinea Pig Store → Activity Feed
 ### Phase 2 Dependencies (Core Entities)
 - **Requires:** Complete Phase 1 foundation
 - **Depends on:** Game Controller Store, UI framework, debug systems
-- **Provides:** Core game entities, pet store system, session management, and timing for subsequent phases
+- **Provides:** Core game entities, pet store system, session management, and timing for subsequent phases ✅ **Timing implemented**
 - **Session Model:** Single-session gameplay with pet store selection (1-2 guinea pigs from pool of 10)
 - **Progression System:** Persistent player progression (currency, items) across game sessions
+- **Favorites System:** Emotional attachment benefits with up to 10 purchasable slots for preserving beloved guinea pigs
+- **Store Refresh Protection:** Favorites survive pet store refresh cycles, maintaining player investment while encouraging experimentation
 
 ### Phase 3 Dependencies (Game World)
 - **Requires:** Guinea pig entity and needs framework from Phase 2
 - **Depends on:** Complete timing system and state management
-- **Provides:** Interactive environment for Phase 4 behaviors
+- **Provides:** Interactive environment with habitat conditions, resource management, and inventory systems for Phase 4 behaviors
+- **Habitat Integration:** Environmental conditions (cleanliness, bedding, water, hay) that affect guinea pig needs
+- **Resource Economy:** Bedding and hay as consumable resources creating ongoing economic gameplay
 
 ### Phase 4 Dependencies (Interactions)
 - **Requires:** Complete game world and habitat system from Phase 3
 - **Depends on:** All entity management and environmental systems
 - **Provides:** Complete gameplay loop for Phase 5 enhancements
+- **Social Interactions:** Guinea pig to guinea pig interactions enhance social need satisfaction when 2 guinea pigs are active
+- **Bonding System:** Hidden compatibility and relationship mechanics with research-based factors (gender, personality, breed)
+- **Pet Store Enhancement:** Personality hint system provides subtle selection guidance without revealing underlying compatibility mechanics
 
 ### Phase 5 Dependencies (Polish)
 - **Requires:** Complete core gameplay from Phases 1-4

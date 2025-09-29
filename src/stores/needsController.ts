@@ -138,6 +138,11 @@ export const useNeedsController = defineStore('needsController', () => {
     if (!processingEnabled.value) return
 
     const guineaPigStore = useGuineaPigStore()
+
+    // First, process needs decay for all active guinea pigs
+    guineaPigStore.processBatchNeedsDecay()
+
+    // Then calculate wellness and apply friendship effects
     const activeGuineaPigs = guineaPigStore.activeGuineaPigs
 
     activeGuineaPigs.forEach(gp => {
