@@ -84,6 +84,13 @@
               <div class="pet-store-debug__guinea-pig-name-wrapper">
                 <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
                 <Badge v-if="isGuineaPigActive(guineaPig.id)" variant="success" size="sm">ACTIVE</Badge>
+                <Badge
+                  v-if="shouldShowRarityBadge(guineaPig.breed)"
+                  :variant="getRarityBadgeVariant(guineaPig.breed)"
+                  size="sm"
+                >
+                  {{ getRarityBadgeText(guineaPig.breed) }}
+                </Badge>
               </div>
               <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
             </div>
@@ -529,6 +536,33 @@ const formatPreferenceName = (name: string) => {
   return name.split('_').map(word =>
     word.charAt(0).toUpperCase() + word.slice(1)
   ).join(' ')
+}
+
+// Helper function to get breed rarity
+const getBreedRarity = (breed: string) => {
+  return petStoreManager.getRarity(breed, petStoreManager.weightedBreeds)
+}
+
+// Helper function to determine if rarity should show badge
+const shouldShowRarityBadge = (breed: string) => {
+  const rarity = getBreedRarity(breed)
+  return rarity === 'very-rare' || rarity === 'ultra-rare'
+}
+
+// Helper function to get badge variant for rarity
+const getRarityBadgeVariant = (breed: string) => {
+  const rarity = getBreedRarity(breed)
+  if (rarity === 'ultra-rare') return 'warning'
+  if (rarity === 'very-rare') return 'primary'
+  return 'secondary'
+}
+
+// Helper function to get badge text for rarity
+const getRarityBadgeText = (breed: string) => {
+  const rarity = getBreedRarity(breed)
+  if (rarity === 'ultra-rare') return 'ULTRA RARE'
+  if (rarity === 'very-rare') return 'VERY RARE'
+  return ''
 }
 
 // Preference select refs (for v-model binding)

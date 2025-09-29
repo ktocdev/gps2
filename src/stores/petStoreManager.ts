@@ -134,7 +134,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     'Hazel', 'Maple', 'Cedar', 'Fern', 'Sage', 'Basil'
   ]
 
-  const breeds = ['American', 'Abyssinian', 'Peruvian', 'Silkie', 'Teddy', 'Rex', 'Texel', 'Coronet']
+  // Simple arrays for UI exports
+  const breeds = ['American', 'Abyssinian', 'Peruvian', 'Silkie', 'Teddy', 'Rex', 'Texel', 'Coronet', 'Alpaca', 'Baldwin', 'Merino', 'Skinny Pig', 'White Crested', 'Sheltie']
 
   const furColors = [
     'white', 'black', 'brown', 'cream', 'orange', 'gray',
@@ -144,13 +145,76 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
   const furPatterns = [
     'self', 'agouti', 'dutch', 'brindle', 'roan',
-    'satin', 'himalayan', 'broken', 'pied', 'magpie'
+    'satin', 'himalayan'
+  ]
+
+  // Weighted arrays for rarity system
+  interface WeightedItem {
+    value: string
+    weight: number
+    rarity?: 'common' | 'uncommon' | 'rare' | 'very-rare' | 'ultra-rare'
+  }
+
+  const weightedBreeds: WeightedItem[] = [
+    // Common breeds (weight 100)
+    { value: 'American', weight: 100, rarity: 'common' },
+    { value: 'Abyssinian', weight: 100, rarity: 'common' },
+    // Uncommon breeds (weight 50)
+    { value: 'Peruvian', weight: 50, rarity: 'uncommon' },
+    { value: 'Teddy', weight: 50, rarity: 'uncommon' },
+    { value: 'Rex', weight: 50, rarity: 'uncommon' },
+    { value: 'Sheltie', weight: 50, rarity: 'uncommon' },
+    // Rare breeds (weight 20)
+    { value: 'Silkie', weight: 20, rarity: 'rare' },
+    { value: 'Texel', weight: 20, rarity: 'rare' },
+    { value: 'Coronet', weight: 20, rarity: 'rare' },
+    { value: 'White Crested', weight: 20, rarity: 'rare' },
+    // Very rare breeds (weight 5)
+    { value: 'Alpaca', weight: 5, rarity: 'very-rare' },
+    { value: 'Merino', weight: 5, rarity: 'very-rare' },
+    // Ultra rare breeds (weight 2)
+    { value: 'Baldwin', weight: 2, rarity: 'ultra-rare' },
+    { value: 'Skinny Pig', weight: 2, rarity: 'ultra-rare' }
+  ]
+
+  const weightedFurColors: WeightedItem[] = [
+    // Common colors (weight 100)
+    { value: 'black', weight: 100, rarity: 'common' },
+    { value: 'white', weight: 100, rarity: 'common' },
+    { value: 'brown', weight: 100, rarity: 'common' },
+    { value: 'cream', weight: 100, rarity: 'common' },
+    { value: 'tortoiseshell', weight: 100, rarity: 'common' },
+    { value: 'tricolor', weight: 100, rarity: 'common' },
+    // Uncommon colors (weight 80)
+    { value: 'orange', weight: 80, rarity: 'uncommon' },
+    { value: 'gray', weight: 80, rarity: 'uncommon' },
+    { value: 'red', weight: 80, rarity: 'uncommon' },
+    { value: 'gold', weight: 80, rarity: 'uncommon' },
+    { value: 'beige', weight: 80, rarity: 'uncommon' },
+    // Rare colors (weight 50)
+    { value: 'chocolate', weight: 50, rarity: 'rare' },
+    { value: 'lilac', weight: 50, rarity: 'rare' },
+    { value: 'buff', weight: 50, rarity: 'rare' },
+    { value: 'dalmatian', weight: 50, rarity: 'rare' }
+  ]
+
+  const weightedFurPatterns: WeightedItem[] = [
+    // Common patterns (weight 100)
+    { value: 'self', weight: 100, rarity: 'common' },
+    { value: 'agouti', weight: 100, rarity: 'common' },
+    // Uncommon patterns (weight 50)
+    { value: 'dutch', weight: 50, rarity: 'uncommon' },
+    { value: 'brindle', weight: 50, rarity: 'uncommon' },
+    // Rare patterns (weight 20)
+    { value: 'roan', weight: 20, rarity: 'rare' },
+    { value: 'satin', weight: 20, rarity: 'rare' },
+    { value: 'himalayan', weight: 20, rarity: 'rare' }
   ]
 
   const vegetables = [
     'bell_pepper', 'carrot', 'cucumber', 'leafy_greens',
     'broccoli', 'celery', 'cherry_tomatoes', 'zucchini',
-    'parsley', 'cilantro', 'sweet_potato', 'snap_peas'
+    'parsley', 'cilantro', 'sweet_potato', 'snap_peas', 'dill'
   ]
 
   const fruits = [
@@ -173,12 +237,34 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     'cozy_corners', 'viewing_platforms'
   ]
 
+  // Weighted random selection function
+  function weightedRandom(items: WeightedItem[]): string {
+    const totalWeight = items.reduce((sum, item) => sum + item.weight, 0)
+    let random = Math.random() * totalWeight
+
+    for (const item of items) {
+      random -= item.weight
+      if (random <= 0) {
+        return item.value
+      }
+    }
+
+    // Fallback (should never reach here)
+    return items[0].value
+  }
+
+  // Helper function to get rarity of a trait
+  function getRarity(value: string, weightedArray: WeightedItem[]): string | undefined {
+    const item = weightedArray.find(i => i.value === value)
+    return item?.rarity
+  }
+
   function randomName(): string {
     return guineaPigNames[Math.floor(Math.random() * guineaPigNames.length)]
   }
 
   function randomBreed(): string {
-    return breeds[Math.floor(Math.random() * breeds.length)]
+    return weightedRandom(weightedBreeds)
   }
 
   function randomGender(): 'male' | 'female' {
@@ -186,11 +272,29 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   }
 
   function randomFurColor(): string {
-    return furColors[Math.floor(Math.random() * furColors.length)]
+    return weightedRandom(weightedFurColors)
   }
 
   function randomFurPattern(): string {
-    return furPatterns[Math.floor(Math.random() * furPatterns.length)]
+    return weightedRandom(weightedFurPatterns)
+  }
+
+  function randomEyeColor(furColor: string): string {
+    // Light colors that are appropriate for pink/red eyes
+    const lightColors = ['white', 'cream', 'beige', 'gray', 'lilac', 'buff']
+
+    // Check if the fur color is appropriate for pink eyes
+    if (lightColors.includes(furColor)) {
+      // 30% chance of pink/red eyes with light colors
+      if (Math.random() < 0.3) {
+        // 50/50 chance between pink and red for variety
+        return Math.random() < 0.5 ? 'pink' : 'red'
+      }
+    }
+
+    // Otherwise, select from normal eye colors (excluding pink)
+    const normalEyeColors = ['brown', 'black', 'blue']
+    return normalEyeColors[Math.floor(Math.random() * normalEyeColors.length)]
   }
 
   function pickRandomPreferences(items: string[], alreadyPicked: string[] = []): string[] {
@@ -289,7 +393,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       appearance: {
         furColor: color,
         furPattern: pattern,
-        eyeColor: ['brown', 'black', 'red', 'blue'][Math.floor(Math.random() * 4)],
+        eyeColor: randomEyeColor(color),  // Now uses fur color-aware eye color selection
         size: ['small', 'medium', 'large'][Math.floor(Math.random() * 3)] as 'small' | 'medium' | 'large'
       },
 
@@ -514,12 +618,18 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     furColors,
     furPatterns,
     breeds,
-    eyeColors: ['brown', 'black', 'red', 'blue'],
+    eyeColors: ['brown', 'black', 'red', 'blue', 'pink'],
     vegetables,
     fruits,
     hayTypes,
     activities,
     habitatFeatures,
+
+    // Weighted arrays for rarity display
+    weightedBreeds,
+    weightedFurColors,
+    weightedFurPatterns,
+    getRarity,
 
     generateRandomGuineaPigs,
     refreshPetStore,

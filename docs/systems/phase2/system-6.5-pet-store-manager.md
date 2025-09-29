@@ -18,6 +18,15 @@ A streamlined single-game session system where guinea pigs are selected from a r
 - Only one active game session at a time
 - Ending a game returns guinea pigs to store with needs reset
 
+**Weighted Rarity System:**
+Guinea pig traits are generated using realistic rarity distributions:
+- **Breeds:** Range from common to ultra-rare based on real guinea pig availability
+- **Colors:** Balanced distribution with special eye color matching
+- **Patterns:** Traditional patterns with appropriate rarity weighting
+
+**Smart Eye Color System:**
+Pink and red eyes only appear with appropriate light fur colors, creating realistic albino and leucistic appearances.
+
 **Progression Persistence:**
 - Currency persists across game sessions
 - Non-consumable items persist (habitat furniture, toys, etc.)
@@ -525,6 +534,68 @@ function stopAutoRefresh() {
 - Adjustable end game penalty
 - Force generate specific guinea pig traits
 - Skip cooldowns
+
+## Rarity & Trait Systems
+
+### Weighted Breed Distribution
+
+Guinea pig breeds are generated using weighted rarity based on real-world availability:
+
+**Common Breeds (40% total):**
+- American (weight: 100)
+- Abyssinian (weight: 100)
+
+**Uncommon Breeds (40% total):**
+- Peruvian (weight: 50)
+- Teddy (weight: 50)
+- Rex (weight: 50)
+- Sheltie (weight: 50)
+
+**Rare Breeds (16% total):**
+- Silkie (weight: 20)
+- Texel (weight: 20)
+- Coronet (weight: 20)
+- White Crested (weight: 20)
+
+**Very Rare Breeds (2% total):**
+- Alpaca (weight: 5)
+- Merino (weight: 5)
+
+**Ultra Rare Breeds (<1% total):**
+- Baldwin (weight: 2)
+- Skinny Pig (weight: 2)
+
+### Color & Pattern Distribution
+
+**Fur Colors:**
+- **Common:** black, white, brown, cream, tortoiseshell, tricolor
+- **Uncommon:** orange, gray, red, gold, beige
+- **Rare:** chocolate, lilac, buff, dalmatian
+
+**Fur Patterns:**
+- **Common:** self, agouti
+- **Uncommon:** dutch, brindle
+- **Rare:** roan, satin, himalayan
+
+### Smart Eye Color System
+
+Eye colors are intelligently selected based on fur color for realistic genetics:
+
+**Light Fur Colors:** white, cream, beige, gray, lilac, buff
+- 30% chance of pink or red eyes (albino/leucistic trait)
+- 70% chance of normal eyes (brown, black, blue)
+
+**All Other Fur Colors:**
+- Only normal eye colors: brown, black, blue
+- No pink eyes (genetically unrealistic)
+
+This system creates authentic-looking guinea pigs where pink eyes naturally appear with light pigmentation, mimicking real albino and leucistic guinea pig genetics.
+
+### UI Integration
+
+- **Rarity Badges:** Very rare and ultra rare breeds display special badges in the pet store
+- **Color Validation:** Eye color selection respects genetic realism
+- **Debug Information:** Rarity information available for UI display
 
 ## Future Considerations
 
