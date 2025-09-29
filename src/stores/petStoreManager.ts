@@ -283,18 +283,30 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Light colors that are appropriate for pink/red eyes
     const lightColors = ['white', 'cream', 'beige', 'gray', 'lilac', 'buff']
 
-    // Check if the fur color is appropriate for pink eyes
     if (lightColors.includes(furColor)) {
-      // 30% chance of pink/red eyes with light colors
-      if (Math.random() < 0.3) {
-        // 50/50 chance between pink and red for variety
+      // Light colors: 25% pink/red, 20% blue, 55% brown/black
+      const random = Math.random()
+
+      if (random < 0.25) {
+        // 25% chance of pink/red eyes
         return Math.random() < 0.5 ? 'pink' : 'red'
+      } else if (random < 0.45) {
+        // 20% chance of blue eyes (25% + 20% = 45%)
+        return 'blue'
+      } else {
+        // 55% chance of brown/black eyes
+        return Math.random() < 0.5 ? 'brown' : 'black'
+      }
+    } else {
+      // Dark colors: 10% blue, 90% brown/black, no pink/red
+      if (Math.random() < 0.1) {
+        // 10% chance of blue eyes (rare)
+        return 'blue'
+      } else {
+        // 90% chance of brown/black eyes
+        return Math.random() < 0.5 ? 'brown' : 'black'
       }
     }
-
-    // Otherwise, select from normal eye colors (excluding pink)
-    const normalEyeColors = ['brown', 'black', 'blue']
-    return normalEyeColors[Math.floor(Math.random() * normalEyeColors.length)]
   }
 
   function pickRandomPreferences(items: string[], alreadyPicked: string[] = []): string[] {

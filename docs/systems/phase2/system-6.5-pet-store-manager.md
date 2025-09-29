@@ -579,17 +579,19 @@ Guinea pig breeds are generated using weighted rarity based on real-world availa
 
 ### Smart Eye Color System
 
-Eye colors are intelligently selected based on fur color for realistic genetics:
+Eye colors are intelligently selected based on fur color for realistic genetics with rarity:
 
 **Light Fur Colors:** white, cream, beige, gray, lilac, buff
-- 30% chance of pink or red eyes (albino/leucistic trait)
-- 70% chance of normal eyes (brown, black, blue)
+- 25% chance of pink or red eyes (albino/leucistic trait)
+- 20% chance of blue eyes (rare but more common with light colors)
+- 55% chance of brown or black eyes (common)
 
 **All Other Fur Colors:**
-- Only normal eye colors: brown, black, blue
-- No pink eyes (genetically unrealistic)
+- 10% chance of blue eyes (rare - makes them special finds!)
+- 90% chance of brown or black eyes (common)
+- 0% chance of pink/red eyes (genetically unrealistic)
 
-This system creates authentic-looking guinea pigs where pink eyes naturally appear with light pigmentation, mimicking real albino and leucistic guinea pig genetics.
+This system creates authentic-looking guinea pigs where pink eyes naturally appear with light pigmentation, and blue eyes are rare treasures that are more exciting to find on dark-colored guinea pigs.
 
 ### UI Integration
 
