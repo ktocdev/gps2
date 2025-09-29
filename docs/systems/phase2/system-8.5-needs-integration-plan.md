@@ -1,8 +1,8 @@
-# Needs System Integration & UI Testing Plan - System 7.5
+# Needs System Integration & UI Testing Plan - System 8.5
 
 **Phase:** Phase 2 (Core Game Entities & Timing)
 **Status:** 📋 Planning - Missing Visual Testing Components
-**Prerequisites:** System 7 (Needs System Architecture) ✅ Core Complete
+**Prerequisites:** System 7 (Needs System Architecture), System 8 (Needs Controller) ✅ Core Complete
 **Created:** September 28, 2025
 
 ## Overview
@@ -11,7 +11,7 @@ Implementation plan for creating missing visual testing components to enable com
 
 **Parent Documentation:**
 - [Needs System Architecture](system-7-needs-system.md) - Complete system specification
-- [Needs System Implementation Plan](system-7-needs-system-implementation-plan.md) - Core implementation
+- [Needs System Implementation Plan](system-7-needs-system-implementation-plan.md) - Core implementation (if exists)
 - [Needs Controller Store](system-8-needs-controller-store.md) - Controller architecture
 - [Wellness System Design](../../game-design/wellness-system.md) - Game design philosophy
 
@@ -584,7 +584,7 @@ watch(() => needsController.currentWellness, (newValue) => {
 ## Documentation Updates
 
 After implementation, update:
-- [ ] system-7-needs-system-implementation-plan.md - Mark visual components complete
+- [ ] system-8.5-needs-integration-plan.md - Mark visual components complete
 - [ ] PROJECT_PLAN.md - Update Phase 2 progress
 - [ ] DEVELOPMENT_PHASES.md - Mark needs system testing complete
 - [ ] Component documentation for each new visual component
