@@ -135,7 +135,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   ]
 
   // Simple arrays for UI exports
-  const breeds = ['American', 'Abyssinian', 'Peruvian', 'Silkie', 'Teddy', 'Rex', 'Texel', 'Coronet', 'Alpaca', 'Baldwin', 'Merino', 'Skinny Pig', 'White Crested', 'Sheltie']
+  const breeds = ['American', 'Abyssinian', 'Peruvian', 'Silkie', 'Teddy', 'Rex', 'Texel', 'Coronet', 'Alpaca', 'Baldwin', 'Merino', 'Skinny Pig', 'White Crested']
 
   const furColors = [
     'white', 'black', 'brown', 'cream', 'orange', 'gray',
@@ -163,7 +163,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     { value: 'Peruvian', weight: 50, rarity: 'uncommon' },
     { value: 'Teddy', weight: 50, rarity: 'uncommon' },
     { value: 'Rex', weight: 50, rarity: 'uncommon' },
-    { value: 'Sheltie', weight: 50, rarity: 'uncommon' },
     // Rare breeds (weight 20)
     { value: 'Silkie', weight: 20, rarity: 'rare' },
     { value: 'Texel', weight: 20, rarity: 'rare' },

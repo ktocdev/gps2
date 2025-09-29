@@ -41,7 +41,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ### Systems
 6. **[Guinea Pig Store](docs/systems/phase2/system-6-guinea-pig-store.md)** - Entity management with data persistence ✅ **Completed including System 6.8** (September 28, 2025 | Branch: GPS2-11)
-6.5. **[Pet Store & Game Session Manager](docs/systems/phase2/system-6.5-pet-store-manager.md)** - Single-session game with 10-guinea pig pet store featuring weighted rarity system, smart eye color genetics, 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-10)
+6.5. **[Pet Store & Game Session Manager](docs/systems/phase2/system-6.5-pet-store-manager.md)** - Single-session game with 10-guinea pig pet store featuring weighted rarity system, smart eye color genetics, 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 28, 2025 | Branch: GPS2-13)
 7. **[Needs System Architecture](docs/systems/phase2/system-7-needs-system.md)** - Core game mechanics with internal wellness system (connect to needs bars, enhanced friendship meter)
 8. **[Needs Controller Store](docs/systems/phase2/system-8-needs-controller-store.md)** - Centralized need processing with wellness calculation and friendship penalties (connect to live needs display, enhanced friendship feedback)
 9. **[Habitat Conditions Store](docs/systems/phase2/system-9-habitat-conditions.md)** - Environmental condition tracking (cleanliness, bedding freshness, water level) with resource management

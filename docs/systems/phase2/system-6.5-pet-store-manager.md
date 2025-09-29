@@ -545,11 +545,10 @@ Guinea pig breeds are generated using weighted rarity based on real-world availa
 - American (weight: 100)
 - Abyssinian (weight: 100)
 
-**Uncommon Breeds (40% total):**
+**Uncommon Breeds (30% total):**
 - Peruvian (weight: 50)
 - Teddy (weight: 50)
 - Rex (weight: 50)
-- Sheltie (weight: 50)
 
 **Rare Breeds (16% total):**
 - Silkie (weight: 20)
