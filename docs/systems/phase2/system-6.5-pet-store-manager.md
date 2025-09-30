@@ -566,15 +566,34 @@ Guinea pig breeds are generated using weighted rarity based on real-world availa
 
 ### Color & Pattern Distribution
 
-**Fur Colors:**
+**Colors (applies to both fur and skin pigmentation):**
 - **Common:** black, white, brown, cream, tortoiseshell, tricolor
 - **Uncommon:** orange, gray, red, gold, beige
 - **Rare:** chocolate, lilac, buff, dalmatian
 
-**Fur Patterns:**
+**Patterns:**
 - **Common:** self, agouti
-- **Uncommon:** dutch, brindle
+- **Uncommon:** dutch, brindle, magpie
 - **Rare:** roan, satin, himalayan
+
+**Hairless Breed Pattern Restrictions:**
+
+Hairless breeds (Baldwin, Skinny Pig) can only have skin pigmentation patterns and exclude fur-specific patterns:
+
+**Allowed for Hairless:**
+- self (solid skin color)
+- dutch (pigmentation patches)
+- magpie (bicolor split pigmentation)
+- dalmatian (pigmented spots)
+
+**Excluded for Hairless:**
+- agouti (requires banded fur)
+- brindle (requires mixed hair colors)
+- roan (requires white/colored hair mixture)
+- satin (fur sheen quality)
+- himalayan (temperature-sensitive fur pigmentation)
+
+The generation system automatically filters patterns based on breed, ensuring biological accuracy.
 
 ### Smart Eye Color System
 
@@ -597,6 +616,7 @@ This system creates authentic-looking guinea pigs where pink eyes naturally appe
 - **Rarity Badges:** Very rare and ultra rare breeds display special badges in the pet store
 - **Color Validation:** Eye color selection respects genetic realism
 - **Debug Information:** Rarity information available for UI display
+- **Consistent Labeling:** Profile displays use generic "Color" and "Pattern" labels (not "Fur Color"/"Fur Pattern") for consistency across all breeds including hairless varieties
 
 ## Future Considerations
 

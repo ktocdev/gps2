@@ -145,7 +145,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
   const furPatterns = [
     'self', 'agouti', 'dutch', 'brindle', 'roan',
-    'satin', 'himalayan'
+    'satin', 'himalayan', 'magpie'
   ]
 
   // Weighted arrays for rarity system
@@ -204,6 +204,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Uncommon patterns (weight 50)
     { value: 'dutch', weight: 50, rarity: 'uncommon' },
     { value: 'brindle', weight: 50, rarity: 'uncommon' },
+    { value: 'magpie', weight: 50, rarity: 'uncommon' },
     // Rare patterns (weight 20)
     { value: 'roan', weight: 20, rarity: 'rare' },
     { value: 'satin', weight: 20, rarity: 'rare' },
@@ -274,7 +275,19 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     return weightedRandom(weightedFurColors)
   }
 
-  function randomFurPattern(): string {
+  function randomFurPattern(breed?: string): string {
+    // Hairless breeds (Baldwin, Skinny Pig) can only have skin pigmentation patterns
+    // Exclude fur-specific patterns: agouti, brindle, roan, satin, himalayan
+    const hairlessBreeds = ['Baldwin', 'Skinny Pig']
+    const furSpecificPatterns = ['agouti', 'brindle', 'roan', 'satin', 'himalayan']
+
+    if (breed && hairlessBreeds.includes(breed)) {
+      const hairlessCompatiblePatterns = weightedFurPatterns.filter(
+        pattern => !furSpecificPatterns.includes(pattern.value)
+      )
+      return weightedRandom(hairlessCompatiblePatterns)
+    }
+
     return weightedRandom(weightedFurPatterns)
   }
 
@@ -356,9 +369,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   }
 
   function generateRandomGuineaPig(): GuineaPig {
+    const breed = randomBreed()
     const color = randomFurColor()
     const multiColorPatterns = ['tortoiseshell', 'tricolor', 'dalmatian']
-    const pattern = multiColorPatterns.includes(color) ? 'self' : randomFurPattern()
+    const pattern = multiColorPatterns.includes(color) ? 'self' : randomFurPattern(breed)
 
     const birthDate = Date.now() - (Math.floor(Math.random() * 730) + 30) * 24 * 60 * 60 * 1000
 
@@ -366,7 +380,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       id: generateGuineaPigId(),
       name: randomName(),
       gender: randomGender(),
-      breed: randomBreed(),
+      breed,
       birthDate,
       lastInteraction: Date.now(),
 

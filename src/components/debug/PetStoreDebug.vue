@@ -191,14 +191,14 @@
           </div>
           <div class="flex flex-col gap-3 mb-4">
             <label class="form-field-inline">
-              Fur Color:
+              Color:
               <select v-model="selectedGuineaPig.appearance.furColor" class="input" :disabled="isSelectedGuineaPigActive">
                 <option v-if="!furColorOptions.includes(selectedGuineaPig.appearance.furColor)" :value="selectedGuineaPig.appearance.furColor">{{ capitalize(selectedGuineaPig.appearance.furColor) }}</option>
                 <option v-for="color in furColorOptions" :key="color" :value="color">{{ capitalize(color) }}</option>
               </select>
             </label>
             <label class="form-field-inline">
-              Fur Pattern:
+              Pattern:
               <select v-model="selectedGuineaPig.appearance.furPattern" class="input" :disabled="isSelectedGuineaPigActive">
                 <option v-if="!furPatternOptions.includes(selectedGuineaPig.appearance.furPattern)" :value="selectedGuineaPig.appearance.furPattern">{{ capitalize(selectedGuineaPig.appearance.furPattern) }}</option>
                 <option v-for="pattern in furPatternOptions" :key="pattern" :value="pattern">{{ capitalize(pattern) }}</option>
