@@ -395,7 +395,18 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   const processBatchNeedsDecay = (): void => {
     const currentTime = Date.now()
 
+    // Defensive check: ensure activeGuineaPigs is an array
+    if (!Array.isArray(activeGuineaPigs.value)) {
+      getLoggingStore().logWarn('activeGuineaPigs is not an array in processBatchNeedsDecay')
+      return
+    }
+
     activeGuineaPigs.value.forEach(guineaPig => {
+      if (!guineaPig || !guineaPig.id) {
+        getLoggingStore().logWarn('Invalid guinea pig in activeGuineaPigs during batch needs decay')
+        return
+      }
+
       const lastUpdate = needsLastUpdate.value[guineaPig.id] || currentTime
       const deltaTime = currentTime - lastUpdate
 

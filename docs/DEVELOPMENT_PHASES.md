@@ -41,7 +41,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ### Systems
 6. **[Guinea Pig Store](docs/systems/phase2/system-6-guinea-pig-store.md)** - Entity management with data persistence ✅ **Completed including System 6.8** (September 28, 2025 | Branch: GPS2-11)
-6.5. **[Pet Store & Game Session Manager](docs/systems/phase2/system-6.5-pet-store-manager.md)** - Single-session game with 10-guinea pig pet store featuring weighted rarity system, smart eye color genetics, 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 28, 2025 | Branch: GPS2-13)
+6.5. **[Pet Store & Game Session Manager](docs/systems/phase2/system-6.5-pet-store-manager.md)** - Single-session game with 10-guinea pig pet store featuring weighted rarity system, smart eye color genetics, hairless breed pattern restrictions (magpie pattern added), 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 28, 2025 | Branch: GPS2-13) | **Updated** (September 29, 2025 | Branch: GPS-15)
 6.9. **[Guinea Pig Favorites System](docs/systems/phase2/system-6.9-guinea-pig-favorites.md)** - Save beloved guinea pigs permanently with up to 10 purchasable slots, protected from store refreshes, with currency-based progression
 7. **[Needs System Architecture](docs/systems/phase2/system-7-needs-system.md)** - Core game mechanics with internal wellness system (connect to needs bars, enhanced friendship meter)
 8. **[Needs Controller Store](docs/systems/phase2/system-8-needs-controller-store.md)** - Centralized need processing with wellness calculation and friendship penalties ✅ **Implemented** (needsController.ts)
@@ -56,7 +56,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ### Key Deliverables
 - **Guinea pig store implementation** with complete data structure, CRUD operations, and enhanced debug panel ✅ **Fully Completed including System 6.8**
-- **Pet store with advanced features** ✅ **Completed** - Weighted rarity system (common to ultra-rare breeds), smart eye color genetics (pink eyes only with light fur), 24-hour auto-refresh with live countdown, and rarity badge UI
+- **Pet store with advanced features** ✅ **Completed** - Weighted rarity system (common to ultra-rare breeds), smart eye color genetics (pink eyes only with light fur), hairless breed pattern restrictions (Baldwin/Skinny Pig exclude fur-specific patterns), magpie pattern addition, 24-hour auto-refresh with live countdown, and rarity badge UI
 - **Guinea pig favorites system** with emotional attachment benefits, slot purchase progression, and store refresh protection
 - **Complete needs system** with all 7 needs categories and interdependencies
 - **Wellness calculation system** (internal only) with friendship penalties ✅ **Implemented**

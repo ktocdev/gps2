@@ -34,7 +34,7 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 
 ##### Phase 2: Core Entities & Timing
 - **[System 6: Guinea Pig Store](systems/phase2/system-6-guinea-pig-store.md)** - Central guinea pig state management ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
-- **[System 6.5: Pet Store & Game Session Manager](systems/phase2/system-6.5-pet-store-manager.md)** - Single-session pet store system with 10 guinea pigs featuring weighted rarity system, smart eye color genetics, 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-11)
+- **[System 6.5: Pet Store & Game Session Manager](systems/phase2/system-6.5-pet-store-manager.md)** - Single-session pet store system with 10 guinea pigs featuring weighted rarity system, smart eye color genetics, hairless breed pattern restrictions (magpie pattern added), 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 27, 2025 | Branch: GPS2-11) | **Updated** (September 29, 2025 | Branch: GPS-15)
 - **[System 6.9: Guinea Pig Favorites](systems/phase2/system-6.9-guinea-pig-favorites.md)** - Save beloved guinea pigs permanently with purchasable slots and store refresh protection
 - **[System 7: Needs System](systems/phase2/system-7-needs-system.md)** - Seven fundamental needs with decay and satisfaction
 - **[System 8: Needs Controller Store](systems/phase2/system-8-needs-controller-store.md)** - Centralized needs management ✅ **Implemented** (needsController.ts)
@@ -96,6 +96,8 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 - **Pet Store & Game Session Manager**: Complete implementation with PetStoreManager store, pet store debug panel, GameController integration, and 10-guinea pig generation system
 - **Weighted Rarity System**: Breeds range from common (American, Abyssinian) to ultra-rare (Baldwin, Skinny Pig) with realistic distribution percentages and rarity badge UI
 - **Smart Eye Color Genetics**: Pink/red eyes only appear with light-colored guinea pigs (white, cream, beige, gray, lilac, buff) creating realistic albino/leucistic appearances
+- **Hairless Breed Pattern System**: Baldwin and Skinny Pig breeds automatically exclude fur-specific patterns (agouti, brindle, roan, satin, himalayan) and only receive skin pigmentation patterns (self, dutch, magpie, dalmatian)
+- **Pattern System Enhancement**: Added magpie pattern (uncommon rarity) for bicolor guinea pigs, consistent labeling across all breeds using generic "Color" and "Pattern" (not "Fur Color"/"Fur Pattern")
 - **24-Hour Auto-Refresh**: Guinea pig store automatically refreshes daily with live countdown timer, persistent across sessions, and startup checks for overdue refreshes
 - **System 6.8 Preference Randomization**: Natural variation in guinea pig preferences with guaranteed 1-2 items per category and no overlap between likes/dislikes
 - **Enhanced Debug Interface**: Accessibility improvements with fieldset/legend structure, horizontal dividers, and improved form organization

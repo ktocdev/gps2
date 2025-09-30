@@ -9,6 +9,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
+import { usePetStoreManager } from './petStoreManager'
 
 export interface OwnedItem {
   itemId: string
@@ -33,6 +34,7 @@ export const usePlayerProgression = defineStore('playerProgression', () => {
   const totalPlayTime = ref<number>(0)
   const guineaPigsAdopted = ref<number>(0)
   const unlockedAchievements = ref<string[]>([])
+  const favoriteSlotsPurchased = ref<number>(0)
 
   const formattedCurrency = computed(() => {
     return `$${currency.value.toLocaleString()}`
@@ -55,6 +57,36 @@ export const usePlayerProgression = defineStore('playerProgression', () => {
     } else {
       return `${seconds}s`
     }
+  })
+
+  // Favorites slot cost calculation
+  function getFavoriteSlotCost(nextSlotNumber: number): number {
+    // Slots 1-3 are free (initial)
+    // Slot 4: $100
+    // Slot 5: $250
+    // Slot 6: $625
+    // Slot 7: $1,563
+    // Slot 8: $3,906
+    // Slot 9: $9,766
+    // Slot 10: $24,414
+
+    if (nextSlotNumber <= 3) return 0
+
+    const baseCost = 100
+    const slotIndex = nextSlotNumber - 4
+    const cost = Math.floor(baseCost * Math.pow(2.5, slotIndex))
+
+    return cost
+  }
+
+  const nextFavoriteSlotCost = computed(() => {
+    const petStoreManager = usePetStoreManager()
+    const nextSlot = petStoreManager.maxFavoriteSlots + 1
+    return getFavoriteSlotCost(nextSlot)
+  })
+
+  const canAffordFavoriteSlot = computed(() => {
+    return currency.value >= nextFavoriteSlotCost.value
   })
 
   function updateCurrency(amount: number): void {
@@ -108,6 +140,39 @@ export const usePlayerProgression = defineStore('playerProgression', () => {
     logging.logInfo(`Total guinea pigs adopted: ${guineaPigsAdopted.value}`)
   }
 
+  function purchaseFavoriteSlot(): boolean {
+    const petStoreManager = usePetStoreManager()
+
+    // Validate max slots not reached
+    if (petStoreManager.maxFavoriteSlots >= 10) {
+      getLoggingStore().logWarn('Maximum favorite slots already purchased')
+      return false
+    }
+
+    const cost = nextFavoriteSlotCost.value
+
+    // Validate currency
+    if (currency.value < cost) {
+      getLoggingStore().logWarn('Insufficient currency for favorite slot purchase')
+      return false
+    }
+
+    // Deduct currency
+    deductCurrency(cost, 'favorite_slot_purchase')
+
+    // Increase max slots
+    petStoreManager.maxFavoriteSlots++
+    favoriteSlotsPurchased.value++
+
+    getLoggingStore().addPlayerAction(
+      `Purchased favorite slot #${petStoreManager.maxFavoriteSlots} for $${cost} 🎁`,
+      '🎁',
+      { slotNumber: petStoreManager.maxFavoriteSlots, cost }
+    )
+
+    return true
+  }
+
   function resetProgression(): void {
     currency.value = 1000
     totalCurrencyEarned.value = 1000
@@ -117,6 +182,12 @@ export const usePlayerProgression = defineStore('playerProgression', () => {
     totalPlayTime.value = 0
     guineaPigsAdopted.value = 0
     unlockedAchievements.value = []
+    favoriteSlotsPurchased.value = 0
+
+    // Reset pet store manager favorites
+    const petStoreManager = usePetStoreManager()
+    petStoreManager.maxFavoriteSlots = 3
+    petStoreManager.favoriteGuineaPigs.length = 0
 
     const logging = getLoggingStore()
     logging.addPlayerAction('Reset player progression 🔄', '🔄', {})
@@ -137,10 +208,17 @@ export const usePlayerProgression = defineStore('playerProgression', () => {
     totalPlayTime,
     guineaPigsAdopted,
     unlockedAchievements,
+    favoriteSlotsPurchased,
 
     formattedCurrency,
     formattedTotalEarned,
     formattedPlayTime,
+
+    // Favorites slot system
+    nextFavoriteSlotCost,
+    canAffordFavoriteSlot,
+    getFavoriteSlotCost,
+    purchaseFavoriteSlot,
 
     updateCurrency,
     deductCurrency,
