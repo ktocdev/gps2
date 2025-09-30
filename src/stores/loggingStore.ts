@@ -157,6 +157,12 @@ export const useLoggingStore = defineStore('loggingStore', () => {
     return addMessage('info', 'achievement', message, emoji, metadata)
   }
 
+  // Generic activity logging (for system events with category/action/details structure)
+  const logActivity = (activity: { category: string; action: string; details?: Record<string, any> }) => {
+    const message = `[${activity.category.toUpperCase()}] ${activity.action}`
+    return addMessage('info', 'system', message, '📊', activity.details)
+  }
+
   // Utility functions
   const clearMessages = () => {
     state.value.messages = []
@@ -232,6 +238,7 @@ export const useLoggingStore = defineStore('loggingStore', () => {
     addAutonomousBehavior,
     addEnvironmentalEvent,
     addAchievement,
+    logActivity,
 
     // Utility methods
     clearMessages,

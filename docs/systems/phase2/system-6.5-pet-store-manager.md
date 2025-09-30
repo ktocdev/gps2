@@ -678,4 +678,41 @@ If implementing over existing guinea pig data:
 3. Clear any existing save game slot data
 4. Initialize pet store manager state
 
+## System Integration Notes
+
+### Favorites System Integration (System 6.9)
+**Integration Date:** September 29, 2025 | Branch: GPS-15
+
+The Pet Store Manager now integrates with the Guinea Pig Favorites System:
+
+**Store Extensions:**
+- Added `favoriteGuineaPigs[]` array to persist favorite guinea pigs
+- Added `maxFavoriteSlots` (default: 3, purchasable up to 10)
+- `refreshPetStore()` preserves favorites during refresh (backed up and restored)
+
+**Methods:**
+- `addToFavorites(guineaPigId)` - Adds guinea pig to favorites with active session awareness
+- `removeFromFavorites(guineaPigId)` - Removes from favorites array
+- `moveFromFavoritesToStore(guineaPigId)` - Moves favorite back to available pool (blocks if active)
+
+**Active Session Behavior:**
+- Guinea pigs can be favorited during active game sessions
+- Favoriting doesn't remove active guinea pigs from gameplay
+- When session ends, favorited guinea pigs remain in favorites only
+- Cannot move active guinea pigs from favorites back to store
+
+**See:** [system-6.9-guinea-pig-favorites.md](./system-6.9-guinea-pig-favorites.md) for complete favorites system documentation.
+
+### Pattern System Updates
+**Update Date:** September 28, 2025
+
+**Hairless Breed Pattern Restrictions:**
+- Baldwin and Skinny Pig breeds exclude fur-specific patterns
+- Excluded patterns: agouti, brindle, roan, satin, himalayan
+- Allowed patterns: self, dutch, dalmatian, magpie (skin pigmentation patterns)
+- `randomFurPattern()` accepts breed parameter for filtering
+
+**Pattern Additions:**
+- Added magpie pattern to pattern arrays and rarities
+
 This streamlined architecture provides better UX, simpler implementation, and encourages players to explore different guinea pig combinations without emotional attachment concerns.

@@ -38,6 +38,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   }
 
   const availableGuineaPigs = ref<GuineaPig[]>([])
+  const favoriteGuineaPigs = ref<GuineaPig[]>([])
+  const maxFavoriteSlots = ref<number>(3)
   const lastRefreshTimestamp = ref<number>(0)
   const refreshCooldownMs = ref<number>(3600000)
   const activeGameSession = ref<GameSession | null>(null)
@@ -113,6 +115,21 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       .map(id => guineaPigStore.getGuineaPig(id))
       .filter(Boolean) as GuineaPig[]
   })
+
+  // Favorites computed properties
+  const favoriteCount = computed(() => favoriteGuineaPigs.value.length)
+
+  const availableFavoriteSlots = computed(() =>
+    maxFavoriteSlots.value - favoriteCount.value
+  )
+
+  const canAddToFavorites = computed(() =>
+    favoriteCount.value < maxFavoriteSlots.value
+  )
+
+  const canPurchaseMoreSlots = computed(() =>
+    maxFavoriteSlots.value < 10
+  )
 
   function generateGuineaPigId(): string {
     return `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -447,10 +464,108 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     )
   }
 
+  // Favorites management functions
+  function addToFavorites(guineaPigId: string): boolean {
+    // Validate guinea pig exists in available pool
+    const guineaPig = availableGuineaPigs.value.find(gp => gp.id === guineaPigId)
+    if (!guineaPig) {
+      getLoggingStore().logWarn('Guinea pig not found in available pool')
+      return false
+    }
+
+    // Check slot availability
+    if (!canAddToFavorites.value) {
+      getLoggingStore().logWarn('No available favorite slots')
+      return false
+    }
+
+    // Check if guinea pig is in active game session
+    const isInActiveSession = activeGameSession.value?.guineaPigIds.includes(guineaPigId) ?? false
+
+    // Only remove from available pool if NOT in active game session
+    if (!isInActiveSession) {
+      availableGuineaPigs.value = availableGuineaPigs.value.filter(
+        gp => gp.id !== guineaPigId
+      )
+    }
+
+    // Add to favorites (create copy to avoid reference issues)
+    favoriteGuineaPigs.value.push({ ...guineaPig })
+
+    getLoggingStore().addPlayerAction(
+      `Added ${guineaPig.name} to favorites ⭐`,
+      '⭐',
+      { guineaPigId, name: guineaPig.name, wasActive: isInActiveSession }
+    )
+
+    return true
+  }
+
+  function removeFromFavorites(guineaPigId: string): boolean {
+    const index = favoriteGuineaPigs.value.findIndex(gp => gp.id === guineaPigId)
+    if (index === -1) {
+      getLoggingStore().logWarn('Guinea pig not found in favorites')
+      return false
+    }
+
+    // Check if guinea pig is in active game session
+    const isInActiveSession = activeGameSession.value?.guineaPigIds.includes(guineaPigId) ?? false
+
+    if (isInActiveSession) {
+      // Silently fail - UI should prevent this action by disabling the button
+      return false
+    }
+
+    const guineaPig = favoriteGuineaPigs.value[index]
+
+    // Remove from favorites
+    favoriteGuineaPigs.value.splice(index, 1)
+
+    getLoggingStore().addPlayerAction(
+      `Removed ${guineaPig.name} from favorites 💔`,
+      '💔',
+      { guineaPigId, name: guineaPig.name }
+    )
+
+    return true
+  }
+
+  function moveFromFavoritesToStore(guineaPigId: string): boolean {
+    const index = favoriteGuineaPigs.value.findIndex(gp => gp.id === guineaPigId)
+    if (index === -1) {
+      getLoggingStore().logWarn('Guinea pig not found in favorites')
+      return false
+    }
+
+    // Check if guinea pig is in active game session
+    const isInActiveSession = activeGameSession.value?.guineaPigIds.includes(guineaPigId) ?? false
+
+    if (isInActiveSession) {
+      // Silently fail - UI should prevent this action by disabling the button
+      return false
+    }
+
+    const guineaPig = favoriteGuineaPigs.value[index]
+
+    // Remove from favorites
+    favoriteGuineaPigs.value.splice(index, 1)
+
+    // Add to available pool
+    availableGuineaPigs.value.push(guineaPig)
+
+    getLoggingStore().addPlayerAction(
+      `Moved ${guineaPig.name} from favorites to store 🏪`,
+      '🏪',
+      { guineaPigId, name: guineaPig.name }
+    )
+
+    return true
+  }
+
   function refreshPetStore(isAutoRefresh: boolean = false): void {
     if (!isAutoRefresh && !canRefreshPetStore.value) {
       const logging = getLoggingStore()
-      logging.logWarning('Pet store refresh on cooldown')
+      logging.logWarn('Pet store refresh on cooldown')
       return
     }
 
@@ -459,8 +574,14 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       endGameSession()
     }
 
+    // Preserve favorites during refresh (key feature!)
+    const favoritesBackup = [...favoriteGuineaPigs.value]
+
     generateRandomGuineaPigs(10)
     lastRefreshTimestamp.value = Date.now()
+
+    // Restore favorites
+    favoriteGuineaPigs.value = favoritesBackup
 
     // Reset auto-refresh timer whenever any refresh occurs (manual or auto)
     if (settings.value.autoRefreshEnabled) {
@@ -471,7 +592,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     const refreshType = isAutoRefresh ? 'Auto-refreshed' : 'Refreshed'
     logging.addPlayerAction(`${refreshType} pet store with new guinea pigs 🔄`, '🔄', {
       isAutoRefresh,
-      nextAutoRefresh: nextAutoRefreshTime.value
+      nextAutoRefresh: nextAutoRefreshTime.value,
+      favoritesPreserved: favoritesBackup.length
     })
   }
 
@@ -484,15 +606,22 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     if (activeGameSession.value) {
       const logging = getLoggingStore()
-      logging.logWarning('Game session already active')
+      logging.logWarn('Game session already active')
       return
     }
 
     const guineaPigStore = useGuineaPigStore()
 
     // Add guinea pigs to the guinea pig store collection before setting them as active
+    // Check both available and favorite guinea pigs
     for (const guineaPigId of guineaPigIds) {
-      const guineaPig = availableGuineaPigs.value.find(gp => gp.id === guineaPigId)
+      let guineaPig = availableGuineaPigs.value.find(gp => gp.id === guineaPigId)
+
+      // If not in available pool, check favorites
+      if (!guineaPig) {
+        guineaPig = favoriteGuineaPigs.value.find(gp => gp.id === guineaPigId)
+      }
+
       if (guineaPig) {
         // Add to guinea pig store collection
         guineaPigStore.collection.guineaPigs[guineaPigId] = { ...guineaPig }
@@ -530,7 +659,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   function endGameSession(): void {
     if (!activeGameSession.value) {
       const logging = getLoggingStore()
-      logging.logWarning('No active game session to end')
+      logging.logWarn('No active game session to end')
       return
     }
 
@@ -553,6 +682,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       '⏹️',
       { penalty: settings.value.endGamePenalty, duration }
     )
+
+    // Note: We do NOT return guinea pigs to availableGuineaPigs here
+    // If they were favorited during the session, they should stay in favorites only
+    // If they weren't favorited, they're already in availableGuineaPigs
 
     activeGameSession.value = null
   }
@@ -626,6 +759,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
   return {
     availableGuineaPigs,
+    favoriteGuineaPigs,
+    maxFavoriteSlots,
     lastRefreshTimestamp,
     refreshCooldownMs,
     activeGameSession,
@@ -638,6 +773,12 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     activeSessionGuineaPigs,
     timeUntilAutoRefresh,
     formattedAutoRefreshTime,
+
+    // Favorites computed properties
+    favoriteCount,
+    availableFavoriteSlots,
+    canAddToFavorites,
+    canPurchaseMoreSlots,
 
     // Data arrays for UI components
     furColors,
@@ -663,7 +804,12 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     initializeStore,
     startAutoRefresh,
     stopAutoRefresh,
-    toggleAutoRefresh
+    toggleAutoRefresh,
+
+    // Favorites methods
+    addToFavorites,
+    removeFromFavorites,
+    moveFromFavoritesToStore
   }
 }, {
   persist: {

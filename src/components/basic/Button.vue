@@ -1,5 +1,17 @@
 <template>
+  <div v-if="tooltip" class="button-wrapper">
+    <button
+      :class="buttonClasses"
+      :disabled="disabled"
+      :type="type"
+      @click="handleClick"
+    >
+      <slot></slot>
+    </button>
+    <span :class="tooltipClasses">{{ tooltip }}</span>
+  </div>
   <button
+    v-else
     :class="buttonClasses"
     :disabled="disabled"
     :type="type"
@@ -19,6 +31,9 @@ interface Props {
   type?: 'button' | 'submit' | 'reset'
   fullWidth?: boolean
   selected?: boolean
+  iconOnly?: boolean
+  tooltip?: string
+  tooltipPosition?: 'top' | 'bottom' | 'left' | 'right'
 }
 
 interface Emits {
@@ -31,7 +46,10 @@ const props = withDefaults(defineProps<Props>(), {
   disabled: false,
   type: 'button',
   fullWidth: false,
-  selected: false
+  selected: false,
+  iconOnly: false,
+  tooltip: '',
+  tooltipPosition: 'top'
 })
 
 const emit = defineEmits<Emits>()
@@ -43,8 +61,15 @@ const buttonClasses = computed(() => {
   const fullWidth = props.fullWidth ? 'button--full-width' : ''
   const disabled = props.disabled ? 'button--disabled' : ''
   const selected = props.selected && props.variant === 'segmented' ? 'button--selected' : ''
+  const iconOnly = props.iconOnly ? 'button--icon-only' : ''
 
-  return [base, variant, size, fullWidth, disabled, selected].filter(Boolean).join(' ')
+  return [base, variant, size, fullWidth, disabled, selected, iconOnly].filter(Boolean).join(' ')
+})
+
+const tooltipClasses = computed(() => {
+  const base = 'button__tooltip'
+  const position = `button__tooltip--${props.tooltipPosition}`
+  return [base, position].join(' ')
 })
 
 const handleClick = (event: MouseEvent) => {
@@ -292,6 +317,130 @@ const handleClick = (event: MouseEvent) => {
   background-color: var(--color-primary-active);
 }
 
+/* Icon-Only Variant - Compact square button for icons */
+.button--icon-only {
+  padding-block: var(--space-2);
+  padding-inline: var(--space-2);
+  inline-size: auto;
+  aspect-ratio: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+}
+
+.button--icon-only.button--sm {
+  padding-block: var(--space-1);
+  padding-inline: var(--space-1);
+  font-size: var(--font-size-base);
+}
+
+.button--icon-only.button--lg {
+  padding-block: var(--space-3);
+  padding-inline: var(--space-3);
+  font-size: var(--font-size-xl);
+}
+
+/* Tooltip System */
+.button-wrapper {
+  position: relative;
+  display: inline-flex;
+  inline-size: fit-content;
+}
+
+.button__tooltip {
+  position: absolute;
+  background-color: var(--color-neutral-900);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
+  border-start-start-radius: var(--radius-base);
+  border-start-end-radius: var(--radius-base);
+  border-end-start-radius: var(--radius-base);
+  border-end-end-radius: var(--radius-base);
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: var(--z-index-tooltip);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.button-wrapper:hover .button__tooltip,
+.button-wrapper:focus-within .button__tooltip {
+  opacity: 1;
+}
+
+/* Tooltip Positions */
+.button__tooltip--top {
+  inset-block-end: calc(100% + var(--space-2));
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+}
+
+.button__tooltip--top::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 100%;
+  inset-inline-start: 50%;
+  margin-inline-start: calc(-1 * var(--space-1));
+  border-inline-start: var(--space-1) solid transparent;
+  border-inline-end: var(--space-1) solid transparent;
+  border-block-start: var(--space-1) solid var(--color-neutral-900);
+}
+
+.button__tooltip--bottom {
+  inset-block-start: calc(100% + var(--space-2));
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+}
+
+.button__tooltip--bottom::after {
+  content: '';
+  position: absolute;
+  inset-block-end: 100%;
+  inset-inline-start: 50%;
+  margin-inline-start: calc(-1 * var(--space-1));
+  border-inline-start: var(--space-1) solid transparent;
+  border-inline-end: var(--space-1) solid transparent;
+  border-block-end: var(--space-1) solid var(--color-neutral-900);
+}
+
+.button__tooltip--left {
+  inset-inline-end: calc(100% + var(--space-2));
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+}
+
+.button__tooltip--left::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: 100%;
+  inset-block-start: 50%;
+  margin-block-start: calc(-1 * var(--space-1));
+  border-block-start: var(--space-1) solid transparent;
+  border-block-end: var(--space-1) solid transparent;
+  border-inline-start: var(--space-1) solid var(--color-neutral-900);
+}
+
+.button__tooltip--right {
+  inset-inline-start: calc(100% + var(--space-2));
+  inset-block-start: 50%;
+  transform: translateY(-50%);
+}
+
+.button__tooltip--right::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: 100%;
+  inset-block-start: 50%;
+  margin-block-start: calc(-1 * var(--space-1));
+  border-block-start: var(--space-1) solid transparent;
+  border-block-end: var(--space-1) solid transparent;
+  border-inline-end: var(--space-1) solid var(--color-neutral-900);
+}
+
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
   .button {
@@ -304,5 +453,9 @@ const handleClick = (event: MouseEvent) => {
 
   .button:active:not(:disabled) {
     transform: none;
+  }
+
+  .button__tooltip {
+    transition: none;
   }
 }</style>

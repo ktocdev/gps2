@@ -137,30 +137,52 @@ export const useNeedsController = defineStore('needsController', () => {
   function processBatchUpdate(): void {
     if (!processingEnabled.value) return
 
-    const guineaPigStore = useGuineaPigStore()
+    try {
+      const guineaPigStore = useGuineaPigStore()
 
-    // First, process needs decay for all active guinea pigs
-    guineaPigStore.processBatchNeedsDecay()
+      // First, process needs decay for all active guinea pigs
+      guineaPigStore.processBatchNeedsDecay()
 
-    // Then calculate wellness and apply friendship effects
-    const activeGuineaPigs = guineaPigStore.activeGuineaPigs
+      // Then calculate wellness and apply friendship effects
+      const activeGuineaPigs = guineaPigStore.activeGuineaPigs
 
-    activeGuineaPigs.forEach(gp => {
-      const wellness = calculateWellness(gp.id)
-
-      currentWellness.value = wellness
-      wellnessHistory.value.push(wellness)
-      if (wellnessHistory.value.length > 100) {
-        wellnessHistory.value.shift()
+      // Defensive check: ensure activeGuineaPigs is an array
+      if (!Array.isArray(activeGuineaPigs)) {
+        getLoggingStore().logWarn('activeGuineaPigs is not an array in processBatchUpdate')
+        return
       }
 
-      applyFriendshipPenalties(gp.id)
+      activeGuineaPigs.forEach(gp => {
+        if (!gp || !gp.id) {
+          getLoggingStore().logWarn('Invalid guinea pig in processBatchUpdate')
+          return
+        }
 
-      checkThresholds(gp.id, wellness)
-    })
+        const wellness = calculateWellness(gp.id)
 
-    lastBatchUpdate.value = Date.now()
-    lastWellnessUpdate.value = Date.now()
+        currentWellness.value = wellness
+        wellnessHistory.value.push(wellness)
+        if (wellnessHistory.value.length > 100) {
+          wellnessHistory.value.shift()
+        }
+
+        applyFriendshipPenalties(gp.id)
+
+        checkThresholds(gp.id, wellness)
+      })
+
+      lastBatchUpdate.value = Date.now()
+      lastWellnessUpdate.value = Date.now()
+    } catch (error) {
+      getLoggingStore().logActivity({
+        category: 'error',
+        action: 'batch_update_error',
+        details: {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        }
+      })
+    }
   }
 
   function pauseProcessing(): void {

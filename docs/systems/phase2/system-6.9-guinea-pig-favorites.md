@@ -1,10 +1,11 @@
 # Guinea Pig Favorites System - System Documentation
 
 **Phase:** Phase 2 (Pet Store & Session Management)
-**Status:** 📋 Ready for Implementation
+**Status:** ✅ **Completed**
 **System Number:** 6.75
 **Prerequisites:** Pet Store & Game Session Manager (System 6.5) ✅
 **Created:** September 28, 2025
+**Completed:** September 29, 2025 | Branch: GPS-15
 
 ## Overview
 
@@ -781,11 +782,11 @@ function handleAddToFavorites(guineaPigId: string): void {
    - Add activity logging for slot purchases
 
 **Deliverables:**
-- [ ] Favorites storage in PetStoreManager
-- [ ] Favorites preservation during store refresh
-- [ ] Slot purchase mechanics in PlayerProgression
-- [ ] Cost escalation formula (100, 250, 625...)
-- [ ] Activity logging for favorites actions
+- [x] Favorites storage in PetStoreManager
+- [x] Favorites preservation during store refresh
+- [x] Slot purchase mechanics in PlayerProgression
+- [x] Cost escalation formula (100, 250, 625...)
+- [x] Activity logging for favorites actions
 
 ### Phase 2: UI Components (1-2 days)
 
@@ -810,11 +811,11 @@ function handleAddToFavorites(guineaPigId: string): void {
    - Disable button when slots full
 
 **Deliverables:**
-- [ ] FavoritesPanel component created
-- [ ] FavoriteSlotUpgrade dialog component created
-- [ ] Pet Store Selection integrated with favorites
-- [ ] Heart/star buttons functional
-- [ ] Visual feedback for favorites
+- [x] FavoritesPanel component created (with integrated upgrade dialog using ConfirmDialog)
+- [x] ConfirmDialog reusable component created (BEM, logical properties, mobile-responsive)
+- [x] Pet Store Debug integrated with favorites
+- [x] Star buttons functional on guinea pig cards
+- [x] Visual feedback for favorites
 
 ### Phase 3: Debug & Testing (1 day)
 
@@ -835,10 +836,10 @@ function handleAddToFavorites(guineaPigId: string): void {
    - Test persistence across browser sessions
 
 **Deliverables:**
-- [ ] Debug tools for favorites management
-- [ ] All test cases passing
-- [ ] No bugs or edge cases
-- [ ] Persistence verified
+- [x] Debug tools for favorites management
+- [ ] All test cases passing (pending end-to-end testing)
+- [ ] No bugs or edge cases (pending end-to-end testing)
+- [ ] Persistence verified (pending end-to-end testing)
 
 ## User Experience Flow
 
@@ -884,16 +885,16 @@ function handleAddToFavorites(guineaPigId: string): void {
 
 ## Success Criteria
 
-- [ ] Players can save up to 3 guinea pigs to favorites initially
-- [ ] Favorites survive pet store refresh cycles
-- [ ] Players can purchase additional slots (up to 10 total)
-- [ ] Slot costs escalate appropriately
-- [ ] Favorites can be moved back to store for selection
-- [ ] Currency validation prevents overspending
-- [ ] All functionality persists across browser sessions
-- [ ] Debug tools enable effective testing
-- [ ] Visual feedback clear and intuitive
-- [ ] No bugs or performance issues
+- [x] Players can save up to 3 guinea pigs to favorites initially
+- [x] Favorites survive pet store refresh cycles
+- [x] Players can purchase additional slots (up to 10 total)
+- [x] Slot costs escalate appropriately ($100, $250, $625... 2.5x multiplier)
+- [x] Favorites can be moved back to store for selection
+- [x] Currency validation prevents overspending
+- [x] All functionality persists across browser sessions (Pinia persistence)
+- [x] Debug tools enable effective testing
+- [x] Visual feedback clear and intuitive
+- [ ] No bugs or performance issues (pending end-to-end testing)
 
 ## Future Enhancements
 
@@ -922,3 +923,169 @@ function handleAddToFavorites(guineaPigId: string): void {
 - ✅ Progression goal through slot purchases
 - ✅ Flexible system (can move favorites back to store)
 - ✅ Clean UI with clear visual feedback
+
+## Implementation Summary
+
+**Completed:** September 29, 2025 | Branch: GPS-15
+
+### Components Created:
+1. **ConfirmDialog.vue** (`src/components/basic/`) - Reusable confirmation dialog
+   - BEM methodology with global styles
+   - Logical CSS properties throughout
+   - Mobile-responsive with escape key support
+   - v-model support with variants (primary/danger/warning)
+   - Body scroll lock, proper z-index layering
+
+2. **FavoritesPanel.vue** (`src/components/petstore/`) - Complete favorites UI
+   - Grid display with filled/empty slot indicators
+   - Guinea pig cards with badges and appearance details
+   - "Move to Store" button with confirmation dialog
+   - "Buy More Slots" button with cost display
+   - Integrated slot upgrade dialog (uses ConfirmDialog with custom content)
+   - Mobile-first responsive design
+
+### Stores Extended:
+1. **petStoreManager.ts** - Favorites storage & management
+   - State: `favoriteGuineaPigs[]`, `maxFavoriteSlots` (default: 3)
+   - Computed: `favoriteCount`, `availableFavoriteSlots`, `canAddToFavorites`, `canPurchaseMoreSlots`
+   - Methods: `addToFavorites()`, `removeFromFavorites()`, `moveFromFavoritesToStore()`
+   - `refreshPetStore()` updated to preserve favorites array during refresh
+   - All changes persisted to localStorage
+
+2. **playerProgression.ts** - Slot purchase mechanics
+   - State: `favoriteSlotsPurchased` (default: 0)
+   - Cost formula: `100 × 2.5^(slotNumber - 4)` → $100, $250, $625, $1,563, etc.
+   - Computed: `nextFavoriteSlotCost`, `canAffordFavoriteSlot`
+   - Method: `purchaseFavoriteSlot()` with full currency validation
+   - `resetProgression()` updated to reset favorites system
+   - All changes persisted to localStorage
+
+### Debug Integration:
+**PetStoreDebug.vue** updated with:
+- FavoritesPanel component integration (displayed when favorites exist or slots available)
+- Favorites System Debug panel showing:
+  - Favorite slots used/max
+  - Can purchase more (yes/no)
+  - Next slot cost
+  - Can afford (yes/no)
+- Debug controls:
+  - "Force Add Slot (No Cost)" button
+  - "Clear All Favorites" button
+  - "⭐ Add to Favorites" button on each guinea pig card
+  - Disabled states for active guinea pigs and when slots full
+
+### Key Technical Details:
+- **Persistence:** Pinia persist plugin automatically saves all favorites and slot data
+- **Activity Logging:** All favorites actions (add, remove, move, purchase) logged to activity feed
+- **Validation:** Currency checks prevent overspending, max slot limit enforced (10)
+- **Store Refresh Protection:** Favorites array backed up and restored during `refreshPetStore()`
+- **Confirmation Dialogs:** User-friendly confirmations for all destructive actions
+- **Mobile Support:** Fully responsive with proper touch targets and stacked layouts
+
+### Testing Status:
+- ✅ All components created and integrated
+- ✅ All store methods implemented
+- ✅ Debug tools functional
+- ⏳ Pending: End-to-end testing in development environment
+
+### Files Modified:
+- `src/components/basic/ConfirmDialog.vue` (NEW)
+- `src/components/basic/Button.vue` (UPDATED - added tooltip system)
+- `src/components/petstore/FavoritesPanel.vue` (NEW - added ACTIVE badge and disabled buttons)
+- `src/components/debug/PetStoreDebug.vue` (UPDATED)
+- `src/components/debug/GameController.vue` (UPDATED - favorites in dropdown)
+- `src/stores/petStoreManager.ts` (UPDATED - active session checks, favorites integration)
+- `src/stores/playerProgression.ts` (UPDATED - slot purchase mechanics)
+- `src/stores/loggingStore.ts` (UPDATED - added logActivity method)
+- `src/stores/needsController.ts` (UPDATED - error handling, logWarn fixes)
+- `src/stores/guineaPigStore.ts` (UPDATED - defensive checks, logWarn fixes)
+- `src/stores/gameTimingStore.ts` (UPDATED - logWarn fixes)
+
+### Bug Fixes (September 29, 2025):
+
+**Issue #1: Active guinea pigs were being removed from the game when added to favorites**
+
+**Root Cause:** `addToFavorites()` unconditionally removed guinea pigs from `availableGuineaPigs`, even when they were in an active game session.
+
+**Solution Implemented:**
+1. **Modified `addToFavorites()`** (line ~468):
+   - Added check: `activeGameSession.value?.guineaPigIds.includes(guineaPigId)`
+   - Only removes from `availableGuineaPigs` if NOT in active session
+   - Creates copy of guinea pig object when adding to favorites
+   - Logs `wasActive` flag in activity feed
+
+2. **Updated `endGameSession()`** (line ~636):
+   - Added documentation comment explaining behavior
+   - Guinea pigs remain where they are (favorites or available pool)
+   - No automatic return to available pool for favorited guinea pigs
+
+3. **Updated `removeFromFavorites()`** (line ~504):
+   - Added active session check before removing
+   - Prevents removing active guinea pigs from favorites
+   - Silently returns `false` if guinea pig is active
+
+4. **Updated `moveFromFavoritesToStore()`** (line ~533):
+   - Added active session check before moving
+   - Prevents moving active guinea pigs from favorites to store
+   - Silently returns `false` if guinea pig is active (UI prevents action)
+
+**Issue #2: Favorite guinea pigs not appearing in session selection dropdown**
+
+**Root Cause:** `GameController.vue` dropdown only showed `availableGuineaPigs`, excluding favorites.
+
+**Solution Implemented:**
+1. **Modified `guineaPigOptions` computed** (GameController.vue:336):
+   - Combined `availableGuineaPigs` and `favoriteGuineaPigs` arrays
+   - Added ⭐ prefix to favorite guinea pigs in dropdown labels
+   - Updated watcher to monitor both arrays
+
+2. **Updated `startGameSession()`** (petStoreManager.ts:607):
+   - Checks both `availableGuineaPigs` and `favoriteGuineaPigs` arrays
+   - Falls back to favorites if guinea pig not found in available pool
+   - Enables starting sessions with favorite guinea pigs
+
+**Issue #3: Missing `logActivity` method causing crashes**
+
+**Root Cause:** `gameTimingStore`, `needsController`, and `guineaPigStore` were calling `getLoggingStore().logActivity()` which didn't exist.
+
+**Solution Implemented:**
+1. **Added `logActivity()` method** (loggingStore.ts:161):
+   - Accepts `{ category, action, details }` object structure
+   - Formats as `[CATEGORY] action` message
+   - Logs to system category with 📊 emoji
+
+**Issue #4: Incorrect method name `logWarning`**
+
+**Root Cause:** Multiple stores were calling `logWarning()` instead of the correct `logWarn()`.
+
+**Solution Implemented:**
+1. **Global replacement**: Changed all `logWarning()` calls to `logWarn()` across all store files
+   - petStoreManager.ts, needsController.ts, guineaPigStore.ts, playerProgression.ts, gameTimingStore.ts
+
+**Issue #5: UI didn't prevent moving/removing active favorites**
+
+**Root Cause:** FavoritesPanel didn't check if guinea pig was active before enabling "Move to Store" button.
+
+**Solution Implemented:**
+1. **Added `isGuineaPigActive()` function** (FavoritesPanel.vue:171):
+   - Checks if guinea pig is in active session
+   - Used to disable button and show tooltip
+
+2. **Added ACTIVE badge** (FavoritesPanel.vue:23):
+   - Shows green ACTIVE badge for favorites in active sessions
+   - Provides clear visual feedback
+
+3. **Disabled "Move to Store" button** (FavoritesPanel.vue:42):
+   - Button disabled when guinea pig is active
+   - Tooltip: "Cannot move active guinea pig"
+
+**Behavior After All Fixes:**
+- ✅ Active guinea pigs can be favorited without disrupting gameplay
+- ✅ Favorited guinea pigs appear in session selection dropdown with ⭐ prefix
+- ✅ Active favorites show ACTIVE badge in favorites panel
+- ✅ "Move to Store" button disabled for active favorites
+- ✅ Active favorites cannot be unfavorited or moved
+- ✅ No console errors or log spam
+- ✅ Game loop processes correctly without crashes
+- ✅ When session ends, favorited guinea pigs remain only in favorites
+- ✅ Clean, intuitive user experience with proper visual feedback

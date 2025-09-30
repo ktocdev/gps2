@@ -49,7 +49,7 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
 
   const startGameLoop = (): void => {
     if (isRunning.value) {
-      getLoggingStore().logWarning('Game loop already running')
+      getLoggingStore().logWarn('Game loop already running')
       return
     }
 
@@ -194,7 +194,7 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
 
   const setIntervalMs = (newInterval: number): void => {
     if (newInterval < 1000 || newInterval > 60000) {
-      getLoggingStore().logWarning(`Invalid interval: ${newInterval}ms. Must be between 1000-60000ms`)
+      getLoggingStore().logWarn(`Invalid interval: ${newInterval}ms. Must be between 1000-60000ms`)
       return
     }
 

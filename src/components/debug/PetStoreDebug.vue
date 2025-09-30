@@ -1,5 +1,6 @@
 <template>
   <div class="pet-store-debug">
+    <!-- First Row: 3 columns on desktop -->
     <div class="panel panel--compact">
       <div class="panel__header">
         <h3>Pet Store Settings</h3>
@@ -81,23 +82,36 @@
             @click="selectedGuineaPig = guineaPig"
           >
             <div class="pet-store-debug__guinea-pig-header">
-              <div class="pet-store-debug__guinea-pig-name-wrapper">
+              <div class="pet-store-debug__guinea-pig-left">
                 <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
-                <Badge v-if="isGuineaPigActive(guineaPig.id)" variant="success" size="sm">ACTIVE</Badge>
-                <Badge
-                  v-if="shouldShowRarityBadge(guineaPig.breed)"
-                  :variant="getRarityBadgeVariant(guineaPig.breed)"
-                  size="sm"
-                >
-                  {{ getRarityBadgeText(guineaPig.breed) }}
-                </Badge>
+                <div class="pet-store-debug__guinea-pig-badges">
+                  <Badge v-if="isGuineaPigActive(guineaPig.id)" variant="success" size="sm">ACTIVE</Badge>
+                  <Badge
+                    v-if="shouldShowRarityBadge(guineaPig.breed)"
+                    :variant="getRarityBadgeVariant(guineaPig.breed)"
+                    size="sm"
+                  >
+                    {{ getRarityBadgeText(guineaPig.breed) }}
+                  </Badge>
+                  <Badge variant="secondary" size="sm">{{ guineaPig.gender }}</Badge>
+                  <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furColor }}</Badge>
+                  <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furPattern }}</Badge>
+                </div>
               </div>
-              <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
-            </div>
-            <div class="pet-store-debug__guinea-pig-details">
-              <Badge variant="secondary" size="sm">{{ guineaPig.gender }}</Badge>
-              <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furColor }}</Badge>
-              <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furPattern }}</Badge>
+              <div class="pet-store-debug__guinea-pig-right">
+                <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
+                <Button
+                  @click.stop="handleAddToFavorites(guineaPig.id)"
+                  :disabled="!petStoreManager.canAddToFavorites"
+                  variant="secondary"
+                  size="sm"
+                  icon-only
+                  tooltip="Add to Favorites"
+                  tooltip-position="top"
+                >
+                  ⭐
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -446,18 +460,80 @@
         <p v-else class="pet-store-debug__empty-message">Click a guinea pig to edit</p>
       </div>
     </div>
+
+    <!-- Second Row: Favorites (2 columns on desktop) -->
+    <div class="pet-store-debug__favorites-row">
+      <FavoritesPanel v-if="petStoreManager.favoriteGuineaPigs.length > 0 || petStoreManager.canAddToFavorites" />
+
+      <div class="panel panel--compact">
+        <div class="panel__header">
+          <h3>Favorites System Debug</h3>
+        </div>
+        <div class="panel__content">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">Favorite Slots:</span>
+              <span class="stat-value">
+                {{ petStoreManager.favoriteGuineaPigs.length }}/{{ petStoreManager.maxFavoriteSlots }}
+              </span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Can Purchase More:</span>
+              <span class="stat-value">
+                {{ petStoreManager.maxFavoriteSlots < 10 ? 'Yes' : 'No (Max)' }}
+              </span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Next Slot Cost:</span>
+              <span class="stat-value">
+                ${{ playerProgression.nextFavoriteSlotCost.toLocaleString() }}
+              </span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Can Afford:</span>
+              <span class="stat-value">
+                {{ playerProgression.canAffordFavoriteSlot ? 'Yes' : 'No' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-3 mt-4">
+            <Button
+              @click="handleForceAddSlot"
+              :disabled="petStoreManager.maxFavoriteSlots >= 10"
+              variant="secondary"
+              full-width
+            >
+              Force Add Slot (No Cost)
+            </Button>
+
+            <Button
+              @click="handleClearFavorites"
+              :disabled="petStoreManager.favoriteGuineaPigs.length === 0"
+              variant="danger"
+              full-width
+            >
+              Clear All Favorites
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { usePetStoreManager } from '../../stores/petStoreManager'
+import { usePlayerProgression } from '../../stores/playerProgression'
 import type { GuineaPig } from '../../stores/guineaPigStore'
 import Slider from '../basic/Slider.vue'
 import Button from '../basic/Button.vue'
 import Badge from '../basic/Badge.vue'
+import FavoritesPanel from '../petstore/FavoritesPanel.vue'
 
 const petStoreManager = usePetStoreManager()
+const playerProgression = usePlayerProgression()
 const selectedGuineaPig = ref<GuineaPig | null>(null)
 
 // Reactive time ref to trigger updates
@@ -774,6 +850,21 @@ const handleRefresh = () => {
 const handleAutoRefreshToggle = () => {
   petStoreManager.toggleAutoRefresh()
 }
+
+// Favorites debug handlers
+const handleForceAddSlot = () => {
+  if (petStoreManager.maxFavoriteSlots < 10) {
+    petStoreManager.maxFavoriteSlots++
+  }
+}
+
+const handleClearFavorites = () => {
+  petStoreManager.favoriteGuineaPigs.length = 0
+}
+
+const handleAddToFavorites = (guineaPigId: string) => {
+  petStoreManager.addToFavorites(guineaPigId)
+}
 </script>
 
 <style>
@@ -783,6 +874,20 @@ const handleAutoRefreshToggle = () => {
   grid-template-columns: 1fr;
   gap: 1rem;
   padding-block: 1rem;
+}
+
+/* Desktop Layout: 3 columns in first row, 2 columns in second row */
+@media (min-width: 1024px) {
+  .pet-store-debug {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .pet-store-debug__favorites-row {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+  }
 }
 
 /* === Guinea Pig List Section === */
@@ -822,13 +927,14 @@ const handleAutoRefreshToggle = () => {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-block-end: 0.5rem;
+  gap: var(--space-3);
 }
 
-.pet-store-debug__guinea-pig-name-wrapper {
+.pet-store-debug__guinea-pig-left {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: var(--space-2);
+  flex: 1;
 }
 
 .pet-store-debug__guinea-pig-name {
@@ -837,15 +943,23 @@ const handleAutoRefreshToggle = () => {
   color: var(--color-text);
 }
 
+.pet-store-debug__guinea-pig-badges {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.pet-store-debug__guinea-pig-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
 .pet-store-debug__guinea-pig-breed {
   font-size: 0.9rem;
   color: var(--color-text-muted);
-}
-
-.pet-store-debug__guinea-pig-details {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  text-align: end;
 }
 
 /* === Editor Warning === */
