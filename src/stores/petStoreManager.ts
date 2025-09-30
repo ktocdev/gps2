@@ -522,8 +522,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     favoriteGuineaPigs.value.splice(index, 1)
 
     getLoggingStore().addPlayerAction(
-      `Removed ${guineaPig.name} from favorites 💔`,
-      '💔',
+      `${guineaPig.name} is no longer a favorite (but still loved!) 💫`,
+      '💫',
       { guineaPigId, name: guineaPig.name }
     )
 
@@ -554,7 +554,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     availableGuineaPigs.value.push(guineaPig)
 
     getLoggingStore().addPlayerAction(
-      `Moved ${guineaPig.name} from favorites to store 🏪`,
+      `${guineaPig.name} is heading back to the store to hang out with friends! 🏪`,
       '🏪',
       { guineaPigId, name: guineaPig.name }
     )
