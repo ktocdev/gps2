@@ -1,14 +1,14 @@
 <template>
-  <div v-if="modelValue" class="confirm-dialog">
-    <div
-      class="confirm-dialog__backdrop"
-      @click="handleBackdropClick"
-    ></div>
-
+  <Dialog
+    :model-value="modelValue"
+    :size="size"
+    :close-on-backdrop="closeOnBackdrop"
+    :close-on-escape="closeOnEscape"
+    @update:model-value="handleDialogClose"
+  >
     <div
       class="confirm-dialog__modal"
-      :class="modalSizeClass"
-      role="dialog"
+      role="alertdialog"
       aria-modal="true"
       :aria-labelledby="titleId"
     >
@@ -39,11 +39,12 @@
         </Button>
       </div>
     </div>
-  </div>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
-import { computed, watch, onMounted, onUnmounted } from 'vue'
+import { computed } from 'vue'
+import Dialog from './Dialog.vue'
 import Button from './Button.vue'
 
 interface Props {
@@ -79,8 +80,6 @@ const emit = defineEmits<Emits>()
 // Generate unique ID for aria-labelledby
 const titleId = `confirm-dialog-title-${Math.random().toString(36).substr(2, 9)}`
 
-const modalSizeClass = computed(() => `confirm-dialog__modal--${props.size}`)
-
 const confirmVariant = computed(() => {
   switch (props.variant) {
     case 'danger':
@@ -104,117 +103,20 @@ function handleCancel() {
   emit('update:modelValue', false)
 }
 
-function handleBackdropClick() {
-  if (props.closeOnBackdrop) {
-    handleCancel()
+function handleDialogClose(value: boolean) {
+  if (!value) {
+    emit('cancel')
   }
+  emit('update:modelValue', value)
 }
-
-function handleEscape(event: KeyboardEvent) {
-  if (props.closeOnEscape && event.key === 'Escape' && props.modelValue) {
-    handleCancel()
-  }
-}
-
-// Body scroll lock when dialog is open
-watch(() => props.modelValue, (isOpen) => {
-  if (isOpen) {
-    document.body.style.overflow = 'hidden'
-  } else {
-    document.body.style.overflow = ''
-  }
-})
-
-// Add escape key listener
-onMounted(() => {
-  document.addEventListener('keydown', handleEscape)
-})
-
-onUnmounted(() => {
-  document.removeEventListener('keydown', handleEscape)
-  document.body.style.overflow = ''
-})
 </script>
 
 <style>
-/* Confirm Dialog Component - BEM Methodology */
+/* Confirm Dialog Component - Extends base Dialog */
 
-/* Root wrapper */
-.confirm-dialog {
-  position: fixed;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  inset-block-end: 0;
-  inset-inline-end: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-4);
-}
-
-/* Backdrop overlay */
-.confirm-dialog__backdrop {
-  position: fixed;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  inset-block-end: 0;
-  inset-inline-end: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: var(--z-index-modal-backdrop);
-  animation: fadeIn var(--transition-fast);
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Modal container */
+/* Modal container - inherits sizing from Dialog component */
 .confirm-dialog__modal {
-  position: relative;
-  z-index: var(--z-index-modal);
-  background-color: var(--color-bg-primary);
-  border: 1px solid var(--color-border-light);
-  border-start-start-radius: var(--radius-lg);
-  border-start-end-radius: var(--radius-lg);
-  border-end-start-radius: var(--radius-lg);
-  border-end-end-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
-  max-inline-size: 100%;
-  max-block-size: calc(100vh - var(--space-8));
-  overflow-y: auto;
-  animation: slideUp var(--transition-normal);
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(var(--space-4));
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Size modifiers */
-.confirm-dialog__modal--sm {
-  inline-size: 100%;
-  max-inline-size: 400px;
-}
-
-.confirm-dialog__modal--md {
-  inline-size: 100%;
-  max-inline-size: 500px;
-}
-
-.confirm-dialog__modal--lg {
-  inline-size: 100%;
-  max-inline-size: 600px;
+  /* Base Dialog handles all positioning, backdrop, and animations */
 }
 
 /* Header */
@@ -261,14 +163,6 @@ onUnmounted(() => {
 
 /* Mobile responsiveness */
 @media (max-width: 640px) {
-  .confirm-dialog {
-    padding: var(--space-2);
-  }
-
-  .confirm-dialog__modal {
-    max-block-size: calc(100vh - var(--space-4));
-  }
-
   .confirm-dialog__header,
   .confirm-dialog__content,
   .confirm-dialog__footer {
@@ -295,20 +189,8 @@ onUnmounted(() => {
   }
 }
 
-/* Reduced motion support */
-@media (prefers-reduced-motion: reduce) {
-  .confirm-dialog__backdrop,
-  .confirm-dialog__modal {
-    animation: none;
-  }
-}
-
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .confirm-dialog__modal {
-    border-width: 2px;
-  }
-
   .confirm-dialog__header,
   .confirm-dialog__footer {
     border-width: 2px;
