@@ -569,9 +569,22 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       return
     }
 
-    // End any active session before refreshing since guinea pig IDs will change
-    if (activeGameSession.value) {
-      endGameSession()
+    // Active sessions are preserved during refresh because:
+    // 1. Active guinea pigs are stored in guineaPigStore.collection (separate from pet store)
+    // 2. Their IDs don't change during refresh
+    // 3. Refresh only regenerates availableGuineaPigs, not active guinea pigs
+    // Therefore: We NEVER end active sessions during refresh!
+
+    const sessionWasActive = activeGameSession.value !== null
+
+    if (sessionWasActive) {
+      const logging = getLoggingStore()
+      const names = activeSessionGuineaPigs.value.map(gp => gp.name).join(' & ')
+      logging.addPlayerAction(
+        `✅ Preserving active session with ${names} during refresh`,
+        '✅',
+        { preservedSession: activeGameSession.value?.id }
+      )
     }
 
     // Preserve favorites during refresh (key feature!)
@@ -593,7 +606,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     logging.addPlayerAction(`${refreshType} pet store with new guinea pigs 🔄`, '🔄', {
       isAutoRefresh,
       nextAutoRefresh: nextAutoRefreshTime.value,
-      favoritesPreserved: favoritesBackup.length
+      favoritesPreserved: favoritesBackup.length,
+      sessionPreserved: sessionWasActive
     })
   }
 
