@@ -13,6 +13,7 @@ import { useLoggingStore } from './loggingStore'
 import { usePlayerProgression } from './playerProgression'
 import { useGuineaPigStore } from './guineaPigStore'
 import { useGameController } from './gameController'
+import { useNeedsController } from './needsController'
 
 export interface GameSession {
   id: string
@@ -659,6 +660,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       guineaPigStore.needsLastUpdate[guineaPigId] = sessionStartTime
     }
 
+    // Enable needs processing for the session
+    const needsController = useNeedsController()
+    needsController.resumeProcessing()
+
     const playerProgression = usePlayerProgression()
     playerProgression.incrementGameSessions()
     playerProgression.incrementGuineaPigsAdopted()
@@ -692,6 +697,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     }
 
     guineaPigStore.setActivePair([])
+
+    // Disable needs processing when session ends
+    const needsController = useNeedsController()
+    needsController.pauseProcessing()
 
     const duration = Date.now() - activeGameSession.value.startedAt
     playerProgression.addPlayTime(duration)

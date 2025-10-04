@@ -29,7 +29,7 @@ export const useNeedsController = defineStore('needsController', () => {
   const penaltyStartTime = ref<number | null>(null)
 
   const lastBatchUpdate = ref<number>(Date.now())
-  const processingEnabled = ref<boolean>(true)
+  const processingEnabled = ref<boolean>(false)
   const updateIntervalMs = ref<number>(5000)
 
   const wellnessThresholds = ref({
@@ -218,7 +218,7 @@ export const useNeedsController = defineStore('needsController', () => {
     currentPenaltyRate.value = 0
     penaltyStartTime.value = null
     lastBatchUpdate.value = Date.now()
-    processingEnabled.value = true
+    processingEnabled.value = false
   }
 
   return {

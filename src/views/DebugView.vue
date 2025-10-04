@@ -1,8 +1,11 @@
 <template>
   <div class="debug-view">
     <div class="debug-view__header">
-      <h1 class="debug-view__title">GPS2 Debug Dashboard</h1>
-      <p class="debug-view__subtitle">Development and testing interface</p>
+      <div>
+        <h1 class="debug-view__title">GPS2 Debug Dashboard</h1>
+        <p class="debug-view__subtitle">Development and testing interface</p>
+      </div>
+      <UtilityNav />
     </div>
 
     <TabContainer
@@ -41,6 +44,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import TabContainer, { type Tab } from '../components/layout/TabContainer.vue'
+import UtilityNav from '../components/layout/UtilityNav.vue'
 import GameControllerView from './GameControllerView.vue'
 import PetStoreDebugView from './PetStoreDebugView.vue'
 import InventoryDebugView from './InventoryDebugView.vue'
@@ -93,6 +97,7 @@ const onTabChange = (tabId: string, previousTabId: string | null) => {
   console.log(`Tab changed from ${previousTabId || 'none'} to ${tabId}`)
 }
 
+
 // Page lifecycle management for automatic pause
 onMounted(() => {
   // Auto-pause game when entering debug panel
@@ -119,6 +124,10 @@ onUnmounted(() => {
 }
 
 .debug-view__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
   padding-block: var(--space-6);
   padding-inline: var(--space-6);
   background: linear-gradient(135deg, var(--color-primary-bg), var(--color-secondary-bg));
@@ -150,6 +159,8 @@ onUnmounted(() => {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .debug-view__header {
+    flex-direction: column;
+    align-items: flex-start;
     padding-block: var(--space-4);
     padding-inline: var(--space-4);
   }

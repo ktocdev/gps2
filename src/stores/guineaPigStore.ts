@@ -448,8 +448,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   }
 
   const satisfyNeed = (guineaPigId: string, needType: keyof GuineaPigNeeds, amount: number): boolean => {
-    // Satisfy means reduce the need (opposite of decay)
-    return adjustNeed(guineaPigId, needType, -amount)
+    // Satisfy means increase the satisfaction level (needs are 100=satisfied, 0=empty)
+    return adjustNeed(guineaPigId, needType, amount)
   }
 
   // Needs satisfaction mechanics for user interactions
