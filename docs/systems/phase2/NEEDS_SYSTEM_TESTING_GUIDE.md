@@ -93,48 +93,52 @@ Where:
 - External Environment = (social + cleanliness + shelter) / 3
 - Maintenance = (chew + nails + health) / 3
 - Happiness = happiness value
+
+Note: Need values are SATISFACTION levels:
+- 100% = Fully satisfied (no need)
+- 0% = Completely unsatisfied (high need)
 ```
 
 #### Test Steps:
 
-1. **Baseline Test - All Needs at 0%**
-   - [ ] Set ALL needs to 0% using sliders
+1. **Baseline Test - All Needs at 100% (Fully Satisfied)**
+   - [ ] Set ALL needs to 100% using sliders (fully satisfied)
    - [ ] Verify Wellness displays **100%** (perfect wellness)
    - [ ] Verify wellness status is **green** (success)
 
 2. **Critical Physical Test (40% weight)**
-   - [ ] Set hunger to 100%, all others to 0%
-   - [ ] Expected wellness: ~60% (100 - (100 × 0.40 × 1/3))
+   - [ ] Set hunger to 0% (starving), all others to 100%
+   - [ ] Expected wellness: ~86.7% (100 × 0.40 × 2/3)
    - [ ] Verify wellness calculation matches
-   - [ ] Set hunger, thirst, energy all to 100%, others to 0%
-   - [ ] Expected wellness: ~60% (100 - (100 × 0.40))
+   - [ ] Set hunger, thirst, energy all to 0%, others to 100%
+   - [ ] Expected wellness: ~60% (100 × 0.60)
    - [ ] Verify wellness is **yellow/orange** (warning)
 
 3. **External Environment Test (25% weight)**
-   - [ ] Reset all needs to 0%
-   - [ ] Set social, cleanliness, shelter to 100%
-   - [ ] Expected wellness: ~75% (100 - (100 × 0.25))
+   - [ ] Reset all needs to 100%
+   - [ ] Set social, cleanliness, shelter to 0% (unsatisfied)
+   - [ ] Expected wellness: ~75% (100 × 0.75)
    - [ ] Verify wellness calculation matches
 
 4. **Maintenance Test (20% weight)**
-   - [ ] Reset all needs to 0%
-   - [ ] Set chew, nails, health to 100%
-   - [ ] Expected wellness: ~80% (100 - (100 × 0.20))
+   - [ ] Reset all needs to 100%
+   - [ ] Set chew, nails, health to 0% (unsatisfied)
+   - [ ] Expected wellness: ~80% (100 × 0.80)
    - [ ] Verify wellness calculation matches
 
 5. **Happiness Test (15% weight)**
-   - [ ] Reset all needs to 0%
-   - [ ] Set happiness to 100%
-   - [ ] Expected wellness: ~85% (100 - (100 × 0.15))
+   - [ ] Reset all needs to 100%
+   - [ ] Set happiness to 0% (unsatisfied)
+   - [ ] Expected wellness: ~85% (100 × 0.85)
    - [ ] Verify wellness calculation matches
 
 6. **Mixed Needs Test**
-   - [ ] Set all needs to 50%
+   - [ ] Set all needs to 50% (half satisfied)
    - [ ] Expected wellness: 50%
    - [ ] Verify wellness displays **50%**
 
 7. **Critical State Test**
-   - [ ] Set ALL needs to 100%
+   - [ ] Set ALL needs to 0% (completely unsatisfied)
    - [ ] Expected wellness: 0%
    - [ ] Verify wellness is **red** (critical)
    - [ ] Verify "Penalty Active: Yes" in System Status
@@ -267,7 +271,7 @@ Where:
 #### Test Steps:
 
 1. **Cleanliness → Health Test**
-   - [ ] Reset all needs to 0%
+   - [ ] Reset all needs to 100%
    - [ ] Set cleanliness to 100% (very dirty)
    - [ ] Wait 2-3 tick cycles (~15 seconds)
    - [ ] Verify health need begins increasing
@@ -275,13 +279,13 @@ Where:
    - [ ] Verify health stops increasing as rapidly
 
 2. **Energy → Happiness Test**
-   - [ ] Reset all needs to 0%
+   - [ ] Reset all needs to 100%
    - [ ] Set energy to 100% (exhausted)
    - [ ] Observe happiness need
    - [ ] Verify happiness may be affected
 
 3. **Social → Happiness Test**
-   - [ ] Reset all needs to 0%
+   - [ ] Reset all needs to 100%
    - [ ] Set social to 100% (lonely)
    - [ ] Observe happiness need
    - [ ] Verify happiness may be affected
