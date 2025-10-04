@@ -86,6 +86,7 @@
                 <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
                 <div class="pet-store-debug__guinea-pig-badges">
                   <Badge v-if="isGuineaPigActive(guineaPig.id)" variant="success" size="sm">ACTIVE</Badge>
+                  <Badge v-if="isGuineaPigFavorited(guineaPig.id)" variant="warning" size="sm">FAVORITED</Badge>
                   <Badge
                     v-if="shouldShowRarityBadge(guineaPig.breed)"
                     :variant="getRarityBadgeVariant(guineaPig.breed)"
@@ -102,11 +103,11 @@
                 <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
                 <Button
                   @click.stop="handleAddToFavorites(guineaPig.id)"
-                  :disabled="!petStoreManager.canAddToFavorites"
+                  :disabled="!petStoreManager.canAddToFavorites || isGuineaPigFavorited(guineaPig.id)"
                   variant="secondary"
                   size="sm"
                   icon-only
-                  tooltip="Add to Favorites"
+                  :tooltip="isGuineaPigFavorited(guineaPig.id) ? 'Already in Favorites' : 'Add to Favorites'"
                   tooltip-position="top"
                 >
                   ⭐
@@ -557,6 +558,10 @@ onUnmounted(() => {
 
 const isGuineaPigActive = (guineaPigId: string): boolean => {
   return petStoreManager.activeGameSession?.guineaPigIds.includes(guineaPigId) ?? false
+}
+
+const isGuineaPigFavorited = (guineaPigId: string): boolean => {
+  return petStoreManager.favoriteGuineaPigs.some(gp => gp.id === guineaPigId)
 }
 
 const isSelectedGuineaPigActive = computed(() => {

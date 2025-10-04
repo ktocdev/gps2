@@ -722,11 +722,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return true
   }
 
-  const allowRest = (guineaPigId: string): boolean => {
+  const sootheToSleep = (guineaPigId: string): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
 
-    // Rest restores energy
+    // Soothing to sleep restores energy
     satisfyNeed(guineaPigId, 'energy', 40)
 
     // Resting with good shelter provides bonus
@@ -735,7 +735,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     }
 
     getLoggingStore().addPlayerAction(
-      `Let ${guineaPig.name} rest`,
+      `Soothed ${guineaPig.name} to sleep`,
       '😴',
       {
         guineaPigId,
@@ -919,7 +919,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     provideChewToy,
     trimNails,
     provideShelter,
-    allowRest
+    sootheToSleep
   }
 }, {
   persist: {

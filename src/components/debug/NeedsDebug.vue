@@ -164,8 +164,8 @@
                     <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm">
                       Trim Nails
                     </Button>
-                    <Button @click="() => allowRest(guineaPig.id)" variant="tertiary" size="sm">
-                      Allow Rest
+                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm">
+                      Soothe to Sleep
                     </Button>
                   </div>
                 </section>
@@ -287,8 +287,8 @@ const trimNails = (guineaPigId: string) => {
   guineaPigStore.trimNails(guineaPigId)
 }
 
-const allowRest = (guineaPigId: string) => {
-  guineaPigStore.allowRest(guineaPigId)
+const sootheToSleep = (guineaPigId: string) => {
+  guineaPigStore.sootheToSleep(guineaPigId)
 }
 
 // Wellness calculation

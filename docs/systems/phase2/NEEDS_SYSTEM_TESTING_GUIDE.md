@@ -337,9 +337,9 @@ Where:
    - [ ] Click "Trim Nails"
    - [ ] Verify nails need decreases
 
-8. **Allow Rest**
+8. **Soothe to Sleep**
    - [ ] Set energy to 50%
-   - [ ] Click "Allow Rest"
+   - [ ] Click "Soothe to Sleep"
    - [ ] Verify energy decreases
 
 **Success Criteria:**

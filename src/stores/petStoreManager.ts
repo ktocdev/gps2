@@ -474,6 +474,13 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       return false
     }
 
+    // Check if already in favorites (prevent duplicates)
+    const isAlreadyFavorited = favoriteGuineaPigs.value.some(gp => gp.id === guineaPigId)
+    if (isAlreadyFavorited) {
+      getLoggingStore().logWarn('Guinea pig is already in favorites')
+      return false
+    }
+
     // Check slot availability
     if (!canAddToFavorites.value) {
       getLoggingStore().logWarn('No available favorite slots')
@@ -483,12 +490,9 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Check if guinea pig is in active game session
     const isInActiveSession = activeGameSession.value?.guineaPigIds.includes(guineaPigId) ?? false
 
-    // Only remove from available pool if NOT in active game session
-    if (!isInActiveSession) {
-      availableGuineaPigs.value = availableGuineaPigs.value.filter(
-        gp => gp.id !== guineaPigId
-      )
-    }
+    // Keep guinea pig in available pool (don't remove)
+    // This allows visual feedback that they're favorited while still showing them
+    // Similar to how active guinea pigs remain visible
 
     // Add to favorites (create copy to avoid reference issues)
     favoriteGuineaPigs.value.push({ ...guineaPig })
