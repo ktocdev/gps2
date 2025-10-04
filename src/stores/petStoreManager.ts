@@ -411,16 +411,16 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       preferences: generateRandomPreferences(),
 
       needs: {
-        hunger: 0,
-        thirst: 0,
-        happiness: 0,
-        cleanliness: 0,
-        health: 0,
-        energy: 0,
-        social: 0,
-        nails: 0,
-        chew: 0,
-        shelter: 0
+        hunger: 100,
+        thirst: 100,
+        happiness: 100,
+        cleanliness: 100,
+        health: 100,
+        energy: 100,
+        social: 100,
+        nails: 100,
+        chew: 100,
+        shelter: 100
       },
 
       stats: {
@@ -428,8 +428,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         age: Math.floor((Date.now() - birthDate) / (1000 * 60 * 60 * 24)),
         level: 1,
         experience: 0,
-        wellness: 100,
-        overallMood: 100
+        wellness: 0,
+        overallMood: 0
       },
 
       appearance: {
@@ -652,6 +652,12 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     }
 
     guineaPigStore.setActivePair(guineaPigIds)
+
+    // Initialize needs tracking for the guinea pigs
+    const sessionStartTime = Date.now()
+    for (const guineaPigId of guineaPigIds) {
+      guineaPigStore.needsLastUpdate[guineaPigId] = sessionStartTime
+    }
 
     const playerProgression = usePlayerProgression()
     playerProgression.incrementGameSessions()

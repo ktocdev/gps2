@@ -57,12 +57,16 @@ export const useNeedsController = defineStore('needsController', () => {
     const maintenance = (needs.chew + needs.nails + needs.health) / 3
     const happiness = needs.happiness
 
-    const wellness = (
+    const averageNeed = (
       (criticalPhysical * 0.40) +
       (externalEnvironment * 0.25) +
       (maintenance * 0.20) +
       (happiness * 0.15)
     )
+
+    // Wellness is inverse of needs (high needs = low wellness)
+    // 100 need = 0 wellness (bad), 0 need = 100 wellness (good)
+    const wellness = 100 - averageNeed
 
     return Math.max(0, Math.min(100, wellness))
   }
