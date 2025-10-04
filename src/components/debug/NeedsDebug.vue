@@ -313,13 +313,6 @@ const formatTimestamp = (timestamp: number): string => {
   return date.toLocaleDateString()
 }
 
-const getNeedStatusClass = (value: number): string => {
-  if (value <= 25) return 'text--success'  // Low need is good
-  if (value <= 50) return 'text--warning'
-  if (value <= 75) return 'text--error'
-  return 'text--critical'  // High need is critical
-}
-
 const getWellnessStatusClass = (value: number): string => {
   if (value >= 75) return 'text--success'  // High wellness is good
   if (value >= 55) return 'text--warning'
@@ -366,10 +359,6 @@ const getNeedUrgency = (value: number): string => {
   margin-block-end: var(--space-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-}
-
-.sidebar-section {
-  /* Sections within sidebar */
 }
 
 /* Tablet and up: Side-by-side layout */
