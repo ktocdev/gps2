@@ -488,17 +488,17 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
-    getLoggingStore().logActivity({
-      category: 'interaction',
-      action: 'feed_guinea_pig',
-      details: {
+    getLoggingStore().addPlayerAction(
+      `Fed ${guineaPig.name} ${foodType}${guineaPig.preferences.favoriteFood.includes(foodType) ? ' (favorite!)' : ''}`,
+      '🥬',
+      {
         guineaPigId,
         foodType,
         hungerReduction,
         happinessBonus,
         wasFavorite: guineaPig.preferences.favoriteFood.includes(foodType)
       }
-    })
+    )
 
     return true
   }
@@ -514,14 +514,14 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
-    getLoggingStore().logActivity({
-      category: 'interaction',
-      action: 'give_water',
-      details: {
+    getLoggingStore().addPlayerAction(
+      `Gave ${guineaPig.name} water`,
+      '💧',
+      {
         guineaPigId,
         thirstReduction: 40
       }
-    })
+    )
 
     return true
   }
@@ -538,15 +538,15 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
-    getLoggingStore().logActivity({
-      category: 'interaction',
-      action: 'clean_guinea_pig',
-      details: {
+    getLoggingStore().addPlayerAction(
+      `Cleaned ${guineaPig.name}`,
+      '🧼',
+      {
         guineaPigId,
         cleanlinessImprovement: 35,
         happinessBonus: 10
       }
-    })
+    )
 
     return true
   }
@@ -578,17 +578,17 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
-    getLoggingStore().logActivity({
-      category: 'interaction',
-      action: 'play_with_guinea_pig',
-      details: {
+    getLoggingStore().addPlayerAction(
+      `Played with ${guineaPig.name}${guineaPig.preferences.favoriteActivity.includes(activityType) ? ' (favorite activity!)' : ''}`,
+      '🎮',
+      {
         guineaPigId,
         activityType,
         happinessGain,
         socialGain,
         wasFavorite: guineaPig.preferences.favoriteActivity.includes(activityType)
       }
-    })
+    )
 
     return true
   }
@@ -615,16 +615,16 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
-    getLoggingStore().logActivity({
-      category: 'interaction',
-      action: 'provide_chew_toy',
-      details: {
+    getLoggingStore().addPlayerAction(
+      `Gave ${guineaPig.name} a chew toy`,
+      '🦷',
+      {
         guineaPigId,
         toyType,
         chewSatisfaction,
         happinessBonus
       }
-    })
+    )
 
     return true
   }
@@ -671,17 +671,17 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
-    getLoggingStore().logActivity({
-      category: 'interaction',
-      action: 'trim_nails',
-      details: {
+    getLoggingStore().addPlayerAction(
+      `Trimmed ${guineaPig.name}'s nails ${isSuccess ? '✓' : '(struggled)'}`,
+      '✂️',
+      {
         guineaPigId,
         successRate: Math.round(successRate),
         isSuccess,
         nailImprovement,
         stressIncrease
       }
-    })
+    )
 
     return true
   }
@@ -708,16 +708,16 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
-    getLoggingStore().logActivity({
-      category: 'interaction',
-      action: 'provide_shelter',
-      details: {
+    getLoggingStore().addPlayerAction(
+      `Provided shelter for ${guineaPig.name}`,
+      '🏠',
+      {
         guineaPigId,
         shelterType,
         shelterSatisfaction,
         happinessBonus
       }
-    })
+    )
 
     return true
   }
@@ -734,14 +734,14 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       satisfyNeed(guineaPigId, 'energy', 10) // Extra energy bonus
     }
 
-    getLoggingStore().logActivity({
-      category: 'interaction',
-      action: 'allow_rest',
-      details: {
+    getLoggingStore().addPlayerAction(
+      `Let ${guineaPig.name} rest`,
+      '😴',
+      {
         guineaPigId,
         energyRestored: guineaPig.needs.shelter < 30 ? 50 : 40
       }
-    })
+    )
 
     return true
   }
