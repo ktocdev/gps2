@@ -64,9 +64,9 @@ export const useNeedsController = defineStore('needsController', () => {
       (happiness * 0.15)
     )
 
-    // Wellness is inverse of needs (high needs = low wellness)
-    // 100 need = 0 wellness (bad), 0 need = 100 wellness (good)
-    const wellness = 100 - averageNeed
+    // Wellness is the weighted average of need satisfaction levels
+    // 100 = fully satisfied (high wellness), 0 = completely unsatisfied (low wellness)
+    const wellness = averageNeed
 
     return Math.max(0, Math.min(100, wellness))
   }
@@ -202,6 +202,15 @@ export const useNeedsController = defineStore('needsController', () => {
   function resumeProcessing(): void {
     processingEnabled.value = true
     lastBatchUpdate.value = Date.now()
+
+    // Reset needsLastUpdate timestamps to prevent accumulated time delta
+    const guineaPigStore = useGuineaPigStore()
+    const currentTime = Date.now()
+    guineaPigStore.activeGuineaPigs.forEach(gp => {
+      if (gp && gp.id) {
+        guineaPigStore.needsLastUpdate[gp.id] = currentTime
+      }
+    })
 
     getLoggingStore().logActivity({
       category: 'system',
