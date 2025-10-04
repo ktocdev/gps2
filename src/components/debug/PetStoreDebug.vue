@@ -21,27 +21,21 @@
           </div>
         </div>
         <div class="flex flex-col gap-4 mt-4">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              v-model="petStoreManager.settings.allowUnlimitedRefresh"
-            />
-            <span>Allow Unlimited Refresh (Debug)</span>
-          </label>
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              :checked="petStoreManager.settings.autoRefreshEnabled"
-              @change="handleAutoRefreshToggle"
-            />
-            <span>Enable 24-Hour Auto-Refresh</span>
-          </label>
+          <CheckboxField
+            v-model="petStoreManager.settings.allowUnlimitedRefresh"
+            label="Allow Unlimited Refresh (Debug)"
+          />
+          <CheckboxField
+            :model-value="petStoreManager.settings.autoRefreshEnabled"
+            label="Enable 24-Hour Auto-Refresh"
+            @update:model-value="handleAutoRefreshToggle"
+          />
           <div v-if="petStoreManager.settings.autoRefreshEnabled" class="auto-refresh-info">
             <Badge variant="info" size="sm">Auto-refresh Active</Badge>
             <span class="auto-refresh-info__text">Next refresh: {{ liveAutoRefreshCountdown }}</span>
           </div>
           <hr class="divider">
-          <Slider
+          <SliderField
             v-model="petStoreManager.settings.endGamePenalty"
             :min="0"
             :max="500"
@@ -132,29 +126,30 @@
             <h4>Basic Info</h4>
           </div>
           <div class="flex flex-col gap-3 mb-4">
-            <label class="form-field-inline">
+            <label for="guinea-pig-name-input" class="form-field-inline">
               Name:
               <input
+                id="guinea-pig-name-input"
                 type="text"
                 v-model="selectedGuineaPig.name"
                 class="input"
                 :disabled="isSelectedGuineaPigActive"
               />
             </label>
-            <label class="form-field-inline">
-              Gender:
-              <select v-model="selectedGuineaPig.gender" class="input" :disabled="isSelectedGuineaPigActive">
-                <option value="male">Neutered Boar</option>
-                <option value="female">Sow</option>
-              </select>
-            </label>
-            <label class="form-field-inline">
-              Breed:
-              <select v-model="selectedGuineaPig.breed" class="input" :disabled="isSelectedGuineaPigActive">
-                <option v-if="!breedOptions.includes(selectedGuineaPig.breed)" :value="selectedGuineaPig.breed">{{ capitalize(selectedGuineaPig.breed) }}</option>
-                <option v-for="breed in breedOptions" :key="breed" :value="breed">{{ capitalize(breed) }}</option>
-              </select>
-            </label>
+            <Select
+              v-model="selectedGuineaPig.gender"
+              label="Gender:"
+              :options="genderOptions"
+              :disabled="isSelectedGuineaPigActive"
+              size="sm"
+            />
+            <Select
+              v-model="selectedGuineaPig.breed"
+              label="Breed:"
+              :options="selectBreedOptions"
+              :disabled="isSelectedGuineaPigActive"
+              size="sm"
+            />
           </div>
           <hr class="divider">
 
@@ -162,7 +157,7 @@
             <h4>Personality</h4>
           </div>
           <div class="flex flex-col gap-3 mb-4">
-            <Slider
+            <SliderField
               v-model="selectedGuineaPig.personality.friendliness"
               :min="1"
               :max="10"
@@ -171,7 +166,7 @@
               size="sm"
               :disabled="isSelectedGuineaPigActive"
             />
-            <Slider
+            <SliderField
               v-model="selectedGuineaPig.personality.playfulness"
               :min="1"
               :max="10"
@@ -180,7 +175,7 @@
               size="sm"
               :disabled="isSelectedGuineaPigActive"
             />
-            <Slider
+            <SliderField
               v-model="selectedGuineaPig.personality.curiosity"
               :min="1"
               :max="10"
@@ -189,7 +184,7 @@
               size="sm"
               :disabled="isSelectedGuineaPigActive"
             />
-            <Slider
+            <SliderField
               v-model="selectedGuineaPig.personality.independence"
               :min="1"
               :max="10"
@@ -205,35 +200,34 @@
             <h4>Appearance</h4>
           </div>
           <div class="flex flex-col gap-3 mb-4">
-            <label class="form-field-inline">
-              Color:
-              <select v-model="selectedGuineaPig.appearance.furColor" class="input" :disabled="isSelectedGuineaPigActive">
-                <option v-if="!furColorOptions.includes(selectedGuineaPig.appearance.furColor)" :value="selectedGuineaPig.appearance.furColor">{{ capitalize(selectedGuineaPig.appearance.furColor) }}</option>
-                <option v-for="color in furColorOptions" :key="color" :value="color">{{ capitalize(color) }}</option>
-              </select>
-            </label>
-            <label class="form-field-inline">
-              Pattern:
-              <select v-model="selectedGuineaPig.appearance.furPattern" class="input" :disabled="isSelectedGuineaPigActive">
-                <option v-if="!furPatternOptions.includes(selectedGuineaPig.appearance.furPattern)" :value="selectedGuineaPig.appearance.furPattern">{{ capitalize(selectedGuineaPig.appearance.furPattern) }}</option>
-                <option v-for="pattern in furPatternOptions" :key="pattern" :value="pattern">{{ capitalize(pattern) }}</option>
-              </select>
-            </label>
-            <label class="form-field-inline">
-              Eye Color:
-              <select v-model="selectedGuineaPig.appearance.eyeColor" class="input" :disabled="isSelectedGuineaPigActive">
-                <option v-if="!eyeColorOptions.includes(selectedGuineaPig.appearance.eyeColor)" :value="selectedGuineaPig.appearance.eyeColor">{{ capitalize(selectedGuineaPig.appearance.eyeColor) }}</option>
-                <option v-for="eyeColor in eyeColorOptions" :key="eyeColor" :value="eyeColor">{{ capitalize(eyeColor) }}</option>
-              </select>
-            </label>
-            <label class="form-field-inline">
-              Size:
-              <select v-model="selectedGuineaPig.appearance.size" class="input" :disabled="isSelectedGuineaPigActive">
-                <option value="small">Small</option>
-                <option value="medium">Medium</option>
-                <option value="large">Large</option>
-              </select>
-            </label>
+            <Select
+              v-model="selectedGuineaPig.appearance.furColor"
+              label="Color:"
+              :options="selectFurColorOptions"
+              :disabled="isSelectedGuineaPigActive"
+              size="sm"
+            />
+            <Select
+              v-model="selectedGuineaPig.appearance.furPattern"
+              label="Pattern:"
+              :options="selectFurPatternOptions"
+              :disabled="isSelectedGuineaPigActive"
+              size="sm"
+            />
+            <Select
+              v-model="selectedGuineaPig.appearance.eyeColor"
+              label="Eye Color:"
+              :options="selectEyeColorOptions"
+              :disabled="isSelectedGuineaPigActive"
+              size="sm"
+            />
+            <Select
+              v-model="selectedGuineaPig.appearance.size"
+              label="Size:"
+              :options="sizeOptions"
+              :disabled="isSelectedGuineaPigActive"
+              size="sm"
+            />
           </div>
           <hr class="divider">
 
@@ -250,35 +244,39 @@
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Likes</span>
                     <div class="preference-row__selects">
-                      <select v-model="vegFavorite1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First liked vegetable">
-                        <option value="">None</option>
-                        <option v-for="veg in vegetableOptions" :key="veg" :value="veg">
-                          {{ formatPreferenceName(veg) }}
-                        </option>
-                      </select>
-                      <select v-model="vegFavorite2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second liked vegetable">
-                        <option value="">None</option>
-                        <option v-for="veg in vegetableOptions" :key="veg" :value="veg">
-                          {{ formatPreferenceName(veg) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="vegFavorite1"
+                        :options="selectVegetableOptions"
+                        aria-label="First liked vegetable"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="vegFavorite2"
+                        :options="selectVegetableOptions"
+                        aria-label="Second liked vegetable"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Dislikes</span>
                     <div class="preference-row__selects">
-                      <select v-model="vegDislike1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First disliked vegetable">
-                        <option value="">None</option>
-                        <option v-for="veg in vegetableOptions" :key="veg" :value="veg">
-                          {{ formatPreferenceName(veg) }}
-                        </option>
-                      </select>
-                      <select v-model="vegDislike2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second disliked vegetable">
-                        <option value="">None</option>
-                        <option v-for="veg in vegetableOptions" :key="veg" :value="veg">
-                          {{ formatPreferenceName(veg) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="vegDislike1"
+                        :options="selectVegetableOptions"
+                        aria-label="First disliked vegetable"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="vegDislike2"
+                        :options="selectVegetableOptions"
+                        aria-label="Second disliked vegetable"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                 </div>
@@ -292,35 +290,39 @@
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Likes</span>
                     <div class="preference-row__selects">
-                      <select v-model="fruitFavorite1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First liked fruit">
-                        <option value="">None</option>
-                        <option v-for="fruit in fruitOptions" :key="fruit" :value="fruit">
-                          {{ formatPreferenceName(fruit) }}
-                        </option>
-                      </select>
-                      <select v-model="fruitFavorite2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second liked fruit">
-                        <option value="">None</option>
-                        <option v-for="fruit in fruitOptions" :key="fruit" :value="fruit">
-                          {{ formatPreferenceName(fruit) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="fruitFavorite1"
+                        :options="selectFruitOptions"
+                        aria-label="First liked fruit"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="fruitFavorite2"
+                        :options="selectFruitOptions"
+                        aria-label="Second liked fruit"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Dislikes</span>
                     <div class="preference-row__selects">
-                      <select v-model="fruitDislike1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First disliked fruit">
-                        <option value="">None</option>
-                        <option v-for="fruit in fruitOptions" :key="fruit" :value="fruit">
-                          {{ formatPreferenceName(fruit) }}
-                        </option>
-                      </select>
-                      <select v-model="fruitDislike2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second disliked fruit">
-                        <option value="">None</option>
-                        <option v-for="fruit in fruitOptions" :key="fruit" :value="fruit">
-                          {{ formatPreferenceName(fruit) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="fruitDislike1"
+                        :options="selectFruitOptions"
+                        aria-label="First disliked fruit"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="fruitDislike2"
+                        :options="selectFruitOptions"
+                        aria-label="Second disliked fruit"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                 </div>
@@ -334,35 +336,39 @@
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Likes</span>
                     <div class="preference-row__selects">
-                      <select v-model="hayFavorite1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First liked hay type">
-                        <option value="">None</option>
-                        <option v-for="hay in hayOptions" :key="hay" :value="hay">
-                          {{ formatPreferenceName(hay) }}
-                        </option>
-                      </select>
-                      <select v-model="hayFavorite2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second liked hay type">
-                        <option value="">None</option>
-                        <option v-for="hay in hayOptions" :key="hay" :value="hay">
-                          {{ formatPreferenceName(hay) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="hayFavorite1"
+                        :options="selectHayOptions"
+                        aria-label="First liked hay type"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="hayFavorite2"
+                        :options="selectHayOptions"
+                        aria-label="Second liked hay type"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Dislikes</span>
                     <div class="preference-row__selects">
-                      <select v-model="hayDislike1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First disliked hay type">
-                        <option value="">None</option>
-                        <option v-for="hay in hayOptions" :key="hay" :value="hay">
-                          {{ formatPreferenceName(hay) }}
-                        </option>
-                      </select>
-                      <select v-model="hayDislike2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second disliked hay type">
-                        <option value="">None</option>
-                        <option v-for="hay in hayOptions" :key="hay" :value="hay">
-                          {{ formatPreferenceName(hay) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="hayDislike1"
+                        :options="selectHayOptions"
+                        aria-label="First disliked hay type"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="hayDislike2"
+                        :options="selectHayOptions"
+                        aria-label="Second disliked hay type"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                 </div>
@@ -378,35 +384,39 @@
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Likes</span>
                     <div class="preference-row__selects">
-                      <select v-model="activityFavorite1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First liked activity">
-                        <option value="">None</option>
-                        <option v-for="activity in activityOptions" :key="activity" :value="activity">
-                          {{ formatPreferenceName(activity) }}
-                        </option>
-                      </select>
-                      <select v-model="activityFavorite2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second liked activity">
-                        <option value="">None</option>
-                        <option v-for="activity in activityOptions" :key="activity" :value="activity">
-                          {{ formatPreferenceName(activity) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="activityFavorite1"
+                        :options="selectActivityOptions"
+                        aria-label="First liked activity"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="activityFavorite2"
+                        :options="selectActivityOptions"
+                        aria-label="Second liked activity"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Dislikes</span>
                     <div class="preference-row__selects">
-                      <select v-model="activityDislike1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First disliked activity">
-                        <option value="">None</option>
-                        <option v-for="activity in activityOptions" :key="activity" :value="activity">
-                          {{ formatPreferenceName(activity) }}
-                        </option>
-                      </select>
-                      <select v-model="activityDislike2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second disliked activity">
-                        <option value="">None</option>
-                        <option v-for="activity in activityOptions" :key="activity" :value="activity">
-                          {{ formatPreferenceName(activity) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="activityDislike1"
+                        :options="selectActivityOptions"
+                        aria-label="First disliked activity"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="activityDislike2"
+                        :options="selectActivityOptions"
+                        aria-label="Second disliked activity"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                 </div>
@@ -422,35 +432,39 @@
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Likes</span>
                     <div class="preference-row__selects">
-                      <select v-model="habitatFavorite1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First liked habitat feature">
-                        <option value="">None</option>
-                        <option v-for="habitat in habitatOptions" :key="habitat" :value="habitat">
-                          {{ formatPreferenceName(habitat) }}
-                        </option>
-                      </select>
-                      <select v-model="habitatFavorite2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second liked habitat feature">
-                        <option value="">None</option>
-                        <option v-for="habitat in habitatOptions" :key="habitat" :value="habitat">
-                          {{ formatPreferenceName(habitat) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="habitatFavorite1"
+                        :options="selectHabitatOptions"
+                        aria-label="First liked habitat feature"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="habitatFavorite2"
+                        :options="selectHabitatOptions"
+                        aria-label="Second liked habitat feature"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                   <div class="preference-row__group">
                     <span class="preference-row__group-label" aria-hidden="true">Dislikes</span>
                     <div class="preference-row__selects">
-                      <select v-model="habitatDislike1" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="First disliked habitat feature">
-                        <option value="">None</option>
-                        <option v-for="habitat in habitatOptions" :key="habitat" :value="habitat">
-                          {{ formatPreferenceName(habitat) }}
-                        </option>
-                      </select>
-                      <select v-model="habitatDislike2" class="input input--sm" :disabled="isSelectedGuineaPigActive" aria-label="Second disliked habitat feature">
-                        <option value="">None</option>
-                        <option v-for="habitat in habitatOptions" :key="habitat" :value="habitat">
-                          {{ formatPreferenceName(habitat) }}
-                        </option>
-                      </select>
+                      <Select
+                        v-model="habitatDislike1"
+                        :options="selectHabitatOptions"
+                        aria-label="First disliked habitat feature"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
+                      <Select
+                        v-model="habitatDislike2"
+                        :options="selectHabitatOptions"
+                        aria-label="Second disliked habitat feature"
+                        :disabled="isSelectedGuineaPigActive"
+                        size="sm"
+                      />
                     </div>
                   </div>
                 </div>
@@ -528,9 +542,11 @@ import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { usePetStoreManager } from '../../stores/petStoreManager'
 import { usePlayerProgression } from '../../stores/playerProgression'
 import type { GuineaPig } from '../../stores/guineaPigStore'
-import Slider from '../basic/Slider.vue'
+import SliderField from '../basic/SliderField.vue'
 import Button from '../basic/Button.vue'
 import Badge from '../basic/Badge.vue'
+import CheckboxField from '../basic/CheckboxField.vue'
+import Select from '../basic/Select.vue'
 import FavoritesPanel from '../petstore/FavoritesPanel.vue'
 
 const petStoreManager = usePetStoreManager()
@@ -602,6 +618,82 @@ const furPatternOptions = petStoreManager.furPatterns
 const breedOptions = petStoreManager.breeds
 const eyeColorOptions = petStoreManager.eyeColors
 
+// Select component options
+const genderOptions = [
+  { label: 'Neutered Boar', value: 'male' },
+  { label: 'Sow', value: 'female' }
+]
+
+const sizeOptions = [
+  { label: 'Small', value: 'small' },
+  { label: 'Medium', value: 'medium' },
+  { label: 'Large', value: 'large' }
+]
+
+const selectBreedOptions = computed(() => {
+  const options = breedOptions.map(breed => ({
+    label: capitalize(breed),
+    value: breed
+  }))
+
+  if (selectedGuineaPig.value && !breedOptions.includes(selectedGuineaPig.value.breed)) {
+    options.unshift({
+      label: capitalize(selectedGuineaPig.value.breed),
+      value: selectedGuineaPig.value.breed
+    })
+  }
+
+  return options
+})
+
+const selectFurColorOptions = computed(() => {
+  const options = furColorOptions.map(color => ({
+    label: capitalize(color),
+    value: color
+  }))
+
+  if (selectedGuineaPig.value && !furColorOptions.includes(selectedGuineaPig.value.appearance.furColor)) {
+    options.unshift({
+      label: capitalize(selectedGuineaPig.value.appearance.furColor),
+      value: selectedGuineaPig.value.appearance.furColor
+    })
+  }
+
+  return options
+})
+
+const selectFurPatternOptions = computed(() => {
+  const options = furPatternOptions.map(pattern => ({
+    label: capitalize(pattern),
+    value: pattern
+  }))
+
+  if (selectedGuineaPig.value && !furPatternOptions.includes(selectedGuineaPig.value.appearance.furPattern)) {
+    options.unshift({
+      label: capitalize(selectedGuineaPig.value.appearance.furPattern),
+      value: selectedGuineaPig.value.appearance.furPattern
+    })
+  }
+
+  return options
+})
+
+const selectEyeColorOptions = computed(() => {
+  const options = eyeColorOptions.map(eyeColor => ({
+    label: capitalize(eyeColor),
+    value: eyeColor
+  }))
+
+  if (selectedGuineaPig.value && !eyeColorOptions.includes(selectedGuineaPig.value.appearance.eyeColor)) {
+    options.unshift({
+      label: capitalize(selectedGuineaPig.value.appearance.eyeColor),
+      value: selectedGuineaPig.value.appearance.eyeColor
+    })
+  }
+
+  return options
+})
+
 // Preference option arrays
 const vegetableOptions = petStoreManager.vegetables
 const fruitOptions = petStoreManager.fruits
@@ -618,6 +710,47 @@ const formatPreferenceName = (name: string) => {
     word.charAt(0).toUpperCase() + word.slice(1)
   ).join(' ')
 }
+
+// Select component options for preferences
+const selectVegetableOptions = computed(() => [
+  { label: 'None', value: '' },
+  ...vegetableOptions.map(veg => ({
+    label: formatPreferenceName(veg),
+    value: veg
+  }))
+])
+
+const selectFruitOptions = computed(() => [
+  { label: 'None', value: '' },
+  ...fruitOptions.map(fruit => ({
+    label: formatPreferenceName(fruit),
+    value: fruit
+  }))
+])
+
+const selectHayOptions = computed(() => [
+  { label: 'None', value: '' },
+  ...hayOptions.map(hay => ({
+    label: formatPreferenceName(hay),
+    value: hay
+  }))
+])
+
+const selectActivityOptions = computed(() => [
+  { label: 'None', value: '' },
+  ...activityOptions.map(activity => ({
+    label: formatPreferenceName(activity),
+    value: activity
+  }))
+])
+
+const selectHabitatOptions = computed(() => [
+  { label: 'None', value: '' },
+  ...habitatOptions.map(habitat => ({
+    label: formatPreferenceName(habitat),
+    value: habitat
+  }))
+])
 
 // Helper function to get breed rarity
 const getBreedRarity = (breed: string) => {

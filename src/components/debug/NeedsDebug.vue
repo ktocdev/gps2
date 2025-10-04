@@ -10,54 +10,58 @@
             <h3>System Controls</h3>
           </div>
           <div class="panel__content">
-            <fieldset>
+            <fieldset class=" mb-6">
               <legend class="sr-only">Needs processing controls</legend>
               <div class="controls-grid">
-                <Button
-                  @click="toggleNeedsProcessing"
-                  :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
-                  full-width
-                >
-                  {{ needsController.processingEnabled ? 'Pause' : 'Resume' }} Needs Processing
-                </Button>
+                <div class="button-with-badge">
+                  <Button
+                    @click="toggleNeedsProcessing"
+                    :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
+                    full-width
+                    :disabled="gameController.isPaused"
+                    class="needs-processing-button"
+                  >
+                    {{ needsController.processingEnabled ? 'Pause' : 'Resume' }} Needs Processing
+                  </Button>
+                  <Badge v-if="gameController.isPaused" variant="warning" size="sm" class="button-with-badge__badge">
+                    Paused by Game
+                  </Badge>
+                </div>
 
                 <Button
                   @click="forceNeedsUpdate"
                   variant="tertiary"
                   full-width
                   :disabled="!hasActiveGuineaPigs"
+                  class="needs-processing-button"
                 >
                   Force Needs Update
                 </Button>
               </div>
             </fieldset>
 
-            <div class="mt-4">
-              <label for="decay-rate-slider" class="form-label">Decay Rate Multiplier</label>
-              <Slider
-                id="decay-rate-slider"
-                v-model="decayRateMultiplier"
-                :min="0"
-                :max="5"
-                :step="0.1"
-                prefix=""
-                suffix="x"
-                @update:modelValue="updateDecayRate"
-              />
-            </div>
+            <hr class="divider">
 
-            <div class="mt-4">
-              <label for="auto-decay-toggle" class="form-label">
-                <input
-                  id="auto-decay-toggle"
-                  type="checkbox"
-                  v-model="autoDecayEnabled"
-                  @change="toggleAutoDecay"
-                  class="mr-2"
-                >
-                Auto Decay Enabled
-              </label>
-            </div>
+            <SliderField
+              v-model="decayRateMultiplier"
+              label="Decay Rate Multiplier"
+              :min="0"
+              :max="5"
+              :step="0.1"
+              prefix=""
+              suffix="x"
+              class="mt-6 mb-6"
+              @update:modelValue="updateDecayRate"
+            />
+
+            <hr class="divider">
+
+            <CheckboxField
+              v-model="autoDecayEnabled"
+              label="Auto Decay Enabled"
+              class="mt-6"
+              @change="toggleAutoDecay"
+            />
           </div>
         </div>
 
@@ -120,7 +124,7 @@
                     <label :for="`${guineaPig.id}-${need}`" class="need-label">
                       {{ formatNeedName(need) }}
                     </label>
-                    <Slider
+                    <SliderField
                       :id="`${guineaPig.id}-${need}`"
                       :modelValue="(guineaPig.needs as any)[need]"
                       :min="0"
@@ -214,11 +218,15 @@
 import { ref, computed } from 'vue'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useNeedsController } from '../../stores/needsController'
+import { useGameController } from '../../stores/gameController'
 import Button from '../basic/Button.vue'
-import Slider from '../basic/Slider.vue'
+import SliderField from '../basic/SliderField.vue'
+import Badge from '../basic/Badge.vue'
+import CheckboxField from '../basic/CheckboxField.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()
+const gameController = useGameController()
 
 // Reactive data
 const decayRateMultiplier = ref(guineaPigStore.settings.needsDecayRate)
@@ -313,13 +321,6 @@ const formatTimestamp = (timestamp: number): string => {
   return date.toLocaleDateString()
 }
 
-const getNeedStatusClass = (value: number): string => {
-  if (value <= 25) return 'text--success'  // Low need is good
-  if (value <= 50) return 'text--warning'
-  if (value <= 75) return 'text--error'
-  return 'text--critical'  // High need is critical
-}
-
 const getWellnessStatusClass = (value: number): string => {
   if (value >= 75) return 'text--success'  // High wellness is good
   if (value >= 55) return 'text--warning'
@@ -366,10 +367,6 @@ const getNeedUrgency = (value: number): string => {
   margin-block-end: var(--space-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-}
-
-.sidebar-section {
-  /* Sections within sidebar */
 }
 
 /* Tablet and up: Side-by-side layout */
@@ -508,5 +505,9 @@ const getNeedUrgency = (value: number): string => {
 .text--critical {
   color: var(--color-error);
   font-weight: 600;
+}
+
+.needs-processing-button {
+  white-space: normal;
 }
 </style>

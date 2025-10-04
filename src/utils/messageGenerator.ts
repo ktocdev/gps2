@@ -328,6 +328,151 @@ export class MessageGenerator {
     }
     messageTemplates[category].push(template)
   }
+
+  // Action-specific message generators for guinea pig interactions
+  static generateFeedMessage(
+    guineaPigName: string,
+    foodType: string,
+    isFavorite: boolean = false
+  ): { message: string; emoji: string } {
+    const foodEmojis: Record<string, string> = {
+      pellets: '🥄',
+      vegetables: '🥬',
+      fruits: '🍓',
+      hay: '🌾'
+    }
+
+    const templates = [
+      `You offer ${guineaPigName} some ${foodType}`,
+      `${guineaPigName} gets a serving of fresh ${foodType}`,
+      `You place ${foodType} in ${guineaPigName}'s dish`,
+      `You scatter ${foodType} for ${guineaPigName}`,
+      `${guineaPigName} receives ${foodType}`
+    ]
+
+    if (isFavorite) {
+      templates.push(
+        `${guineaPigName} gets their favorite: ${foodType}! ✨`,
+        `You treat ${guineaPigName} to their beloved ${foodType}!`,
+        `${guineaPigName}'s eyes light up at the ${foodType}!`
+      )
+    }
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    const emoji = foodEmojis[foodType] || '🍽️'
+
+    return { message, emoji }
+  }
+
+  static generateWaterMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `You fill ${guineaPigName}'s water bottle with fresh water`,
+      `${guineaPigName} gets clean, refreshing water`,
+      `You refresh ${guineaPigName}'s water supply`,
+      `${guineaPigName} receives fresh water`,
+      `You ensure ${guineaPigName} has plenty of water`
+    ]
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '💧' }
+  }
+
+  static generateCleanMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `You give ${guineaPigName} a gentle cleaning`,
+      `${guineaPigName} gets groomed and pampered`,
+      `You brush ${guineaPigName}'s fur lovingly`,
+      `${guineaPigName} gets a spa treatment`,
+      `You clean ${guineaPigName} with care`
+    ]
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '🧼' }
+  }
+
+  static generatePlayMessage(
+    guineaPigName: string,
+    activityType: string = 'general_play',
+    isFavorite: boolean = false
+  ): { message: string; emoji: string } {
+    const templates = [
+      `You play with ${guineaPigName}`,
+      `${guineaPigName} enjoys playtime with you`,
+      `You engage ${guineaPigName} in fun activities`,
+      `${guineaPigName} has a delightful play session`,
+      `You spend quality time playing with ${guineaPigName}`
+    ]
+
+    if (isFavorite) {
+      templates.push(
+        `You do ${guineaPigName}'s favorite activity together!`,
+        `${guineaPigName} is thrilled with their favorite game!`
+      )
+    }
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '🎮' }
+  }
+
+  static generateChewToyMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `You give ${guineaPigName} a new chew toy`,
+      `${guineaPigName} receives a fresh chew toy`,
+      `You place a chew toy for ${guineaPigName}`,
+      `${guineaPigName} gets something to gnaw on`,
+      `You provide ${guineaPigName} with a chew toy`
+    ]
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '🦷' }
+  }
+
+  static generateTrimNailsMessage(
+    guineaPigName: string,
+    wasSuccessful: boolean
+  ): { message: string; emoji: string } {
+    const templates = wasSuccessful ? [
+      `You successfully trim ${guineaPigName}'s nails`,
+      `${guineaPigName} sits still for a nail trim`,
+      `You carefully trim ${guineaPigName}'s nails`,
+      `${guineaPigName} gets a pedicure`,
+      `You gently trim ${guineaPigName}'s tiny nails`
+    ] : [
+      `You attempt to trim ${guineaPigName}'s nails`,
+      `${guineaPigName} squirms during the nail trim`,
+      `You try your best with ${guineaPigName}'s nails`,
+      `${guineaPigName} isn't cooperating with nail trimming`
+    ]
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '✂️' }
+  }
+
+  static generateShelterMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `You arrange a cozy shelter for ${guineaPigName}`,
+      `${guineaPigName} gets a comfortable hideout`,
+      `You set up a safe space for ${guineaPigName}`,
+      `${guineaPigName} receives a secure hideaway`,
+      `You create a peaceful retreat for ${guineaPigName}`
+    ]
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '🏠' }
+  }
+
+  static generateSootheToSleepMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `You gently soothe ${guineaPigName} to sleep`,
+      `${guineaPigName} drifts off peacefully`,
+      `You help ${guineaPigName} settle down for a nap`,
+      `${guineaPigName} relaxes and falls asleep`,
+      `You create a calm environment for ${guineaPigName} to rest`
+    ]
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '😴' }
+  }
 }
 
 // Convenience functions for direct use

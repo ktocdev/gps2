@@ -118,7 +118,7 @@ export const useGameController = defineStore('gameController', () => {
   }
 
   // State management actions
-  const setState = (newState: GameState['currentState'], pauseReason?: GameState['pauseReason']) => {
+  const setState = (newState: GameState['currentState'], pauseReason?: GameState['pauseReason'], context?: 'start' | 'resume') => {
     if (!isValidTransition(gameState.value.currentState, newState)) {
       // Log to both console and error tracking system
       console.error(`Invalid state transition: ${gameState.value.currentState} -> ${newState}`)
@@ -140,7 +140,9 @@ export const useGameController = defineStore('gameController', () => {
     const logging = getLoggingStore()
     const stateMessages = {
       intro: 'Game started - Welcome to Guinea Pig Simulator! 🎮',
-      playing: 'Game resumed - Your guinea pig is ready for care! 🐹',
+      playing: context === 'resume'
+        ? 'Game resumed - Your guinea pigs are ready for care! 🐹'
+        : 'Session started - Your guinea pigs are ready for care! 🐹',
       paused: `Game paused${pauseReason ? ` (${pauseReason})` : ''} ⏸️`,
       stopped: 'Game stopped - See you next time! 👋'
     }
@@ -158,7 +160,7 @@ export const useGameController = defineStore('gameController', () => {
 
   const startGame = () => {
     if (hasGuineaPig.value) {
-      setState('playing')
+      setState('playing', undefined, 'start')
 
       // Start the game timing system
       const gameTimingStore = useGameTimingStore()
@@ -187,7 +189,7 @@ export const useGameController = defineStore('gameController', () => {
 
   const resumeGame = () => {
     if (gameState.value.currentState === 'paused') {
-      setState('playing')
+      setState('playing', undefined, 'resume')
 
       // Resume the game timing system
       const gameTimingStore = useGameTimingStore()
@@ -323,9 +325,7 @@ export const useGameController = defineStore('gameController', () => {
 
     logging.logInfo('Game Controller initializing...')
 
-    // Initialize guinea pig store first
-    guineaPigStore.initializeStore()
-
+    // Guinea pig store is already initialized in App.vue
     // Sync state with guinea pig store
     syncGameStateWithGuineaPigs()
 
@@ -336,7 +336,7 @@ export const useGameController = defineStore('gameController', () => {
       syncGameStateWithGuineaPigs()
     } else {
       // No guinea pig data, start fresh
-      logging.logInfo('No guinea pig data found, starting new game')
+      logging.logInfo('No guinea pig data found, starting new session')
       newGame(true)
     }
 

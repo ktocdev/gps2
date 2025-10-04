@@ -670,7 +670,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     const playerProgression = usePlayerProgression()
     playerProgression.incrementGameSessions()
-    playerProgression.incrementGuineaPigsAdopted()
+    playerProgression.incrementGuineaPigsAdopted(guineaPigIds.length)
 
     // Start the game for the new session
     const gameController = useGameController()
@@ -770,11 +770,9 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
   function initializeStore(): void {
     const logging = getLoggingStore()
-    logging.logInfo('Pet Store Manager initializing...')
 
     if (availableGuineaPigs.value.length === 0) {
       generateRandomGuineaPigs(10)
-      logging.logInfo('Generated initial pet store with 10 guinea pigs')
     }
 
     // Check if an auto-refresh is due (in case app was closed and reopened)

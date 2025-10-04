@@ -10,6 +10,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
 import { useNeedsController } from './needsController'
+import { MessageGenerator } from '../utils/messageGenerator'
 
 // Core guinea pig entity interfaces
 export interface GuineaPigPersonality {
@@ -359,15 +360,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       collection.value.lastUpdated = Date.now()
       needsLastUpdate.value[guineaPigId] = Date.now()
 
-      getLoggingStore().logActivity({
-        category: 'needs',
-        action: 'needs_decay_processed',
-        details: {
-          guineaPigId,
-          deltaTimeMinutes: Math.round(deltaTimeMinutes * 100) / 100,
-          needs: { ...guineaPig.needs }
-        }
-      })
+      // Removed excessive needs_decay_processed logging to prevent message spam
+      // This was logging every 5 seconds per guinea pig, creating 100+ messages quickly
     }
 
     return needsChanged
@@ -432,17 +426,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.needs[needType] = newValue
     collection.value.lastUpdated = Date.now()
 
-    getLoggingStore().logActivity({
-      category: 'needs',
-      action: 'need_adjusted',
-      details: {
-        guineaPigId,
-        needType,
-        oldValue,
-        newValue,
-        change: amount
-      }
-    })
+    // Removed need_adjusted logging to prevent spam when using debug sliders
+    // Each slider adjustment was creating a system message
 
     return true
   }
@@ -488,15 +473,18 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
+    const isFavorite = guineaPig.preferences.favoriteFood.includes(foodType)
+    const { message, emoji } = MessageGenerator.generateFeedMessage(guineaPig.name, foodType, isFavorite)
+
     getLoggingStore().addPlayerAction(
-      `Fed ${guineaPig.name} ${foodType}${guineaPig.preferences.favoriteFood.includes(foodType) ? ' (favorite!)' : ''}`,
-      '🥬',
+      message,
+      emoji,
       {
         guineaPigId,
         foodType,
         hungerReduction,
         happinessBonus,
-        wasFavorite: guineaPig.preferences.favoriteFood.includes(foodType)
+        wasFavorite: isFavorite
       }
     )
 
@@ -514,9 +502,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
+    const { message, emoji } = MessageGenerator.generateWaterMessage(guineaPig.name)
+
     getLoggingStore().addPlayerAction(
-      `Gave ${guineaPig.name} water`,
-      '💧',
+      message,
+      emoji,
       {
         guineaPigId,
         thirstReduction: 40
@@ -538,9 +528,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
+    const { message, emoji } = MessageGenerator.generateCleanMessage(guineaPig.name)
+
     getLoggingStore().addPlayerAction(
-      `Cleaned ${guineaPig.name}`,
-      '🧼',
+      message,
+      emoji,
       {
         guineaPigId,
         cleanlinessImprovement: 35,
@@ -561,7 +553,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     let energyCost = 5 // Playing can be slightly tiring
 
     // Check if this activity is preferred
-    if (guineaPig.preferences.favoriteActivity.includes(activityType)) {
+    const isFavorite = guineaPig.preferences.favoriteActivity.includes(activityType)
+    if (isFavorite) {
       happinessGain += 10 // Bonus for preferred activities
     }
 
@@ -578,15 +571,17 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
+    const { message, emoji } = MessageGenerator.generatePlayMessage(guineaPig.name, activityType, isFavorite)
+
     getLoggingStore().addPlayerAction(
-      `Played with ${guineaPig.name}${guineaPig.preferences.favoriteActivity.includes(activityType) ? ' (favorite activity!)' : ''}`,
-      '🎮',
+      message,
+      emoji,
       {
         guineaPigId,
         activityType,
         happinessGain,
         socialGain,
-        wasFavorite: guineaPig.preferences.favoriteActivity.includes(activityType)
+        wasFavorite: isFavorite
       }
     )
 
@@ -615,9 +610,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
+    const { message, emoji } = MessageGenerator.generateChewToyMessage(guineaPig.name)
+
     getLoggingStore().addPlayerAction(
-      `Gave ${guineaPig.name} a chew toy`,
-      '🦷',
+      message,
+      emoji,
       {
         guineaPigId,
         toyType,
@@ -671,9 +668,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
+    const { message, emoji } = MessageGenerator.generateTrimNailsMessage(guineaPig.name, isSuccess)
+
     getLoggingStore().addPlayerAction(
-      `Trimmed ${guineaPig.name}'s nails ${isSuccess ? '✓' : '(struggled)'}`,
-      '✂️',
+      message,
+      emoji,
       {
         guineaPigId,
         successRate: Math.round(successRate),
@@ -708,9 +707,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
+    const { message, emoji } = MessageGenerator.generateShelterMessage(guineaPig.name)
+
     getLoggingStore().addPlayerAction(
-      `Provided shelter for ${guineaPig.name}`,
-      '🏠',
+      message,
+      emoji,
       {
         guineaPigId,
         shelterType,
@@ -734,9 +735,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       satisfyNeed(guineaPigId, 'energy', 10) // Extra energy bonus
     }
 
+    const { message, emoji } = MessageGenerator.generateSootheToSleepMessage(guineaPig.name)
+
     getLoggingStore().addPlayerAction(
-      `Soothed ${guineaPig.name} to sleep`,
-      '😴',
+      message,
+      emoji,
       {
         guineaPigId,
         energyRestored: guineaPig.needs.shelter < 30 ? 50 : 40
@@ -749,7 +752,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   // Store initialization
   const initializeStore = () => {
     const logging = getLoggingStore()
-    logging.logInfo('Guinea Pig Store initializing...')
 
     // Validate existing data
     validateCollection()
@@ -844,18 +846,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.friendship = Math.max(0, Math.min(100, guineaPig.friendship + amount))
     collection.value.lastUpdated = Date.now()
 
-    if (Math.abs(amount) > 0.1) {
-      getLoggingStore().logActivity({
-        category: 'relationship',
-        action: amount > 0 ? 'friendship_increased' : 'friendship_decreased',
-        details: {
-          guineaPigId: id,
-          oldFriendship,
-          newFriendship: guineaPig.friendship,
-          change: amount
-        }
-      })
-    }
+    // Removed friendship change logging to prevent spam
+    // This was being called every 5 seconds by wellness penalty/bonus system
+    // Creating dozens of messages per minute
 
     return true
   }

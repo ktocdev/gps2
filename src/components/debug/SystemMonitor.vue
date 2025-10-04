@@ -47,7 +47,9 @@
               </Button>
             </div>
             <div class="search-input">
+              <label for="message-search-input" class="visually-hidden">Search messages</label>
               <input
+                id="message-search-input"
                 v-model="searchTerm"
                 type="text"
                 placeholder="Search messages..."
