@@ -9,6 +9,7 @@
         :class="selectClasses"
         :value="modelValue"
         :disabled="disabled"
+        :aria-label="ariaLabel"
         @change="handleChange"
       >
         <option v-if="placeholder" value="" disabled>
@@ -54,7 +55,9 @@ type SelectOption = string | number | { label: string; value: string | number }
 interface Props {
   modelValue: string | number
   options: SelectOption[]
+  id?: string
   label?: string
+  ariaLabel?: string
   placeholder?: string
   disabled?: boolean
   error?: string
@@ -77,7 +80,7 @@ const emit = defineEmits<Emits>()
 
 // Generate unique ID for the select element
 const instance = getCurrentInstance()
-const selectId = computed(() => `select-${instance?.uid || Math.random().toString(36).substr(2, 9)}`)
+const selectId = computed(() => props.id || `select-${instance?.uid || Math.random().toString(36).substr(2, 9)}`)
 
 const selectWrapperClasses = computed(() => {
   const base = 'select'

@@ -56,18 +56,12 @@
 
             <hr class="divider">
 
-            <div class="mt-6">
-              <label for="auto-decay-toggle" class="form-label">
-                <input
-                  id="auto-decay-toggle"
-                  type="checkbox"
-                  v-model="autoDecayEnabled"
-                  @change="toggleAutoDecay"
-                  class="mr-2"
-                >
-                Auto Decay Enabled
-              </label>
-            </div>
+            <CheckboxField
+              v-model="autoDecayEnabled"
+              label="Auto Decay Enabled"
+              class="mt-6"
+              @change="toggleAutoDecay"
+            />
           </div>
         </div>
 
@@ -228,6 +222,7 @@ import { useGameController } from '../../stores/gameController'
 import Button from '../basic/Button.vue'
 import SliderField from '../basic/SliderField.vue'
 import Badge from '../basic/Badge.vue'
+import CheckboxField from '../basic/CheckboxField.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()

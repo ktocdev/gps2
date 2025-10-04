@@ -30,16 +30,15 @@
           </div>
           <div class="panel__content">
             <div class="button-group-container">
+              <Select
+                v-model="selectedCategory"
+                label="Category:"
+                :options="categoryOptions"
+              />
               <div class="form-group">
-                <label>Category:</label>
-                <Select
-                  v-model="selectedCategory"
-                  :options="categoryOptions"
-                />
-              </div>
-              <div class="form-group">
-                <label>Custom Message:</label>
+                <label for="custom-message-input">Custom Message:</label>
                 <input
+                  id="custom-message-input"
                   v-model="customMessage"
                   type="text"
                   placeholder="Enter custom message..."
@@ -61,20 +60,16 @@
           </div>
           <div class="panel__content">
             <div class="button-group-container">
-              <div class="form-group">
-                <label>Message Count:</label>
-                <Select
-                  v-model="bulkCount"
-                  :options="[5, 10, 25, 50, 100]"
-                />
-              </div>
-              <div class="form-group">
-                <label>Interval (ms):</label>
-                <Select
-                  v-model="bulkInterval"
-                  :options="[100, 250, 500, 1000, 2000]"
-                />
-              </div>
+              <Select
+                v-model="bulkCount"
+                label="Message Count:"
+                :options="[5, 10, 25, 50, 100]"
+              />
+              <Select
+                v-model="bulkInterval"
+                label="Interval (ms):"
+                :options="[100, 250, 500, 1000, 2000]"
+              />
               <div class="button-group">
                 <Button @click="startBulkTest" :disabled="isBulkTesting" variant="primary" size="sm">
                   {{ isBulkTesting ? 'Running...' : 'Start Bulk Test' }}
