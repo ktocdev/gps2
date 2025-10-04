@@ -27,6 +27,7 @@ import { computed, getCurrentInstance } from 'vue'
 
 interface Props {
   modelValue: number
+  id?: string
   min?: number
   max?: number
   step?: number
@@ -59,7 +60,7 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<Emits>()
 
 const instance = getCurrentInstance()
-const sliderId = computed(() => `slider-${instance?.uid || Math.random().toString(36).substr(2, 9)}`)
+const sliderId = computed(() => props.id || `slider-${instance?.uid || Math.random().toString(36).substr(2, 9)}`)
 
 const sliderWrapperClasses = computed(() => {
   const base = 'slider'

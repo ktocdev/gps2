@@ -41,7 +41,7 @@
             <span class="auto-refresh-info__text">Next refresh: {{ liveAutoRefreshCountdown }}</span>
           </div>
           <hr class="divider">
-          <Slider
+          <SliderField
             v-model="petStoreManager.settings.endGamePenalty"
             :min="0"
             :max="500"
@@ -162,7 +162,7 @@
             <h4>Personality</h4>
           </div>
           <div class="flex flex-col gap-3 mb-4">
-            <Slider
+            <SliderField
               v-model="selectedGuineaPig.personality.friendliness"
               :min="1"
               :max="10"
@@ -171,7 +171,7 @@
               size="sm"
               :disabled="isSelectedGuineaPigActive"
             />
-            <Slider
+            <SliderField
               v-model="selectedGuineaPig.personality.playfulness"
               :min="1"
               :max="10"
@@ -180,7 +180,7 @@
               size="sm"
               :disabled="isSelectedGuineaPigActive"
             />
-            <Slider
+            <SliderField
               v-model="selectedGuineaPig.personality.curiosity"
               :min="1"
               :max="10"
@@ -189,7 +189,7 @@
               size="sm"
               :disabled="isSelectedGuineaPigActive"
             />
-            <Slider
+            <SliderField
               v-model="selectedGuineaPig.personality.independence"
               :min="1"
               :max="10"
@@ -528,7 +528,7 @@ import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { usePetStoreManager } from '../../stores/petStoreManager'
 import { usePlayerProgression } from '../../stores/playerProgression'
 import type { GuineaPig } from '../../stores/guineaPigStore'
-import Slider from '../basic/Slider.vue'
+import SliderField from '../basic/SliderField.vue'
 import Button from '../basic/Button.vue'
 import Badge from '../basic/Badge.vue'
 import FavoritesPanel from '../petstore/FavoritesPanel.vue'

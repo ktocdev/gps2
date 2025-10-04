@@ -33,7 +33,7 @@
           />
         </div>
 
-        <div class="controls-grid">
+        <div class="controls-grid controls-grid--compact">
           <Button
             @click="addCurrency"
             variant="primary"
@@ -55,7 +55,7 @@
         <hr class="divider">
 
         <div class="form-label mb-2">Quick Actions</div>
-        <div class="controls-grid">
+        <div class="controls-grid controls-grid--compact">
           <Button
             @click="addQuickAmount(100)"
             variant="secondary"
@@ -170,10 +170,7 @@ const resetCurrency = () => {
   gap: var(--space-4);
 }
 
-.controls-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: var(--space-2);
+.controls-grid--compact {
   margin-top: var(--space-3);
 }
 

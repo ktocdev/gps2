@@ -491,13 +491,6 @@ const resetFirstTimeUser = () => {
   margin-bottom: var(--space-6);
 }
 
-.controls-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: var(--space-3);
-}
-
-
 pre {
   background-color: var(--color-background-tertiary);
   padding: var(--space-3);
