@@ -138,7 +138,7 @@ import { usePetStoreManager } from '../../stores/petStoreManager'
 import { usePlayerProgression } from '../../stores/playerProgression'
 import Button from '../basic/Button.vue'
 import Badge from '../basic/Badge.vue'
-import ConfirmDialog from '../basic/ConfirmDialog.vue'
+import ConfirmDialog from '../basic/dialogs/ConfirmDialog.vue'
 
 const petStoreManager = usePetStoreManager()
 const playerProgression = usePlayerProgression()

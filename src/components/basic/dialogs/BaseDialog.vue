@@ -1,12 +1,12 @@
 <template>
   <dialog
     ref="dialogRef"
-    class="dialog"
+    class="base-dialog"
     :class="dialogSizeClass"
     @close="handleClose"
     @click="handleDialogClick"
   >
-    <div class="dialog__content">
+    <div class="base-dialog__content">
       <slot></slot>
     </div>
   </dialog>
@@ -37,7 +37,7 @@ const emit = defineEmits<Emits>()
 
 const dialogRef = ref<HTMLDialogElement | null>(null)
 
-const dialogSizeClass = `dialog--${props.size}`
+const dialogSizeClass = `base-dialog--${props.size}`
 
 function handleClose() {
   emit('update:modelValue', false)
@@ -91,7 +91,7 @@ onUnmounted(() => {
 /* Base Dialog Component - Uses native <dialog> element */
 
 /* Native dialog element */
-.dialog {
+.base-dialog {
   padding: 0;
   border: none;
   background-color: transparent;
@@ -107,13 +107,13 @@ onUnmounted(() => {
 }
 
 /* Native backdrop (::backdrop pseudo-element) */
-.dialog::backdrop {
+.base-dialog::backdrop {
   background-color: rgba(0, 0, 0, 0.5);
   animation: fadeIn var(--transition-fast);
 }
 
 /* Dialog content wrapper */
-.dialog__content {
+.base-dialog__content {
   background-color: var(--color-bg-primary);
   border: 1px solid var(--color-border-light);
   border-start-start-radius: var(--radius-lg);
@@ -127,17 +127,17 @@ onUnmounted(() => {
 }
 
 /* Size modifiers */
-.dialog--sm .dialog__content {
+.base-dialog--sm .base-dialog__content {
   inline-size: 100%;
   max-inline-size: 400px;
 }
 
-.dialog--md .dialog__content {
+.base-dialog--md .base-dialog__content {
   inline-size: 100%;
   max-inline-size: 500px;
 }
 
-.dialog--lg .dialog__content {
+.base-dialog--lg .base-dialog__content {
   inline-size: 100%;
   max-inline-size: 600px;
 }
@@ -165,26 +165,26 @@ onUnmounted(() => {
 
 /* Mobile responsiveness */
 @media (max-width: 640px) {
-  .dialog {
+  .base-dialog {
     max-block-size: calc(100vh - var(--space-4));
   }
 
-  .dialog__content {
+  .base-dialog__content {
     max-block-size: calc(100vh - var(--space-4));
   }
 }
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
-  .dialog::backdrop,
-  .dialog__content {
+  .base-dialog::backdrop,
+  .base-dialog__content {
     animation: none;
   }
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-  .dialog__content {
+  .base-dialog__content {
     border-width: 2px;
   }
 }

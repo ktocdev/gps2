@@ -1,5 +1,5 @@
 <template>
-  <Dialog
+  <BaseDialog
     :model-value="modelValue"
     :size="size"
     :close-on-backdrop="closeOnBackdrop"
@@ -39,13 +39,13 @@
         </Button>
       </div>
     </div>
-  </Dialog>
+  </BaseDialog>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Dialog from './Dialog.vue'
-import Button from './Button.vue'
+import BaseDialog from './BaseDialog.vue'
+import Button from '../Button.vue'
 
 interface Props {
   modelValue: boolean
