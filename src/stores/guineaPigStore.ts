@@ -360,15 +360,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       collection.value.lastUpdated = Date.now()
       needsLastUpdate.value[guineaPigId] = Date.now()
 
-      getLoggingStore().logActivity({
-        category: 'needs',
-        action: 'needs_decay_processed',
-        details: {
-          guineaPigId,
-          deltaTimeMinutes: Math.round(deltaTimeMinutes * 100) / 100,
-          needs: { ...guineaPig.needs }
-        }
-      })
+      // Removed excessive needs_decay_processed logging to prevent message spam
+      // This was logging every 5 seconds per guinea pig, creating 100+ messages quickly
     }
 
     return needsChanged
@@ -433,17 +426,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.needs[needType] = newValue
     collection.value.lastUpdated = Date.now()
 
-    getLoggingStore().logActivity({
-      category: 'needs',
-      action: 'need_adjusted',
-      details: {
-        guineaPigId,
-        needType,
-        oldValue,
-        newValue,
-        change: amount
-      }
-    })
+    // Removed need_adjusted logging to prevent spam when using debug sliders
+    // Each slider adjustment was creating a system message
 
     return true
   }
@@ -768,7 +752,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   // Store initialization
   const initializeStore = () => {
     const logging = getLoggingStore()
-    logging.logInfo('Guinea Pig Store initializing...')
 
     // Validate existing data
     validateCollection()
@@ -863,18 +846,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.friendship = Math.max(0, Math.min(100, guineaPig.friendship + amount))
     collection.value.lastUpdated = Date.now()
 
-    if (Math.abs(amount) > 0.1) {
-      getLoggingStore().logActivity({
-        category: 'relationship',
-        action: amount > 0 ? 'friendship_increased' : 'friendship_decreased',
-        details: {
-          guineaPigId: id,
-          oldFriendship,
-          newFriendship: guineaPig.friendship,
-          change: amount
-        }
-      })
-    }
+    // Removed friendship change logging to prevent spam
+    // This was being called every 5 seconds by wellness penalty/bonus system
+    // Creating dozens of messages per minute
 
     return true
   }

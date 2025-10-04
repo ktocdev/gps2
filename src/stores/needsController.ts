@@ -93,15 +93,8 @@ export const useNeedsController = defineStore('needsController', () => {
         penaltyStartTime.value = Date.now()
       }
 
-      getLoggingStore().logActivity({
-        category: 'needs',
-        action: 'friendship_penalty_applied',
-        details: {
-          guineaPigId,
-          wellness,
-          penaltyRate
-        }
-      })
+      // Removed friendship_penalty_applied logging to prevent spam
+      // This was logging every 5 seconds when wellness was low
     } else if (wellness > wellnessThresholds.value.recoveryThreshold) {
       isPenaltyActive.value = false
       currentPenaltyRate.value = 0
@@ -111,15 +104,8 @@ export const useNeedsController = defineStore('needsController', () => {
         const guineaPigStore = useGuineaPigStore()
         guineaPigStore.adjustFriendship(guineaPigId, 0.2)
 
-        getLoggingStore().logActivity({
-          category: 'needs',
-          action: 'friendship_bonus_applied',
-          details: {
-            guineaPigId,
-            wellness,
-            bonus: 0.2
-          }
-        })
+        // Removed friendship_bonus_applied logging to prevent spam
+        // This was logging every 5 seconds when wellness was high
       }
     }
   }

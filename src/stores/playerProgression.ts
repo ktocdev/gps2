@@ -135,8 +135,8 @@ export const usePlayerProgression = defineStore('playerProgression', () => {
     logging.logInfo(`Added ${Math.floor(milliseconds / 1000)}s to total play time`)
   }
 
-  function incrementGuineaPigsAdopted(): void {
-    guineaPigsAdopted.value++
+  function incrementGuineaPigsAdopted(count: number = 1): void {
+    guineaPigsAdopted.value += count
 
     const logging = getLoggingStore()
     logging.logInfo(`Total guinea pigs adopted: ${guineaPigsAdopted.value}`)
@@ -197,7 +197,6 @@ export const usePlayerProgression = defineStore('playerProgression', () => {
 
   function initializeStore(): void {
     const logging = getLoggingStore()
-    logging.logInfo('Player Progression initializing...')
     logging.logInfo(`Player Progression initialized: ${formattedCurrency.value}, ${totalGameSessions.value} sessions`)
   }
 
