@@ -29,7 +29,7 @@ export const useNeedsController = defineStore('needsController', () => {
   const penaltyStartTime = ref<number | null>(null)
 
   const lastBatchUpdate = ref<number>(Date.now())
-  const processingEnabled = ref<boolean>(true)
+  const processingEnabled = ref<boolean>(false)
   const updateIntervalMs = ref<number>(5000)
 
   const wellnessThresholds = ref({
@@ -57,12 +57,16 @@ export const useNeedsController = defineStore('needsController', () => {
     const maintenance = (needs.chew + needs.nails + needs.health) / 3
     const happiness = needs.happiness
 
-    const wellness = (
+    const averageNeed = (
       (criticalPhysical * 0.40) +
       (externalEnvironment * 0.25) +
       (maintenance * 0.20) +
       (happiness * 0.15)
     )
+
+    // Wellness is the weighted average of need satisfaction levels
+    // 100 = fully satisfied (high wellness), 0 = completely unsatisfied (low wellness)
+    const wellness = averageNeed
 
     return Math.max(0, Math.min(100, wellness))
   }
@@ -199,6 +203,15 @@ export const useNeedsController = defineStore('needsController', () => {
     processingEnabled.value = true
     lastBatchUpdate.value = Date.now()
 
+    // Reset needsLastUpdate timestamps to prevent accumulated time delta
+    const guineaPigStore = useGuineaPigStore()
+    const currentTime = Date.now()
+    guineaPigStore.activeGuineaPigs.forEach(gp => {
+      if (gp && gp.id) {
+        guineaPigStore.needsLastUpdate[gp.id] = currentTime
+      }
+    })
+
     getLoggingStore().logActivity({
       category: 'system',
       action: 'needs_processing_resumed',
@@ -214,7 +227,7 @@ export const useNeedsController = defineStore('needsController', () => {
     currentPenaltyRate.value = 0
     penaltyStartTime.value = null
     lastBatchUpdate.value = Date.now()
-    processingEnabled.value = true
+    processingEnabled.value = false
   }
 
   return {

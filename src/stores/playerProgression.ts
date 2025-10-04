@@ -62,19 +62,21 @@ export const usePlayerProgression = defineStore('playerProgression', () => {
   // Favorites slot cost calculation
   function getFavoriteSlotCost(nextSlotNumber: number): number {
     // Slots 1-3 are free (initial)
-    // Slot 4: $100
-    // Slot 5: $250
-    // Slot 6: $625
-    // Slot 7: $1,563
-    // Slot 8: $3,906
-    // Slot 9: $9,766
-    // Slot 10: $24,414
+    // Clean doubling progression (2.0x multiplier with $50 base):
+    // Slot 4: $50
+    // Slot 5: $100
+    // Slot 6: $200
+    // Slot 7: $400
+    // Slot 8: $800
+    // Slot 9: $1,600
+    // Slot 10: $3,200
+    // Total cost for all slots: $6,150 (affordable progression)
 
     if (nextSlotNumber <= 3) return 0
 
-    const baseCost = 100
+    const baseCost = 50
     const slotIndex = nextSlotNumber - 4
-    const cost = Math.floor(baseCost * Math.pow(2.5, slotIndex))
+    const cost = Math.floor(baseCost * Math.pow(2.0, slotIndex))
 
     return cost
   }

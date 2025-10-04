@@ -142,6 +142,18 @@
   --z-index-popover: 1060;
   --z-index-tooltip: 1070;
 
+  /* Need-Specific Colors */
+  --color-need-hunger: #f59e0b;      /* Amber - food/nutrition */
+  --color-need-thirst: #06b6d4;      /* Cyan - water/hydration */
+  --color-need-happiness: #f472b6;   /* Pink - joy/emotions */
+  --color-need-cleanliness: #8b5cf6; /* Purple - hygiene/care */
+  --color-need-health: #ef4444;      /* Red - medical/vitality */
+  --color-need-energy: #fbbf24;      /* Yellow - rest/stamina */
+  --color-need-social: #ec4899;      /* Hot pink - friendship/bonding */
+  --color-need-nails: #64748b;       /* Slate - grooming/maintenance */
+  --color-need-chew: #a78bfa;        /* Light purple - dental/enrichment */
+  --color-need-shelter: #14b8a6;     /* Teal - security/comfort */
+
   /* Transitions */
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;

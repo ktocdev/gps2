@@ -13,6 +13,7 @@ import { useLoggingStore } from './loggingStore'
 import { usePlayerProgression } from './playerProgression'
 import { useGuineaPigStore } from './guineaPigStore'
 import { useGameController } from './gameController'
+import { useNeedsController } from './needsController'
 
 export interface GameSession {
   id: string
@@ -411,16 +412,16 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       preferences: generateRandomPreferences(),
 
       needs: {
-        hunger: 0,
-        thirst: 0,
-        happiness: 0,
-        cleanliness: 0,
-        health: 0,
-        energy: 0,
-        social: 0,
-        nails: 0,
-        chew: 0,
-        shelter: 0
+        hunger: 100,
+        thirst: 100,
+        happiness: 100,
+        cleanliness: 100,
+        health: 100,
+        energy: 100,
+        social: 100,
+        nails: 100,
+        chew: 100,
+        shelter: 100
       },
 
       stats: {
@@ -428,8 +429,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         age: Math.floor((Date.now() - birthDate) / (1000 * 60 * 60 * 24)),
         level: 1,
         experience: 0,
-        wellness: 100,
-        overallMood: 100
+        wellness: 0,
+        overallMood: 0
       },
 
       appearance: {
@@ -473,6 +474,13 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       return false
     }
 
+    // Check if already in favorites (prevent duplicates)
+    const isAlreadyFavorited = favoriteGuineaPigs.value.some(gp => gp.id === guineaPigId)
+    if (isAlreadyFavorited) {
+      getLoggingStore().logWarn('Guinea pig is already in favorites')
+      return false
+    }
+
     // Check slot availability
     if (!canAddToFavorites.value) {
       getLoggingStore().logWarn('No available favorite slots')
@@ -482,12 +490,9 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Check if guinea pig is in active game session
     const isInActiveSession = activeGameSession.value?.guineaPigIds.includes(guineaPigId) ?? false
 
-    // Only remove from available pool if NOT in active game session
-    if (!isInActiveSession) {
-      availableGuineaPigs.value = availableGuineaPigs.value.filter(
-        gp => gp.id !== guineaPigId
-      )
-    }
+    // Keep guinea pig in available pool (don't remove)
+    // This allows visual feedback that they're favorited while still showing them
+    // Similar to how active guinea pigs remain visible
 
     // Add to favorites (create copy to avoid reference issues)
     favoriteGuineaPigs.value.push({ ...guineaPig })
@@ -569,9 +574,22 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       return
     }
 
-    // End any active session before refreshing since guinea pig IDs will change
-    if (activeGameSession.value) {
-      endGameSession()
+    // Active sessions are preserved during refresh because:
+    // 1. Active guinea pigs are stored in guineaPigStore.collection (separate from pet store)
+    // 2. Their IDs don't change during refresh
+    // 3. Refresh only regenerates availableGuineaPigs, not active guinea pigs
+    // Therefore: We NEVER end active sessions during refresh!
+
+    const sessionWasActive = activeGameSession.value !== null
+
+    if (sessionWasActive) {
+      const logging = getLoggingStore()
+      const names = activeSessionGuineaPigs.value.map(gp => gp.name).join(' & ')
+      logging.addPlayerAction(
+        `✅ Preserving active session with ${names} during refresh`,
+        '✅',
+        { preservedSession: activeGameSession.value?.id }
+      )
     }
 
     // Preserve favorites during refresh (key feature!)
@@ -593,7 +611,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     logging.addPlayerAction(`${refreshType} pet store with new guinea pigs 🔄`, '🔄', {
       isAutoRefresh,
       nextAutoRefresh: nextAutoRefreshTime.value,
-      favoritesPreserved: favoritesBackup.length
+      favoritesPreserved: favoritesBackup.length,
+      sessionPreserved: sessionWasActive
     })
   }
 
@@ -639,6 +658,16 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     guineaPigStore.setActivePair(guineaPigIds)
 
+    // Initialize needs tracking for the guinea pigs
+    const sessionStartTime = Date.now()
+    for (const guineaPigId of guineaPigIds) {
+      guineaPigStore.needsLastUpdate[guineaPigId] = sessionStartTime
+    }
+
+    // Enable needs processing for the session
+    const needsController = useNeedsController()
+    needsController.resumeProcessing()
+
     const playerProgression = usePlayerProgression()
     playerProgression.incrementGameSessions()
     playerProgression.incrementGuineaPigsAdopted()
@@ -672,6 +701,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     }
 
     guineaPigStore.setActivePair([])
+
+    // Disable needs processing when session ends
+    const needsController = useNeedsController()
+    needsController.pauseProcessing()
 
     const duration = Date.now() - activeGameSession.value.startedAt
     playerProgression.addPlayTime(duration)

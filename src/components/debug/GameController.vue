@@ -298,31 +298,16 @@ const selectedGuineaPig1 = ref<string | number>('')
 const selectedGuineaPig2 = ref<string | number>('')
 
 // Restore guinea pig selection from active session
-watch([() => petStoreManager.activeGameSession, () => petStoreManager.availableGuineaPigs, () => petStoreManager.favoriteGuineaPigs], ([session, availableGuineaPigs, favoriteGuineaPigs]) => {
+watch([() => petStoreManager.activeGameSession], ([session]) => {
   if (session) {
     // Restore selection from active session
+    // Active guinea pigs are always valid because they're stored in guineaPigStore.collection
     const sessionGuineaPigIds = session.guineaPigIds || []
-    const allGuineaPigs = [...availableGuineaPigs, ...favoriteGuineaPigs]
 
-    // Clear current selections
-    selectedGuineaPig1.value = ''
-    selectedGuineaPig2.value = ''
-
-    // Set guinea pig 1 if it exists in available or favorite guinea pigs
-    if (sessionGuineaPigIds[0]) {
-      const gp1Exists = allGuineaPigs.find(gp => gp.id === sessionGuineaPigIds[0])
-      if (gp1Exists) {
-        selectedGuineaPig1.value = sessionGuineaPigIds[0]
-      }
-    }
-
-    // Set guinea pig 2 if it exists in available or favorite guinea pigs
-    if (sessionGuineaPigIds[1]) {
-      const gp2Exists = allGuineaPigs.find(gp => gp.id === sessionGuineaPigIds[1])
-      if (gp2Exists) {
-        selectedGuineaPig2.value = sessionGuineaPigIds[1]
-      }
-    }
+    // Set guinea pig selections directly from session
+    // They exist in guineaPigStore.collection even if not in available/favorites
+    selectedGuineaPig1.value = sessionGuineaPigIds[0] || ''
+    selectedGuineaPig2.value = sessionGuineaPigIds[1] || ''
   } else if (!session) {
     // No active session, clear selections
     selectedGuineaPig1.value = ''
@@ -335,17 +320,28 @@ const getGenderEmoji = (gender: 'male' | 'female') => {
 }
 
 const guineaPigOptions = computed(() => {
-  // Combine available and favorite guinea pigs for selection
-  const allGuineaPigs = [
+  // Combine available, favorite, and active guinea pigs for selection
+  const availableAndFavorites = [
     ...petStoreManager.availableGuineaPigs,
     ...petStoreManager.favoriteGuineaPigs
   ]
+
+  // Add active guinea pigs from guineaPigStore if they're not already in the list
+  const activeGuineaPigs = petStoreManager.activeSessionGuineaPigs || []
+  const allGuineaPigs = [...availableAndFavorites]
+
+  for (const activeGp of activeGuineaPigs) {
+    if (!allGuineaPigs.some(gp => gp.id === activeGp.id)) {
+      allGuineaPigs.push(activeGp)
+    }
+  }
 
   return [
     { label: 'None', value: '' },
     ...allGuineaPigs.map(gp => {
       const isFavorite = petStoreManager.favoriteGuineaPigs.some(f => f.id === gp.id)
-      const prefix = isFavorite ? '⭐ ' : ''
+      const isActive = activeGuineaPigs.some(a => a.id === gp.id)
+      const prefix = isFavorite ? '⭐ ' : isActive ? '🎮 ' : ''
       return {
         label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
         value: gp.id
@@ -355,11 +351,21 @@ const guineaPigOptions = computed(() => {
 })
 
 const guineaPig2Options = computed(() => {
-  // Combine available and favorite guinea pigs for selection
-  const allGuineaPigs = [
+  // Combine available, favorite, and active guinea pigs for selection
+  const availableAndFavorites = [
     ...petStoreManager.availableGuineaPigs,
     ...petStoreManager.favoriteGuineaPigs
   ]
+
+  // Add active guinea pigs from guineaPigStore if they're not already in the list
+  const activeGuineaPigs = petStoreManager.activeSessionGuineaPigs || []
+  const allGuineaPigs = [...availableAndFavorites]
+
+  for (const activeGp of activeGuineaPigs) {
+    if (!allGuineaPigs.some(gp => gp.id === activeGp.id)) {
+      allGuineaPigs.push(activeGp)
+    }
+  }
 
   return [
     { label: 'None', value: '' },
@@ -367,7 +373,8 @@ const guineaPig2Options = computed(() => {
       .filter(gp => gp.id !== selectedGuineaPig1.value)
       .map(gp => {
         const isFavorite = petStoreManager.favoriteGuineaPigs.some(f => f.id === gp.id)
-        const prefix = isFavorite ? '⭐ ' : ''
+        const isActive = activeGuineaPigs.some(a => a.id === gp.id)
+        const prefix = isFavorite ? '⭐ ' : isActive ? '🎮 ' : ''
         return {
           label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
           value: gp.id
