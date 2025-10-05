@@ -392,7 +392,7 @@ export class MessageGenerator {
 
   static generatePlayMessage(
     guineaPigName: string,
-    activityType: string = 'general_play',
+    _activityType: string = 'general_play',
     isFavorite: boolean = false
   ): { message: string; emoji: string } {
     const templates = [

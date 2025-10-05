@@ -842,7 +842,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const guineaPig = collection.value.guineaPigs[id]
     if (!guineaPig) return false
 
-    const oldFriendship = guineaPig.friendship
     guineaPig.friendship = Math.max(0, Math.min(100, guineaPig.friendship + amount))
     collection.value.lastUpdated = Date.now()
 

@@ -172,8 +172,8 @@
             <Button
               @click="toggleNeedsProcessing"
               :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
-              :disabled="gameController.isPaused"
-              :title="gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : ''"
+              :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
+              :title="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : '')"
               size="sm"
               full-width
               class="needs-processing-button"

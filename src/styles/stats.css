@@ -55,3 +55,24 @@
 .stat-value--muted {
   color: var(--color-text-muted);
 }
+
+/* Text Color Utilities - for use outside of stat-value context */
+.text--success {
+  color: var(--color-success);
+}
+
+.text--error {
+  color: var(--color-error);
+}
+
+.text--warning {
+  color: var(--color-warning);
+}
+
+.text--info {
+  color: var(--color-info);
+}
+
+.text--muted {
+  color: var(--color-text-muted);
+}

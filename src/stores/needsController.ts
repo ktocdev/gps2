@@ -7,9 +7,10 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useGuineaPigStore } from './guineaPigStore'
 import { useLoggingStore } from './loggingStore'
+import { usePetStoreManager } from './petStoreManager'
 
 export const useNeedsController = defineStore('needsController', () => {
   let loggingStore: any = null
@@ -230,6 +231,20 @@ export const useNeedsController = defineStore('needsController', () => {
     lastBatchUpdate.value = Date.now()
     processingEnabled.value = false
   }
+
+  // Watch for session end and reset manual pause state
+  const petStoreManager = usePetStoreManager()
+  watch(
+    () => petStoreManager.activeGameSession,
+    (newSession, oldSession) => {
+      // If session ended (was active, now null) and manually paused, reset
+      if (oldSession && !newSession && manuallyPausedByUser.value) {
+        resumeProcessing()
+        const logging = getLoggingStore()
+        logging.logInfo('Session ended - resetting manual pause state')
+      }
+    }
+  )
 
   return {
     currentWellness,

@@ -49,7 +49,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const settings = ref<PetStoreSettings>({
     endGamePenalty: 50,
     allowUnlimitedRefresh: false,
-    autoRefreshEnabled: false,
+    autoRefreshEnabled: true,
     autoRefreshIntervalMs: 86400000 // 24 hours in milliseconds
   })
 
@@ -822,12 +822,12 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     }
 
     // Check if an auto-refresh is due (in case app was closed and reopened)
-    if (settings.value.autoRefreshEnabled && nextAutoRefreshTime.value > 0) {
-      if (Date.now() >= nextAutoRefreshTime.value) {
+    if (settings.value.autoRefreshEnabled) {
+      if (nextAutoRefreshTime.value > 0 && Date.now() >= nextAutoRefreshTime.value) {
         logging.logInfo('Auto-refresh was due, refreshing pet store')
         refreshPetStore(true)
       }
-      // Restart the auto-refresh interval
+      // Start or restart the auto-refresh interval
       startAutoRefresh()
     }
 

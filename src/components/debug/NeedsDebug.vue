@@ -18,10 +18,10 @@
                     @click="toggleNeedsProcessing"
                     :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
                     full-width
-                    :disabled="gameController.isPaused"
-                    :tooltip="needsController.processingEnabled
+                    :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
+                    :tooltip="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : (needsController.processingEnabled
                       ? 'Pause needs processing (will stay paused when game resumes)'
-                      : 'Resume needs processing'"
+                      : 'Resume needs processing'))"
                     tooltip-position="top"
                     class="needs-processing-button"
                   >
@@ -166,28 +166,28 @@
                 <section class="sidebar-section">
                   <h5 class="section-title">Quick Actions</h5>
                   <div class="quick-actions-grid">
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'pellets')" variant="tertiary" size="sm">
+                    <Button @click="() => feedGuineaPig(guineaPig.id, 'pellets')" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.hunger >= 100">
                       Feed Pellets
                     </Button>
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'vegetables')" variant="tertiary" size="sm">
+                    <Button @click="() => feedGuineaPig(guineaPig.id, 'vegetables')" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.hunger >= 100">
                       Feed Vegetables
                     </Button>
-                    <Button @click="() => giveWater(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => giveWater(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.thirst >= 100">
                       Give Water
                     </Button>
-                    <Button @click="() => cleanGuineaPig(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => cleanGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.cleanliness >= 100">
                       Clean
                     </Button>
-                    <Button @click="() => playWithGuineaPig(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => playWithGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || (guineaPig.needs.happiness >= 100 && guineaPig.needs.social >= 100)">
                       Play
                     </Button>
-                    <Button @click="() => provideChewToy(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => provideChewToy(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.chew >= 100">
                       Chew Toy
                     </Button>
-                    <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.nails >= 100">
                       Trim Nails
                     </Button>
-                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.energy >= 100">
                       Soothe to Sleep
                     </Button>
                   </div>
@@ -238,6 +238,7 @@ import { ref, computed } from 'vue'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useNeedsController } from '../../stores/needsController'
 import { useGameController } from '../../stores/gameController'
+import { usePetStoreManager } from '../../stores/petStoreManager'
 import Button from '../basic/Button.vue'
 import SliderField from '../basic/SliderField.vue'
 import Badge from '../basic/Badge.vue'
@@ -246,6 +247,7 @@ import CheckboxField from '../basic/CheckboxField.vue'
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()
 const gameController = useGameController()
+const petStoreManager = usePetStoreManager()
 
 // Reactive data
 const decayRateMultiplier = ref(guineaPigStore.settings.needsDecayRate)
@@ -529,5 +531,6 @@ const getNeedUrgency = (value: number): string => {
 
 .needs-processing-button {
   white-space: normal;
+  width: 100%;
 }
 </style>
