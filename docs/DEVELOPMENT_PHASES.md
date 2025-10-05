@@ -41,28 +41,30 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ### Systems
 6. **[Guinea Pig Store](docs/systems/phase2/system-6-guinea-pig-store.md)** - Entity management with data persistence ✅ **Completed including System 6.8** (September 28, 2025 | Branch: GPS2-11)
-6.5. **[Pet Store & Game Session Manager](docs/systems/phase2/system-6.5-pet-store-manager.md)** - Single-session game with 10-guinea pig pet store featuring weighted rarity system, smart eye color genetics, hairless breed pattern restrictions (magpie pattern added), 24-hour auto-refresh, persistent progression, and session management ✅ **Completed** (September 28, 2025 | Branch: GPS2-13) | **Updated** (September 29, 2025 | Branch: GPS-15)
+6.5. **[Pet Store & Game Session Manager](docs/systems/phase2/system-6.5-pet-store-manager.md)** - Single-session game with 10-guinea pig pet store featuring weighted rarity system (American breed 30% spawn rate), smart eye color genetics, hairless breed pattern restrictions, 24-hour auto-refresh (enabled by default), persistent progression, and session management ✅ **Completed** (September 28, 2025 | Branch: GPS2-13)
 6.9. **[Guinea Pig Favorites System](docs/systems/phase2/system-6.9-guinea-pig-favorites.md)** - Save beloved guinea pigs permanently with up to 10 purchasable slots, protected from store refreshes, with currency-based progression
-7. **[Needs System Architecture](docs/systems/phase2/system-7-needs-system.md)** - Core game mechanics with internal wellness system (connect to needs bars, enhanced friendship meter)
-8. **[Needs Controller Store](docs/systems/phase2/system-8-needs-controller-store.md)** - Centralized need processing with wellness calculation and friendship penalties ✅ **Implemented** (needsController.ts)
-9. **[Interval Management System](docs/systems/phase2/system-9-10-game-timing.md)** - Game timing that drives needs decay and friendship penalties ✅ **Implemented** (gameTimingStore.ts)
-10. **[Game Loop Integration](docs/systems/phase2/system-9-10-game-timing.md)** - Connect needs system with timing for core functionality including wellness-to-friendship feedback ✅ **Implemented** (gameTimingStore.ts)
+7. **[Needs System Architecture](docs/systems/phase2/system-7-needs-system.md)** - Core game mechanics with 10 quick actions (Feed, Water, Clean, Play, Chew Toy, Trim Nails, Shelter, Health Check, Sleep) and smart disable states ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
+8. **[Needs Controller Store](docs/systems/phase2/system-8-needs-controller-store.md)** - Centralized need processing with wellness calculation, manual pause tracking, and auto-reset on session end ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
+9. **[Interval Management System](docs/systems/phase2/system-9-10-game-timing.md)** - Game timing with pause/resume integration and orientation handling ✅ **Completed** (gameTimingStore.ts)
+10. **[Game Loop Integration](docs/systems/phase2/system-9-10-game-timing.md)** - Complete timing integration with needs system and wellness-to-friendship feedback ✅ **Completed** (gameTimingStore.ts)
 
 ### Debug Panel Development (Phase 2)
-- **Needs System Debug Panel** - Built alongside Needs System (System 7)
-- **Guinea Pig Debug Panel** - Built alongside Guinea Pig Store (System 6) ✅ **Enhanced** (September 28, 2025 | Branch: GPS2-11) - Accessibility improvements, fieldset/legend structure, horizontal dividers
-- **Wellness Debug Panel** - Built alongside Needs Controller (System 8) ⚠️ **Needs UI Integration**
+- **Needs System Debug Panel** - ✅ **Completed** (October 5, 2025 | Branch: GPS2-18) - 10 quick actions with smart tooltips, System Controls integration, helper functions for disable states
+- **Game Controller Panel** - ✅ **Enhanced** (October 5, 2025 | Branch: GPS2-18) - System Controls panel, centralized system management, auto-reset logic
+- **Guinea Pig Debug Panel** - ✅ **Enhanced** (September 28, 2025 | Branch: GPS2-11) - Accessibility improvements, fieldset/legend structure
 - **Inventory Debug Panel** - ✅ **Partially Implemented Early** (September 28, 2025 | Branch: GPS2-11) - Currency controls only, full implementation planned for Phase 3
 
+**Testing Guide:** [NEEDS_SYSTEM_TESTING_GUIDE.md](testing/NEEDS_SYSTEM_TESTING_GUIDE.md)
+
 ### Key Deliverables
-- **Guinea pig store implementation** with complete data structure, CRUD operations, and enhanced debug panel ✅ **Fully Completed including System 6.8**
-- **Pet store with advanced features** ✅ **Completed** - Weighted rarity system (common to ultra-rare breeds), smart eye color genetics (pink eyes only with light fur), hairless breed pattern restrictions (Baldwin/Skinny Pig exclude fur-specific patterns), magpie pattern addition, 24-hour auto-refresh with live countdown, and rarity badge UI
-- **Guinea pig favorites system** with emotional attachment benefits, slot purchase progression, and store refresh protection
-- **Complete needs system** with all 7 needs categories and interdependencies
-- **Wellness calculation system** (internal only) with friendship penalties ✅ **Implemented**
-- **Game timing coordination** with pause/resume and orientation integration ✅ **Implemented**
-- **Preference discovery mechanics** through guinea pig reactions
-- **Activity feed integration** with all systems for real-time player feedback
+- **Guinea pig store implementation** with complete data structure, CRUD operations, and enhanced debug panel ✅ **Fully Completed**
+- **Pet store with advanced features** ✅ **Completed** - Weighted rarity (American 30% spawn), smart eye color genetics, hairless breed pattern restrictions, 24-hour auto-refresh (enabled by default)
+- **Guinea pig favorites system** with slot purchase progression and store refresh protection
+- **Complete needs system** ✅ **Completed** - 10 interactive quick actions with smart disable states (game pause, needs processing pause, need at 100%)
+- **System Controls panel** ✅ **Completed** - Centralized system management, manual pause tracking, auto-reset on session end, future-ready for Phase 3 systems
+- **Wellness calculation system** ✅ **Completed** - Internal calculation with friendship penalties and wellness thresholds
+- **Game timing coordination** ✅ **Completed** - Pause/resume integration, orientation handling, interval management
+- **Activity feed integration** ✅ **Completed** - Natural language messages for all player actions and quick actions
 
 ### Integration Focus
 - Connect all systems to existing UI placeholders from Phase 1
