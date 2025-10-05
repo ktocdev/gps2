@@ -59,16 +59,19 @@ export const useNeedsController = defineStore('needsController', () => {
 
     const needs = guineaPig.needs
 
-    const criticalPhysical = (needs.hunger + needs.thirst + needs.energy) / 3
-    const externalEnvironment = (needs.social + needs.cleanliness + needs.shelter) / 3
-    const maintenance = (needs.chew + needs.nails + needs.health) / 3
-    const happiness = needs.happiness
+    // Critical Needs (high weight - 40%)
+    const critical = (needs.hunger + needs.thirst + needs.energy + needs.shelter) / 4
+
+    // Environmental Needs (medium weight - 35%)
+    const environmental = (needs.play + needs.social + needs.stimulation + needs.comfort) / 4
+
+    // Maintenance Needs (lower weight - 25%)
+    const maintenance = (needs.hygiene + needs.nails + needs.health + needs.chew) / 4
 
     const averageNeed = (
-      (criticalPhysical * 0.40) +
-      (externalEnvironment * 0.25) +
-      (maintenance * 0.20) +
-      (happiness * 0.15)
+      (critical * 0.40) +
+      (environmental * 0.35) +
+      (maintenance * 0.25)
     )
 
     // Wellness is the weighted average of need satisfaction levels

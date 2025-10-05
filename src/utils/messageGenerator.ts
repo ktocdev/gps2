@@ -486,6 +486,45 @@ export class MessageGenerator {
     const message = templates[Math.floor(Math.random() * templates.length)]
     return { message, emoji: '😴' }
   }
+
+  static generateSocializeMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `You spend quality social time with ${guineaPigName}`,
+      `${guineaPigName} enjoys your companionship`,
+      `You give ${guineaPigName} gentle attention and affection`,
+      `${guineaPigName} bonds with you`,
+      `You interact warmly with ${guineaPigName}`
+    ]
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '🤝' }
+  }
+
+  static generateRearrangeCageMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `You rearrange ${guineaPigName}'s cage with new enrichment`,
+      `${guineaPigName} explores the newly arranged habitat`,
+      `You add variety to ${guineaPigName}'s environment`,
+      `${guineaPigName} investigates the changes curiously`,
+      `You provide ${guineaPigName} with environmental enrichment`
+    ]
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '🔄' }
+  }
+
+  static generateProvideBeddingMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `You provide fresh, soft bedding for ${guineaPigName}`,
+      `${guineaPigName} gets cozy new bedding`,
+      `You refresh ${guineaPigName}'s bedding for maximum comfort`,
+      `${guineaPigName} snuggles into the fresh bedding`,
+      `You ensure ${guineaPigName} has comfortable bedding`
+    ]
+
+    const message = templates[Math.floor(Math.random() * templates.length)]
+    return { message, emoji: '🛏️' }
+  }
 }
 
 // Convenience functions for direct use

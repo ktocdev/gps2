@@ -41,8 +41,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const availableGuineaPigs = ref<GuineaPig[]>([])
   const favoriteGuineaPigs = ref<GuineaPig[]>([])
   const maxFavoriteSlots = ref<number>(3)
-  const lastRefreshTimestamp = ref<number>(0)
-  const refreshCooldownMs = ref<number>(3600000)
   const activeGameSession = ref<GameSession | null>(null)
   const nextAutoRefreshTime = ref<number>(0)
 
@@ -57,33 +55,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   let autoRefreshInterval: ReturnType<typeof setInterval> | null = null
 
   const canRefreshPetStore = computed(() => {
-    if (settings.value.allowUnlimitedRefresh) return true
-    const elapsed = Date.now() - lastRefreshTimestamp.value
-    return elapsed >= refreshCooldownMs.value
-  })
-
-  const remainingCooldownMs = computed(() => {
-    if (settings.value.allowUnlimitedRefresh) return 0
-    const elapsed = Date.now() - lastRefreshTimestamp.value
-    const remaining = refreshCooldownMs.value - elapsed
-    return Math.max(0, remaining)
-  })
-
-  const formattedCooldown = computed(() => {
-    const ms = remainingCooldownMs.value
-    if (ms === 0) return 'Ready'
-
-    const hours = Math.floor(ms / (1000 * 60 * 60))
-    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
-    const seconds = Math.floor((ms % (1000 * 60)) / 1000)
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m ${seconds}s`
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds}s`
-    } else {
-      return `${seconds}s`
-    }
+    return settings.value.allowUnlimitedRefresh
   })
 
   const timeUntilAutoRefresh = computed(() => {
@@ -570,7 +542,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   function refreshPetStore(isAutoRefresh: boolean = false): void {
     if (!isAutoRefresh && !canRefreshPetStore.value) {
       const logging = getLoggingStore()
-      logging.logWarn('Pet store refresh on cooldown')
+      logging.logWarn('Manual refresh disabled - toggle "Allow Unlimited Refresh" to enable')
       return
     }
 
@@ -636,8 +608,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     // Place active guinea pigs first, then favorites, then new ones
     availableGuineaPigs.value = [...activeGuineaPigs, ...favoriteGuineaPigsInAvailableList, ...newGuineaPigs]
-
-    lastRefreshTimestamp.value = Date.now()
 
     // Restore favorites
     favoriteGuineaPigs.value = favoritesBackup
@@ -838,15 +808,11 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     availableGuineaPigs,
     favoriteGuineaPigs,
     maxFavoriteSlots,
-    lastRefreshTimestamp,
-    refreshCooldownMs,
     activeGameSession,
     settings,
     nextAutoRefreshTime,
 
     canRefreshPetStore,
-    remainingCooldownMs,
-    formattedCooldown,
     activeSessionGuineaPigs,
     timeUntilAutoRefresh,
     formattedAutoRefreshTime,

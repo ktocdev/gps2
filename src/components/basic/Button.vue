@@ -259,6 +259,7 @@ const handleClick = (event: MouseEvent) => {
 /* Full Width */
 .button--full-width {
   inline-size: 100%;
+  white-space: break-spaces;
 }
 
 /* Enhanced styling for larger screens */

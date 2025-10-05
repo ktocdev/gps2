@@ -30,16 +30,23 @@ export interface GuineaPigPreferences {
 }
 
 export interface GuineaPigNeeds {
+  // Critical Needs (high decay, high weight)
   hunger: number        // 0-100: How hungry they are (100 = starving)
   thirst: number        // 0-100: How thirsty they are (100 = dehydrated)
-  happiness: number     // 0-100: How much happiness they need (100 = very sad)
-  cleanliness: number   // 0-100: How much they need grooming/cleaning (100 = very dirty)
-  health: number        // 0-100: How much health care they need (100 = very sick)
   energy: number        // 0-100: How much rest/energy they need (100 = exhausted)
-  social: number        // 0-100: How much they need social interaction (100 = lonely)
-  nails: number         // 0-100: How much they need nail trimming (100 = overgrown)
-  chew: number          // 0-100: How much they need chew items (100 = dental problems)
   shelter: number       // 0-100: How much they need security/shelter (100 = anxious)
+
+  // Environmental Needs (medium decay, medium weight)
+  play: number          // 0-100: How much they need play/activity (100 = bored)
+  social: number        // 0-100: How much they need social interaction (100 = lonely)
+  stimulation: number   // 0-100: How much they need mental enrichment (100 = unstimulated)
+  comfort: number       // 0-100: How much they need comfortable bedding (100 = uncomfortable)
+
+  // Maintenance Needs (low decay, medium weight)
+  hygiene: number       // 0-100: How much they need grooming/cleaning (100 = very dirty)
+  nails: number         // 0-100: How much they need nail trimming (100 = overgrown)
+  health: number        // 0-100: How much health care they need (100 = very sick)
+  chew: number          // 0-100: How much they need chew items (100 = dental problems)
 }
 
 export interface GuineaPigStats {
@@ -298,16 +305,23 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
   // Needs decay system
   const needsDecayRates = ref({
+    // Critical Needs (high decay)
     hunger: 20,       // Critical need - requires attention in 5 min sessions
     thirst: 25,       // Most critical - water needed quickly (4 min)
-    happiness: 10,    // Medium-term engagement goal (10 min)
-    cleanliness: 6,   // Periodic grooming needed (16 min)
-    health: 2,        // Long-term care across sessions (50 min)
     energy: 15,       // Regular rest needed (7 min)
+    shelter: 18,      // Critical for security/anxiety (6 min)
+
+    // Environmental Needs (medium decay)
+    play: 10,         // Regular play needed (10 min)
     social: 8,        // Regular interaction needed (12 min)
+    stimulation: 7,   // Mental enrichment needed (14 min)
+    comfort: 5,       // Bedding comfort needed (20 min)
+
+    // Maintenance Needs (low decay)
+    hygiene: 6,       // Periodic grooming needed (16 min)
     nails: 1,         // Rare maintenance task (100 min)
-    chew: 5,          // Moderate maintenance (20 min)
-    shelter: 3        // Environmental comfort (33 min)
+    health: 2,        // Long-term care across sessions (50 min)
+    chew: 5           // Moderate maintenance (20 min)
   })
 
   const needsLastUpdate = ref<Record<string, number>>({})
@@ -520,23 +534,21 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
 
-    // Cleaning improves cleanliness and provides some happiness
-    satisfyNeed(guineaPigId, 'cleanliness', 35)
-    satisfyNeed(guineaPigId, 'happiness', 10)
+    // Cleaning improves hygiene
+    satisfyNeed(guineaPigId, 'hygiene', 35)
 
     // Update interaction tracking
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
 
-    const { message, emoji } = MessageGenerator.generateCleanMessage(guineaPig.name)
+    const { message, emoji} = MessageGenerator.generateCleanMessage(guineaPig.name)
 
     getLoggingStore().addPlayerAction(
       message,
       emoji,
       {
         guineaPigId,
-        cleanlinessImprovement: 35,
-        happinessBonus: 10
+        hygieneImprovement: 35
       }
     )
 
@@ -547,20 +559,18 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
 
-    // Play improves happiness, social needs, and provides some energy if not too energetic
-    let happinessGain = 20
-    const socialGain = 15
-    let energyCost = 5 // Playing can be slightly tiring
+    // Play improves play need and can be slightly tiring
+    let playGain = 20
+    const energyCost = 5 // Playing can be slightly tiring
 
     // Check if this activity is preferred
     const isFavorite = guineaPig.preferences.favoriteActivity.includes(activityType)
     if (isFavorite) {
-      happinessGain += 10 // Bonus for preferred activities
+      playGain += 10 // Bonus for preferred activities
     }
 
     // Apply effects
-    satisfyNeed(guineaPigId, 'happiness', happinessGain)
-    satisfyNeed(guineaPigId, 'social', socialGain)
+    satisfyNeed(guineaPigId, 'play', playGain)
 
     // Only tire them if they're not already tired
     if (guineaPig.needs.energy < 70) {
@@ -579,9 +589,90 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       {
         guineaPigId,
         activityType,
-        happinessGain,
-        socialGain,
+        playGain,
         wasFavorite: isFavorite
+      }
+    )
+
+    return true
+  }
+
+  const socializeWithGuineaPig = (guineaPigId: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    // Socializing improves social need
+    const socialGain = 25
+
+    // Apply effects
+    satisfyNeed(guineaPigId, 'social', socialGain)
+
+    // Update interaction tracking
+    guineaPig.lastInteraction = Date.now()
+    guineaPig.totalInteractions += 1
+
+    const { message, emoji } = MessageGenerator.generateSocializeMessage(guineaPig.name)
+
+    getLoggingStore().addPlayerAction(
+      message,
+      emoji,
+      {
+        guineaPigId,
+        socialGain
+      }
+    )
+
+    return true
+  }
+
+  const rearrangeCage = (guineaPigId: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    // Rearranging cage improves stimulation
+    const stimulationGain = 30
+
+    satisfyNeed(guineaPigId, 'stimulation', stimulationGain)
+
+    // Update interaction tracking
+    guineaPig.lastInteraction = Date.now()
+    guineaPig.totalInteractions += 1
+
+    const { message, emoji } = MessageGenerator.generateRearrangeCageMessage(guineaPig.name)
+
+    getLoggingStore().addPlayerAction(
+      message,
+      emoji,
+      {
+        guineaPigId,
+        stimulationGain
+      }
+    )
+
+    return true
+  }
+
+  const provideBedding = (guineaPigId: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    // Providing fresh bedding improves comfort
+    const comfortGain = 35
+
+    satisfyNeed(guineaPigId, 'comfort', comfortGain)
+
+    // Update interaction tracking
+    guineaPig.lastInteraction = Date.now()
+    guineaPig.totalInteractions += 1
+
+    const { message, emoji } = MessageGenerator.generateProvideBeddingMessage(guineaPig.name)
+
+    getLoggingStore().addPlayerAction(
+      message,
+      emoji,
+      {
+        guineaPigId,
+        comfortGain
       }
     )
 
@@ -592,19 +683,16 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
 
-    // Chew toys satisfy chew needs and provide some happiness
+    // Chew toys satisfy chew needs
     let chewSatisfaction = 30
-    let happinessBonus = 5
 
     // Check preferences
     if (guineaPig.preferences.favoriteActivity.includes('chewing') ||
         guineaPig.preferences.favoriteActivity.includes(toyType)) {
       chewSatisfaction += 10
-      happinessBonus += 10
     }
 
     satisfyNeed(guineaPigId, 'chew', chewSatisfaction)
-    satisfyNeed(guineaPigId, 'happiness', happinessBonus)
 
     // Update interaction tracking
     guineaPig.lastInteraction = Date.now()
@@ -618,8 +706,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       {
         guineaPigId,
         toyType,
-        chewSatisfaction,
-        happinessBonus
+        chewSatisfaction
       }
     )
 
@@ -661,7 +748,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
     satisfyNeed(guineaPigId, 'nails', nailImprovement)
     if (stressIncrease > 0) {
-      adjustNeed(guineaPigId, 'happiness', stressIncrease) // Stress reduces happiness
+      adjustNeed(guineaPigId, 'comfort', stressIncrease) // Stress reduces comfort
     }
 
     // Update interaction tracking
@@ -834,16 +921,21 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     if (!guineaPig) return false
 
     guineaPig.needs = {
+      // Critical Needs
       hunger: 100,
       thirst: 100,
-      happiness: 100,
-      cleanliness: 100,
-      health: 100,
       energy: 100,
+      shelter: 100,
+      // Environmental Needs
+      play: 100,
       social: 100,
+      stimulation: 100,
+      comfort: 100,
+      // Maintenance Needs
+      hygiene: 100,
       nails: 100,
-      chew: 100,
-      shelter: 100
+      health: 100,
+      chew: 100
     }
 
     guineaPig.stats.wellness = 0
@@ -938,6 +1030,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     giveWater,
     cleanGuineaPig,
     playWithGuineaPig,
+    socializeWithGuineaPig,
+    rearrangeCage,
+    provideBedding,
     provideChewToy,
     trimNails,
     provideShelter,

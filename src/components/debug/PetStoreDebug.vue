@@ -3,64 +3,6 @@
     <!-- First Row: 3 columns on desktop -->
     <div class="panel panel--compact">
       <div class="panel__header">
-        <h3>Pet Store Settings</h3>
-      </div>
-      <div class="panel__content">
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-label">Can Refresh:</span>
-            <span class="stat-value">{{ petStoreManager.canRefreshPetStore ? 'Yes' : 'No' }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Cooldown:</span>
-            <span class="stat-value">{{ petStoreManager.formattedCooldown }}</span>
-          </div>
-          <div class="stat-item" v-if="petStoreManager.settings.autoRefreshEnabled">
-            <span class="stat-label">Auto-refresh in:</span>
-            <span class="stat-value">{{ liveAutoRefreshCountdown }}</span>
-          </div>
-        </div>
-        <div class="flex flex-col gap-4 mt-4">
-          <CheckboxField
-            v-model="petStoreManager.settings.allowUnlimitedRefresh"
-            label="Allow Unlimited Refresh (Debug)"
-          />
-          <CheckboxField
-            :model-value="petStoreManager.settings.autoRefreshEnabled"
-            label="Enable 24-Hour Auto-Refresh"
-            @update:model-value="handleAutoRefreshToggle"
-          />
-          <div v-if="petStoreManager.settings.autoRefreshEnabled" class="auto-refresh-info">
-            <Badge variant="info" size="sm">Auto-refresh Active</Badge>
-            <span class="auto-refresh-info__text">Next refresh: {{ liveAutoRefreshCountdown }}</span>
-          </div>
-          <hr class="divider">
-          <SliderField
-            v-model="petStoreManager.settings.endGamePenalty"
-            :min="0"
-            :max="500"
-            :step="10"
-            class="mt-2 mb-6"
-            label="End Game Penalty"
-            size="sm"
-            prefix="$"
-          />
-        </div>
-      </div>
-
-      <div class="panel__footer mt-4">
-        <Button
-          @click="handleRefresh"
-          :disabled="!petStoreManager.canRefreshPetStore"
-          full-width
-        >
-          Refresh Pet Store
-        </Button>
-      </div>
-    </div>
-
-    <div class="panel panel--compact">
-      <div class="panel__header">
         <h3>Available Guinea Pigs ({{ petStoreManager.availableGuineaPigs.length }})</h3>
       </div>
       <div class="panel__content">
@@ -122,119 +64,107 @@
           <div v-if="isSelectedGuineaPigActive" class="pet-store-debug__warning">
             ⚠️ Cannot edit active guinea pig in game session
           </div>
-          <div class="panel__header">
-            <h4>Basic Info</h4>
-          </div>
-          <div class="flex flex-col gap-3 mb-4">
-            <label for="guinea-pig-name-input" class="form-field-inline">
-              Name:
-              <input
-                id="guinea-pig-name-input"
-                type="text"
-                v-model="selectedGuineaPig.name"
-                class="input"
+          <Details summary="Basic Info" variant="bordered" default-open>
+            <div class="flex flex-col gap-3">
+              <label for="guinea-pig-name-input" class="form-field-inline">
+                Name:
+                <input
+                  id="guinea-pig-name-input"
+                  type="text"
+                  v-model="selectedGuineaPig.name"
+                  class="input"
+                  :disabled="isSelectedGuineaPigActive"
+                />
+              </label>
+              <Select
+                v-model="selectedGuineaPig.gender"
+                label="Gender:"
+                :options="genderOptions"
+                :disabled="isSelectedGuineaPigActive"
+                size="sm"
+              />
+              <Select
+                v-model="selectedGuineaPig.breed"
+                label="Breed:"
+                :options="selectBreedOptions"
+                :disabled="isSelectedGuineaPigActive"
+                size="sm"
+              />
+            </div>
+          </Details>
+
+          <Details summary="Personality" variant="bordered">
+            <div class="flex flex-col gap-3">
+              <SliderField
+                v-model="selectedGuineaPig.personality.friendliness"
+                :min="1"
+                :max="10"
+                label="Friendliness"
+                size="sm"
                 :disabled="isSelectedGuineaPigActive"
               />
-            </label>
-            <Select
-              v-model="selectedGuineaPig.gender"
-              label="Gender:"
-              :options="genderOptions"
-              :disabled="isSelectedGuineaPigActive"
-              size="sm"
-            />
-            <Select
-              v-model="selectedGuineaPig.breed"
-              label="Breed:"
-              :options="selectBreedOptions"
-              :disabled="isSelectedGuineaPigActive"
-              size="sm"
-            />
-          </div>
-          <hr class="divider">
+              <SliderField
+                v-model="selectedGuineaPig.personality.playfulness"
+                :min="1"
+                :max="10"
+                label="Playfulness"
+                size="sm"
+                :disabled="isSelectedGuineaPigActive"
+              />
+              <SliderField
+                v-model="selectedGuineaPig.personality.curiosity"
+                :min="1"
+                :max="10"
+                label="Curiosity"
+                size="sm"
+                :disabled="isSelectedGuineaPigActive"
+              />
+              <SliderField
+                v-model="selectedGuineaPig.personality.independence"
+                :min="1"
+                :max="10"
+                label="Independence"
+                size="sm"
+                :disabled="isSelectedGuineaPigActive"
+              />
+            </div>
+          </Details>
 
-          <div class="panel__header">
-            <h4>Personality</h4>
-          </div>
-          <div class="flex flex-col gap-3 mb-4">
-            <SliderField
-              v-model="selectedGuineaPig.personality.friendliness"
-              :min="1"
-              :max="10"
-              class="mb-2"
-              label="Friendliness"
-              size="sm"
-              :disabled="isSelectedGuineaPigActive"
-            />
-            <SliderField
-              v-model="selectedGuineaPig.personality.playfulness"
-              :min="1"
-              :max="10"
-              class="mb-2"
-              label="Playfulness"
-              size="sm"
-              :disabled="isSelectedGuineaPigActive"
-            />
-            <SliderField
-              v-model="selectedGuineaPig.personality.curiosity"
-              :min="1"
-              :max="10"
-              class="mb-2"
-              label="Curiosity"
-              size="sm"
-              :disabled="isSelectedGuineaPigActive"
-            />
-            <SliderField
-              v-model="selectedGuineaPig.personality.independence"
-              :min="1"
-              :max="10"
-              class="mb-2"
-              label="Independence"
-              size="sm"
-              :disabled="isSelectedGuineaPigActive"
-            />
-          </div>
-          <hr class="divider">
+          <Details summary="Appearance" variant="bordered">
+            <div class="flex flex-col gap-3">
+              <Select
+                v-model="selectedGuineaPig.appearance.furColor"
+                label="Color:"
+                :options="selectFurColorOptions"
+                :disabled="isSelectedGuineaPigActive"
+                size="sm"
+              />
+              <Select
+                v-model="selectedGuineaPig.appearance.furPattern"
+                label="Pattern:"
+                :options="selectFurPatternOptions"
+                :disabled="isSelectedGuineaPigActive"
+                size="sm"
+              />
+              <Select
+                v-model="selectedGuineaPig.appearance.eyeColor"
+                label="Eye Color:"
+                :options="selectEyeColorOptions"
+                :disabled="isSelectedGuineaPigActive"
+                size="sm"
+              />
+              <Select
+                v-model="selectedGuineaPig.appearance.size"
+                label="Size:"
+                :options="sizeOptions"
+                :disabled="isSelectedGuineaPigActive"
+                size="sm"
+              />
+            </div>
+          </Details>
 
-          <div class="panel__header">
-            <h4>Appearance</h4>
-          </div>
-          <div class="flex flex-col gap-3 mb-4">
-            <Select
-              v-model="selectedGuineaPig.appearance.furColor"
-              label="Color:"
-              :options="selectFurColorOptions"
-              :disabled="isSelectedGuineaPigActive"
-              size="sm"
-            />
-            <Select
-              v-model="selectedGuineaPig.appearance.furPattern"
-              label="Pattern:"
-              :options="selectFurPatternOptions"
-              :disabled="isSelectedGuineaPigActive"
-              size="sm"
-            />
-            <Select
-              v-model="selectedGuineaPig.appearance.eyeColor"
-              label="Eye Color:"
-              :options="selectEyeColorOptions"
-              :disabled="isSelectedGuineaPigActive"
-              size="sm"
-            />
-            <Select
-              v-model="selectedGuineaPig.appearance.size"
-              label="Size:"
-              :options="sizeOptions"
-              :disabled="isSelectedGuineaPigActive"
-              size="sm"
-            />
-          </div>
-          <hr class="divider">
-
-          <div class="panel__header">
-            <h4>Preferences (Likes & Dislikes)</h4>
-          </div>
-          <div class="flex flex-col gap-3 mb-2">
+          <Details summary="Preferences (Likes & Dislikes)" variant="bordered">
+            <div class="flex flex-col gap-3">
             <!-- Food Preferences -->
             <div class="form-field-block">
               <!-- Vegetables -->
@@ -470,14 +400,14 @@
                 </div>
               </fieldset>
             </div>
-          </div>
+            </div>
+          </Details>
         </div>
         <p v-else class="pet-store-debug__empty-message">Click a guinea pig to edit</p>
       </div>
     </div>
 
-    <!-- Second Row: Favorites (2 columns on desktop) -->
-    <div class="pet-store-debug__favorites-row">
+    <div class="panel-row">
       <FavoritesPanel v-if="petStoreManager.favoriteGuineaPigs.length > 0 || petStoreManager.canAddToFavorites" />
 
       <div class="panel panel--compact">
@@ -534,6 +464,57 @@
         </div>
       </div>
     </div>
+
+    <!-- Pet Store Settings - Single Column -->
+    <div class="panel panel--compact">
+      <div class="panel__header">
+        <h3>Pet Store Settings</h3>
+      </div>
+      <div class="panel__content">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">Can Refresh:</span>
+            <span class="stat-value">{{ petStoreManager.canRefreshPetStore ? 'Yes' : 'No' }}</span>
+          </div>
+          <div class="stat-item" v-if="petStoreManager.settings.autoRefreshEnabled">
+            <span class="stat-label">Auto-refresh in:</span>
+            <span class="stat-value">{{ liveAutoRefreshCountdown }}</span>
+          </div>
+        </div>
+        <div class="flex flex-col gap-4 mt-4">
+          <CheckboxField
+            v-model="petStoreManager.settings.allowUnlimitedRefresh"
+            label="Allow Unlimited Refresh (Debug)"
+          />
+          <CheckboxField
+            :model-value="petStoreManager.settings.autoRefreshEnabled"
+            label="Enable 24-Hour Auto-Refresh"
+            @update:model-value="handleAutoRefreshToggle"
+          />
+          <hr class="divider">
+          <SliderField
+            v-model="petStoreManager.settings.endGamePenalty"
+            :min="0"
+            :max="500"
+            :step="10"
+            class="mt-2 mb-6"
+            label="End Game Penalty"
+            size="sm"
+            prefix="$"
+          />
+        </div>
+      </div>
+
+      <div class="panel__footer mt-4">
+        <Button
+          @click="handleRefresh"
+          :disabled="!petStoreManager.canRefreshPetStore"
+          full-width
+        >
+          Refresh Pet Store
+        </Button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -547,6 +528,7 @@ import Button from '../basic/Button.vue'
 import Badge from '../basic/Badge.vue'
 import CheckboxField from '../basic/CheckboxField.vue'
 import Select from '../basic/Select.vue'
+import Details from '../basic/Details.vue'
 import FavoritesPanel from '../petstore/FavoritesPanel.vue'
 
 const petStoreManager = usePetStoreManager()
@@ -1042,13 +1024,6 @@ const handleAddToFavorites = (guineaPigId: string) => {
   .pet-store-debug {
     grid-template-columns: repeat(3, 1fr);
   }
-
-  .pet-store-debug__favorites-row {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 1rem;
-  }
 }
 
 /* === Guinea Pig List Section === */
@@ -1231,23 +1206,6 @@ const handleAddToFavorites = (guineaPigId: string) => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-block-end: var(--space-1);
-}
-
-/* === Auto-refresh Info === */
-.auto-refresh-info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background-color: var(--color-info-bg);
-  border: 1px solid var(--color-info);
-  border-radius: var(--radius-base);
-  margin-block-start: var(--space-2);
-}
-
-.auto-refresh-info__text {
-  font-size: var(--font-size-sm);
-  color: var(--color-text);
 }
 
 /* === Responsive Layout === */

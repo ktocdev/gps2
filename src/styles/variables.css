@@ -176,27 +176,28 @@
   --z-index-tooltip: 1070;
 
   /* Need-Specific Colors */
+  /* Critical Needs */
   --color-need-hunger: #f59e0b;      /* Amber - food/nutrition */
   --color-need-thirst: #06b6d4;      /* Cyan - water/hydration */
-  --color-need-happiness: #f472b6;   /* Pink - joy/emotions */
-  --color-need-cleanliness: #8b5cf6; /* Purple - hygiene/care */
-  --color-need-health: #ef4444;      /* Red - medical/vitality */
-  --color-need-energy: #fbbf24;      /* Yellow - rest/stamina */
+  --color-need-energy: #1e3a8a;      /* Navy blue - rest/stamina */
+  --color-need-shelter: #92400e;     /* Warm brown - security/comfort */
+
+  /* Environmental Needs */
+  --color-need-play: #10b981;        /* Green - activity/fun */
   --color-need-social: #ec4899;      /* Hot pink - friendship/bonding */
+  --color-need-stimulation: #f97316; /* Orange - enrichment/variety */
+  --color-need-comfort: #818cf8;     /* Indigo - relaxation/coziness */
+
+  /* Maintenance Needs */
+  --color-need-hygiene: #0ea5e9;     /* Sky blue - cleanliness/grooming */
   --color-need-nails: #64748b;       /* Slate - grooming/maintenance */
-  --color-need-chew: #a78bfa;        /* Light purple - dental/enrichment */
-  --color-need-shelter: #14b8a6;     /* Teal - security/comfort */
+  --color-need-health: #ef4444;      /* Red - medical/vitality */
+  --color-need-chew: #f5f5dc;        /* Light beige - dental/enrichment */
 
   /* Transitions */
   --transition-fast: 150ms ease-in-out;
   --transition-normal: 250ms ease-in-out;
   --transition-slow: 350ms ease-in-out;
-
-  /* Breakpoints (for reference in container queries) */
-  --breakpoint-sm: 640px;
-  --breakpoint-md: 768px;
-  --breakpoint-lg: 1024px;
-  --breakpoint-xl: 1280px;
 }
 
 /* Dark Mode Theme */

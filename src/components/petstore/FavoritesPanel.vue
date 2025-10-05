@@ -227,7 +227,8 @@ function getRarityBadgeText(breed: string): string {
 /* Favorites Panel Component - BEM Methodology */
 
 .favorites-panel {
-  margin-block-end: var(--space-6);
+  flex: 1;
+  min-inline-size: 280px;
 }
 
 /* Panel Header Customization */
@@ -245,10 +246,10 @@ function getRarityBadgeText(breed: string): string {
   font-weight: var(--font-weight-medium);
 }
 
-/* Grid Layout */
+/* Vertical Layout */
 .favorites-panel__grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  display: flex;
+  flex-direction: column;
   gap: var(--space-4);
 }
 

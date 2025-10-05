@@ -1,135 +1,12 @@
 <template>
   <div class="needs-debug">
-    <!-- Needs System Overview -->
-    <div class="mb-8">
-      <h2>Needs System Debug</h2>
-      <div class="panel-row">
-        <!-- System Controls -->
-        <div class="panel panel--compact">
-          <div class="panel__header">
-            <h3>System Controls</h3>
-          </div>
-          <div class="panel__content">
-            <fieldset class=" mb-6">
-              <legend class="sr-only">Needs processing controls</legend>
-              <div class="controls-grid">
-                <div class="button-with-badge">
-                  <Button
-                    @click="toggleNeedsProcessing"
-                    :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
-                    full-width
-                    :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
-                    :tooltip="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : (needsController.processingEnabled
-                      ? 'Pause needs processing (will stay paused when game resumes)'
-                      : 'Resume needs processing'))"
-                    tooltip-position="top"
-                    class="needs-processing-button"
-                  >
-                    {{ needsController.processingEnabled ? 'Pause' : 'Resume' }} Needs Processing
-                  </Button>
-                  <Badge v-if="gameController.isPaused" variant="warning" size="sm" class="button-with-badge__badge">
-                    Paused by Game
-                  </Badge>
-                </div>
-
-                <Button
-                  @click="forceNeedsUpdate"
-                  variant="tertiary"
-                  full-width
-                  :disabled="!hasActiveGuineaPigs || gameController.isPaused || !needsController.processingEnabled"
-                  :title="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : (!hasActiveGuineaPigs ? 'No active guinea pigs' : ''))"
-                  class="needs-processing-button"
-                >
-                  Force Needs Update
-                </Button>
-              </div>
-            </fieldset>
-
-            <hr class="divider">
-
-            <SliderField
-              v-model="decayRateMultiplier"
-              label="Decay Rate Multiplier"
-              :min="0"
-              :max="5"
-              :step="0.1"
-              prefix=""
-              suffix="x"
-              class="mt-6 mb-6"
-              @update:modelValue="updateDecayRate"
-            />
-
-            <hr class="divider">
-
-            <CheckboxField
-              v-model="autoDecayEnabled"
-              label="Auto Decay Enabled"
-              class="mt-6"
-              @change="toggleAutoDecay"
-            />
-          </div>
-        </div>
-
-        <!-- System Status -->
-        <div class="panel panel--compact">
-          <div class="panel__header">
-            <h3>System Status</h3>
-          </div>
-          <div class="panel__content">
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">Processing:</span>
-                <span
-                  v-if="needsController.isPausedManually"
-                  class="stat-value text--warning"
-                >
-                  Paused (Manual) ⚠️
-                </span>
-                <span
-                  v-else-if="!needsController.processingEnabled"
-                  class="stat-value text--muted"
-                >
-                  Paused (Auto)
-                </span>
-                <span
-                  v-else
-                  class="stat-value text--success"
-                >
-                  Active ✓
-                </span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Current Wellness:</span>
-                <span class="stat-value">{{ needsController.currentWellness.toFixed(1) }}%</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Penalty Active:</span>
-                <span class="stat-value" :class="needsController.isPenaltyActive ? 'text--error' : 'text--success'">
-                  {{ needsController.isPenaltyActive ? 'Yes' : 'No' }}
-                </span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Penalty Rate:</span>
-                <span class="stat-value">{{ needsController.currentPenaltyRate.toFixed(2) }}/tick</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Last Update:</span>
-                <span class="stat-value">{{ formatTimestamp(needsController.lastBatchUpdate) }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Update Interval:</span>
-                <span class="stat-value">{{ needsController.updateIntervalMs / 1000 }}s</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <h2>Needs System Debug</h2>
 
     <!-- Individual Guinea Pig Needs -->
     <div v-if="hasActiveGuineaPigs">
       <h3>Individual Guinea Pig Needs</h3>
-      <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id" class="mb-6">
+      <div class="guinea-pigs-grid mb-6">
+        <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id">
         <div class="panel">
           <div class="panel__header">
             <h4>{{ guineaPig.name }} ({{ guineaPig.breed }})</h4>
@@ -138,25 +15,148 @@
             <div class="guinea-pig-layout">
               <!-- Needs Section -->
               <section class="guinea-pig-layout__needs">
-                <h5 class="section-title">Needs</h5>
-                <div class="needs-compact-grid">
-                  <div v-for="need in allNeeds" :key="need" class="need-control need-control--compact" :data-need-type="need" :data-need-urgency="getNeedUrgency((guineaPig.needs as any)[need])">
-                    <label :for="`${guineaPig.id}-${need}`" class="need-label">
-                      {{ formatNeedName(need) }}
-                    </label>
-                    <SliderField
-                      :id="`${guineaPig.id}-${need}`"
-                      :modelValue="(guineaPig.needs as any)[need]"
-                      :min="0"
-                      :max="100"
-                      :step="1"
-                      prefix=""
-                      suffix="%"
-                      @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
-                    />
-                    <span class="need-value">
-                      {{ ((guineaPig.needs as any)[need]).toFixed(0) }}%
-                    </span>
+                <div class="panel panel--accent">
+                  <div class="panel__header">
+                    <h5>Needs</h5>
+                  </div>
+                  <div class="panel__content">
+                    <!-- Critical Needs -->
+                    <div class="needs-category">
+                      <div class="panel panel--compact panel--bordered">
+                        <div class="panel__header">
+                          <h6>Critical Needs</h6>
+                        </div>
+                        <div class="panel__content">
+                          <div class="needs-list">
+                    <div v-for="need in criticalNeeds" :key="need" class="needs-list__item">
+                      <div class="need-row" :data-need-urgency="getNeedUrgency((guineaPig.needs as any)[need])">
+                        <div class="need-row__info">
+                          <label :for="`${guineaPig.id}-${need}`" class="need-row__label">
+                            {{ formatNeedName(need) }}
+                          </label>
+                          <span class="need-row__value">
+                            {{ ((guineaPig.needs as any)[need]).toFixed(0) }}%
+                          </span>
+                        </div>
+                        <SliderField
+                          :id="`${guineaPig.id}-${need}`"
+                          :modelValue="(guineaPig.needs as any)[need]"
+                          :min="0"
+                          :max="100"
+                          :step="1"
+                          prefix=""
+                          suffix="%"
+                          @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
+                          class="need-row__slider"
+                        />
+                      </div>
+                      <Button
+                        @click="getNeedAction(need, guineaPig.id).handler"
+                        variant="tertiary"
+                        size="sm"
+                        :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
+                        :title="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
+                        :class="['needs-list__action', `needs-list__action--${need}`]"
+                      >
+                        {{ getNeedAction(need, guineaPig.id).label }}
+                      </Button>
+                    </div>
+                  </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Environmental Needs -->
+                    <div class="needs-category">
+                      <div class="panel panel--compact panel--bordered">
+                        <div class="panel__header">
+                          <h6>Environmental Needs</h6>
+                        </div>
+                        <div class="panel__content">
+                          <div class="needs-list">
+                    <div v-for="need in environmentalNeeds" :key="need" class="needs-list__item">
+                      <div class="need-row" :data-need-urgency="getNeedUrgency((guineaPig.needs as any)[need])">
+                        <div class="need-row__info">
+                          <label :for="`${guineaPig.id}-${need}`" class="need-row__label">
+                            {{ formatNeedName(need) }}
+                          </label>
+                          <span class="need-row__value">
+                            {{ ((guineaPig.needs as any)[need]).toFixed(0) }}%
+                          </span>
+                        </div>
+                        <SliderField
+                          :id="`${guineaPig.id}-${need}`"
+                          :modelValue="(guineaPig.needs as any)[need]"
+                          :min="0"
+                          :max="100"
+                          :step="1"
+                          prefix=""
+                          suffix="%"
+                          @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
+                          class="need-row__slider"
+                        />
+                      </div>
+                      <Button
+                        @click="getNeedAction(need, guineaPig.id).handler"
+                        variant="tertiary"
+                        size="sm"
+                        :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
+                        :title="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
+                        :class="['needs-list__action', `needs-list__action--${need}`]"
+                      >
+                        {{ getNeedAction(need, guineaPig.id).label }}
+                      </Button>
+                    </div>
+                  </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Maintenance Needs -->
+                    <div class="needs-category">
+                      <div class="panel panel--compact panel--bordered">
+                        <div class="panel__header">
+                          <h6>Maintenance Needs</h6>
+                        </div>
+                        <div class="panel__content">
+                          <div class="needs-list">
+                    <div v-for="need in maintenanceNeeds" :key="need" class="needs-list__item">
+                      <div class="need-row" :data-need-urgency="getNeedUrgency((guineaPig.needs as any)[need])">
+                        <div class="need-row__info">
+                          <label :for="`${guineaPig.id}-${need}`" class="need-row__label">
+                            {{ formatNeedName(need) }}
+                          </label>
+                          <span class="need-row__value">
+                            {{ ((guineaPig.needs as any)[need]).toFixed(0) }}%
+                          </span>
+                        </div>
+                        <SliderField
+                          :id="`${guineaPig.id}-${need}`"
+                          :modelValue="(guineaPig.needs as any)[need]"
+                          :min="0"
+                          :max="100"
+                          :step="1"
+                          prefix=""
+                          suffix="%"
+                          @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
+                          class="need-row__slider"
+                        />
+                      </div>
+                      <Button
+                        @click="getNeedAction(need, guineaPig.id).handler"
+                        variant="tertiary"
+                        size="sm"
+                        :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
+                        :title="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
+                        :class="['needs-list__action', `needs-list__action--${need}`]"
+                      >
+                        {{ getNeedAction(need, guineaPig.id).label }}
+                      </Button>
+                    </div>
+                  </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>
@@ -166,38 +166,9 @@
                 <!-- Quick Actions -->
                 <section class="sidebar-section">
                   <h5 class="section-title">Quick Actions</h5>
-                  <div class="quick-actions-grid">
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'pellets')" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.hunger)" :title="getQuickActionTooltip(guineaPig.needs.hunger, 'Hunger')">
-                      Feed Pellets
-                    </Button>
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'vegetables')" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.hunger)" :title="getQuickActionTooltip(guineaPig.needs.hunger, 'Hunger')">
-                      Feed Vegetables
-                    </Button>
-                    <Button @click="() => giveWater(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.thirst)" :title="getQuickActionTooltip(guineaPig.needs.thirst, 'Thirst')">
-                      Give Water
-                    </Button>
-                    <Button @click="() => cleanGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.cleanliness)" :title="getQuickActionTooltip(guineaPig.needs.cleanliness, 'Cleanliness')">
-                      Clean
-                    </Button>
-                    <Button @click="() => playWithGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || !needsController.processingEnabled || (guineaPig.needs.happiness >= 100 && guineaPig.needs.social >= 100)" :title="getQuickActionTooltip(Math.min(guineaPig.needs.happiness, guineaPig.needs.social), 'Happiness & Social')">
-                      Play
-                    </Button>
-                    <Button @click="() => provideChewToy(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.chew)" :title="getQuickActionTooltip(guineaPig.needs.chew, 'Chew')">
-                      Chew Toy
-                    </Button>
-                    <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.nails)" :title="getQuickActionTooltip(guineaPig.needs.nails, 'Nails')">
-                      Trim Nails
-                    </Button>
-                    <Button @click="() => provideShelter(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.shelter)" :title="getQuickActionTooltip(guineaPig.needs.shelter, 'Shelter')">
-                      Provide Shelter
-                    </Button>
-                    <Button @click="() => performHealthCheck(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.health)" :title="getQuickActionTooltip(guineaPig.needs.health, 'Health')">
-                      Health Check
-                    </Button>
-                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.energy)" :title="getQuickActionTooltip(guineaPig.needs.energy, 'Energy')">
-                      Soothe to Sleep
-                    </Button>
-                  </div>
+                  <Button @click="() => replenishAllNeeds(guineaPig.id)" variant="primary" size="md" full-width :disabled="gameController.isPaused || !needsController.processingEnabled" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : 'Replenish all needs to 100%')">
+                    Replenish All Needs
+                  </Button>
                 </section>
 
                 <!-- Stats & Wellness -->
@@ -228,13 +199,128 @@
             </div>
           </div>
         </div>
+        </div>
       </div>
     </div>
 
     <!-- No Active Guinea Pigs -->
-    <div v-else class="panel panel--warning">
+    <div v-else class="panel panel--warning mb-6">
       <div class="panel__content text-center">
         <p>No active guinea pigs. Start a game session from the Pet Store tab to test needs system.</p>
+      </div>
+    </div>
+
+    <!-- System Controls & Status - Bottom Row -->
+    <div class="panel-row">
+      <!-- System Controls -->
+      <div class="panel panel--compact">
+        <div class="panel__header">
+          <h3>System Controls</h3>
+        </div>
+        <div class="panel__content">
+          <fieldset class=" mb-6">
+            <legend class="sr-only">Needs processing controls</legend>
+            <div class="controls-grid">
+              <div class="button-with-badge">
+                <Button
+                  @click="toggleNeedsProcessing"
+                  :variant="needsController.processingEnabled ? 'danger' : 'warning'"
+                  full-width
+                  :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
+                  :tooltip="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : (needsController.processingEnabled
+                    ? 'Pause needs processing (will stay paused when game resumes)'
+                    : 'Resume needs processing'))"
+                  tooltip-position="top"
+                  class="needs-processing-button"
+                >
+                  {{ needsController.processingEnabled ? 'Pause' : 'Resume' }} Needs Processing
+                </Button>
+                <Badge v-if="gameController.isPaused" variant="warning" size="sm" class="button-with-badge__badge">
+                  Paused by Game
+                </Badge>
+              </div>
+
+              <Button
+                @click="forceNeedsUpdate"
+                variant="tertiary"
+                full-width
+                :disabled="!hasActiveGuineaPigs || gameController.isPaused || !needsController.processingEnabled"
+                :title="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : (!hasActiveGuineaPigs ? 'No active guinea pigs' : ''))"
+                class="needs-processing-button"
+              >
+                Force Needs Update
+              </Button>
+            </div>
+          </fieldset>
+
+          <hr class="divider">
+
+          <SliderField
+            v-model="decayRateMultiplier"
+            label="Decay Rate Multiplier"
+            :min="0"
+            :max="5"
+            :step="0.1"
+            prefix=""
+            suffix="x"
+            class="mt-6"
+            @update:modelValue="updateDecayRate"
+          />
+        </div>
+      </div>
+
+      <!-- System Status -->
+      <div class="panel panel--compact">
+        <div class="panel__header">
+          <h3>System Status</h3>
+        </div>
+        <div class="panel__content">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">Processing:</span>
+              <span
+                v-if="needsController.isPausedManually"
+                class="stat-value text--warning"
+              >
+                Paused (Manual) ⚠️
+              </span>
+              <span
+                v-else-if="!needsController.processingEnabled"
+                class="stat-value text--muted"
+              >
+                Paused (Auto)
+              </span>
+              <span
+                v-else
+                class="stat-value text--success"
+              >
+                Active ✓
+              </span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Current Wellness:</span>
+              <span class="stat-value">{{ needsController.currentWellness.toFixed(1) }}%</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Penalty Active:</span>
+              <span class="stat-value" :class="needsController.isPenaltyActive ? 'text--error' : 'text--success'">
+                {{ needsController.isPenaltyActive ? 'Yes' : 'No' }}
+              </span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Penalty Rate:</span>
+              <span class="stat-value">{{ needsController.currentPenaltyRate.toFixed(2) }}/tick</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Last Update:</span>
+              <span class="stat-value">{{ formatTimestamp(needsController.lastBatchUpdate) }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Update Interval:</span>
+              <span class="stat-value">{{ needsController.updateIntervalMs / 1000 }}s</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -249,7 +335,6 @@ import { usePetStoreManager } from '../../stores/petStoreManager'
 import Button from '../basic/Button.vue'
 import SliderField from '../basic/SliderField.vue'
 import Badge from '../basic/Badge.vue'
-import CheckboxField from '../basic/CheckboxField.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()
@@ -258,7 +343,6 @@ const petStoreManager = usePetStoreManager()
 
 // Reactive data
 const decayRateMultiplier = ref(guineaPigStore.settings.needsDecayRate)
-const autoDecayEnabled = ref(guineaPigStore.settings.autoNeedsDecay)
 
 // Computed properties
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
@@ -282,8 +366,11 @@ const getQuickActionTooltip = (needValue: number, needName?: string) => {
   return ''
 }
 
-// All needs in a single array for compact display
-const allNeeds = ['hunger', 'thirst', 'energy', 'happiness', 'social', 'cleanliness', 'shelter', 'chew', 'nails', 'health']
+// All needs organized by category
+const criticalNeeds = ['hunger', 'thirst', 'energy', 'shelter'] as const
+const environmentalNeeds = ['play', 'social', 'stimulation', 'comfort'] as const
+const maintenanceNeeds = ['hygiene', 'nails', 'health', 'chew'] as const
+const allNeeds = [...criticalNeeds, ...environmentalNeeds, ...maintenanceNeeds] as const
 
 // System controls
 const toggleNeedsProcessing = () => {
@@ -301,10 +388,6 @@ const forceNeedsUpdate = () => {
 
 const updateDecayRate = (value: number) => {
   guineaPigStore.settings.needsDecayRate = value
-}
-
-const toggleAutoDecay = () => {
-  guineaPigStore.settings.autoNeedsDecay = autoDecayEnabled.value
 }
 
 // Need manipulation
@@ -355,6 +438,44 @@ const sootheToSleep = (guineaPigId: string) => {
   guineaPigStore.sootheToSleep(guineaPigId)
 }
 
+const socializeWithGuineaPig = (guineaPigId: string) => {
+  guineaPigStore.socializeWithGuineaPig(guineaPigId)
+}
+
+const rearrangeCage = (guineaPigId: string) => {
+  guineaPigStore.rearrangeCage(guineaPigId)
+}
+
+const provideBedding = (guineaPigId: string) => {
+  guineaPigStore.provideBedding(guineaPigId)
+}
+
+const replenishAllNeeds = (guineaPigId: string) => {
+  allNeeds.forEach(need => {
+    guineaPigStore.adjustNeed(guineaPigId, need, 100)
+  })
+}
+
+// Helper function to get the action button for each need
+const getNeedAction = (need: string, guineaPigId: string) => {
+  const actions: Record<string, { label: string; handler: () => void }> = {
+    hunger: { label: 'Give Food', handler: () => feedGuineaPig(guineaPigId, 'pellets') },
+    thirst: { label: 'Give Water', handler: () => giveWater(guineaPigId) },
+    energy: { label: 'Soothe to Sleep', handler: () => sootheToSleep(guineaPigId) },
+    shelter: { label: 'Provide Shelter', handler: () => provideShelter(guineaPigId) },
+    play: { label: 'Play Together', handler: () => playWithGuineaPig(guineaPigId) },
+    social: { label: 'Socialize', handler: () => socializeWithGuineaPig(guineaPigId) },
+    stimulation: { label: 'Rearrange Cage', handler: () => rearrangeCage(guineaPigId) },
+    comfort: { label: 'Provide Bedding', handler: () => provideBedding(guineaPigId) },
+    hygiene: { label: 'Clean & Groom', handler: () => cleanGuineaPig(guineaPigId) },
+    nails: { label: 'Trim Nails', handler: () => trimNails(guineaPigId) },
+    health: { label: 'Health Check', handler: () => performHealthCheck(guineaPigId) },
+    chew: { label: 'Give Chew Toy', handler: () => provideChewToy(guineaPigId) }
+  }
+
+  return actions[need] || { label: 'Action', handler: () => {} }
+}
+
 // Wellness calculation
 const calculateWellness = (guineaPigId: string): number => {
   return needsController.calculateWellness(guineaPigId)
@@ -398,6 +519,19 @@ const getNeedUrgency = (value: number): string => {
   max-inline-size: 100%;
 }
 
+/* Guinea Pigs Grid Layout */
+.guinea-pigs-grid {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1400px) {
+  .guinea-pigs-grid {
+    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  }
+}
+
 /* Mobile-first: Stack vertically */
 .guinea-pig-layout {
   display: flex;
@@ -425,15 +559,16 @@ const getNeedUrgency = (value: number): string => {
   letter-spacing: 0.05em;
 }
 
-/* Tablet and up: Side-by-side layout */
-@media (min-width: 768px) {
+/* Desktop: Side-by-side layout */
+@media (min-width: 1800px) {
   .guinea-pig-layout {
     flex-direction: row;
     gap: var(--space-6);
   }
 
   .guinea-pig-layout__needs {
-    flex: 2;
+    flex: 3;
+    max-inline-size: calc(75% - var(--space-6));
   }
 
   .guinea-pig-layout__sidebar {
@@ -442,107 +577,245 @@ const getNeedUrgency = (value: number): string => {
   }
 }
 
-.needs-compact-grid {
-  display: grid;
-  gap: 0.5rem;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+/* Needs Category Sections */
+.needs-category {
+  margin-block-end: var(--space-4);
 }
 
-.need-control {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.5rem;
-  align-items: center;
-  padding: 0.75rem;
+.needs-category:last-child {
+  margin-block-end: 0;
+}
+
+.needs-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.needs-list__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.needs-list__action {
+  flex-shrink: 0;
+  min-inline-size: 140px;
+}
+
+/* Need-specific action button colors */
+.needs-list__action--hunger {
+  background-color: var(--color-need-hunger);
+  color: black;
+  border-color: var(--color-need-hunger);
+}
+
+.needs-list__action--hunger:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-hunger) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-hunger) 85%, black);
+  color: white;
+}
+
+.needs-list__action--thirst {
+  background-color: var(--color-need-thirst);
+  color: white;
+  border-color: var(--color-need-thirst);
+}
+
+.needs-list__action--thirst:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-thirst) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-thirst) 85%, black);
+}
+
+.needs-list__action--energy {
+  background-color: var(--color-need-energy);
+  color: white;
+  border-color: var(--color-need-energy);
+}
+
+.needs-list__action--energy:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-energy) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-energy) 85%, black);
+  color: white;
+}
+
+.needs-list__action--shelter {
+  background-color: var(--color-need-shelter);
+  color: white;
+  border-color: var(--color-need-shelter);
+}
+
+.needs-list__action--shelter:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-shelter) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-shelter) 85%, black);
+  color: white;
+}
+
+.needs-list__action--play {
+  background-color: var(--color-need-play);
+  color: white;
+  border-color: var(--color-need-play);
+}
+
+.needs-list__action--play:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-play) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-play) 85%, black);
+}
+
+.needs-list__action--social {
+  background-color: var(--color-need-social);
+  color: white;
+  border-color: var(--color-need-social);
+}
+
+.needs-list__action--social:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-social) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-social) 85%, black);
+}
+
+.needs-list__action--stimulation {
+  background-color: var(--color-need-stimulation);
+  color: white;
+  border-color: var(--color-need-stimulation);
+}
+
+.needs-list__action--stimulation:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-stimulation) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-stimulation) 85%, black);
+}
+
+.needs-list__action--comfort {
+  background-color: var(--color-need-comfort);
+  color: white;
+  border-color: var(--color-need-comfort);
+}
+
+.needs-list__action--comfort:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-comfort) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-comfort) 85%, black);
+}
+
+.needs-list__action--hygiene {
+  background-color: var(--color-need-hygiene);
+  color: black;
+  border-color: var(--color-need-hygiene);
+}
+
+.needs-list__action--hygiene:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-hygiene) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-hygiene) 85%, black);
+  color: white;
+}
+
+.needs-list__action--nails {
+  background-color: var(--color-need-nails);
+  color: white;
+  border-color: var(--color-need-nails);
+}
+
+.needs-list__action--nails:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-nails) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-nails) 85%, black);
+}
+
+.needs-list__action--health {
+  background-color: var(--color-need-health);
+  color: white;
+  border-color: var(--color-need-health);
+}
+
+.needs-list__action--health:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-health) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-health) 85%, black);
+}
+
+.needs-list__action--chew {
+  background-color: var(--color-need-chew);
+  color: black;
+  border-color: var(--color-need-chew);
+}
+
+.needs-list__action--chew:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-chew) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-chew) 85%, black);
+  color: white;
+}
+
+/* Need Row Layout */
+.need-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
   border-radius: var(--radius-md);
   transition: background-color var(--transition-fast);
+  border-inline-start: 3px solid var(--color-border-medium);
 }
 
-.need-control--compact {
-  padding: 0.5rem;
-  gap: 0.375rem;
+.need-row__info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-/* Need-specific colors using data attributes */
-.need-control[data-need-type="hunger"] {
-  border-inline-start: 3px solid var(--color-need-hunger);
+.need-row__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
 }
-.need-control[data-need-type="thirst"] {
-  border-inline-start: 3px solid var(--color-need-thirst);
+
+.need-row__value {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  min-inline-size: 3rem;
+  text-align: end;
+  color: var(--color-text-secondary);
 }
-.need-control[data-need-type="happiness"] {
-  border-inline-start: 3px solid var(--color-need-happiness);
-}
-.need-control[data-need-type="cleanliness"] {
-  border-inline-start: 3px solid var(--color-need-cleanliness);
-}
-.need-control[data-need-type="health"] {
-  border-inline-start: 3px solid var(--color-need-health);
-}
-.need-control[data-need-type="energy"] {
-  border-inline-start: 3px solid var(--color-need-energy);
-}
-.need-control[data-need-type="social"] {
-  border-inline-start: 3px solid var(--color-need-social);
-}
-.need-control[data-need-type="nails"] {
-  border-inline-start: 3px solid var(--color-need-nails);
-}
-.need-control[data-need-type="chew"] {
-  border-inline-start: 3px solid var(--color-need-chew);
-}
-.need-control[data-need-type="shelter"] {
-  border-inline-start: 3px solid var(--color-need-shelter);
+
+.need-row__slider {
+  flex: 1;
+  min-inline-size: 0;
 }
 
 /* Urgency-based backgrounds */
-.need-control[data-need-urgency="satisfied"] {
+.need-row[data-need-urgency="satisfied"] {
   background-color: var(--color-success-bg);
+  border-inline-start-color: var(--color-success);
 }
-.need-control[data-need-urgency="good"] {
-  background-color: rgba(100, 116, 139, 0.1); /* Slate gray tint */
+
+.need-row[data-need-urgency="good"] {
+  background-color: rgba(100, 116, 139, 0.05);
+  border-inline-start-color: var(--color-border-dark);
 }
-.need-control[data-need-urgency="medium"] {
+
+.need-row[data-need-urgency="medium"] {
   background-color: var(--color-warning-bg);
+  border-inline-start-color: var(--color-warning);
 }
-.need-control[data-need-urgency="critical"] {
+
+.need-row[data-need-urgency="critical"] {
   background-color: var(--color-error-bg);
+  border-inline-start-color: var(--color-error);
 }
 
-.need-label {
-  grid-column: 1 / -1;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  margin-block-end: 0.25rem;
-}
-
-.need-control--compact .need-label {
-  font-size: 0.75rem;
-  margin-block-end: 0.125rem;
-}
-
-.need-value {
-  font-weight: 600;
-  font-size: 0.875rem;
-  min-inline-size: 3rem;
-  text-align: end;
-}
-
-.need-control--compact .need-value {
-  font-size: 0.75rem;
-  min-inline-size: 2.5rem;
-}
-
-.quick-actions-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-}
-
+/* Desktop: side-by-side controls */
 @media (min-width: 768px) {
-  .quick-actions-grid {
-    grid-template-columns: 1fr;
+  .needs-list__item {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .need-row {
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  .need-row__info {
+    min-inline-size: 120px;
+    flex-shrink: 0;
   }
 }
 
@@ -565,6 +838,8 @@ const getNeedUrgency = (value: number): string => {
 
 .needs-processing-button {
   white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   width: 100%;
 }
 </style>
