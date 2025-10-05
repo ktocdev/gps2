@@ -22,10 +22,6 @@ interface GameState {
 }
 
 interface GameSettings {
-  autoSave: {
-    enabled: boolean
-    frequency: 30 | 60 | 120 // seconds
-  }
   tutorial: {
     mode: 'auto' | 'always_show' | 'never_show'
     isGlobalFirstTime: boolean
@@ -69,10 +65,6 @@ export const useGameController = defineStore('gameController', () => {
 
   // Settings with defaults
   const settings = ref<GameSettings>({
-    autoSave: {
-      enabled: true,
-      frequency: 60
-    },
     tutorial: {
       mode: 'auto',
       isGlobalFirstTime: true
@@ -277,14 +269,6 @@ export const useGameController = defineStore('gameController', () => {
     settings.value = { ...settings.value, ...newSettings }
   }
 
-  const updateAutoSaveFrequency = (frequency: 30 | 60 | 120) => {
-    settings.value.autoSave.frequency = frequency
-  }
-
-  const toggleAutoSave = () => {
-    settings.value.autoSave.enabled = !settings.value.autoSave.enabled
-  }
-
   const setTutorialMode = (mode: 'auto' | 'always_show' | 'never_show') => {
     settings.value.tutorial.mode = mode
   }
@@ -295,27 +279,6 @@ export const useGameController = defineStore('gameController', () => {
 
   const toggleErrorReporting = () => {
     settings.value.errorReporting.enabled = !settings.value.errorReporting.enabled
-  }
-
-  // Auto-save functionality
-  let autoSaveInterval: number | null = null
-
-  const startAutoSave = () => {
-    if (!settings.value.autoSave.enabled) return
-
-    stopAutoSave() // Clear any existing interval
-
-    // Auto-save functionality can be implemented with pet store manager
-    autoSaveInterval = setInterval(() => {
-      // Will be implemented when pet store manager is added
-    }, settings.value.autoSave.frequency * 1000)
-  }
-
-  const stopAutoSave = () => {
-    if (autoSaveInterval) {
-      clearInterval(autoSaveInterval)
-      autoSaveInterval = null
-    }
   }
 
   // Initialize store
@@ -338,12 +301,6 @@ export const useGameController = defineStore('gameController', () => {
       // No guinea pig data, start fresh
       logging.logInfo('No guinea pig data found, starting new session')
       newGame(true)
-    }
-
-    // Start auto-save if enabled
-    if (settings.value.autoSave.enabled) {
-      startAutoSave()
-      logging.logDebug(`Auto-save enabled with ${settings.value.autoSave.frequency}s frequency`)
     }
 
     logging.logInfo('Game Controller initialized successfully')
@@ -376,15 +333,9 @@ export const useGameController = defineStore('gameController', () => {
 
     // Settings
     updateSettings,
-    updateAutoSaveFrequency,
-    toggleAutoSave,
     setTutorialMode,
     setPerformanceMode,
     toggleErrorReporting,
-
-    // Auto-save
-    startAutoSave,
-    stopAutoSave,
 
     // Initialization
     initializeStore,

@@ -227,27 +227,6 @@
     <div class="mb-8">
       <h2>Current Settings</h2>
       <div class="panel-row">
-        <!-- Auto-Save Settings -->
-        <div class="panel panel--compact">
-          <div class="panel__header">
-            <h3>Auto-Save</h3>
-          </div>
-          <div class="panel__content">
-            <div class="flex flex-column gap-3">
-              <Select
-                v-model="autoSaveFreq"
-                @change="updateAutoSaveFreq"
-                :options="autoSaveOptions"
-                label="Auto-Save Frequency"
-                size="sm"
-              />
-              <Button @click="gameController.toggleAutoSave()" variant="tertiary" size="sm">
-                {{ gameController.settings.autoSave.enabled ? 'Disable' : 'Enable' }} Auto-Save
-              </Button>
-            </div>
-          </div>
-        </div>
-
         <!-- Tutorial Settings -->
         <div class="panel panel--compact">
           <div class="panel__header">
@@ -469,13 +448,6 @@ const toggleNeedsProcessing = () => {
 }
 
 // Settings Management
-const autoSaveOptions = [
-  { value: 30, label: '30 seconds' },
-  { value: 60, label: '1 minute' },
-  { value: 300, label: '5 minutes' },
-  { value: 600, label: '10 minutes' }
-]
-
 const tutorialOptions = [
   { value: 'auto', label: 'Auto' },
   { value: 'always_show', label: 'Always Show' },
@@ -486,11 +458,6 @@ const performanceOptions = [
   { value: 'standard', label: 'Standard' },
   { value: 'reduced', label: 'Reduced' }
 ]
-
-const autoSaveFreq = computed({
-  get: () => gameController.settings.autoSave.frequency,
-  set: (value: number) => gameController.updateAutoSaveFrequency(value as 30 | 60 | 120)
-})
 
 const tutorialMode = computed({
   get: () => gameController.settings.tutorial.mode,
@@ -503,10 +470,6 @@ const performanceMode = computed({
 })
 
 // Settings Methods
-const updateAutoSaveFreq = () => {
-  // Reactive value already updated through computed setter
-}
-
 const updateTutorialMode = () => {
   // Reactive value already updated through computed setter
 }
