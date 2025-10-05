@@ -56,7 +56,7 @@
                         size="sm"
                         :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
                         :title="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
-                        class="needs-list__action"
+                        :class="['needs-list__action', `needs-list__action--${need}`]"
                       >
                         {{ getNeedAction(need, guineaPig.id).label }}
                       </Button>
@@ -102,7 +102,7 @@
                         size="sm"
                         :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
                         :title="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
-                        class="needs-list__action"
+                        :class="['needs-list__action', `needs-list__action--${need}`]"
                       >
                         {{ getNeedAction(need, guineaPig.id).label }}
                       </Button>
@@ -148,7 +148,7 @@
                         size="sm"
                         :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
                         :title="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
-                        class="needs-list__action"
+                        :class="['needs-list__action', `needs-list__action--${need}`]"
                       >
                         {{ getNeedAction(need, guineaPig.id).label }}
                       </Button>
@@ -204,7 +204,7 @@
     </div>
 
     <!-- No Active Guinea Pigs -->
-    <div v-else class="panel panel--warning">
+    <div v-else class="panel panel--warning mb-6">
       <div class="panel__content text-center">
         <p>No active guinea pigs. Start a game session from the Pet Store tab to test needs system.</p>
       </div>
@@ -526,7 +526,7 @@ const getNeedUrgency = (value: number): string => {
   grid-template-columns: 1fr;
 }
 
-@media (min-width: var(--breakpoint-lg)) {
+@media (min-width: 1400px) {
   .guinea-pigs-grid {
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   }
@@ -559,8 +559,8 @@ const getNeedUrgency = (value: number): string => {
   letter-spacing: 0.05em;
 }
 
-/* Tablet and up: Side-by-side layout */
-@media (min-width: var(--breakpoint-md)) {
+/* Desktop: Side-by-side layout */
+@media (min-width: 1800px) {
   .guinea-pig-layout {
     flex-direction: row;
     gap: var(--space-6);
@@ -601,6 +601,144 @@ const getNeedUrgency = (value: number): string => {
 .needs-list__action {
   flex-shrink: 0;
   min-inline-size: 140px;
+}
+
+/* Need-specific action button colors */
+.needs-list__action--hunger {
+  background-color: var(--color-need-hunger);
+  color: black;
+  border-color: var(--color-need-hunger);
+}
+
+.needs-list__action--hunger:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-hunger) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-hunger) 85%, black);
+  color: white;
+}
+
+.needs-list__action--thirst {
+  background-color: var(--color-need-thirst);
+  color: white;
+  border-color: var(--color-need-thirst);
+}
+
+.needs-list__action--thirst:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-thirst) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-thirst) 85%, black);
+}
+
+.needs-list__action--energy {
+  background-color: var(--color-need-energy);
+  color: white;
+  border-color: var(--color-need-energy);
+}
+
+.needs-list__action--energy:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-energy) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-energy) 85%, black);
+  color: white;
+}
+
+.needs-list__action--shelter {
+  background-color: var(--color-need-shelter);
+  color: white;
+  border-color: var(--color-need-shelter);
+}
+
+.needs-list__action--shelter:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-shelter) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-shelter) 85%, black);
+  color: white;
+}
+
+.needs-list__action--play {
+  background-color: var(--color-need-play);
+  color: white;
+  border-color: var(--color-need-play);
+}
+
+.needs-list__action--play:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-play) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-play) 85%, black);
+}
+
+.needs-list__action--social {
+  background-color: var(--color-need-social);
+  color: white;
+  border-color: var(--color-need-social);
+}
+
+.needs-list__action--social:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-social) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-social) 85%, black);
+}
+
+.needs-list__action--stimulation {
+  background-color: var(--color-need-stimulation);
+  color: white;
+  border-color: var(--color-need-stimulation);
+}
+
+.needs-list__action--stimulation:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-stimulation) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-stimulation) 85%, black);
+}
+
+.needs-list__action--comfort {
+  background-color: var(--color-need-comfort);
+  color: white;
+  border-color: var(--color-need-comfort);
+}
+
+.needs-list__action--comfort:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-comfort) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-comfort) 85%, black);
+}
+
+.needs-list__action--hygiene {
+  background-color: var(--color-need-hygiene);
+  color: black;
+  border-color: var(--color-need-hygiene);
+}
+
+.needs-list__action--hygiene:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-hygiene) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-hygiene) 85%, black);
+  color: white;
+}
+
+.needs-list__action--nails {
+  background-color: var(--color-need-nails);
+  color: white;
+  border-color: var(--color-need-nails);
+}
+
+.needs-list__action--nails:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-nails) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-nails) 85%, black);
+}
+
+.needs-list__action--health {
+  background-color: var(--color-need-health);
+  color: white;
+  border-color: var(--color-need-health);
+}
+
+.needs-list__action--health:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-health) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-health) 85%, black);
+}
+
+.needs-list__action--chew {
+  background-color: var(--color-need-chew);
+  color: black;
+  border-color: var(--color-need-chew);
+}
+
+.needs-list__action--chew:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-need-chew) 85%, black);
+  border-color: color-mix(in srgb, var(--color-need-chew) 85%, black);
+  color: white;
 }
 
 /* Need Row Layout */
@@ -661,7 +799,7 @@ const getNeedUrgency = (value: number): string => {
 }
 
 /* Desktop: side-by-side controls */
-@media (min-width: var(--breakpoint-md)) {
+@media (min-width: 768px) {
   .needs-list__item {
     flex-direction: row;
     align-items: center;
@@ -700,6 +838,8 @@ const getNeedUrgency = (value: number): string => {
 
 .needs-processing-button {
   white-space: normal;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
   width: 100%;
 }
 </style>

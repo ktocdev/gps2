@@ -280,7 +280,7 @@
 }
 
 /* Enhanced styling for larger screens */
-@media (min-width: var(--breakpoint-md)) {
+@media (min-width: 769px) {
   .panel {
     padding: var(--space-6);
     border-start-start-radius: var(--radius-lg);
@@ -347,7 +347,7 @@
   padding: var(--space-4);
 }
 
-@media (min-width: var(--breakpoint-md)) {
+@media (min-width: 769px) {
   .panel-grid {
     gap: var(--space-6);
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -366,7 +366,7 @@
   min-inline-size: auto;
 }
 
-@media (min-width: var(--breakpoint-md)) {
+@media (min-width: 769px) {
   .panel-row {
     gap: var(--space-6);
     flex-direction: row;
