@@ -143,32 +143,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   const activeGuineaPigs = computed(() => {
     const activeIds = collection.value.activeGuineaPigIds || []
     return activeIds
-      .map(id => {
-        const gp = collection.value.guineaPigs[id]
-        if (gp) {
-          // Migrate old needs structure to new 11-need structure
-          if (!gp.needs.play || !gp.needs.stimulation || !gp.needs.comfort || !gp.needs.hygiene) {
-            gp.needs = {
-              // Critical Needs
-              hunger: gp.needs.hunger ?? 100,
-              thirst: gp.needs.thirst ?? 100,
-              energy: gp.needs.energy ?? 100,
-              shelter: gp.needs.shelter ?? 100,
-              // Environmental Needs
-              play: gp.needs.play ?? 100,
-              social: gp.needs.social ?? 100,
-              stimulation: gp.needs.stimulation ?? 100,
-              comfort: gp.needs.comfort ?? 100,
-              // Maintenance Needs
-              hygiene: gp.needs.hygiene ?? (gp.needs as any).cleanliness ?? 100,
-              nails: gp.needs.nails ?? 100,
-              health: gp.needs.health ?? 100,
-              chew: gp.needs.chew ?? 100
-            }
-          }
-        }
-        return gp
-      })
+      .map(id => collection.value.guineaPigs[id])
       .filter(Boolean)
   })
 
