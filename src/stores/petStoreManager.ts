@@ -574,6 +574,12 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       return
     }
 
+    // Charge penalty for manual refresh (not auto-refresh)
+    if (!isAutoRefresh) {
+      const playerProgression = usePlayerProgression()
+      playerProgression.deductCurrency(settings.value.endGamePenalty, 'pet_store_refresh')
+    }
+
     // Active sessions are preserved during refresh because:
     // 1. Active guinea pigs are stored in guineaPigStore.collection (separate from pet store)
     // 2. Their IDs don't change during refresh
@@ -582,9 +588,19 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     const sessionWasActive = activeGameSession.value !== null
 
+    // Preserve active guinea pigs during refresh
+    const activeGuineaPigs: GuineaPig[] = []
     if (sessionWasActive) {
+      const guineaPigStore = useGuineaPigStore()
+      for (const id of activeGameSession.value!.guineaPigIds) {
+        const gp = guineaPigStore.getGuineaPig(id)
+        if (gp) {
+          activeGuineaPigs.push(gp)
+        }
+      }
+
       const logging = getLoggingStore()
-      const names = activeSessionGuineaPigs.value.map(gp => gp.name).join(' & ')
+      const names = activeGuineaPigs.map(gp => gp.name).join(' & ')
       logging.addPlayerAction(
         `✅ Preserving active session with ${names} during refresh`,
         '✅',
@@ -595,7 +611,32 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Preserve favorites during refresh (key feature!)
     const favoritesBackup = [...favoriteGuineaPigs.value]
 
-    generateRandomGuineaPigs(10)
+    // Preserve favorite guinea pigs in the available list
+    // Get favorites that are currently in the available list
+    const favoriteGuineaPigsInAvailableList: GuineaPig[] = []
+    for (const favorite of favoriteGuineaPigs.value) {
+      // Find the guinea pig in available list (to get latest state)
+      const availableGP = availableGuineaPigs.value.find(gp => gp.id === favorite.id)
+      if (availableGP) {
+        // Only add if not already in active list (avoid duplicates)
+        const isAlreadyInActiveList = activeGuineaPigs.some(gp => gp.id === favorite.id)
+        if (!isAlreadyInActiveList) {
+          favoriteGuineaPigsInAvailableList.push(availableGP)
+        }
+      }
+    }
+
+    // Calculate how many new guinea pigs we need
+    const preservedCount = activeGuineaPigs.length + favoriteGuineaPigsInAvailableList.length
+    const newGuineaPigsCount = 10 - preservedCount
+    const newGuineaPigs: GuineaPig[] = []
+    for (let i = 0; i < newGuineaPigsCount; i++) {
+      newGuineaPigs.push(generateRandomGuineaPig())
+    }
+
+    // Place active guinea pigs first, then favorites, then new ones
+    availableGuineaPigs.value = [...activeGuineaPigs, ...favoriteGuineaPigsInAvailableList, ...newGuineaPigs]
+
     lastRefreshTimestamp.value = Date.now()
 
     // Restore favorites
@@ -608,11 +649,16 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     const logging = getLoggingStore()
     const refreshType = isAutoRefresh ? 'Auto-refreshed' : 'Refreshed'
-    logging.addPlayerAction(`${refreshType} pet store with new guinea pigs 🔄`, '🔄', {
+    const penaltyMsg = isAutoRefresh ? '' : ` (penalty: $${settings.value.endGamePenalty})`
+    logging.addPlayerAction(`${refreshType} pet store with new guinea pigs${penaltyMsg} 🔄`, '🔄', {
       isAutoRefresh,
+      penalty: isAutoRefresh ? 0 : settings.value.endGamePenalty,
       nextAutoRefresh: nextAutoRefreshTime.value,
       favoritesPreserved: favoritesBackup.length,
-      sessionPreserved: sessionWasActive
+      sessionPreserved: sessionWasActive,
+      activeGuineaPigsPreserved: activeGuineaPigs.length,
+      favoriteGuineaPigsPreserved: favoriteGuineaPigsInAvailableList.length,
+      newGuineaPigsGenerated: newGuineaPigsCount
     })
   }
 
