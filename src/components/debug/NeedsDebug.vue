@@ -18,7 +18,11 @@
                     @click="toggleNeedsProcessing"
                     :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
                     full-width
-                    :disabled="gameController.isPaused"
+                    :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
+                    :tooltip="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : (needsController.processingEnabled
+                      ? 'Pause needs processing (will stay paused when game resumes)'
+                      : 'Resume needs processing'))"
+                    tooltip-position="top"
                     class="needs-processing-button"
                   >
                     {{ needsController.processingEnabled ? 'Pause' : 'Resume' }} Needs Processing
@@ -32,7 +36,8 @@
                   @click="forceNeedsUpdate"
                   variant="tertiary"
                   full-width
-                  :disabled="!hasActiveGuineaPigs"
+                  :disabled="!hasActiveGuineaPigs || gameController.isPaused || !needsController.processingEnabled"
+                  :title="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : (!hasActiveGuineaPigs ? 'No active guinea pigs' : ''))"
                   class="needs-processing-button"
                 >
                   Force Needs Update
@@ -74,8 +79,23 @@
             <div class="stats-grid">
               <div class="stat-item">
                 <span class="stat-label">Processing:</span>
-                <span class="stat-value" :class="needsController.processingEnabled ? 'text--success' : 'text--error'">
-                  {{ needsController.processingEnabled ? 'Active' : 'Paused' }}
+                <span
+                  v-if="needsController.isPausedManually"
+                  class="stat-value text--warning"
+                >
+                  Paused (Manual) ⚠️
+                </span>
+                <span
+                  v-else-if="!needsController.processingEnabled"
+                  class="stat-value text--muted"
+                >
+                  Paused (Auto)
+                </span>
+                <span
+                  v-else
+                  class="stat-value text--success"
+                >
+                  Active ✓
                 </span>
               </div>
               <div class="stat-item">
@@ -147,28 +167,34 @@
                 <section class="sidebar-section">
                   <h5 class="section-title">Quick Actions</h5>
                   <div class="quick-actions-grid">
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'pellets')" variant="tertiary" size="sm">
+                    <Button @click="() => feedGuineaPig(guineaPig.id, 'pellets')" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.hunger)" :title="getQuickActionTooltip(guineaPig.needs.hunger, 'Hunger')">
                       Feed Pellets
                     </Button>
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'vegetables')" variant="tertiary" size="sm">
+                    <Button @click="() => feedGuineaPig(guineaPig.id, 'vegetables')" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.hunger)" :title="getQuickActionTooltip(guineaPig.needs.hunger, 'Hunger')">
                       Feed Vegetables
                     </Button>
-                    <Button @click="() => giveWater(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => giveWater(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.thirst)" :title="getQuickActionTooltip(guineaPig.needs.thirst, 'Thirst')">
                       Give Water
                     </Button>
-                    <Button @click="() => cleanGuineaPig(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => cleanGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.cleanliness)" :title="getQuickActionTooltip(guineaPig.needs.cleanliness, 'Cleanliness')">
                       Clean
                     </Button>
-                    <Button @click="() => playWithGuineaPig(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => playWithGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || !needsController.processingEnabled || (guineaPig.needs.happiness >= 100 && guineaPig.needs.social >= 100)" :title="getQuickActionTooltip(Math.min(guineaPig.needs.happiness, guineaPig.needs.social), 'Happiness & Social')">
                       Play
                     </Button>
-                    <Button @click="() => provideChewToy(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => provideChewToy(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.chew)" :title="getQuickActionTooltip(guineaPig.needs.chew, 'Chew')">
                       Chew Toy
                     </Button>
-                    <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.nails)" :title="getQuickActionTooltip(guineaPig.needs.nails, 'Nails')">
                       Trim Nails
                     </Button>
-                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm">
+                    <Button @click="() => provideShelter(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.shelter)" :title="getQuickActionTooltip(guineaPig.needs.shelter, 'Shelter')">
+                      Provide Shelter
+                    </Button>
+                    <Button @click="() => performHealthCheck(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.health)" :title="getQuickActionTooltip(guineaPig.needs.health, 'Health')">
+                      Health Check
+                    </Button>
+                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.energy)" :title="getQuickActionTooltip(guineaPig.needs.energy, 'Energy')">
                       Soothe to Sleep
                     </Button>
                   </div>
@@ -219,6 +245,7 @@ import { ref, computed } from 'vue'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useNeedsController } from '../../stores/needsController'
 import { useGameController } from '../../stores/gameController'
+import { usePetStoreManager } from '../../stores/petStoreManager'
 import Button from '../basic/Button.vue'
 import SliderField from '../basic/SliderField.vue'
 import Badge from '../basic/Badge.vue'
@@ -227,6 +254,7 @@ import CheckboxField from '../basic/CheckboxField.vue'
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()
 const gameController = useGameController()
+const petStoreManager = usePetStoreManager()
 
 // Reactive data
 const decayRateMultiplier = ref(guineaPigStore.settings.needsDecayRate)
@@ -235,13 +263,33 @@ const autoDecayEnabled = ref(guineaPigStore.settings.autoNeedsDecay)
 // Computed properties
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 
+// Helper function to check if quick action is disabled
+const isQuickActionDisabled = (needValue: number) => {
+  return gameController.isPaused || !needsController.processingEnabled || needValue >= 100
+}
+
+// Helper function to get quick action tooltip when disabled
+const getQuickActionTooltip = (needValue: number, needName?: string) => {
+  if (gameController.isPaused) {
+    return 'Action disabled - Game Paused'
+  }
+  if (!needsController.processingEnabled) {
+    return 'Action disabled - Needs Processing Paused'
+  }
+  if (needValue >= 100) {
+    return needName ? `${needName} already at 100%` : 'Need already at 100%'
+  }
+  return ''
+}
+
 // All needs in a single array for compact display
 const allNeeds = ['hunger', 'thirst', 'energy', 'happiness', 'social', 'cleanliness', 'shelter', 'chew', 'nails', 'health']
 
 // System controls
 const toggleNeedsProcessing = () => {
   if (needsController.processingEnabled) {
-    needsController.pauseProcessing()
+    // Pass true to indicate manual pause
+    needsController.pauseProcessing(true)
   } else {
     needsController.resumeProcessing()
   }
@@ -293,6 +341,14 @@ const provideChewToy = (guineaPigId: string) => {
 
 const trimNails = (guineaPigId: string) => {
   guineaPigStore.trimNails(guineaPigId)
+}
+
+const provideShelter = (guineaPigId: string) => {
+  guineaPigStore.provideShelter(guineaPigId)
+}
+
+const performHealthCheck = (guineaPigId: string) => {
+  guineaPigStore.performHealthCheck(guineaPigId)
 }
 
 const sootheToSleep = (guineaPigId: string) => {
@@ -509,5 +565,6 @@ const getNeedUrgency = (value: number): string => {
 
 .needs-processing-button {
   white-space: normal;
+  width: 100%;
 }
 </style>

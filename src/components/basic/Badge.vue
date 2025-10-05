@@ -59,6 +59,7 @@ const badgeClasses = computed(() => {
 .badge--primary {
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
+  border: 1px solid transparent;
 }
 
 .badge--secondary {
@@ -70,20 +71,24 @@ const badgeClasses = computed(() => {
 .badge--success {
   background-color: var(--color-success);
   color: var(--color-text-inverse);
+  border: 1px solid transparent;
 }
 
 .badge--info {
   background-color: var(--color-info);
   color: var(--color-text-inverse);
+  border: 1px solid transparent;
 }
 
 .badge--warning {
   background-color: var(--color-warning);
   color: var(--color-text-primary);
+  border: 1px solid transparent;
 }
 
 .badge--danger {
   background-color: var(--color-error);
   color: var(--color-text-inverse);
+  border: 1px solid transparent;
 }
 </style>

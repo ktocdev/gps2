@@ -66,7 +66,7 @@
       <div class="panel__content">
         <div class="pet-store-debug__guinea-pig-list">
           <div
-            v-for="guineaPig in petStoreManager.availableGuineaPigs"
+            v-for="guineaPig in sortedAvailableGuineaPigs"
             :key="guineaPig.id"
             class="pet-store-debug__guinea-pig-item"
             :class="{
@@ -79,7 +79,7 @@
               <div class="pet-store-debug__guinea-pig-left">
                 <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
                 <div class="pet-store-debug__guinea-pig-badges">
-                  <Badge v-if="isGuineaPigActive(guineaPig.id)" variant="success" size="sm">ACTIVE</Badge>
+                  <Badge v-if="isGuineaPigActive(guineaPig.id)" variant="info" size="sm">ACTIVE</Badge>
                   <Badge v-if="isGuineaPigFavorited(guineaPig.id)" variant="warning" size="sm">FAVORITED</Badge>
                   <Badge
                     v-if="shouldShowRarityBadge(guineaPig.breed)"
@@ -583,6 +583,29 @@ const isGuineaPigFavorited = (guineaPigId: string): boolean => {
 const isSelectedGuineaPigActive = computed(() => {
   if (!selectedGuineaPig.value) return false
   return isGuineaPigActive(selectedGuineaPig.value.id)
+})
+
+// Computed property to sort guinea pigs with active ones at the top, then favorites
+const sortedAvailableGuineaPigs = computed(() => {
+  return [...petStoreManager.availableGuineaPigs].sort((a, b) => {
+    const aIsActive = isGuineaPigActive(a.id)
+    const bIsActive = isGuineaPigActive(b.id)
+    const aIsFavorite = isGuineaPigFavorited(a.id)
+    const bIsFavorite = isGuineaPigFavorited(b.id)
+
+    // Active guinea pigs come first
+    if (aIsActive && !bIsActive) return -1
+    if (!aIsActive && bIsActive) return 1
+
+    // If both have same active status, favorites come next
+    if (aIsActive === bIsActive) {
+      if (aIsFavorite && !bIsFavorite) return -1
+      if (!aIsFavorite && bIsFavorite) return 1
+    }
+
+    // Keep original order for same status
+    return 0
+  })
 })
 
 // Computed property that uses currentTime to trigger reactivity

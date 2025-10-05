@@ -20,7 +20,7 @@
               <div class="favorites-panel__header">
                 <span class="favorites-panel__name">{{ favorite.name }}</span>
                 <div class="favorites-panel__badges">
-                  <Badge v-if="isGuineaPigActive(favorite.id)" variant="success" size="sm">ACTIVE</Badge>
+                  <Badge v-if="isGuineaPigActive(favorite.id)" variant="info" size="sm">ACTIVE</Badge>
                   <Badge variant="warning" size="sm">⭐ Favorite</Badge>
                   <Badge
                     v-if="shouldShowRarityBadge(favorite.breed)"

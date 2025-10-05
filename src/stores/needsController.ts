@@ -7,9 +7,10 @@
  */
 
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useGuineaPigStore } from './guineaPigStore'
 import { useLoggingStore } from './loggingStore'
+import { usePetStoreManager } from './petStoreManager'
 
 export const useNeedsController = defineStore('needsController', () => {
   let loggingStore: any = null
@@ -30,6 +31,7 @@ export const useNeedsController = defineStore('needsController', () => {
 
   const lastBatchUpdate = ref<number>(Date.now())
   const processingEnabled = ref<boolean>(false)
+  const manuallyPausedByUser = ref<boolean>(false)
   const updateIntervalMs = ref<number>(5000)
 
   const wellnessThresholds = ref({
@@ -44,6 +46,11 @@ export const useNeedsController = defineStore('needsController', () => {
     high: -0.75,
     medium: -0.5
   })
+
+  // Computed property to check if manually paused
+  const isPausedManually = computed(() =>
+    !processingEnabled.value && manuallyPausedByUser.value
+  )
 
   function calculateWellness(guineaPigId: string): number {
     const guineaPigStore = useGuineaPigStore()
@@ -175,18 +182,27 @@ export const useNeedsController = defineStore('needsController', () => {
     }
   }
 
-  function pauseProcessing(): void {
+  function pauseProcessing(isManual: boolean = false): void {
     processingEnabled.value = false
+
+    // Track if pause was user-initiated
+    if (isManual) {
+      manuallyPausedByUser.value = true
+    }
 
     getLoggingStore().logActivity({
       category: 'system',
       action: 'needs_processing_paused',
-      details: { timestamp: Date.now() }
+      details: {
+        timestamp: Date.now(),
+        manual: isManual
+      }
     })
   }
 
   function resumeProcessing(): void {
     processingEnabled.value = true
+    manuallyPausedByUser.value = false  // Clear manual flag when resuming
     lastBatchUpdate.value = Date.now()
 
     // Reset needsLastUpdate timestamps to prevent accumulated time delta
@@ -216,6 +232,20 @@ export const useNeedsController = defineStore('needsController', () => {
     processingEnabled.value = false
   }
 
+  // Watch for session end and reset manual pause state
+  const petStoreManager = usePetStoreManager()
+  watch(
+    () => petStoreManager.activeGameSession,
+    (newSession, oldSession) => {
+      // If session ended (was active, now null) and manually paused, reset
+      if (oldSession && !newSession && manuallyPausedByUser.value) {
+        resumeProcessing()
+        const logging = getLoggingStore()
+        logging.logInfo('Session ended - resetting manual pause state')
+      }
+    }
+  )
+
   return {
     currentWellness,
     wellnessHistory,
@@ -225,6 +255,8 @@ export const useNeedsController = defineStore('needsController', () => {
     penaltyStartTime,
     lastBatchUpdate,
     processingEnabled,
+    manuallyPausedByUser,
+    isPausedManually,
     updateIntervalMs,
     wellnessThresholds,
     penaltyRates,

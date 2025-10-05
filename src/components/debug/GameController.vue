@@ -14,10 +14,10 @@
               <Button
                 @click="handleStartSession"
                 variant="primary"
-                :disabled="!canStartSession"
-                :title="!canStartSession ? 'Select 1-2 guinea pigs from pet store' : 'Start game session'"
+                :disabled="!canStartSession || !!petStoreManager.activeGameSession"
+                :title="petStoreManager.activeGameSession ? 'Game session already active' : (!canStartSession ? 'Select 1-2 guinea pigs from pet store' : 'Start game session')"
               >
-                Start Session
+                {{ petStoreManager.activeGameSession ? 'Game in Session' : 'Start Session' }}
               </Button>
             </div>
             <Button
@@ -97,12 +97,13 @@
     <div class="mb-8">
       <h2>Game State</h2>
       <div class="panel-row">
-        <!-- Game Controls -->
+        <!-- Game State & Controls -->
         <div class="panel panel--compact">
           <div class="panel__header">
-            <h3>Game Controls</h3>
+            <h3>Game State & Controls</h3>
           </div>
           <div class="panel__content">
+            <!-- Game Controls -->
             <div class="controls-grid">
               <Button
                 @click="gameController.pauseGame('manual')"
@@ -121,16 +122,9 @@
                 Resume Game
               </Button>
             </div>
-          </div>
-        </div>
 
-        <!-- Current State -->
-        <div class="panel panel--compact">
-          <div class="panel__header">
-            <h3>Current State</h3>
-          </div>
-          <div class="panel__content">
-            <div class="stats-grid">
+            <!-- Current State Stats -->
+            <div class="stats-grid mt-4">
               <div class="stat-item">
                 <span class="stat-label">Game State:</span>
                 <span class="stat-value">{{ gameController.gameState.currentState }}</span>
@@ -150,6 +144,51 @@
               <div class="stat-item">
                 <span class="stat-label">Last Save:</span>
                 <span class="stat-value">{{ new Date(gameController.gameState.lastSaveTimestamp).toLocaleString() }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Controls -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>System Controls</h3>
+          </div>
+          <div class="panel__content">
+            <!-- Needs Processing Control -->
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Needs Processing:</span>
+                <span v-if="needsController.isPausedManually" class="stat-value text--warning">
+                  Paused (Manual) ⚠️
+                </span>
+                <span v-else-if="!needsController.processingEnabled" class="stat-value text--muted">
+                  Paused (Auto)
+                </span>
+                <span v-else class="stat-value text--success">
+                  Active ✓
+                </span>
+              </div>
+            </div>
+
+            <Button
+              @click="toggleNeedsProcessing"
+              :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
+              :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
+              :title="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : '')"
+              size="sm"
+              full-width
+              class="needs-processing-button mt-3"
+            >
+              {{ needsController.processingEnabled ? 'Pause Needs Processing' : 'Resume Needs Processing' }}
+            </Button>
+
+            <!-- Warning: Needs Manually Paused -->
+            <div v-if="needsController.isPausedManually" class="panel__subpanel panel__subpanel--warning mt-3">
+              <div class="panel__subpanel-content">
+                <p class="panel__subpanel-text panel__subpanel-text--warning">
+                  ⚠️ Needs manually paused in Needs System
+                </p>
               </div>
             </div>
           </div>
@@ -284,6 +323,7 @@ import { useGameController } from '../../stores/gameController'
 import { usePetStoreManager } from '../../stores/petStoreManager'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { usePlayerProgression } from '../../stores/playerProgression'
+import { useNeedsController } from '../../stores/needsController'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
 
@@ -292,6 +332,7 @@ const gameController = useGameController()
 const petStoreManager = usePetStoreManager()
 const guineaPigStore = useGuineaPigStore()
 const playerProgression = usePlayerProgression()
+const needsController = useNeedsController()
 
 // Pet Store Session State
 const selectedGuineaPig1 = ref<string | number>('')
@@ -417,6 +458,15 @@ const canResumeGame = computed(() => {
   const hasActiveSession = petStoreManager.activeGameSession !== null
   return gameController.gameState.currentState === 'paused' && hasActiveSession
 })
+
+// System Controls
+const toggleNeedsProcessing = () => {
+  if (needsController.processingEnabled) {
+    needsController.pauseProcessing(true) // Manual pause
+  } else {
+    needsController.resumeProcessing()
+  }
+}
 
 // Settings Management
 const autoSaveOptions = [
