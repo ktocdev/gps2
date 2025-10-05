@@ -227,7 +227,8 @@ function getRarityBadgeText(breed: string): string {
 /* Favorites Panel Component - BEM Methodology */
 
 .favorites-panel {
-  margin-block-end: var(--space-6);
+  flex: 1;
+  min-inline-size: 280px;
 }
 
 /* Panel Header Customization */

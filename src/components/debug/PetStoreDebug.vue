@@ -407,7 +407,7 @@
       </div>
     </div>
 
-    <div class="pet-store-debug__favorites-column">
+    <div class="panel-row">
       <FavoritesPanel v-if="petStoreManager.favoriteGuineaPigs.length > 0 || petStoreManager.canAddToFavorites" />
 
       <div class="panel panel--compact">
@@ -1023,12 +1023,6 @@ const handleAddToFavorites = (guineaPigId: string) => {
 @media (min-width: 1024px) {
   .pet-store-debug {
     grid-template-columns: repeat(3, 1fr);
-  }
-
-  .pet-store-debug__favorites-column {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
   }
 }
 
