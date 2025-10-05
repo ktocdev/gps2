@@ -167,34 +167,34 @@
                 <section class="sidebar-section">
                   <h5 class="section-title">Quick Actions</h5>
                   <div class="quick-actions-grid">
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'pellets')" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.hunger >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.hunger >= 100 ? 'Need already at 100%' : '')">
+                    <Button @click="() => feedGuineaPig(guineaPig.id, 'pellets')" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.hunger)" :title="getQuickActionTooltip(guineaPig.needs.hunger, 'Hunger')">
                       Feed Pellets
                     </Button>
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'vegetables')" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.hunger >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.hunger >= 100 ? 'Need already at 100%' : '')">
+                    <Button @click="() => feedGuineaPig(guineaPig.id, 'vegetables')" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.hunger)" :title="getQuickActionTooltip(guineaPig.needs.hunger, 'Hunger')">
                       Feed Vegetables
                     </Button>
-                    <Button @click="() => giveWater(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.thirst >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.thirst >= 100 ? 'Need already at 100%' : '')">
+                    <Button @click="() => giveWater(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.thirst)" :title="getQuickActionTooltip(guineaPig.needs.thirst, 'Thirst')">
                       Give Water
                     </Button>
-                    <Button @click="() => cleanGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.cleanliness >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.cleanliness >= 100 ? 'Need already at 100%' : '')">
+                    <Button @click="() => cleanGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.cleanliness)" :title="getQuickActionTooltip(guineaPig.needs.cleanliness, 'Cleanliness')">
                       Clean
                     </Button>
-                    <Button @click="() => playWithGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || (guineaPig.needs.happiness >= 100 && guineaPig.needs.social >= 100)" :title="gameController.isPaused ? 'Action disabled - Game Paused' : ((guineaPig.needs.happiness >= 100 && guineaPig.needs.social >= 100) ? 'Needs already at 100%' : '')">
+                    <Button @click="() => playWithGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || !needsController.processingEnabled || (guineaPig.needs.happiness >= 100 && guineaPig.needs.social >= 100)" :title="getQuickActionTooltip(Math.min(guineaPig.needs.happiness, guineaPig.needs.social), 'Happiness & Social')">
                       Play
                     </Button>
-                    <Button @click="() => provideChewToy(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.chew >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.chew >= 100 ? 'Need already at 100%' : '')">
+                    <Button @click="() => provideChewToy(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.chew)" :title="getQuickActionTooltip(guineaPig.needs.chew, 'Chew')">
                       Chew Toy
                     </Button>
-                    <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.nails >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.nails >= 100 ? 'Need already at 100%' : '')">
+                    <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.nails)" :title="getQuickActionTooltip(guineaPig.needs.nails, 'Nails')">
                       Trim Nails
                     </Button>
-                    <Button @click="() => provideShelter(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.shelter >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.shelter >= 100 ? 'Need already at 100%' : '')">
+                    <Button @click="() => provideShelter(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.shelter)" :title="getQuickActionTooltip(guineaPig.needs.shelter, 'Shelter')">
                       Provide Shelter
                     </Button>
-                    <Button @click="() => performHealthCheck(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.health >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.health >= 100 ? 'Need already at 100%' : '')">
+                    <Button @click="() => performHealthCheck(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.health)" :title="getQuickActionTooltip(guineaPig.needs.health, 'Health')">
                       Health Check
                     </Button>
-                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.energy >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.energy >= 100 ? 'Need already at 100%' : '')">
+                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm" :disabled="isQuickActionDisabled(guineaPig.needs.energy)" :title="getQuickActionTooltip(guineaPig.needs.energy, 'Energy')">
                       Soothe to Sleep
                     </Button>
                   </div>
@@ -262,6 +262,25 @@ const autoDecayEnabled = ref(guineaPigStore.settings.autoNeedsDecay)
 
 // Computed properties
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
+
+// Helper function to check if quick action is disabled
+const isQuickActionDisabled = (needValue: number) => {
+  return gameController.isPaused || !needsController.processingEnabled || needValue >= 100
+}
+
+// Helper function to get quick action tooltip when disabled
+const getQuickActionTooltip = (needValue: number, needName?: string) => {
+  if (gameController.isPaused) {
+    return 'Action disabled - Game Paused'
+  }
+  if (!needsController.processingEnabled) {
+    return 'Action disabled - Needs Processing Paused'
+  }
+  if (needValue >= 100) {
+    return needName ? `${needName} already at 100%` : 'Need already at 100%'
+  }
+  return ''
+}
 
 // All needs in a single array for compact display
 const allNeeds = ['hunger', 'thirst', 'energy', 'happiness', 'social', 'cleanliness', 'shelter', 'chew', 'nails', 'health']
