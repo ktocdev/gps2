@@ -526,7 +526,7 @@ const getNeedUrgency = (value: number): string => {
   grid-template-columns: 1fr;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: var(--breakpoint-lg)) {
   .guinea-pigs-grid {
     grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   }
@@ -560,7 +560,7 @@ const getNeedUrgency = (value: number): string => {
 }
 
 /* Tablet and up: Side-by-side layout */
-@media (min-width: 768px) {
+@media (min-width: var(--breakpoint-md)) {
   .guinea-pig-layout {
     flex-direction: row;
     gap: var(--space-6);
@@ -661,7 +661,7 @@ const getNeedUrgency = (value: number): string => {
 }
 
 /* Desktop: side-by-side controls */
-@media (min-width: 768px) {
+@media (min-width: var(--breakpoint-md)) {
   .needs-list__item {
     flex-direction: row;
     align-items: center;
