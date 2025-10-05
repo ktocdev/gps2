@@ -152,6 +152,23 @@
                 <span class="stat-value">{{ new Date(gameController.gameState.lastSaveTimestamp).toLocaleString() }}</span>
               </div>
             </div>
+
+            <!-- Warning: Needs Manually Paused -->
+            <div v-if="needsController.isPausedManually" class="panel__subpanel panel__subpanel--warning">
+              <div class="panel__subpanel-content">
+                <p class="panel__subpanel-text panel__subpanel-text--warning">
+                  ⚠️ Needs manually paused in Needs System
+                </p>
+                <Button
+                  @click="needsController.resumeProcessing()"
+                  variant="warning"
+                  size="sm"
+                  full-width
+                >
+                  Enable Needs
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -284,6 +301,7 @@ import { useGameController } from '../../stores/gameController'
 import { usePetStoreManager } from '../../stores/petStoreManager'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { usePlayerProgression } from '../../stores/playerProgression'
+import { useNeedsController } from '../../stores/needsController'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
 
@@ -292,6 +310,7 @@ const gameController = useGameController()
 const petStoreManager = usePetStoreManager()
 const guineaPigStore = useGuineaPigStore()
 const playerProgression = usePlayerProgression()
+const needsController = useNeedsController()
 
 // Pet Store Session State
 const selectedGuineaPig1 = ref<string | number>('')

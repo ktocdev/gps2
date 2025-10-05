@@ -19,6 +19,10 @@
                     :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
                     full-width
                     :disabled="gameController.isPaused"
+                    :tooltip="needsController.processingEnabled
+                      ? 'Pause needs processing (will stay paused when game resumes)'
+                      : 'Resume needs processing'"
+                    tooltip-position="top"
                     class="needs-processing-button"
                   >
                     {{ needsController.processingEnabled ? 'Pause' : 'Resume' }} Needs Processing
@@ -74,8 +78,23 @@
             <div class="stats-grid">
               <div class="stat-item">
                 <span class="stat-label">Processing:</span>
-                <span class="stat-value" :class="needsController.processingEnabled ? 'text--success' : 'text--error'">
-                  {{ needsController.processingEnabled ? 'Active' : 'Paused' }}
+                <span
+                  v-if="needsController.isPausedManually"
+                  class="stat-value text--warning"
+                >
+                  Paused (Manual) ⚠️
+                </span>
+                <span
+                  v-else-if="!needsController.processingEnabled"
+                  class="stat-value text--muted"
+                >
+                  Paused (Auto)
+                </span>
+                <span
+                  v-else
+                  class="stat-value text--success"
+                >
+                  Active ✓
                 </span>
               </div>
               <div class="stat-item">
@@ -241,7 +260,8 @@ const allNeeds = ['hunger', 'thirst', 'energy', 'happiness', 'social', 'cleanlin
 // System controls
 const toggleNeedsProcessing = () => {
   if (needsController.processingEnabled) {
-    needsController.pauseProcessing()
+    // Pass true to indicate manual pause
+    needsController.pauseProcessing(true)
   } else {
     needsController.resumeProcessing()
   }
