@@ -156,17 +156,19 @@
           </div>
           <div class="panel__content">
             <!-- Needs Processing Control -->
-            <div class="stat-item mb-3">
-              <span class="stat-label">Needs Processing:</span>
-              <span v-if="needsController.isPausedManually" class="stat-value text--warning">
-                Paused (Manual) ⚠️
-              </span>
-              <span v-else-if="!needsController.processingEnabled" class="stat-value text--muted">
-                Paused (Auto)
-              </span>
-              <span v-else class="stat-value text--success">
-                Active ✓
-              </span>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Needs Processing:</span>
+                <span v-if="needsController.isPausedManually" class="stat-value text--warning">
+                  Paused (Manual) ⚠️
+                </span>
+                <span v-else-if="!needsController.processingEnabled" class="stat-value text--muted">
+                  Paused (Auto)
+                </span>
+                <span v-else class="stat-value text--success">
+                  Active ✓
+                </span>
+              </div>
             </div>
 
             <Button
@@ -176,7 +178,7 @@
               :title="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : '')"
               size="sm"
               full-width
-              class="needs-processing-button"
+              class="needs-processing-button mt-3"
             >
               {{ needsController.processingEnabled ? 'Pause Needs Processing' : 'Resume Needs Processing' }}
             </Button>

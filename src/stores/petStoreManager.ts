@@ -174,8 +174,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   }
 
   const weightedBreeds: WeightedItem[] = [
-    // Common breeds (weight 100)
-    { value: 'American', weight: 100, rarity: 'common' },
+    // Common breeds (American most common at weight 150, Abyssinian at 100)
+    { value: 'American', weight: 150, rarity: 'common' },
     { value: 'Abyssinian', weight: 100, rarity: 'common' },
     // Uncommon breeds (weight 50)
     { value: 'Peruvian', weight: 50, rarity: 'uncommon' },

@@ -36,7 +36,8 @@
                   @click="forceNeedsUpdate"
                   variant="tertiary"
                   full-width
-                  :disabled="!hasActiveGuineaPigs"
+                  :disabled="!hasActiveGuineaPigs || gameController.isPaused || !needsController.processingEnabled"
+                  :title="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : (!hasActiveGuineaPigs ? 'No active guinea pigs' : ''))"
                   class="needs-processing-button"
                 >
                   Force Needs Update
@@ -166,28 +167,34 @@
                 <section class="sidebar-section">
                   <h5 class="section-title">Quick Actions</h5>
                   <div class="quick-actions-grid">
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'pellets')" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.hunger >= 100">
+                    <Button @click="() => feedGuineaPig(guineaPig.id, 'pellets')" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.hunger >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.hunger >= 100 ? 'Need already at 100%' : '')">
                       Feed Pellets
                     </Button>
-                    <Button @click="() => feedGuineaPig(guineaPig.id, 'vegetables')" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.hunger >= 100">
+                    <Button @click="() => feedGuineaPig(guineaPig.id, 'vegetables')" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.hunger >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.hunger >= 100 ? 'Need already at 100%' : '')">
                       Feed Vegetables
                     </Button>
-                    <Button @click="() => giveWater(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.thirst >= 100">
+                    <Button @click="() => giveWater(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.thirst >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.thirst >= 100 ? 'Need already at 100%' : '')">
                       Give Water
                     </Button>
-                    <Button @click="() => cleanGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.cleanliness >= 100">
+                    <Button @click="() => cleanGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.cleanliness >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.cleanliness >= 100 ? 'Need already at 100%' : '')">
                       Clean
                     </Button>
-                    <Button @click="() => playWithGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || (guineaPig.needs.happiness >= 100 && guineaPig.needs.social >= 100)">
+                    <Button @click="() => playWithGuineaPig(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || (guineaPig.needs.happiness >= 100 && guineaPig.needs.social >= 100)" :title="gameController.isPaused ? 'Action disabled - Game Paused' : ((guineaPig.needs.happiness >= 100 && guineaPig.needs.social >= 100) ? 'Needs already at 100%' : '')">
                       Play
                     </Button>
-                    <Button @click="() => provideChewToy(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.chew >= 100">
+                    <Button @click="() => provideChewToy(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.chew >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.chew >= 100 ? 'Need already at 100%' : '')">
                       Chew Toy
                     </Button>
-                    <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.nails >= 100">
+                    <Button @click="() => trimNails(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.nails >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.nails >= 100 ? 'Need already at 100%' : '')">
                       Trim Nails
                     </Button>
-                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.energy >= 100">
+                    <Button @click="() => provideShelter(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.shelter >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.shelter >= 100 ? 'Need already at 100%' : '')">
+                      Provide Shelter
+                    </Button>
+                    <Button @click="() => performHealthCheck(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.health >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.health >= 100 ? 'Need already at 100%' : '')">
+                      Health Check
+                    </Button>
+                    <Button @click="() => sootheToSleep(guineaPig.id)" variant="tertiary" size="sm" :disabled="gameController.isPaused || guineaPig.needs.energy >= 100" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (guineaPig.needs.energy >= 100 ? 'Need already at 100%' : '')">
                       Soothe to Sleep
                     </Button>
                   </div>
@@ -315,6 +322,14 @@ const provideChewToy = (guineaPigId: string) => {
 
 const trimNails = (guineaPigId: string) => {
   guineaPigStore.trimNails(guineaPigId)
+}
+
+const provideShelter = (guineaPigId: string) => {
+  guineaPigStore.provideShelter(guineaPigId)
+}
+
+const performHealthCheck = (guineaPigId: string) => {
+  guineaPigStore.performHealthCheck(guineaPigId)
 }
 
 const sootheToSleep = (guineaPigId: string) => {

@@ -71,14 +71,14 @@ const debugTabs: Tab[] = [
     icon: '🏪',
   },
   {
-    id: 'inventory',
-    label: 'Inventory',
-    icon: '🎒',
-  },
-  {
     id: 'needs',
     label: 'Needs System',
     icon: '🍎',
+  },
+  {
+    id: 'inventory',
+    label: 'Inventory',
+    icon: '🎒',
   },
   {
     id: 'logging',

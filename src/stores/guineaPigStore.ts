@@ -723,6 +723,36 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return true
   }
 
+  const performHealthCheck = (guineaPigId: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    // Health check improves health needs
+    const healthImprovement = 20
+    const happinessBonus = 5
+
+    satisfyNeed(guineaPigId, 'health', healthImprovement)
+    satisfyNeed(guineaPigId, 'happiness', happinessBonus)
+
+    // Update interaction tracking
+    guineaPig.lastInteraction = Date.now()
+    guineaPig.totalInteractions += 1
+
+    const { message, emoji } = MessageGenerator.generateHealthCheckMessage(guineaPig.name)
+
+    getLoggingStore().addPlayerAction(
+      message,
+      emoji,
+      {
+        guineaPigId,
+        healthImprovement,
+        happinessBonus
+      }
+    )
+
+    return true
+  }
+
   const sootheToSleep = (guineaPigId: string): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
@@ -911,6 +941,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     provideChewToy,
     trimNails,
     provideShelter,
+    performHealthCheck,
     sootheToSleep
   }
 }, {
