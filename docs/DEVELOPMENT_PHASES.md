@@ -86,7 +86,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 **Goal:** Enhance gameplay feedback through personality, preferences, wellness reactions, rescue system, and comprehensive activity messages
 
 ### Systems
-1. **[Personality Trait Influences](docs/systems/phase2.5/system-1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Independence affect need decay rates, interaction effectiveness, and behavioral reactions
+1. **[Personality Trait Influences](docs/systems/phase2.5/system-1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay rates, interaction effectiveness, and behavioral reactions
 2. **[Preferences: Likes & Dislikes](docs/systems/phase2.5/system-2-preferences-likes-dislikes.md)** - Individual guinea pig preferences system with hidden discovery mechanics (favorites +50% satisfaction, dislikes -30% with rejection chance)
 3. **[Wellness-Based Interaction Reactions](docs/systems/phase2.5/system-3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates (95% excellent → 20% critical), behavioral states, and guinea pig responsiveness
 4. **[Guinea Pig Rescue System](docs/systems/phase2.5/system-4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty, needs reset to 100%, Fresh Start option (resets money to $1000, loses slots 4-10)

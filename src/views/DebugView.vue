@@ -30,6 +30,10 @@
         <NeedsDebugView />
       </template>
 
+      <template #personality>
+        <PersonalityDebugView />
+      </template>
+
       <template #logging>
         <LoggingSystemView />
       </template>
@@ -49,6 +53,7 @@ import GameControllerView from './GameControllerView.vue'
 import PetStoreDebugView from './PetStoreDebugView.vue'
 import InventoryDebugView from './InventoryDebugView.vue'
 import NeedsDebugView from './NeedsDebugView.vue'
+import PersonalityDebugView from './PersonalityDebugView.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
 import { useGameController } from '../stores/gameController'
@@ -74,6 +79,11 @@ const debugTabs: Tab[] = [
     id: 'needs',
     label: 'Needs System',
     icon: '🍎',
+  },
+  {
+    id: 'personality',
+    label: 'Personality',
+    icon: '🎭',
   },
   {
     id: 'inventory',

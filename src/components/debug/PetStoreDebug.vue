@@ -120,10 +120,10 @@
                 :disabled="isSelectedGuineaPigActive"
               />
               <SliderField
-                v-model="selectedGuineaPig.personality.independence"
+                v-model="selectedGuineaPig.personality.boldness"
                 :min="1"
                 :max="10"
-                label="Independence"
+                label="Boldness"
                 size="sm"
                 :disabled="isSelectedGuineaPigActive"
               />

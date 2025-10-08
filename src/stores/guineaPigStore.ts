@@ -17,7 +17,7 @@ export interface GuineaPigPersonality {
   friendliness: number    // 1-10: How social/friendly they are
   playfulness: number     // 1-10: How much they enjoy activities
   curiosity: number       // 1-10: How much they explore
-  independence: number    // 1-10: How self-sufficient they are
+  boldness: number        // 1-10: How confident/brave they are
 }
 
 export interface GuineaPigPreferences {
@@ -326,6 +326,52 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
   const needsLastUpdate = ref<Record<string, number>>({})
 
+  /**
+   * Calculate personality trait modifier for need decay rate
+   * Based on Phase 2.5 - System 1: Personality Trait Influences
+   */
+  const getPersonalityDecayModifier = (guineaPig: GuineaPig, needType: keyof GuineaPigNeeds): number => {
+    const personality = guineaPig.personality
+    let modifier = 1.0
+
+    switch (needType) {
+      case 'social':
+        // Friendliness: higher = faster decay (needs more social interaction)
+        // Modifier: 1 + (friendliness - 5) * 0.04
+        // Friendliness 10: 1.20x (+20%), Friendliness 1: 0.84x (-16%)
+        modifier = 1 + (personality.friendliness - 5) * 0.04
+        break
+
+      case 'play':
+        // Playfulness: higher = faster decay (needs more activity)
+        // Modifier: 1 + (playfulness - 5) * 0.06
+        // Playfulness 10: 1.30x (+30%), Playfulness 1: 0.76x (-24%)
+        modifier = 1 + (personality.playfulness - 5) * 0.06
+        break
+
+      case 'stimulation':
+        // Curiosity: higher = faster decay (needs more enrichment)
+        // Modifier: 1 + (curiosity - 5) * 0.08
+        // Curiosity 10: 1.40x (+40%), Curiosity 1: 0.68x (-32%)
+        modifier = 1 + (personality.curiosity - 5) * 0.08
+        break
+
+      case 'comfort':
+        // Boldness: higher = slower decay (less stressed, more confident)
+        // Modifier: 1 - (boldness - 5) * 0.05
+        // Boldness 10: 0.75x (-25%), Boldness 1: 1.20x (+20%)
+        modifier = 1 - (personality.boldness - 5) * 0.05
+        break
+
+      default:
+        // No personality modifier for other needs
+        modifier = 1.0
+    }
+
+    // Clamp modifier to reasonable range (0.5x to 2.0x)
+    return Math.max(0.5, Math.min(2.0, modifier))
+  }
+
   const processNeedsDecay = (guineaPigId: string, deltaTimeMs: number): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig || !settings.value.autoNeedsDecay) return false
@@ -354,6 +400,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       if (needKey === 'hunger' || needKey === 'thirst') {
         finalDecayRate *= healthModifier // Poor health increases basic needs
       }
+
+      // Apply personality trait modifiers (Phase 2.5 - System 1)
+      finalDecayRate *= getPersonalityDecayModifier(guineaPig, needKey as keyof GuineaPigNeeds)
 
       // Happiness has special boredom mechanics - handle in separate function
       if (needKey === 'happiness') {
@@ -474,9 +523,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
     // Feed the guinea pig
     satisfyNeed(guineaPigId, 'hunger', hungerReduction)
-    if (happinessBonus > 0) {
-      satisfyNeed(guineaPigId, 'happiness', happinessBonus)
-    }
+    // Happiness bonus removed - happiness is now derived from wellness
 
     // Vegetables provide slight thirst relief
     if (foodType === 'vegetables') {
@@ -788,7 +835,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     }
 
     satisfyNeed(guineaPigId, 'shelter', shelterSatisfaction)
-    satisfyNeed(guineaPigId, 'happiness', happinessBonus)
+    // Happiness bonus removed - happiness is now derived from wellness
 
     // Update interaction tracking
     guineaPig.lastInteraction = Date.now()
@@ -819,7 +866,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const happinessBonus = 5
 
     satisfyNeed(guineaPigId, 'health', healthImprovement)
-    satisfyNeed(guineaPigId, 'happiness', happinessBonus)
+    // Happiness bonus removed - happiness is now derived from wellness
 
     // Update interaction tracking
     guineaPig.lastInteraction = Date.now()

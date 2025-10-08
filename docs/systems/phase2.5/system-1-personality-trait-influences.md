@@ -3,7 +3,7 @@
 **Phase 2.5: Interactive Feedback Enhancement**
 
 ## Overview
-Comprehensive system defining how the 4 core personality traits (Friendliness, Playfulness, Curiosity, Independence) influence guinea pig behavior, needs, interactions, and all gameplay mechanics. Personality creates unique individual experiences, making each guinea pig genuinely different to care for.
+Comprehensive system defining how the 4 core personality traits (Friendliness, Playfulness, Curiosity, Boldness) influence guinea pig behavior, needs, interactions, and all gameplay mechanics. Personality creates unique individual experiences, making each guinea pig genuinely different to care for.
 
 ## Core Philosophy
 - **Individual uniqueness**: Each guinea pig feels distinctly different based on personality
@@ -91,28 +91,31 @@ Each guinea pig has 4 personality traits rated 1-10:
 - Comfortable with some novelty
 - Neither fearful nor reckless
 
-#### Independence (1-10)
-**Definition**: Self-sufficiency and comfort with solitude
+#### Boldness (1-10)
+**Definition**: Confidence, bravery, and comfort with new experiences and changes
 
-**High Independence (7-10)**:
-- Happy alone
-- Self-entertaining
-- Less needy for attention
-- Confident and self-assured
-- Tolerates solitude well
+**High Boldness (7-10)**:
+- Confident and brave
+- Quick to explore new things
+- Less stressed by changes
+- First to investigate unfamiliar items
+- Comfortable in new situations
+- Resilient to environmental shifts
 
-**Low Independence (1-3)**:
-- Needs companionship
-- Seeks frequent interaction
-- More vocal when alone
-- Thrives with attention
-- Prefers group activities
+**Low Boldness (1-3)**:
+- Cautious and timid
+- Needs time to adjust
+- Stressed by sudden changes
+- Prefers familiar environments
+- Hides when uncertain
+- Sensitive to disruptions
 
-**Moderate Independence (4-6)**:
-- Balanced self-sufficiency
-- Enjoys both alone time and company
-- Adaptable to varying social situations
-- Comfortable flexibility
+**Moderate Boldness (4-6)**:
+- Balanced confidence
+- Adjusts to changes at own pace
+- Neither fearful nor reckless
+- Cautiously curious
+- Steady adaptation
 
 ## Current System Influences (Phase 2)
 
@@ -120,13 +123,13 @@ Each guinea pig has 4 personality traits rated 1-10:
 
 **Friendliness → Social Need Decay**:
 ```typescript
-// High friendliness = slower social need decay (more socially satisfied)
-socialDecayRate = baseDecayRate * (1 - (friendliness - 5) * 0.04)
+// High friendliness = faster social need decay (needs more interaction)
+socialDecayRate = baseDecayRate * (1 + (friendliness - 5) * 0.04)
 
 // Examples:
-// Friendliness 10: 0.8x decay rate (-20%)
+// Friendliness 10: 1.20x decay rate (+20%, very social, gets lonely quickly)
 // Friendliness 5: 1.0x decay rate (baseline)
-// Friendliness 1: 1.16x decay rate (+16%)
+// Friendliness 1: 0.84x decay rate (-16%, reserved, comfortable alone)
 ```
 
 **Playfulness → Play Need Decay**:
@@ -151,29 +154,24 @@ stimulationDecayRate = baseDecayRate * (1 + (curiosity - 5) * 0.08)
 // Curiosity 1: 0.68x decay rate (-32%)
 ```
 
-**Independence → Social Need Decay**:
+**Boldness → Comfort Need Decay**:
 ```typescript
-// High independence = slower social decay (comfortable alone)
-// Works opposite to friendliness, both influence social need
-socialDecayModifier = baseDecayRate * (1 - (independence - 5) * 0.06)
+// High boldness = slower comfort decay (confident, less stressed)
+comfortDecayRate = baseDecayRate * (1 - (boldness - 5) * 0.05)
 
 // Examples:
-// Independence 10: 0.70x decay rate (-30%)
-// Independence 5: 1.0x decay rate (baseline)
-// Independence 1: 1.24x decay rate (+24%)
-
-// Combined with friendliness:
-finalSocialDecay = baseRate * friendlinessModifier * independenceModifier
+// Boldness 10: 0.75x decay rate (-25%)
+// Boldness 5: 1.0x decay rate (baseline)
+// Boldness 1: 1.20x decay rate (+20%)
 ```
 
 **Combined Example**:
 ```
-Guinea Pig: High Friendliness (8) + Low Independence (2)
-  Friendliness modifier: 1 - (8 - 5) * 0.04 = 0.88x (-12%)
-  Independence modifier: 1 - (2 - 5) * 0.06 = 1.18x (+18%)
-  Combined: 0.88 * 1.18 = 1.04x (+4% faster social decay)
+Guinea Pig: High Curiosity (9) + Low Boldness (2)
+  Curiosity modifier: 1 + (9 - 5) * 0.08 = 1.32x (+32% stimulation decay)
+  Boldness modifier: 1 - (2 - 5) * 0.05 = 1.15x (+15% comfort decay)
 
-Result: Socially needy guinea pig (friendly but not independent)
+Result: Curious but timid guinea pig - loves to explore but gets stressed easily
 ```
 
 ### Interaction Effectiveness Modifiers
@@ -221,18 +219,19 @@ effectiveSatisfaction = (baseSatisfaction + newItemBonus) * multiplier
 // Curiosity 1: 30 * 0.76 = 23 (-24% effectiveness)
 ```
 
-**Independence → Comfort from Solitary Activities**:
+**Boldness → Comfort from Environmental Changes**:
 ```typescript
-// provideBedding(), shelter(), self-grooming bonus
+// provideBedding(), rearrangeCage() when combined with habitat changes
 baseComfort = 35
-independenceBonus = independence >= 7 ? 7 : 0
+boldnessBonus = boldness >= 7 ? 8 : 0
+timidPenalty = boldness <= 3 ? -5 : 0
 
-effectiveComfort = baseComfort + independenceBonus
+effectiveComfort = baseComfort + boldnessBonus + timidPenalty
 
 // Examples:
-// Independence 10: 35 + 7 = 42 (+20% from solitary care)
-// Independence 5: 35 (baseline)
-// Independence 1: 35 (no penalty, just no bonus)
+// Boldness 10: 35 + 8 = 43 (+23% from confident adaptation)
+// Boldness 5: 35 (baseline)
+// Boldness 1: 35 - 5 = 30 (-14% penalty, stressed by changes)
 ```
 
 ### Friendship Progression Modifiers
@@ -251,16 +250,19 @@ actualGain = baseFriendshipGain * multiplier
 // Friendliness 1: 0.5 * 0.88 = 0.44 (-12% slower bonding)
 ```
 
-**Combined Personality → Friendship Ceiling**:
+**Boldness → Friendship Resilience**:
 ```typescript
-// Very independent guinea pigs have slightly lower max friendship
-// But can still reach "Best Friend" status, just takes longer
+// Bold guinea pigs maintain friendship better during low wellness
+// Timid guinea pigs lose friendship faster when stressed
 
-if (independence >= 8 && friendliness <= 3) {
-  // Independent loner personality
-  friendshipGainReduction = 0.85 // -15% to all friendship gains
-} else {
-  friendshipGainReduction = 1.0
+if (wellness < 40) {
+  if (boldness >= 7) {
+    friendshipDecayModifier = 0.75 // -25% friendship loss when unwell
+  } else if (boldness <= 3) {
+    friendshipDecayModifier = 1.25 // +25% friendship loss when stressed
+  } else {
+    friendshipDecayModifier = 1.0
+  }
 }
 ```
 
@@ -302,17 +304,17 @@ if (independence >= 8 && friendliness <= 3) {
 - "Guinea pig prefers the familiar corner of the cage"
 - "Guinea pig takes time to adjust to the changes"
 
-**Independence → Solo Activity Reactions**:
+**Boldness → Stress/Change Reactions**:
 
-**High Independence**:
-- "Guinea pig contentedly entertains itself"
-- "Guinea pig seems perfectly happy alone"
-- "Guinea pig enjoys peaceful solitary time"
+**High Boldness**:
+- "Guinea pig confidently investigates the change!"
+- "Guinea pig seems unfazed by the disruption"
+- "Guinea pig bravely approaches the new situation"
 
-**Low Independence**:
-- "Guinea pig looks around hopefully for company"
-- "Guinea pig wheeks softly, seeking attention"
-- "Guinea pig seems happiest with interaction"
+**Low Boldness**:
+- "Guinea pig retreats to the hideout nervously"
+- "Guinea pig watches cautiously from a safe distance"
+- "Guinea pig needs time to adjust to the changes"
 
 ## Future System Influences (Phase 3-5)
 
@@ -351,13 +353,19 @@ explorationRadius = curiosity * 10 // Percentage of habitat explored per cycle
 // Low curiosity: Stays in 10% comfort zone
 ```
 
-**Independence → Solo Activity Preference**:
+**Boldness → Hiding Behavior**:
 ```typescript
-// Preference for solo vs. companion activities
-soloActivityWeight = independence * 10
+// Likelihood of hiding when wellness is low
+hidingThreshold = 60 - (boldness * 3) // Wellness percentage when hiding starts
 
-// High independence: 100% weight to solo activities
-// Low independence: 10% weight, prefers companion interaction
+// High boldness (10): Hides only below 30% wellness (confident)
+// Low boldness (1): Hides below 57% wellness (timid, hides easily)
+
+// Duration of hiding behavior
+hidingDuration = (11 - boldness) * 20 // Seconds before re-emerging
+
+// High boldness: 20 seconds (brief hide)
+// Low boldness: 200 seconds (extended hiding)
 ```
 
 ### Guinea Pig Bonding (Phase 4)
@@ -368,7 +376,7 @@ Summary of personality compatibility:
 - **Friendliness**: High+High = +20, High+Low = +10
 - **Playfulness**: Similar levels bond better (within 3 points = +10)
 - **Curiosity**: Complementary helps (High+Low = +5 for balance)
-- **Independence**: Similar levels preferred (within 2 points = +15)
+- **Boldness**: Similar levels preferred (within 3 points = +15, bold protects timid)
 
 ### Item Interaction Preferences (Phase 3-4)
 
@@ -380,9 +388,10 @@ Summary of personality compatibility:
 - High curiosity: Maximum benefit from puzzle feeders, new items
 - Low curiosity: Consistent benefit from familiar enrichment
 
-**Independence → Hideout Usage**:
-- High independence: Uses individual hideouts more frequently
-- Low independence: Prefers multi-guinea pig hideouts, open areas near companion
+**Boldness → Hideout Usage**:
+- High boldness: Uses hideouts mainly for sleep, spends time in open areas
+- Low boldness: Retreats to hideouts frequently when uncertain or stressed
+- Moderate boldness: Balanced use, hideouts as comfort zones
 
 **Friendliness → Mirror/Social Toys**:
 - High friendliness: Enjoys mirrors, "social" enrichment items
@@ -421,11 +430,11 @@ messMultiplier = 1 + (playfulness - 5) * 0.04
 │ Friendliness:    ████████░░ 8/10  │
 │ Playfulness:     ███░░░░░░░ 3/10  │
 │ Curiosity:       ██████████ 10/10 │
-│ Independence:    ████░░░░░░ 4/10  │
+│ Boldness:        ██░░░░░░░░ 2/10  │
 │                                   │
-│ Personality Type: Curious Observer│
+│ Personality Type: Timid Explorer  │
+│ - Curious but cautious            │
 │ - Social but reserved             │
-│ - Loves exploring                 │
 │ - Calm energy level               │
 └───────────────────────────────────┘
 ```
@@ -445,11 +454,11 @@ messMultiplier = 1 + (playfulness - 5) * 0.04
 **System generates personality summary based on trait combinations**:
 
 **Combinations**:
-- **Social Butterfly**: High Friendliness (8+), Low Independence (1-3)
-- **Independent Explorer**: High Curiosity (8+), High Independence (8+)
-- **Energetic Player**: High Playfulness (8+), High Curiosity (7+)
+- **Social Butterfly**: High Friendliness (8+), High Playfulness (7+)
+- **Timid Explorer**: High Curiosity (8+), Low Boldness (1-3)
+- **Brave Adventurer**: High Curiosity (8+), High Boldness (8+)
 - **Calm Companion**: Low Playfulness (1-3), High Friendliness (7+)
-- **Cautious Observer**: Low Curiosity (1-3), Low Playfulness (1-3)
+- **Cautious Observer**: Low Curiosity (1-3), Low Boldness (1-3)
 - **Balanced Buddy**: All traits 4-6 (moderate everything)
 
 ## Balancing Guidelines
@@ -482,12 +491,12 @@ messMultiplier = 1 + (playfulness - 5) * 0.04
 ```
 Easy Care:
   - Low playfulness (content with less)
-  - High independence (less social need)
+  - High boldness (resilient to stress)
   - Low curiosity (routine is fine)
 
 Challenging Care:
   - High playfulness (needs constant enrichment)
-  - Low independence (needs attention)
+  - Low boldness (easily stressed, needs stability)
   - High curiosity (bores easily)
 ```
 
@@ -528,11 +537,8 @@ function calculatePersonalityNeedDecay(
 
   switch (needType) {
     case 'social':
-      // Friendliness: higher = slower decay
-      const friendlinessModifier = 1 - (guineaPig.personality.friendliness - 5) * 0.04
-      // Independence: higher = slower decay
-      const independenceModifier = 1 - (guineaPig.personality.independence - 5) * 0.06
-      modifier = friendlinessModifier * independenceModifier
+      // Friendliness: higher = faster decay (needs more interaction)
+      modifier = 1 + (guineaPig.personality.friendliness - 5) * 0.04
       break
 
     case 'play':
@@ -543,6 +549,11 @@ function calculatePersonalityNeedDecay(
     case 'stimulation':
       // Curiosity: higher = faster decay
       modifier = 1 + (guineaPig.personality.curiosity - 5) * 0.08
+      break
+
+    case 'comfort':
+      // Boldness: higher = slower decay (less stressed)
+      modifier = 1 - (guineaPig.personality.boldness - 5) * 0.05
       break
   }
 
@@ -580,7 +591,7 @@ function generatePersonalityReaction(
   guineaPig: GuineaPig,
   interactionType: string
 ): { message: string; emoji: string } {
-  const { friendliness, playfulness, curiosity, independence } = guineaPig.personality
+  const { friendliness, playfulness, curiosity, boldness } = guineaPig.personality
 
   if (interactionType === 'social_interaction') {
     if (friendliness >= 8) {
@@ -610,6 +621,20 @@ function generatePersonalityReaction(
     }
   }
 
+  if (interactionType === 'habitat_change') {
+    if (boldness >= 8) {
+      return {
+        message: `${guineaPig.name} confidently investigates the change!`,
+        emoji: '😎'
+      }
+    } else if (boldness <= 3) {
+      return {
+        message: `${guineaPig.name} retreats to the hideout nervously`,
+        emoji: '😰'
+      }
+    }
+  }
+
   // Default reaction
   return {
     message: `${guineaPig.name} reacts to the interaction`,
@@ -625,20 +650,20 @@ function generatePersonalityReaction(
 **Test Guinea Pig Profiles**:
 
 **1. Social Butterfly**:
-- Friendliness: 10, Playfulness: 8, Curiosity: 6, Independence: 2
-- Expected: Needs lots of interaction, forms bonds quickly, social decay very slow
+- Friendliness: 10, Playfulness: 8, Curiosity: 6, Boldness: 7
+- Expected: Needs lots of interaction, forms bonds quickly, social decay very slow, confident
 
-**2. Independent Explorer**:
-- Friendliness: 3, Playfulness: 5, Curiosity: 10, Independence: 10
-- Expected: Happy alone, needs constant enrichment, slow bonding, explores everything
+**2. Timid Explorer**:
+- Friendliness: 3, Playfulness: 5, Curiosity: 10, Boldness: 2
+- Expected: Curious but cautious, needs enrichment, slow bonding, easily stressed by changes
 
 **3. Energetic Player**:
-- Friendliness: 7, Playfulness: 10, Curiosity: 9, Independence: 4
-- Expected: High energy, needs toys, friendly but demanding, fast play decay
+- Friendliness: 7, Playfulness: 10, Curiosity: 9, Boldness: 8
+- Expected: High energy, needs toys, friendly and bold, fast play decay, confident adventurer
 
 **4. Calm Companion**:
-- Friendliness: 9, Playfulness: 2, Curiosity: 3, Independence: 3
-- Expected: Loves attention, peaceful, routine-oriented, slow play decay
+- Friendliness: 9, Playfulness: 2, Curiosity: 3, Boldness: 6
+- Expected: Loves attention, peaceful, routine-oriented, slow play decay, steady temperament
 
 **5. Balanced Buddy**:
 - All traits: 5-6
