@@ -11,6 +11,7 @@ import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
 import { useGameTimingStore } from './gameTimingStore'
 import { useGuineaPigStore } from './guineaPigStore'
+import { useNeedsController } from './needsController'
 
 // TypeScript interfaces
 interface GameState {
@@ -169,6 +170,10 @@ export const useGameController = defineStore('gameController', () => {
       // Pause the game timing system
       const gameTimingStore = useGameTimingStore()
       gameTimingStore.pauseGameLoop()
+
+      // Pause needs processing (connected to game pause)
+      const needsController = useNeedsController()
+      needsController.pauseProcessing(false) // Not a manual pause, it's game-driven
     } else if (gameState.value.currentState === 'paused') {
       // Pause reason priority: manual > navigation > orientation
       const currentReason = gameState.value.pauseReason
@@ -186,6 +191,10 @@ export const useGameController = defineStore('gameController', () => {
       // Resume the game timing system
       const gameTimingStore = useGameTimingStore()
       gameTimingStore.resumeGameLoop()
+
+      // Resume needs processing (connected to game resume)
+      const needsController = useNeedsController()
+      needsController.resumeProcessing()
     }
   }
 

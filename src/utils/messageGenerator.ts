@@ -333,7 +333,8 @@ export class MessageGenerator {
   static generateFeedMessage(
     guineaPigName: string,
     foodType: string,
-    isFavorite: boolean = false
+    isFavorite: boolean = false,
+    isDisliked: boolean = false
   ): { message: string; emoji: string } {
     const foodEmojis: Record<string, string> = {
       pellets: '🥄',
@@ -342,20 +343,35 @@ export class MessageGenerator {
       hay: '🌾'
     }
 
-    const templates = [
-      `You offer ${guineaPigName} some ${foodType}`,
-      `${guineaPigName} gets a serving of fresh ${foodType}`,
-      `You place ${foodType} in ${guineaPigName}'s dish`,
-      `You scatter ${foodType} for ${guineaPigName}`,
-      `${guineaPigName} receives ${foodType}`
-    ]
+    let templates: string[]
 
     if (isFavorite) {
-      templates.push(
-        `${guineaPigName} gets their favorite: ${foodType}! ✨`,
-        `You treat ${guineaPigName} to their beloved ${foodType}!`,
-        `${guineaPigName}'s eyes light up at the ${foodType}!`
-      )
+      // Favorite food - enthusiastic messages (Phase 2.5 - System 2)
+      templates = [
+        `✨ ${guineaPigName}'s eyes light up! They absolutely love ${foodType}!`,
+        `${guineaPigName} does excited popcorns - this is their favorite!`,
+        `${guineaPigName} devours the ${foodType} with enthusiasm!`,
+        `${guineaPigName} can't get enough of this ${foodType}!`,
+        `You treat ${guineaPigName} to their beloved ${foodType}! ✨`
+      ]
+    } else if (isDisliked) {
+      // Disliked food - reluctant messages (Phase 2.5 - System 2)
+      templates = [
+        `${guineaPigName} sniffs the ${foodType} and eats it reluctantly 😐`,
+        `${guineaPigName} shows little interest but eventually eats the ${foodType}`,
+        `${guineaPigName} accepts the ${foodType} without much enthusiasm`,
+        `${guineaPigName} clearly doesn't enjoy this ${foodType}...`,
+        `${guineaPigName} eats the ${foodType} half-heartedly`
+      ]
+    } else {
+      // Neutral food - standard messages
+      templates = [
+        `You offer ${guineaPigName} some ${foodType}`,
+        `${guineaPigName} gets a serving of fresh ${foodType}`,
+        `${guineaPigName} eats the ${foodType} contentedly`,
+        `You scatter ${foodType} for ${guineaPigName}`,
+        `${guineaPigName} munches on the ${foodType}`
+      ]
     }
 
     const message = templates[Math.floor(Math.random() * templates.length)]
@@ -392,23 +408,58 @@ export class MessageGenerator {
 
   static generatePlayMessage(
     guineaPigName: string,
-    _activityType: string = 'general_play',
-    isFavorite: boolean = false
+    activityType: string = 'general_play',
+    isFavorite: boolean = false,
+    isRejected: boolean = false,
+    isDisliked: boolean = false
   ): { message: string; emoji: string } {
-    const templates = [
-      `You play with ${guineaPigName}`,
-      `${guineaPigName} enjoys playtime with you`,
-      `You engage ${guineaPigName} in fun activities`,
-      `${guineaPigName} has a delightful play session`,
-      `You spend quality time playing with ${guineaPigName}`
-    ]
+    const formattedActivity = activityType
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ')
 
-    if (isFavorite) {
-      templates.push(
-        `You do ${guineaPigName}'s favorite activity together!`,
-        `${guineaPigName} is thrilled with their favorite game!`
-      )
+    // Rejection messages (Phase 2.5 - System 2)
+    if (isRejected) {
+      const templates = [
+        `${guineaPigName} has no interest in ${formattedActivity.toLowerCase()}`,
+        `${guineaPigName} avoids ${formattedActivity.toLowerCase()} entirely`,
+        `${guineaPigName} refuses to participate in ${formattedActivity.toLowerCase()}`,
+        `${guineaPigName} clearly dislikes ${formattedActivity.toLowerCase()}`
+      ]
+      const message = templates[Math.floor(Math.random() * templates.length)]
+      return { message, emoji: '😐' }
     }
+
+    // Favorite activity messages (Phase 2.5 - System 2)
+    if (isFavorite) {
+      const templates = [
+        `${guineaPigName} absolutely loves ${formattedActivity.toLowerCase()}! 🎉`,
+        `${guineaPigName} engages enthusiastically with ${formattedActivity.toLowerCase()}!`,
+        `${guineaPigName} zooms around during ${formattedActivity.toLowerCase()} with pure joy!`,
+        `✨ ${formattedActivity} is clearly ${guineaPigName}'s favorite thing!`
+      ]
+      const message = templates[Math.floor(Math.random() * templates.length)]
+      return { message, emoji: '🎉' }
+    }
+
+    // Disliked activity - reluctant participation (Phase 2.5 - System 2)
+    if (isDisliked) {
+      const templates = [
+        `${guineaPigName} participates in ${formattedActivity.toLowerCase()} halfheartedly`,
+        `${guineaPigName} tolerates ${formattedActivity.toLowerCase()} but seems uncomfortable`,
+        `${guineaPigName} doesn't seem to enjoy ${formattedActivity.toLowerCase()}`
+      ]
+      const message = templates[Math.floor(Math.random() * templates.length)]
+      return { message, emoji: '😕' }
+    }
+
+    // Neutral activity messages
+    const templates = [
+      `You play ${formattedActivity.toLowerCase()} with ${guineaPigName}`,
+      `${guineaPigName} participates in ${formattedActivity.toLowerCase()} comfortably`,
+      `${guineaPigName} seems content with ${formattedActivity.toLowerCase()}`,
+      `${guineaPigName} engages with ${formattedActivity.toLowerCase()} normally`
+    ]
 
     const message = templates[Math.floor(Math.random() * templates.length)]
     return { message, emoji: '🎮' }

@@ -41,8 +41,8 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 - **[Systems 9-10: Game Timing](systems/phase2/system-9-10-game-timing.md)** - Unified tick system with pause/resume, automatic pause on navigation, Game State & Controls panel ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
 
 ##### Phase 2.5: Interactive Feedback Enhancement
-- **[System 1: Personality Trait Influences](systems/phase2.5/system-1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay, interaction effectiveness, and reactions
-- **[System 2: Preferences: Likes & Dislikes](systems/phase2.5/system-2-preferences-likes-dislikes.md)** - Individual guinea pig preferences with hidden discovery mechanics (favorites/neutral/disliked)
+- **[System 1: Personality Trait Influences](systems/phase2.5/system-1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay, interaction effectiveness, and reactions ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
+- **[System 2: Preferences: Likes & Dislikes](systems/phase2.5/system-2-preferences-likes-dislikes.md)** - Individual guinea pig preferences with hidden discovery mechanics (favorites/neutral/disliked) ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
 - **[System 3: Wellness-Based Interaction Reactions](systems/phase2.5/system-3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates, behavioral states, and guinea pig responsiveness
 - **[System 4: Guinea Pig Rescue](systems/phase2.5/system-4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty and Fresh Start option (slots 4-10 lost)
 - **[System 5: Enhanced Activity Messages](systems/phase2.5/system-5-enhanced-activity-messages.md)** - Guinea pig reactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
@@ -97,7 +97,7 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 3. Dive into specific system documentation as needed
 
 ## Current Development Status
-**Branch:** TBD (Phase 3 Starting) | **Updated:** October 5, 2025
+**Branch:** GPS2-20 (Phase 2.5 In Progress) | **Updated:** October 7, 2025
 
 ### Phase 2 Complete ✅
 **Completed:** October 5, 2025 | **Branch:** GPS2-18
@@ -112,28 +112,33 @@ All Phase 2 systems complete and tested:
 - ✅ **Accessibility** - All form labels, ARIA support, mobile-responsive layouts
 - ✅ **Testing & Documentation** - High-level needs testing, comprehensive docs
 
-**Key Deliverables:**
-- 11-need system with descriptive action labels
-- Need-specific button colors with accessible contrast
-- Responsive layouts (single column below 1440px)
-- Pet Store Details component (reusable collapsible sections)
-- Enhanced activity feed with varied messages
-- Panel variants (accent, bordered, compact)
+### Phase 2.5 In Progress 🚧
+**Branch:** GPS2-20 | **Started:** October 7, 2025
 
-### Phase 3 Starting 🚀
-**Priority:** Game World & Environment
-- **System 11: Habitat Conditions** - Environmental state tracking (cleanliness, bedding, water, hay)
-- **System 12: Habitat Item System** - Grid-based item placement and interactions
-- **System 13: Inventory & Store** - Resource management and purchasing (expand existing currency controls)
-- **System 14: Habitat Maintenance** - Enhanced poop system, cleanliness, bedding/water management
+**Completed Systems:**
+- ✅ **System 1: Personality Trait Influences** - Complete (testing needed)
+  - 4 personality traits (Friendliness, Playfulness, Curiosity, Boldness) affecting need decay
+  - Decay rate modifiers: Social (0.84x-1.20x), Play (0.76x-1.30x), Stimulation (0.68x-1.40x), Comfort (0.75x-1.20x)
+  - PersonalityDebug.vue with trait sliders and decay rate preview calculator
+  - Replaced Independence with Boldness (affects Comfort instead of Social)
+- ✅ **System 2: Preferences: Likes & Dislikes** - Complete (testing needed)
+  - Food preferences: Favorites +50% satisfaction, Dislikes -30% or 50% rejection chance
+  - Activity preferences: Favorites +50% satisfaction, Dislikes -40% or 70% rejection chance
+  - Food/activity selection dropdowns in NeedsDebug panel
+  - Preference-aware message generation for all interactions
+  - Game pause fix (connected to needs pause)
 
-**Focus Areas:**
-- Environmental condition tracking and decay
-- Resource-based gameplay (bedding, hay as consumables)
-- Item placement and interaction
-- Economic integration with maintenance costs
+**Remaining Systems:**
+- **System 3: Wellness-Based Interaction Reactions** - Not Started
+- **System 4: Guinea Pig Rescue** - Not Started
+- **System 5: Enhanced Activity Messages** - Not Started
 
-**Documentation:** [TODO-2025-10-05.md](TODO-2025-10-05.md) | [Phase 3 Systems](systems/phase3/)
+**Next Steps:**
+- Test personality trait effects on need decay rates
+- Test food and activity preferences (favorites, dislikes, rejection)
+- Begin System 3: Wellness-Based Interaction Reactions
+
+**Documentation:** [TODO-2025-10-05.md](TODO-2025-10-05.md) | [Phase 2.5 Systems](systems/phase2.5/)
 
 ## Documentation Maintenance
 - Update specific system files rather than monolithic documents
