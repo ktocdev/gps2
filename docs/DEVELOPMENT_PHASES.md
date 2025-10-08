@@ -81,6 +81,42 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ---
 
+## Phase 2.5: Interactive Feedback Enhancement (Systems 1-5)
+**Duration:** 1-2 weeks
+**Goal:** Enhance gameplay feedback through personality, preferences, wellness reactions, rescue system, and comprehensive activity messages
+
+### Systems
+1. **[Personality Trait Influences](docs/systems/phase2.5/system-1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Independence affect need decay rates, interaction effectiveness, and behavioral reactions
+2. **[Preferences: Likes & Dislikes](docs/systems/phase2.5/system-2-preferences-likes-dislikes.md)** - Individual guinea pig preferences system with hidden discovery mechanics (favorites +50% satisfaction, dislikes -30% with rejection chance)
+3. **[Wellness-Based Interaction Reactions](docs/systems/phase2.5/system-3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates (95% excellent → 20% critical), behavioral states, and guinea pig responsiveness
+4. **[Guinea Pig Rescue System](docs/systems/phase2.5/system-4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty, needs reset to 100%, Fresh Start option (resets money to $1000, loses slots 4-10)
+5. **[Enhanced Activity Messages](docs/systems/phase2.5/system-5-enhanced-activity-messages.md)** - Guinea pig reactions to interactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
+
+### Debug Panel Development (Phase 2.5)
+- **Personality Debug Panel** - Built alongside Personality Trait Influences (System 1) - Trait adjustment, decay rate preview, interaction effectiveness testing
+- **Preferences Debug Panel** - Built alongside Preferences System (System 2) - View/edit hidden preferences, test preference responses
+- **Wellness Reaction Debug Panel** - Built alongside Wellness Reactions (System 3) - Success rate calculator, behavioral state preview, interaction testing
+- **Rescue System Debug Panel** - Built alongside Rescue System (System 4) - Rescue threshold adjustment, preview dialogs, test rescue trigger
+- **Activity Message Debug Panel** - Built alongside Enhanced Messages (System 5) - Message preview, throttle testing, category filtering
+
+### Key Deliverables
+- **Personality trait system** modifying need decay rates and interaction effectiveness with observable differences
+- **Hidden preference discovery** through observation (favorites, neutral, dislikes) with satisfaction modifiers
+- **Wellness-based reactions** creating 5 behavioral tiers (Excellent 95% success → Critical 20% success)
+- **Rescue safety net** preventing complete failure with economic penalty and Fresh Start recovery option
+- **Comprehensive activity messages** for all interactions with anti-spam throttling (60s warnings, 30s critical)
+- **Friendship milestone tracking** with 6 tiers (25% Distant → 95% Best Friend)
+- **Integration across systems** - personality + wellness + preferences combine for authentic guinea pig responses
+
+### Enhancement Focus
+- **Personality-driven gameplay** making each guinea pig unique to care for
+- **Natural discovery mechanics** through observation rather than explicit stat displays
+- **Wellness feedback loops** creating meaningful consequences for poor care
+- **Safety net with consequences** preventing frustration while maintaining stakes
+- **Rich activity feed** providing continuous feedback on guinea pig state and reactions
+
+---
+
 ## Phase 3: Game World & Environment (Systems 11-14)
 **Duration:** 2-3 weeks
 **Goal:** Build interactive habitat with item placement, inventory, and maintenance systems
@@ -203,6 +239,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 ### Success Metrics
 - **Phase 1:** Complete UI framework with all placeholders and error tracking system
 - **Phase 2:** Functional guinea pig simulation with core systems and their debug panels
+- **Phase 2.5:** Rich interactive feedback with personality, preferences, wellness reactions, and rescue system
 - **Phase 3:** Economic gameplay with habitat management and comprehensive debug tools
 - **Phase 4:** Complete gameplay loop with AI behaviors and full debug coverage
 - **Phase 5:** Polished experience with unified Debug Menu and optional enhancements

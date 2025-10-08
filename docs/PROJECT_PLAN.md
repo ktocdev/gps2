@@ -40,6 +40,13 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 - **[System 8: Needs Controller Store](systems/phase2/system-8-needs-controller-store.md)** - Centralized management with manual pause tracking, auto-reset on session end, System Controls panel ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
 - **[Systems 9-10: Game Timing](systems/phase2/system-9-10-game-timing.md)** - Unified tick system with pause/resume, automatic pause on navigation, Game State & Controls panel ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
 
+##### Phase 2.5: Interactive Feedback Enhancement
+- **[System 1: Personality Trait Influences](systems/phase2.5/system-1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Independence affect need decay, interaction effectiveness, and reactions
+- **[System 2: Preferences: Likes & Dislikes](systems/phase2.5/system-2-preferences-likes-dislikes.md)** - Individual guinea pig preferences with hidden discovery mechanics (favorites/neutral/disliked)
+- **[System 3: Wellness-Based Interaction Reactions](systems/phase2.5/system-3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates, behavioral states, and guinea pig responsiveness
+- **[System 4: Guinea Pig Rescue](systems/phase2.5/system-4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty and Fresh Start option (slots 4-10 lost)
+- **[System 5: Enhanced Activity Messages](systems/phase2.5/system-5-enhanced-activity-messages.md)** - Guinea pig reactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
+
 ##### Phase 3: Game World & Environment
 - **[System 11: Habitat Conditions](systems/phase3/system-11-habitat-conditions.md)** - Environmental state tracking with resource management
 - **[Inventory Store System](systems/phase3/inventory-store-system.md)** - Item management and purchasing
