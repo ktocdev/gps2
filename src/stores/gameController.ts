@@ -11,6 +11,7 @@ import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
 import { useGameTimingStore } from './gameTimingStore'
 import { useGuineaPigStore } from './guineaPigStore'
+import { useNeedsController } from './needsController'
 
 // TypeScript interfaces
 interface GameState {
@@ -22,10 +23,6 @@ interface GameState {
 }
 
 interface GameSettings {
-  autoSave: {
-    enabled: boolean
-    frequency: 30 | 60 | 120 // seconds
-  }
   tutorial: {
     mode: 'auto' | 'always_show' | 'never_show'
     isGlobalFirstTime: boolean
@@ -69,10 +66,6 @@ export const useGameController = defineStore('gameController', () => {
 
   // Settings with defaults
   const settings = ref<GameSettings>({
-    autoSave: {
-      enabled: true,
-      frequency: 60
-    },
     tutorial: {
       mode: 'auto',
       isGlobalFirstTime: true
@@ -177,6 +170,10 @@ export const useGameController = defineStore('gameController', () => {
       // Pause the game timing system
       const gameTimingStore = useGameTimingStore()
       gameTimingStore.pauseGameLoop()
+
+      // Pause needs processing (connected to game pause)
+      const needsController = useNeedsController()
+      needsController.pauseProcessing(false) // Not a manual pause, it's game-driven
     } else if (gameState.value.currentState === 'paused') {
       // Pause reason priority: manual > navigation > orientation
       const currentReason = gameState.value.pauseReason
@@ -194,6 +191,10 @@ export const useGameController = defineStore('gameController', () => {
       // Resume the game timing system
       const gameTimingStore = useGameTimingStore()
       gameTimingStore.resumeGameLoop()
+
+      // Resume needs processing (connected to game resume)
+      const needsController = useNeedsController()
+      needsController.resumeProcessing()
     }
   }
 
@@ -277,14 +278,6 @@ export const useGameController = defineStore('gameController', () => {
     settings.value = { ...settings.value, ...newSettings }
   }
 
-  const updateAutoSaveFrequency = (frequency: 30 | 60 | 120) => {
-    settings.value.autoSave.frequency = frequency
-  }
-
-  const toggleAutoSave = () => {
-    settings.value.autoSave.enabled = !settings.value.autoSave.enabled
-  }
-
   const setTutorialMode = (mode: 'auto' | 'always_show' | 'never_show') => {
     settings.value.tutorial.mode = mode
   }
@@ -295,27 +288,6 @@ export const useGameController = defineStore('gameController', () => {
 
   const toggleErrorReporting = () => {
     settings.value.errorReporting.enabled = !settings.value.errorReporting.enabled
-  }
-
-  // Auto-save functionality
-  let autoSaveInterval: number | null = null
-
-  const startAutoSave = () => {
-    if (!settings.value.autoSave.enabled) return
-
-    stopAutoSave() // Clear any existing interval
-
-    // Auto-save functionality can be implemented with pet store manager
-    autoSaveInterval = setInterval(() => {
-      // Will be implemented when pet store manager is added
-    }, settings.value.autoSave.frequency * 1000)
-  }
-
-  const stopAutoSave = () => {
-    if (autoSaveInterval) {
-      clearInterval(autoSaveInterval)
-      autoSaveInterval = null
-    }
   }
 
   // Initialize store
@@ -338,12 +310,6 @@ export const useGameController = defineStore('gameController', () => {
       // No guinea pig data, start fresh
       logging.logInfo('No guinea pig data found, starting new session')
       newGame(true)
-    }
-
-    // Start auto-save if enabled
-    if (settings.value.autoSave.enabled) {
-      startAutoSave()
-      logging.logDebug(`Auto-save enabled with ${settings.value.autoSave.frequency}s frequency`)
     }
 
     logging.logInfo('Game Controller initialized successfully')
@@ -376,15 +342,9 @@ export const useGameController = defineStore('gameController', () => {
 
     // Settings
     updateSettings,
-    updateAutoSaveFrequency,
-    toggleAutoSave,
     setTutorialMode,
     setPerformanceMode,
     toggleErrorReporting,
-
-    // Auto-save
-    startAutoSave,
-    stopAutoSave,
 
     // Initialization
     initializeStore,

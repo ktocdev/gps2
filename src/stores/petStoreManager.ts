@@ -378,7 +378,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         friendliness: Math.floor(Math.random() * 10) + 1,
         playfulness: Math.floor(Math.random() * 10) + 1,
         curiosity: Math.floor(Math.random() * 10) + 1,
-        independence: Math.floor(Math.random() * 10) + 1
+        boldness: Math.floor(Math.random() * 10) + 1
       },
 
       preferences: generateRandomPreferences(),
@@ -386,14 +386,16 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       needs: {
         hunger: 100,
         thirst: 100,
-        happiness: 100,
-        cleanliness: 100,
-        health: 100,
         energy: 100,
+        shelter: 100,
+        play: 100,
         social: 100,
+        stimulation: 100,
+        comfort: 100,
+        hygiene: 100,
         nails: 100,
-        chew: 100,
-        shelter: 100
+        health: 100,
+        chew: 100
       },
 
       stats: {
