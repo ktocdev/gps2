@@ -29,6 +29,44 @@ export interface GuineaPigPreferences {
   dislikedHabitat: string[]   // Disliked habitat features (up to 2)
 }
 
+// System 2.5: Fulfillment Limitation System
+export type FoodType = 'fruit' | 'vegetables' | 'pellets' | 'treats' | 'hay'
+export type InteractionType = 'play' | 'social'
+
+export interface ConsumptionLimit {
+  consumed: number
+  limit: number
+}
+
+export interface ConsumptionLimits {
+  fruit: ConsumptionLimit
+  vegetables: ConsumptionLimit
+  pellets: ConsumptionLimit
+  treats: ConsumptionLimit
+}
+
+export interface InteractionRejection {
+  lastRejectionTime: number | null
+  cooldownEndTime: number | null
+  rejectionCount: number
+  isOnCooldown: boolean
+}
+
+export interface FeedResult {
+  success: boolean
+  message: string
+  hungerGained?: number
+  remainingServings?: number
+}
+
+export interface InteractionResult {
+  success: boolean
+  rejected: boolean
+  message: string
+  cooldownSeconds?: number
+  friendshipPenalty?: number
+}
+
 export interface GuineaPigNeeds {
   // Critical Needs (high decay, high weight)
   hunger: number        // 0-100: How hungry they are (100 = starving)
@@ -83,6 +121,11 @@ export interface GuineaPig {
   // Relationship data
   friendship: number          // 0-100: Relationship with player
   relationships: Record<string, number> // guinea pig ID -> friendship level (0-100)
+
+  // System 2.5: Fulfillment Limitation System
+  consumptionLimits: ConsumptionLimits
+  interactionRejection: InteractionRejection
+  lastHungerResetLevel: number
 
   // Tracking data
   totalInteractions: number
@@ -489,6 +532,17 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.needs[needType] = newValue
     collection.value.lastUpdated = Date.now()
 
+    // System 2.5: Reset consumption limits when hunger fulfilled to 100%
+    if (needType === 'hunger' && newValue === 100 && oldValue < 100) {
+      guineaPig.consumptionLimits.fruit.consumed = 0
+      guineaPig.consumptionLimits.vegetables.consumed = 0
+      guineaPig.consumptionLimits.pellets.consumed = 0
+      guineaPig.consumptionLimits.treats.consumed = 0
+      guineaPig.lastHungerResetLevel = 100
+
+      getLoggingStore().logInfo(`Consumption limits reset for ${guineaPig.name} (hunger cycle complete)`)
+    }
+
     // Removed need_adjusted logging to prevent spam when using debug sliders
     // Each slider adjustment was creating a system message
 
@@ -501,16 +555,36 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   }
 
   // Needs satisfaction mechanics for user interactions
-  const feedGuineaPig = (guineaPigId: string, foodType: 'pellets' | 'hay' | 'vegetables' | 'treats' = 'pellets'): boolean => {
+  const feedGuineaPig = (guineaPigId: string, foodType: 'pellets' | 'hay' | 'vegetables' | 'treats' | 'fruit' = 'pellets'): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
+
+    // System 2.5: Check consumption limits (hay is unlimited)
+    if (foodType !== 'hay') {
+      const limit = guineaPig.consumptionLimits[foodType as keyof ConsumptionLimits]
+      if (limit && limit.consumed >= limit.limit) {
+        getLoggingStore().addPlayerAction(
+          `${guineaPig.name} has already eaten ${limit.limit} serving(s) of ${foodType} this hunger cycle 🚫`,
+          '🚫',
+          {
+            guineaPigId,
+            foodType,
+            consumed: limit.consumed,
+            limit: limit.limit,
+            reason: 'consumption_limit_reached'
+          }
+        )
+        return false
+      }
+    }
 
     // Base satisfaction amounts
     const feedingAmounts = {
       pellets: 25,     // Basic nutrition
       hay: 15,         // Continuous munching
       vegetables: 30,  // High nutrition + happiness
-      treats: 35       // High satisfaction but should be limited
+      treats: 35,      // High satisfaction but should be limited
+      fruit: 30        // High nutrition + happiness (similar to vegetables)
     }
 
     let hungerSatisfaction = feedingAmounts[foodType]
@@ -553,9 +627,17 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     // Feed the guinea pig
     satisfyNeed(guineaPigId, 'hunger', hungerSatisfaction)
 
-    // Vegetables provide slight thirst relief
-    if (foodType === 'vegetables') {
+    // Vegetables and fruit provide slight thirst relief
+    if (foodType === 'vegetables' || foodType === 'fruit') {
       satisfyNeed(guineaPigId, 'thirst', 5)
+    }
+
+    // System 2.5: Track consumption (except hay)
+    if (foodType !== 'hay') {
+      const limit = guineaPig.consumptionLimits[foodType as keyof ConsumptionLimits]
+      if (limit) {
+        limit.consumed += 1
+      }
     }
 
     // Update interaction tracking
@@ -1081,6 +1163,211 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return true
   }
 
+  // System 2.5: Consumption tracking helpers
+  const checkConsumptionLimit = (guineaPigId: string, foodType: FoodType): boolean => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    if (foodType === 'hay') return true // Hay is unlimited
+
+    const limit = guineaPig.consumptionLimits[foodType as keyof ConsumptionLimits]
+    return limit ? limit.consumed < limit.limit : true
+  }
+
+  const getRemainingServings = (guineaPigId: string, foodType: FoodType): number => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return 0
+
+    if (foodType === 'hay') return -1 // Unlimited indicator
+
+    const limit = guineaPig.consumptionLimits[foodType as keyof ConsumptionLimits]
+    return limit ? limit.limit - limit.consumed : 0
+  }
+
+  const resetConsumptionLimits = (guineaPigId: string): void => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return
+
+    guineaPig.consumptionLimits.fruit.consumed = 0
+    guineaPig.consumptionLimits.vegetables.consumed = 0
+    guineaPig.consumptionLimits.pellets.consumed = 0
+    guineaPig.consumptionLimits.treats.consumed = 0
+    guineaPig.lastHungerResetLevel = guineaPig.needs.hunger
+
+    collection.value.lastUpdated = Date.now()
+  }
+
+  // System 2.5: Interaction rejection mechanics
+  const calculateRejectionProbability = (guineaPigId: string): number => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return 0
+
+    const needsController = useNeedsController()
+    const wellness = needsController.calculateWellness(guineaPigId)
+    const friendliness = guineaPig.personality.friendliness
+    const friendship = guineaPig.friendship
+
+    // Base rejection rate
+    let baseRate = 0
+    if (friendship < 30) {
+      if (friendliness <= 3) {
+        baseRate = 75
+      } else if (friendliness >= 8) {
+        baseRate = 50
+      } else {
+        // Linear interpolation for mid-range friendliness
+        baseRate = 75 - ((friendliness - 3) / 5) * 25
+      }
+    } else if (friendship >= 70) {
+      baseRate = 10 // Minimal rejection for high friendship
+    } else {
+      // Linear interpolation for mid-range friendship
+      const friendshipFactor = (friendship - 30) / 40
+      const lowFriendlinessRate = friendliness <= 3 ? 75 : 50
+      baseRate = lowFriendlinessRate - (friendshipFactor * (lowFriendlinessRate - 10))
+    }
+
+    // Wellness modifiers
+    let wellnessModifier = 0
+    if (wellness < 30) {
+      wellnessModifier = 30 // Too tired, wants to rest
+    } else if (wellness < 50) {
+      wellnessModifier = 15 // Low energy, not feeling well
+    } else if (wellness > 70) {
+      wellnessModifier = -30 // Healthy, in good mood
+    }
+
+    const finalRate = Math.max(0, Math.min(100, baseRate + wellnessModifier))
+    return finalRate
+  }
+
+  const calculateRejectionCooldown = (guineaPigId: string): number => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return 30
+
+    const needsController = useNeedsController()
+    const wellness = needsController.calculateWellness(guineaPigId)
+    const friendship = guineaPig.friendship
+
+    // Base cooldown: 30s + friendship factor (0-90s)
+    const friendshipFactor = (100 - friendship) * 0.9
+    let cooldown = 30 + friendshipFactor
+
+    // Wellness modifier
+    if (wellness > 70) {
+      cooldown -= 15 // Recovers faster, in good mood
+    } else if (wellness < 30) {
+      cooldown += 15 // Needs more recovery time
+    }
+
+    return Math.max(30, Math.min(120, cooldown))
+  }
+
+  const applyRejectionPenalty = (guineaPigId: string): number => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return 0
+
+    // Random penalty between -1% and -5%
+    const penalty = -(1 + Math.random() * 4)
+    adjustFriendship(guineaPigId, penalty)
+
+    return penalty
+  }
+
+  const isInteractionOnCooldown = (guineaPigId: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    if (!guineaPig.interactionRejection.isOnCooldown) return false
+
+    const now = Date.now()
+    if (guineaPig.interactionRejection.cooldownEndTime && now >= guineaPig.interactionRejection.cooldownEndTime) {
+      // Cooldown expired, clear it
+      guineaPig.interactionRejection.isOnCooldown = false
+      guineaPig.interactionRejection.cooldownEndTime = null
+      collection.value.lastUpdated = Date.now()
+      return false
+    }
+
+    return true
+  }
+
+  const getRemainingCooldown = (guineaPigId: string): number => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig || !guineaPig.interactionRejection.cooldownEndTime) return 0
+
+    const now = Date.now()
+    const remaining = Math.max(0, guineaPig.interactionRejection.cooldownEndTime - now)
+    return Math.ceil(remaining / 1000) // Convert to seconds
+  }
+
+  const attemptInteraction = (guineaPigId: string, interactionType: InteractionType): InteractionResult => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) {
+      return {
+        success: false,
+        rejected: false,
+        message: 'Guinea pig not found'
+      }
+    }
+
+    // Check if on cooldown
+    if (isInteractionOnCooldown(guineaPigId)) {
+      const remainingSeconds = getRemainingCooldown(guineaPigId)
+      return {
+        success: false,
+        rejected: false,
+        message: `${guineaPig.name} needs some space. Try again in ${remainingSeconds}s`,
+        cooldownSeconds: remainingSeconds
+      }
+    }
+
+    // Calculate rejection probability
+    const rejectionChance = calculateRejectionProbability(guineaPigId)
+    const roll = Math.random() * 100
+
+    if (roll < rejectionChance) {
+      // Rejected!
+      const cooldownSeconds = calculateRejectionCooldown(guineaPigId)
+      const penalty = applyRejectionPenalty(guineaPigId)
+
+      const now = Date.now()
+      guineaPig.interactionRejection.lastRejectionTime = now
+      guineaPig.interactionRejection.cooldownEndTime = now + (cooldownSeconds * 1000)
+      guineaPig.interactionRejection.isOnCooldown = true
+      guineaPig.interactionRejection.rejectionCount += 1
+      collection.value.lastUpdated = Date.now()
+
+      const interactionVerb = interactionType === 'play' ? 'play' : 'socialize'
+      getLoggingStore().addPlayerAction(
+        `${guineaPig.name} ran away! Not interested in ${interactionVerb}ing right now 🏃`,
+        '🚫',
+        {
+          guineaPigId,
+          interactionType,
+          rejectionChance: rejectionChance.toFixed(1),
+          cooldownSeconds,
+          friendshipPenalty: penalty.toFixed(2)
+        }
+      )
+
+      return {
+        success: false,
+        rejected: true,
+        message: `${guineaPig.name} ran away! Try again in ${cooldownSeconds}s`,
+        cooldownSeconds,
+        friendshipPenalty: penalty
+      }
+    }
+
+    // Accepted!
+    return {
+      success: true,
+      rejected: false,
+      message: `${guineaPig.name} accepts the ${interactionType} interaction`
+    }
+  }
+
   return {
     // State
     collection,
@@ -1131,6 +1418,19 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     processBatchNeedsDecay,
     adjustNeed,
     satisfyNeed,
+
+    // System 2.5: Consumption tracking
+    checkConsumptionLimit,
+    getRemainingServings,
+    resetConsumptionLimits,
+
+    // System 2.5: Interaction rejection
+    calculateRejectionProbability,
+    calculateRejectionCooldown,
+    applyRejectionPenalty,
+    isInteractionOnCooldown,
+    getRemainingCooldown,
+    attemptInteraction,
 
     // Interaction methods
     feedGuineaPig,

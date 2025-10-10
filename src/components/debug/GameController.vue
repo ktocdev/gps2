@@ -492,9 +492,7 @@ const resetFirstTimeUser = () => {
 <style>
 /* Game Controller Styles */
 .game-controller {
-  padding: var(--space-4);
-  max-width: 1200px;
-  margin: 0 auto;
+  max-inline-size: 100%;
 }
 
 .panel-row {

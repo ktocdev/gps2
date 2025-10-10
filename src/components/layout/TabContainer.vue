@@ -45,6 +45,7 @@ export interface Tab {
   icon?: string
   badge?: string | number
   disabled?: boolean
+  panelClass?: string
 }
 
 interface Props {
@@ -83,10 +84,12 @@ const getTabClasses = (tabId: string) => {
 }
 
 const getPanelClasses = (tabId: string) => {
+  const tab = props.tabs.find(t => t.id === tabId)
   const base = 'tab-container__panel'
   const active = activeTab.value === tabId ? 'tab-container__panel--active' : ''
+  const custom = tab?.panelClass || ''
 
-  return [base, active].filter(Boolean).join(' ')
+  return [base, active, custom].filter(Boolean).join(' ')
 }
 
 // Methods
@@ -293,6 +296,12 @@ defineExpose({
 
 .tab-container__panel--active {
   display: block;
+}
+
+/* Panel Modifiers */
+.tab-container__panel--constrained {
+  max-inline-size: 1200px;
+  margin-inline: auto;
 }
 
 /* Variant: Compact */
