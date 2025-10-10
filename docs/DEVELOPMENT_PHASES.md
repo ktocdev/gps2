@@ -89,6 +89,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 ### Systems
 1. **[Personality Trait Influences](docs/systems/phase2.5/system-1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay rates, interaction effectiveness, and behavioral reactions ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
 2. **[Preferences: Likes & Dislikes](docs/systems/phase2.5/system-2-preferences-likes-dislikes.md)** - Individual guinea pig preferences system with hidden discovery mechanics (favorites +50% satisfaction, dislikes -30% with rejection chance) ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
+2.5. **[Fulfillment Limitation System](docs/systems/phase2.5/system-2.5-fulfillment-limitation.md)** - Consumption limits per hunger cycle (fruit:1, veg:3, pellets:2, treats:1, hay:unlimited), interaction rejection based on personality + friendship + wellness, cooldown system (30s-2min) 🚧 **In Progress** (October 9, 2025)
 3. **[Wellness-Based Interaction Reactions](docs/systems/phase2.5/system-3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates (95% excellent → 20% critical), behavioral states, and guinea pig responsiveness
 4. **[Guinea Pig Rescue System](docs/systems/phase2.5/system-4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty, needs reset to 100%, Fresh Start option (resets money to $1000, loses slots 4-10)
 5. **[Enhanced Activity Messages](docs/systems/phase2.5/system-5-enhanced-activity-messages.md)** - Guinea pig reactions to interactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
@@ -96,6 +97,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 ### Debug Panel Development (Phase 2.5)
 - **Personality Debug Panel** - ✅ **Completed** (October 7, 2025) - PersonalityDebug.vue with trait sliders, decay rate preview, active guinea pigs only
 - **Preferences Testing** - ✅ **Using Existing Panels** - Guinea Pig Editor (edit preferences) + NeedsDebug (test with food/activity dropdowns)
+- **Feeding Debug Panel** - 🚧 **In Progress** (October 9, 2025) - FeedingDebug.vue with consumption limit tracking, servings remaining counters, fulfill session hunger button
 - **Wellness Reaction Testing** - ✅ **Using Existing Panels** - NeedsDebug (adjust wellness) + Activity Feed (observe interaction success/rejection)
 - **Rescue System Debug Panel** - Not Started - Rescue threshold adjustment, preview dialogs, test rescue trigger
 - **Activity Message Testing** - ✅ **Using Existing Panels** - Activity Feed (observe message throttling, reactions, warnings)

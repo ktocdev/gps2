@@ -416,6 +416,22 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
       friendship: 50,
       relationships: {},
+
+      // System 2.5: Fulfillment Limitation System
+      consumptionLimits: {
+        fruit: { consumed: 0, limit: 1 },
+        vegetables: { consumed: 0, limit: 3 },
+        pellets: { consumed: 0, limit: 2 },
+        treats: { consumed: 0, limit: 1 }
+      },
+      interactionRejection: {
+        lastRejectionTime: null,
+        cooldownEndTime: null,
+        rejectionCount: 0,
+        isOnCooldown: false
+      },
+      lastHungerResetLevel: 100,
+
       totalInteractions: 0,
       lifetimeHappiness: 100,
       achievementsUnlocked: []

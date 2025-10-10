@@ -34,6 +34,10 @@
         <PersonalityDebugView />
       </template>
 
+      <template #feeding>
+        <FeedingDebugView />
+      </template>
+
       <template #logging>
         <LoggingSystemView />
       </template>
@@ -54,6 +58,7 @@ import PetStoreDebugView from './PetStoreDebugView.vue'
 import InventoryDebugView from './InventoryDebugView.vue'
 import NeedsDebugView from './NeedsDebugView.vue'
 import PersonalityDebugView from './PersonalityDebugView.vue'
+import FeedingDebugView from './FeedingDebugView.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
 import { useGameController } from '../stores/gameController'
@@ -69,11 +74,13 @@ const debugTabs: Tab[] = [
     id: 'controller',
     label: 'Game Controller',
     icon: '🎮',
+    panelClass: 'tab-container__panel--constrained'
   },
   {
     id: 'pet-store',
     label: 'Pet Store',
     icon: '🏪',
+    panelClass: 'tab-container__panel--constrained'
   },
   {
     id: 'needs',
@@ -81,24 +88,34 @@ const debugTabs: Tab[] = [
     icon: '🍎',
   },
   {
+    id: 'feeding',
+    label: 'Feeding System',
+    icon: '🥕',
+    panelClass: 'tab-container__panel--constrained'
+  },
+  {
     id: 'personality',
     label: 'Personality',
     icon: '🎭',
+    panelClass: 'tab-container__panel--constrained'
   },
   {
     id: 'inventory',
     label: 'Inventory',
     icon: '🎒',
+    panelClass: 'tab-container__panel--constrained'
   },
   {
     id: 'logging',
     label: 'Logging System',
     icon: '📝',
+    panelClass: 'tab-container__panel--constrained'
   },
   {
     id: 'error-tracking',
     label: 'Error Tracking',
     icon: '🐛',
+    panelClass: 'tab-container__panel--constrained'
   }
 ]
 

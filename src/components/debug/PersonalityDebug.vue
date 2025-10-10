@@ -353,11 +353,4 @@ function getDecayEffectText(modifier: string): string {
 .decay-modifier--normal {
   color: var(--color-text-secondary);
 }
-
-/* Responsive */
-@media (max-width: 1440px) {
-  .guinea-pigs-grid {
-    grid-template-columns: 1fr;
-  }
-}
 </style>

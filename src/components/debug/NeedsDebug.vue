@@ -50,30 +50,8 @@
                           class="need-row__slider"
                         />
                       </div>
-                      <!-- Food selection for hunger need (Phase 2.5 - System 2) -->
-                      <div v-if="(need as string) === 'hunger'" class="needs-list__food-action">
-                        <Select
-                          :modelValue="selectedFoodTypes[guineaPig.id] || ''"
-                          @update:modelValue="(value: string | number) => selectedFoodTypes[guineaPig.id] = String(value)"
-                          :options="foodOptions"
-                          placeholder="Select food..."
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
-                          class="needs-list__food-select"
-                        />
-                        <Button
-                          @click="getNeedAction(need, guineaPig.id).handler"
-                          variant="tertiary"
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need]) || !selectedFoodTypes[guineaPig.id]"
-                          :title="!selectedFoodTypes[guineaPig.id] ? 'Select a food type first' : getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
-                          :class="['needs-list__action', `needs-list__action--${need}`]"
-                        >
-                          {{ getNeedAction(need, guineaPig.id).label }}
-                        </Button>
-                      </div>
                       <!-- Activity selection for play/stimulation needs (Phase 2.5 - System 2) -->
-                      <div v-else-if="(need as string) === 'play' || (need as string) === 'stimulation'" class="needs-list__food-action">
+                      <div v-if="(need as string) === 'play' || (need as string) === 'stimulation'" class="needs-list__food-action">
                         <Select
                           :modelValue="selectedActivityTypes[guineaPig.id] || ''"
                           @update:modelValue="(value: string | number) => selectedActivityTypes[guineaPig.id] = String(value)"
@@ -142,30 +120,8 @@
                           class="need-row__slider"
                         />
                       </div>
-                      <!-- Food selection for hunger need (Phase 2.5 - System 2) -->
-                      <div v-if="(need as string) === 'hunger'" class="needs-list__food-action">
-                        <Select
-                          :modelValue="selectedFoodTypes[guineaPig.id] || ''"
-                          @update:modelValue="(value: string | number) => selectedFoodTypes[guineaPig.id] = String(value)"
-                          :options="foodOptions"
-                          placeholder="Select food..."
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
-                          class="needs-list__food-select"
-                        />
-                        <Button
-                          @click="getNeedAction(need, guineaPig.id).handler"
-                          variant="tertiary"
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need]) || !selectedFoodTypes[guineaPig.id]"
-                          :title="!selectedFoodTypes[guineaPig.id] ? 'Select a food type first' : getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
-                          :class="['needs-list__action', `needs-list__action--${need}`]"
-                        >
-                          {{ getNeedAction(need, guineaPig.id).label }}
-                        </Button>
-                      </div>
                       <!-- Activity selection for play/stimulation needs (Phase 2.5 - System 2) -->
-                      <div v-else-if="(need as string) === 'play' || (need as string) === 'stimulation'" class="needs-list__food-action">
+                      <div v-if="(need as string) === 'play' || (need as string) === 'stimulation'" class="needs-list__food-action">
                         <Select
                           :modelValue="selectedActivityTypes[guineaPig.id] || ''"
                           @update:modelValue="(value: string | number) => selectedActivityTypes[guineaPig.id] = String(value)"
@@ -234,30 +190,8 @@
                           class="need-row__slider"
                         />
                       </div>
-                      <!-- Food selection for hunger need (Phase 2.5 - System 2) -->
-                      <div v-if="(need as string) === 'hunger'" class="needs-list__food-action">
-                        <Select
-                          :modelValue="selectedFoodTypes[guineaPig.id] || ''"
-                          @update:modelValue="(value: string | number) => selectedFoodTypes[guineaPig.id] = String(value)"
-                          :options="foodOptions"
-                          placeholder="Select food..."
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
-                          class="needs-list__food-select"
-                        />
-                        <Button
-                          @click="getNeedAction(need, guineaPig.id).handler"
-                          variant="tertiary"
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need]) || !selectedFoodTypes[guineaPig.id]"
-                          :title="!selectedFoodTypes[guineaPig.id] ? 'Select a food type first' : getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
-                          :class="['needs-list__action', `needs-list__action--${need}`]"
-                        >
-                          {{ getNeedAction(need, guineaPig.id).label }}
-                        </Button>
-                      </div>
                       <!-- Activity selection for play/stimulation needs (Phase 2.5 - System 2) -->
-                      <div v-else-if="(need as string) === 'play' || (need as string) === 'stimulation'" class="needs-list__food-action">
+                      <div v-if="(need as string) === 'play' || (need as string) === 'stimulation'" class="needs-list__food-action">
                         <Select
                           :modelValue="selectedActivityTypes[guineaPig.id] || ''"
                           @update:modelValue="(value: string | number) => selectedActivityTypes[guineaPig.id] = String(value)"
@@ -483,36 +417,11 @@ const petStoreManager = usePetStoreManager()
 // Reactive data
 const decayRateMultiplier = ref(guineaPigStore.settings.needsDecayRate)
 
-// Food selection per guinea pig (Phase 2.5 - System 2: Preferences)
-const selectedFoodTypes = ref<Record<string, string>>({}) // guineaPigId -> selected food type
-
 // Activity selection per guinea pig (Phase 2.5 - System 2: Preferences)
 const selectedActivityTypes = ref<Record<string, string>>({}) // guineaPigId -> selected activity type
 
 // Computed properties
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
-
-// Food options for dropdowns (Phase 2.5 - System 2)
-const foodOptions = computed(() => {
-  const options = [
-    { label: '--- Vegetables ---', value: '', disabled: true },
-    ...petStoreManager.vegetables.map(v => ({
-      label: formatPreferenceName(v),
-      value: v
-    })),
-    { label: '--- Fruits ---', value: '', disabled: true },
-    ...petStoreManager.fruits.map(f => ({
-      label: formatPreferenceName(f),
-      value: f
-    })),
-    { label: '--- Hay ---', value: '', disabled: true },
-    ...petStoreManager.hayTypes.map(h => ({
-      label: formatPreferenceName(h),
-      value: h
-    }))
-  ]
-  return options
-})
 
 // Activity options for dropdowns (Phase 2.5 - System 2)
 const activityOptions = computed(() => {
@@ -577,15 +486,12 @@ const adjustNeed = (guineaPigId: string, needType: string, value: number) => {
 }
 
 // Quick actions
-const feedGuineaPig = (guineaPigId: string) => {
-  const selectedFood = selectedFoodTypes.value[guineaPigId]
-  if (!selectedFood) return // No food selected
-
-  guineaPigStore.feedGuineaPig(guineaPigId, selectedFood as any)
-}
-
 const giveWater = (guineaPigId: string) => {
   guineaPigStore.giveWater(guineaPigId)
+}
+
+const fulfillHunger = (guineaPigId: string) => {
+  guineaPigStore.adjustNeed(guineaPigId, 'hunger', 100)
 }
 
 const cleanGuineaPig = (guineaPigId: string) => {
@@ -645,7 +551,7 @@ const replenishAllNeeds = (guineaPigId: string) => {
 // Helper function to get the action button for each need
 const getNeedAction = (need: string, guineaPigId: string) => {
   const actions: Record<string, { label: string; handler: () => void }> = {
-    hunger: { label: 'Feed', handler: () => feedGuineaPig(guineaPigId) },
+    hunger: { label: 'Fulfill Hunger', handler: () => fulfillHunger(guineaPigId) },
     thirst: { label: 'Give Water', handler: () => giveWater(guineaPigId) },
     energy: { label: 'Soothe to Sleep', handler: () => sootheToSleep(guineaPigId) },
     shelter: { label: 'Provide Shelter', handler: () => provideShelter(guineaPigId) },
