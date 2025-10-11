@@ -2,7 +2,6 @@
   <div class="game-controller">
     <!-- Pet Store Game Session -->
     <div class="mb-8">
-      <h2>Pet Store Game Session</h2>
       <div class="panel-row">
         <!-- Session Controls -->
         <div class="panel panel--compact">
@@ -30,6 +29,17 @@
             >
               Return Guinea Pigs & End Session
             </Button>
+            <hr class="divider mt-4">
+            <SliderField
+              v-model="petStoreManager.settings.endGamePenalty"
+              :min="0"
+              :max="500"
+              :step="10"
+              class="mt-3"
+              label="End Game Penalty (non-favorite rescue)"
+              size="sm"
+              prefix="$"
+            />
           </div>
         </div>
 
@@ -95,7 +105,6 @@
 
     <!-- Game State Display -->
     <div class="mb-8">
-      <h2>Game State</h2>
       <div class="panel-row">
         <!-- Game State & Controls -->
         <div class="panel panel--compact">
@@ -225,7 +234,6 @@
 
     <!-- Settings Display -->
     <div class="mb-8">
-      <h2>Current Settings</h2>
       <div class="panel-row">
         <!-- Tutorial Settings -->
         <div class="panel panel--compact">
@@ -273,7 +281,6 @@
 
     <!-- Raw Store Data (Debug) -->
     <div class="mb-8">
-      <h2>Raw Store Data (Debug)</h2>
       <div class="panel-row">
         <div class="panel panel--accent">
           <div class="panel__header">
@@ -293,6 +300,13 @@
         </div>
       </div>
     </div>
+    <!-- Session Ending Dialog -->
+    <SessionEndingDialog
+      :is-open="isSessionEndDialogOpen"
+      @confirm="handleConfirmEndSession"
+      @cancel="handleCancelEndSession"
+      @favoriteNonFavorites="handleFavoriteNonFavorites"
+    />
   </div>
 </template>
 
@@ -305,6 +319,8 @@ import { usePlayerProgression } from '../../stores/playerProgression'
 import { useNeedsController } from '../../stores/needsController'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
+import SliderField from '../basic/SliderField.vue'
+import SessionEndingDialog from '../game/SessionEndingDialog.vue'
 
 // Stores
 const gameController = useGameController()
@@ -316,6 +332,7 @@ const needsController = useNeedsController()
 // Pet Store Session State
 const selectedGuineaPig1 = ref<string | number>('')
 const selectedGuineaPig2 = ref<string | number>('')
+const isSessionEndDialogOpen = ref(false)
 
 // Restore guinea pig selection from active session
 watch([() => petStoreManager.activeGameSession], ([session]) => {
@@ -422,9 +439,35 @@ const handleStartSession = () => {
 }
 
 const handleEndSession = () => {
+  // Open dialog instead of directly ending
+  isSessionEndDialogOpen.value = true
+}
+
+const handleConfirmEndSession = () => {
   petStoreManager.endGameSession()
   selectedGuineaPig1.value = ''
   selectedGuineaPig2.value = ''
+  isSessionEndDialogOpen.value = false
+}
+
+const handleCancelEndSession = () => {
+  isSessionEndDialogOpen.value = false
+}
+
+const handleFavoriteNonFavorites = () => {
+  // Get non-favorited guinea pigs in active session
+  if (!petStoreManager.activeGameSession) return
+
+  const { guineaPigIds, wasFromFavorites } = petStoreManager.activeGameSession
+  const nonFavoritedIds = guineaPigIds.filter(id => !wasFromFavorites[id])
+
+  // Favorite each non-favorited guinea pig
+  for (const id of nonFavoritedIds) {
+    petStoreManager.addToFavorites(id)
+  }
+
+  // Close dialog - user can now end session for free
+  isSessionEndDialogOpen.value = false
 }
 
 // Game Control State

@@ -36,6 +36,7 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 - **[System 6: Guinea Pig Store](systems/phase2/system-6-guinea-pig-store.md)** - Central guinea pig state management ✅ **Core Completed** (September 22, 2025 | Branch: GPS2-7)
 - **[System 6.5: Pet Store & Game Session Manager](systems/phase2/system-6.5-pet-store-manager.md)** - Single-session system with active/favorite preservation, 30% American breed spawn rate, 24-hour auto-refresh enabled by default, weighted rarity, smart genetics ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
 - **[System 6.9: Guinea Pig Favorites](systems/phase2/system-6.9-guinea-pig-favorites.md)** - Save beloved guinea pigs permanently with purchasable slots and store refresh protection ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
+- **[System 6.95: Session Ending & Store Refresh Enhancement](systems/phase2/system-6.95-session-ending-store-refresh-enhancement.md)** - Escalating store refresh costs ($100→$3,200), three session ending outcomes based on favorites (all favorited=$0, none favorited=$100, mixed=$50), warning dialog with player choice, bonding grief effects ✅ **Completed** (October 11, 2025 | Branch: GPS2-22)
 - **[System 7: Needs System](systems/phase2/system-7-needs-system.md)** - 10 needs categories with quick actions, smart disable states (game pause, needs pause, 100% saturation), informative tooltips ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
 - **[System 8: Needs Controller Store](systems/phase2/system-8-needs-controller-store.md)** - Centralized management with manual pause tracking, auto-reset on session end, System Controls panel ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
 - **[Systems 9-10: Game Timing](systems/phase2/system-9-10-game-timing.md)** - Unified tick system with pause/resume, automatic pause on navigation, Game State & Controls panel ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
@@ -98,48 +99,11 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 3. Dive into specific system documentation as needed
 
 ## Current Development Status
-**Branch:** GPS2-20 (Phase 2.5 In Progress) | **Updated:** October 7, 2025
+**Latest:** Phase 2 Complete (System 6.95) | **Branch:** GPS2-22 | **Updated:** October 11, 2025
 
-### Phase 2 Complete ✅
-**Completed:** October 5, 2025 | **Branch:** GPS2-18
+For detailed implementation status and phase breakdowns, see **[DEVELOPMENT_PHASES.md](DEVELOPMENT_PHASES.md)**.
 
-All Phase 2 systems complete and tested:
-- ✅ **Pet Store & Game Session Manager (6.5)** - Single-session with favorites preservation, 30% American breed spawn, 24-hour auto-refresh
-- ✅ **Guinea Pig Favorites (6.9)** - Permanent favorites with store refresh protection
-- ✅ **Needs System (7)** - 11-need structure (Critical, Environmental, Maintenance) with weighted wellness calculation
-- ✅ **Needs Controller (8)** - Manual pause tracking, auto-reset on session end
-- ✅ **Game Timing (9-10)** - Pause/resume integration with orientation handling
-- ✅ **UI/UX Polish** - Responsive debug panels, need-specific button colors, accessible contrast
-- ✅ **Accessibility** - All form labels, ARIA support, mobile-responsive layouts
-- ✅ **Testing & Documentation** - High-level needs testing, comprehensive docs
-
-### Phase 2.5 In Progress 🚧
-**Branch:** GPS2-20 | **Started:** October 7, 2025
-
-**Completed Systems:**
-- ✅ **System 1: Personality Trait Influences** - Complete (testing needed)
-  - 4 personality traits (Friendliness, Playfulness, Curiosity, Boldness) affecting need decay
-  - Decay rate modifiers: Social (0.84x-1.20x), Play (0.76x-1.30x), Stimulation (0.68x-1.40x), Comfort (0.75x-1.20x)
-  - PersonalityDebug.vue with trait sliders and decay rate preview calculator
-  - Replaced Independence with Boldness (affects Comfort instead of Social)
-- ✅ **System 2: Preferences: Likes & Dislikes** - Complete (testing needed)
-  - Food preferences: Favorites +50% satisfaction, Dislikes -30% or 50% rejection chance
-  - Activity preferences: Favorites +50% satisfaction, Dislikes -40% or 70% rejection chance
-  - Food/activity selection dropdowns in NeedsDebug panel
-  - Preference-aware message generation for all interactions
-  - Game pause fix (connected to needs pause)
-
-**Remaining Systems:**
-- **System 3: Wellness-Based Interaction Reactions** - Not Started
-- **System 4: Guinea Pig Rescue** - Not Started
-- **System 5: Enhanced Activity Messages** - Not Started
-
-**Next Steps:**
-- Test personality trait effects on need decay rates
-- Test food and activity preferences (favorites, dislikes, rejection)
-- Begin System 3: Wellness-Based Interaction Reactions
-
-**Documentation:** [TODO-2025-10-05.md](TODO-2025-10-05.md) | [Phase 2.5 Systems](systems/phase2.5/)
+For active task tracking and recent completions, see **[TODO-2025-10-05.md](TODO-2025-10-05.md)**.
 
 ## Documentation Maintenance
 - Update specific system files rather than monolithic documents

@@ -2,7 +2,7 @@
   <div class="system-monitor">
     <div class="panel-grid">
       <!-- System Messages Panel -->
-      <div class="panel panel--primary">
+      <div class="panel panel--compact panel--primary">
         <div class="panel__header">
           <h3>System Messages</h3>
         </div>
@@ -83,7 +83,7 @@
       </div>
 
       <!-- Error Analysis Panel -->
-      <div class="panel panel--secondary">
+      <div class="panel panel--compact panel--secondary">
         <div class="panel__header">
           <h3>Error Analysis</h3>
         </div>
@@ -155,7 +155,7 @@
       </div>
 
       <!-- Performance Metrics Panel -->
-      <div class="panel panel--muted">
+      <div class="panel panel--compact panel--muted">
         <div class="panel__header">
           <h3>Performance Metrics</h3>
         </div>
@@ -211,7 +211,7 @@
       </div>
 
       <!-- Developer Tools Panel -->
-      <div class="panel panel--border-secondary">
+      <div class="panel panel--compact panel--border-secondary">
         <div class="panel__header">
           <h3>Developer Tools</h3>
         </div>

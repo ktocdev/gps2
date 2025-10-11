@@ -61,9 +61,9 @@
       </div>
       <div class="panel__content">
         <div v-if="selectedGuineaPig" class="pet-store-debug__editor">
-          <div v-if="isSelectedGuineaPigActive" class="pet-store-debug__warning">
+          <BlockMessage v-if="isSelectedGuineaPigActive" variant="warning">
             ⚠️ Cannot edit active guinea pig in game session
-          </div>
+          </BlockMessage>
           <Details summary="Basic Info" variant="bordered" default-open>
             <div class="flex flex-col gap-3">
               <label for="guinea-pig-name-input" class="form-field-inline">
@@ -89,43 +89,6 @@
                 :options="selectBreedOptions"
                 :disabled="isSelectedGuineaPigActive"
                 size="sm"
-              />
-            </div>
-          </Details>
-
-          <Details summary="Personality" variant="bordered">
-            <div class="flex flex-col gap-3">
-              <SliderField
-                v-model="selectedGuineaPig.personality.friendliness"
-                :min="1"
-                :max="10"
-                label="Friendliness"
-                size="sm"
-                :disabled="isSelectedGuineaPigActive"
-              />
-              <SliderField
-                v-model="selectedGuineaPig.personality.playfulness"
-                :min="1"
-                :max="10"
-                label="Playfulness"
-                size="sm"
-                :disabled="isSelectedGuineaPigActive"
-              />
-              <SliderField
-                v-model="selectedGuineaPig.personality.curiosity"
-                :min="1"
-                :max="10"
-                label="Curiosity"
-                size="sm"
-                :disabled="isSelectedGuineaPigActive"
-              />
-              <SliderField
-                v-model="selectedGuineaPig.personality.boldness"
-                :min="1"
-                :max="10"
-                label="Boldness"
-                size="sm"
-                :disabled="isSelectedGuineaPigActive"
               />
             </div>
           </Details>
@@ -159,6 +122,46 @@
                 :options="sizeOptions"
                 :disabled="isSelectedGuineaPigActive"
                 size="sm"
+              />
+            </div>
+          </Details>
+
+          <Details summary="Personality" variant="bordered">
+            <BlockMessage v-if="isSelectedGuineaPigActive" variant="info">
+              ℹ️ The personality traits of active guinea pigs can be modified in the Personality Debug tab.
+            </BlockMessage>
+            <div class="flex flex-col gap-3">
+              <SliderField
+                v-model="selectedGuineaPig.personality.friendliness"
+                :min="1"
+                :max="10"
+                label="Friendliness"
+                size="sm"
+                :disabled="isSelectedGuineaPigActive"
+              />
+              <SliderField
+                v-model="selectedGuineaPig.personality.playfulness"
+                :min="1"
+                :max="10"
+                label="Playfulness"
+                size="sm"
+                :disabled="isSelectedGuineaPigActive"
+              />
+              <SliderField
+                v-model="selectedGuineaPig.personality.curiosity"
+                :min="1"
+                :max="10"
+                label="Curiosity"
+                size="sm"
+                :disabled="isSelectedGuineaPigActive"
+              />
+              <SliderField
+                v-model="selectedGuineaPig.personality.boldness"
+                :min="1"
+                :max="10"
+                label="Boldness"
+                size="sm"
+                :disabled="isSelectedGuineaPigActive"
               />
             </div>
           </Details>
@@ -465,10 +468,10 @@
       </div>
     </div>
 
-    <!-- Pet Store Settings - Single Column -->
+    <!-- Refresh Settings - Single Column -->
     <div class="panel panel--compact">
       <div class="panel__header">
-        <h3>Pet Store Settings</h3>
+        <h3>Refresh Settings</h3>
       </div>
       <div class="panel__content">
         <div class="stats-grid">
@@ -480,35 +483,37 @@
             <span class="stat-label">Auto-refresh in:</span>
             <span class="stat-value">{{ liveAutoRefreshCountdown }}</span>
           </div>
+          <div class="stat-item">
+            <span class="stat-label">Next Manual Refresh Cost:</span>
+            <span class="stat-value">${{ petStoreManager.nextRefreshCost }}</span>
+          </div>
         </div>
         <div class="flex flex-col gap-4 mt-4">
           <CheckboxField
             v-model="petStoreManager.settings.allowUnlimitedRefresh"
-            label="Allow Unlimited Refresh (Debug)"
-          />
-          <CheckboxField
-            :model-value="petStoreManager.settings.autoRefreshEnabled"
-            label="Enable 24-Hour Auto-Refresh"
-            @update:model-value="handleAutoRefreshToggle"
+            label="No Charge for Refresh (Debug)"
           />
           <hr class="divider">
-          <SliderField
-            v-model="petStoreManager.settings.endGamePenalty"
-            :min="0"
-            :max="500"
-            :step="10"
-            class="mt-2 mb-6"
-            label="End Game Penalty"
-            size="sm"
-            prefix="$"
-          />
+          <div class="cost-sequence-display">
+            <label class="text-label">Escalating Refresh Cost Sequence:</label>
+            <div class="cost-sequence">
+              <span
+                v-for="(cost, index) in petStoreManager.settings.refreshCostSequence"
+                :key="index"
+                :class="['cost-badge', { 'cost-badge--current': index === petStoreManager.settings.currentRefreshIndex, 'cost-badge--past': index < petStoreManager.settings.currentRefreshIndex }]"
+              >
+                ${{ cost }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="panel__footer mt-4">
         <Button
           @click="handleRefresh"
-          :disabled="!petStoreManager.canRefreshPetStore"
+          :disabled="isRefreshAtMaxCost"
+          :title="isRefreshAtMaxCost ? 'Maximum refresh cost reached ($3,200). Wait for 24-hour auto-refresh or enable No Charge mode.' : 'Refresh pet store with new guinea pigs'"
           full-width
         >
           Refresh Pet Store
@@ -529,6 +534,7 @@ import Badge from '../basic/Badge.vue'
 import CheckboxField from '../basic/CheckboxField.vue'
 import Select from '../basic/Select.vue'
 import Details from '../basic/Details.vue'
+import BlockMessage from '../basic/BlockMessage.vue'
 import FavoritesPanel from '../petstore/FavoritesPanel.vue'
 
 const petStoreManager = usePetStoreManager()
@@ -588,6 +594,15 @@ const sortedAvailableGuineaPigs = computed(() => {
     // Keep original order for same status
     return 0
   })
+})
+
+// Check if refresh is at max cost (disabled unless "No Charge" is enabled)
+const isRefreshAtMaxCost = computed(() => {
+  if (petStoreManager.settings.allowUnlimitedRefresh) {
+    return false // Never disable if "No Charge" is enabled
+  }
+  const { currentRefreshIndex, refreshCostSequence } = petStoreManager.settings
+  return currentRefreshIndex >= refreshCostSequence.length - 1
 })
 
 // Computed property that uses currentTime to trigger reactivity
@@ -990,10 +1005,6 @@ const handleRefresh = () => {
   // The watcher will handle re-selecting the guinea pig after refresh
 }
 
-const handleAutoRefreshToggle = () => {
-  petStoreManager.toggleAutoRefresh()
-}
-
 // Favorites debug handlers
 const handleForceAddSlot = () => {
   if (petStoreManager.maxFavoriteSlots < 10) {
@@ -1098,18 +1109,6 @@ const handleAddToFavorites = (guineaPigId: string) => {
   text-align: end;
 }
 
-/* === Editor Warning === */
-.pet-store-debug__warning {
-  padding: var(--space-3);
-  background-color: var(--color-warning-bg);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-warning);
-  border-radius: var(--radius-base);
-  margin-block-end: var(--space-4);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-}
-
 /* === Editor Section === */
 .pet-store-debug__editor {
   display: flex;
@@ -1206,6 +1205,43 @@ const handleAddToFavorites = (guineaPigId: string) => {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-block-end: var(--space-1);
+}
+
+/* === Cost Sequence Display === */
+.cost-sequence-display {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.cost-sequence {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.cost-badge {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-bg-secondary);
+  border: 2px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.cost-badge--current {
+  background-color: var(--color-warning-bg);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+
+.cost-badge--past {
+  background-color: var(--color-success-bg);
+  border-color: var(--color-success);
+  color: var(--color-success);
+  opacity: 0.7;
 }
 
 /* === Responsive Layout === */

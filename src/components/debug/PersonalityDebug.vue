@@ -1,19 +1,16 @@
 <template>
   <div class="personality-debug">
-    <h2>Personality Trait Influences Debug</h2>
-
     <!-- Active Guinea Pigs Only -->
     <div v-if="hasActiveGuineaPigs">
-      <h3>Active Guinea Pigs - Personality Traits</h3>
       <div class="guinea-pigs-grid mb-6">
         <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id">
-          <div class="panel">
+          <div class="panel panel--compact">
             <div class="panel__header">
               <h4>{{ guineaPig.name }} ({{ guineaPig.breed }})</h4>
             </div>
             <div class="panel__content">
               <!-- Personality Traits -->
-              <div class="panel panel--accent mb-4">
+              <div class="panel panel--compact panel--accent mb-4">
                 <div class="panel__header">
                   <h5>Personality Traits</h5>
                 </div>
@@ -121,7 +118,7 @@
               </div>
 
               <!-- Decay Rate Preview Calculator -->
-              <div class="panel panel--bordered">
+              <div class="panel panel--compact panel--bordered">
                 <div class="panel__header">
                   <h5>Need Decay Rate Modifiers</h5>
                 </div>
@@ -165,7 +162,7 @@
     </div>
 
     <!-- No Active Guinea Pigs -->
-    <div v-else class="panel panel--bordered">
+    <div v-else class="panel panel--compact panel--bordered">
       <div class="panel__content">
         <p class="text-muted">No active guinea pigs. Adopt guinea pigs from the Pet Store to test personality traits.</p>
       </div>
@@ -250,12 +247,6 @@ function getDecayEffectText(modifier: string): string {
 <style scoped>
 .personality-debug {
   padding-block-end: var(--spacing-8);
-}
-
-.guinea-pigs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 600px), 1fr));
-  gap: var(--spacing-6);
 }
 
 /* Trait Row */
