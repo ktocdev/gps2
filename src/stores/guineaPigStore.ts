@@ -131,6 +131,10 @@ export interface GuineaPig {
   lastPlayTime: number | null        // Timestamp of last play interaction
   lastSocialTime: number | null      // Timestamp of last social interaction
 
+  // Phase 2: Adoption timers (for store guinea pigs)
+  adoptionTimer: number | null       // Timestamp when guinea pig entered store
+  adoptionDuration: number           // How long available in store (ms)
+
   // Tracking data
   totalInteractions: number
   lifetimeHappiness: number   // Average happiness over lifetime

@@ -401,6 +401,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       lastPlayTime: null,
       lastSocialTime: null,
 
+      // Phase 2: Adoption timers
+      adoptionTimer: Date.now(),
+      adoptionDuration: Math.floor(Math.random() * (5 * 24 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000) + 2 * 24 * 60 * 60 * 1000), // 2-5 days in ms
+
       totalInteractions: 0,
       lifetimeHappiness: 100,
       achievementsUnlocked: []
@@ -526,6 +530,86 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     return true
   }
 
+  // Phase 2: Adoption Timer System
+  /**
+   * Process adoption timers for all store guinea pigs
+   * Replaces guinea pigs whose adoption time has expired
+   */
+  function processAdoptionTimers(): void {
+    const now = Date.now()
+    const expiredGuineaPigs: string[] = []
+
+    // Check all available guinea pigs for expired timers
+    for (const guineaPig of availableGuineaPigs.value) {
+      if (guineaPig.adoptionTimer !== null) {
+        const expirationTime = guineaPig.adoptionTimer + guineaPig.adoptionDuration
+
+        if (now >= expirationTime) {
+          // Skip if guinea pig is in active session or favorites
+          const isActive = activeGameSession.value?.guineaPigIds.includes(guineaPig.id) ?? false
+          const isFavorited = favoriteGuineaPigs.value.some(fav => fav.id === guineaPig.id)
+
+          if (!isActive && !isFavorited) {
+            expiredGuineaPigs.push(guineaPig.id)
+          }
+        }
+      }
+    }
+
+    // Replace expired guinea pigs with new ones
+    for (const expiredId of expiredGuineaPigs) {
+      const index = availableGuineaPigs.value.findIndex(gp => gp.id === expiredId)
+      if (index !== -1) {
+        const oldGuineaPig = availableGuineaPigs.value[index]
+        const newGuineaPig = generateRandomGuineaPig()
+
+        availableGuineaPigs.value.splice(index, 1, newGuineaPig)
+
+        getLoggingStore().addPlayerAction(
+          `${oldGuineaPig.name} was adopted by another family! ${newGuineaPig.name} has arrived at the store 🏪`,
+          '🏪',
+          {
+            removedId: expiredId,
+            removedName: oldGuineaPig.name,
+            addedId: newGuineaPig.id,
+            addedName: newGuineaPig.name
+          }
+        )
+      }
+    }
+  }
+
+  /**
+   * Get time remaining until adoption for a guinea pig
+   */
+  function getAdoptionTimeRemaining(guineaPigId: string): number {
+    const guineaPig = availableGuineaPigs.value.find(gp => gp.id === guineaPigId)
+    if (!guineaPig || guineaPig.adoptionTimer === null) return 0
+
+    const expirationTime = guineaPig.adoptionTimer + guineaPig.adoptionDuration
+    const remaining = expirationTime - Date.now()
+
+    return Math.max(0, remaining)
+  }
+
+  /**
+   * Format adoption timer as human-readable string
+   */
+  function formatAdoptionTimer(ms: number): string {
+    if (ms === 0) return 'Adopted'
+
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24))
+    const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
+
+    if (days > 0) {
+      return `${days}d ${hours}h`
+    } else if (hours > 0) {
+      return `${hours}h ${minutes}m`
+    } else {
+      return `${minutes}m`
+    }
+  }
 
   function startGameSession(guineaPigIds: string[]): void {
     if (guineaPigIds.length < 1 || guineaPigIds.length > 2) {
@@ -819,6 +903,11 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     startGameSession,
     endGameSession,
     initializeStore,
+
+    // Phase 2: Adoption timer methods
+    processAdoptionTimers,
+    getAdoptionTimeRemaining,
+    formatAdoptionTimer,
 
     // Favorites methods
     addToFavorites,

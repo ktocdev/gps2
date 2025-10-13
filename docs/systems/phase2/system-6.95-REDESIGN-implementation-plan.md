@@ -166,60 +166,59 @@ This implementation plan provides a careful, systematic approach to implementing
 
 **Duration:** 3-4 days
 **Goal:** Replace manual refresh with automatic adoption timers
+**Status:** ✅ COMPLETE
 
 ### Tasks
 
-- [ ] **Add StoreGuineaPig interface**
-  ```typescript
-  interface StoreGuineaPig extends GuineaPig {
-    adoptionTimer: number       // Timestamp when adopted
-    adoptionDuration: number    // How long available (ms)
-  }
-  ```
+- [x] **Add adoption timer properties to GuineaPig interface**
+  - Added `adoptionTimer: number | null` - Timestamp when guinea pig entered store
+  - Added `adoptionDuration: number` - How long available in store (ms, 2-5 days)
+  - Implemented in `src/stores/guineaPigStore.ts`
 
-- [ ] **Create generateStoreGuineaPig() function**
-  - Generate random guinea pig using existing logic
-  - Add random adoption timer (2-5 days)
-  - Store timer in adoptionTimers map
-  - Return StoreGuineaPig with timer data
+- [x] **Update guinea pig generation with adoption timers**
+  - Generate random adoption duration: 2-5 days in milliseconds
+  - Set adoptionTimer to Date.now() when guinea pig is created
+  - Implemented in `src/stores/petStoreManager.ts` - `generateRandomGuineaPig()`
 
-- [ ] **Create checkAdoptionTimers() function**
+- [x] **Create processAdoptionTimers() function**
   - Check all store guinea pigs for expired timers
-  - Return list of expired guinea pig IDs
-  - Call on every game tick
+  - Skip guinea pigs that are active or favorited
+  - Replace expired guinea pigs with new random guinea pigs
+  - Log adoption events to activity feed
+  - Implemented in `src/stores/petStoreManager.ts`
 
-- [ ] **Create replaceAdoptedGuineaPig() function**
-  - Remove expired guinea pig from store
-  - Generate new random guinea pig
-  - Add new guinea pig to store
-  - Log system message: "A guinea pig found their forever home! 🏡"
+- [x] **Create helper functions**
+  - `getAdoptionTimeRemaining(guineaPigId)` - Returns ms remaining until adoption
+  - `formatAdoptionTimer(ms)` - Formats as "Xd Xh" or "Xh Xm" or "Xm"
+  - Implemented in `src/stores/petStoreManager.ts`
 
-- [ ] **Integrate checkAdoptionTimers() into game tick loop**
-  - Call from needsController or game timing system
-  - Ensure timers checked every tick
-  - Handle multiple expirations in same tick
+- [x] **Integrate adoption timer processing into game tick**
+  - Added call to `processAdoptionTimers()` in `processBatchUpdate()`
+  - Runs every 5 seconds alongside needs decay
+  - Implemented in `src/stores/needsController.ts`
 
-- [ ] **Add adoption countdown display to PetStoreDebug.vue**
-  - Show "⏰ Adopted in X days Y hours" per guinea pig
-  - Update countdown in real-time
-  - Style countdown prominently
+- [x] **Update PetStoreDebug to display adoption timers**
+  - Show adoption countdown on each guinea pig card
+  - Format: "⏱️ Xd Xh" or "⏱️ Xh Xm"
+  - Updates in real-time
+  - Implemented in `src/components/debug/PetStoreDebug.vue`
 
-- [ ] **Implement formatAdoptionCountdown() helper function**
-  - Convert timestamp to human-readable format
-  - Show days and hours
-  - Handle edge cases (< 1 hour, < 1 day)
-
-**Files to Modify:**
-- `src/stores/petStoreManager.ts` - Add timer functions and interface
-- `src/stores/needsController.ts` - Integrate timer checking
-- `src/components/debug/PetStoreDebug.vue` - Add countdown displays
+**Files Modified:**
+- ✅ `src/stores/guineaPigStore.ts` - Added adoptionTimer and adoptionDuration properties
+- ✅ `src/stores/petStoreManager.ts` - Added processAdoptionTimers(), getAdoptionTimeRemaining(), formatAdoptionTimer()
+- ✅ `src/stores/needsController.ts` - Integrated timer processing into game tick
+- ✅ `src/components/debug/PetStoreDebug.vue` - Added adoption timer display
 
 **Success Criteria:**
 - ✅ Each store guinea pig has visible adoption countdown
-- ✅ Guinea pigs automatically replaced when timer expires
-- ✅ Timers persist across app sessions
-- ✅ New guinea pigs generated with new timers
-- ✅ System message logged when guinea pig "adopted"
+- ✅ Guinea pigs automatically replaced when timer expires (2-5 days)
+- ✅ Active guinea pigs never replaced
+- ✅ Favorited guinea pigs never replaced
+- ✅ Timers persist across app sessions (via Pinia persistence)
+- ✅ New guinea pigs generated with new random timers (2-5 days)
+- ✅ System message logged when guinea pig "adopted" (activity feed)
+- ✅ Store always maintains 10 guinea pigs
+- ✅ Build succeeds with no TypeScript errors
 
 ---
 

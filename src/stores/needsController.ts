@@ -139,9 +139,13 @@ export const useNeedsController = defineStore('needsController', () => {
 
     try {
       const guineaPigStore = useGuineaPigStore()
+      const petStoreManager = usePetStoreManager()
 
       // First, process needs decay for all active guinea pigs
       guineaPigStore.processBatchNeedsDecay()
+
+      // Phase 2: Process adoption timers for store guinea pigs
+      petStoreManager.processAdoptionTimers()
 
       // Then calculate wellness and apply friendship effects
       const activeGuineaPigs = guineaPigStore.activeGuineaPigs

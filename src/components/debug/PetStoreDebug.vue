@@ -34,6 +34,9 @@
                   <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furColor }}</Badge>
                   <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furPattern }}</Badge>
                 </div>
+                <div class="pet-store-debug__adoption-timer" v-if="guineaPig.adoptionTimer">
+                  ⏱️ {{ getAdoptionTimerDisplay(guineaPig.id) }}
+                </div>
               </div>
               <div class="pet-store-debug__guinea-pig-right">
                 <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
@@ -925,6 +928,12 @@ const handleClearFavorites = () => {
 const handleAddToFavorites = (guineaPigId: string) => {
   petStoreManager.addToFavorites(guineaPigId)
 }
+
+// Phase 2: Adoption timer display
+const getAdoptionTimerDisplay = (guineaPigId: string) => {
+  const remaining = petStoreManager.getAdoptionTimeRemaining(guineaPigId)
+  return petStoreManager.formatAdoptionTimer(remaining)
+}
 </script>
 
 <style>
@@ -1000,6 +1009,13 @@ const handleAddToFavorites = (guineaPigId: string) => {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.pet-store-debug__adoption-timer {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-block-start: var(--space-2);
+  font-weight: 500;
 }
 
 .pet-store-debug__guinea-pig-right {
