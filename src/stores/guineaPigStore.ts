@@ -103,6 +103,14 @@ export interface GuineaPigAppearance {
   size: 'small' | 'medium' | 'large' // Relative size
 }
 
+// Phase 5: Bond preservation system
+export interface GuineaPigBond {
+  partnerId: string         // ID of bonded guinea pig
+  relationshipLevel: number // 0-100: Strength of bond
+  bondedAt: number          // Timestamp when bond was created
+  timesTogether: number     // Number of sessions together
+}
+
 export interface GuineaPig {
   id: string
   name: string
@@ -120,7 +128,9 @@ export interface GuineaPig {
 
   // Relationship data
   friendship: number          // 0-100: Relationship with player
+  friendshipFrozen: boolean   // True when in Stardust Sanctuary (Phase 4)
   relationships: Record<string, number> // guinea pig ID -> friendship level (0-100)
+  bonds: Record<string, GuineaPigBond> // Phase 5: Preserved bonds with Sanctuary guinea pigs
 
   // System 2.5: Fulfillment Limitation System
   consumptionLimits: ConsumptionLimits
@@ -1342,6 +1352,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   const adjustFriendship = (id: string, amount: number): boolean => {
     const guineaPig = collection.value.guineaPigs[id]
     if (!guineaPig) return false
+
+    // Phase 4: Don't adjust friendship if frozen (in Stardust Sanctuary)
+    if (guineaPig.friendshipFrozen) return false
 
     guineaPig.friendship = Math.max(0, Math.min(100, guineaPig.friendship + amount))
     collection.value.lastUpdated = Date.now()

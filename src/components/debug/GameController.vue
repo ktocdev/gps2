@@ -21,26 +21,15 @@
               </Button>
             </div>
             <Button
-              @click="handleEndSession"
+              @click="handleReturnToStore"
               variant="secondary"
               full-width
               class="mt-3"
-              :disabled="!petStoreManager.activeGameSession"
-              :title="!petStoreManager.activeGameSession ? 'No active session' : 'Return guinea pigs to store and end session'"
+              :disabled="!petStoreManager.canAccessStore"
+              :title="petStoreManager.canAccessStore ? 'Return to pet store to adopt more guinea pigs' : 'Move all active guinea pigs to Stardust Sanctuary to return to store'"
             >
-              Return Guinea Pigs & End Session
+              Return to Store
             </Button>
-            <hr class="divider mt-4">
-            <SliderField
-              v-model="petStoreManager.settings.endGamePenalty"
-              :min="0"
-              :max="500"
-              :step="10"
-              class="mt-3"
-              label="End Game Penalty (non-favorite rescue)"
-              size="sm"
-              prefix="$"
-            />
           </div>
         </div>
 
@@ -301,13 +290,6 @@
         </div>
       </div>
     </div>
-    <!-- Session Ending Dialog -->
-    <SessionEndingDialog
-      :is-open="isSessionEndDialogOpen"
-      @confirm="handleConfirmEndSession"
-      @cancel="handleCancelEndSession"
-      @favoriteNonFavorites="handleFavoriteNonFavorites"
-    />
   </div>
 </template>
 
@@ -318,10 +300,9 @@ import { usePetStoreManager } from '../../stores/petStoreManager'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { usePlayerProgression } from '../../stores/playerProgression'
 import { useNeedsController } from '../../stores/needsController'
+import { useLoggingStore } from '../../stores/loggingStore'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
-import SliderField from '../basic/SliderField.vue'
-import SessionEndingDialog from '../game/SessionEndingDialog.vue'
 
 // Stores
 const gameController = useGameController()
@@ -329,11 +310,11 @@ const petStoreManager = usePetStoreManager()
 const guineaPigStore = useGuineaPigStore()
 const playerProgression = usePlayerProgression()
 const needsController = useNeedsController()
+const loggingStore = useLoggingStore()
 
 // Pet Store Session State
 const selectedGuineaPig1 = ref<string | number>('')
 const selectedGuineaPig2 = ref<string | number>('')
-const isSessionEndDialogOpen = ref(false)
 
 // Restore guinea pig selection from active session
 watch([() => petStoreManager.activeGameSession], ([session]) => {
@@ -342,8 +323,8 @@ watch([() => petStoreManager.activeGameSession], ([session]) => {
     // Active guinea pigs are always valid because they're stored in guineaPigStore.collection
     const sessionGuineaPigIds = session.guineaPigIds || []
 
-    // Set guinea pig selections directly from session
-    // They exist in guineaPigStore.collection even if not in available/favorites
+    // Phase 6: Set guinea pig selections directly from session
+    // They exist in guineaPigStore.collection even if not in available/sanctuary
     selectedGuineaPig1.value = sessionGuineaPigIds[0] || ''
     selectedGuineaPig2.value = sessionGuineaPigIds[1] || ''
   } else if (!session) {
@@ -358,15 +339,15 @@ const getGenderEmoji = (gender: 'male' | 'female') => {
 }
 
 const guineaPigOptions = computed(() => {
-  // Combine available, favorite, and active guinea pigs for selection
-  const availableAndFavorites = [
+  // Phase 6: Combine available, sanctuary, and active guinea pigs for selection (no more favorites)
+  const availableAndSanctuary = [
     ...petStoreManager.availableGuineaPigs,
-    ...petStoreManager.favoriteGuineaPigs
+    ...petStoreManager.sanctuaryGuineaPigs
   ]
 
   // Add active guinea pigs from guineaPigStore if they're not already in the list
   const activeGuineaPigs = petStoreManager.activeSessionGuineaPigs || []
-  const allGuineaPigs = [...availableAndFavorites]
+  const allGuineaPigs = [...availableAndSanctuary]
 
   for (const activeGp of activeGuineaPigs) {
     if (!allGuineaPigs.some(gp => gp.id === activeGp.id)) {
@@ -377,9 +358,9 @@ const guineaPigOptions = computed(() => {
   return [
     { label: 'None', value: '' },
     ...allGuineaPigs.map(gp => {
-      const isFavorite = petStoreManager.favoriteGuineaPigs.some(f => f.id === gp.id)
+      const isInSanctuary = petStoreManager.sanctuaryGuineaPigs.some(s => s.id === gp.id)
       const isActive = activeGuineaPigs.some(a => a.id === gp.id)
-      const prefix = isFavorite ? '⭐ ' : isActive ? '🎮 ' : ''
+      const prefix = isInSanctuary ? '✨ ' : isActive ? '🎮 ' : ''
       return {
         label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
         value: gp.id
@@ -389,15 +370,15 @@ const guineaPigOptions = computed(() => {
 })
 
 const guineaPig2Options = computed(() => {
-  // Combine available, favorite, and active guinea pigs for selection
-  const availableAndFavorites = [
+  // Phase 6: Combine available, sanctuary, and active guinea pigs for selection (no more favorites)
+  const availableAndSanctuary = [
     ...petStoreManager.availableGuineaPigs,
-    ...petStoreManager.favoriteGuineaPigs
+    ...petStoreManager.sanctuaryGuineaPigs
   ]
 
   // Add active guinea pigs from guineaPigStore if they're not already in the list
   const activeGuineaPigs = petStoreManager.activeSessionGuineaPigs || []
-  const allGuineaPigs = [...availableAndFavorites]
+  const allGuineaPigs = [...availableAndSanctuary]
 
   for (const activeGp of activeGuineaPigs) {
     if (!allGuineaPigs.some(gp => gp.id === activeGp.id)) {
@@ -410,9 +391,9 @@ const guineaPig2Options = computed(() => {
     ...allGuineaPigs
       .filter(gp => gp.id !== selectedGuineaPig1.value)
       .map(gp => {
-        const isFavorite = petStoreManager.favoriteGuineaPigs.some(f => f.id === gp.id)
+        const isInSanctuary = petStoreManager.sanctuaryGuineaPigs.some(s => s.id === gp.id)
         const isActive = activeGuineaPigs.some(a => a.id === gp.id)
-        const prefix = isFavorite ? '⭐ ' : isActive ? '🎮 ' : ''
+        const prefix = isInSanctuary ? '✨ ' : isActive ? '🎮 ' : ''
         return {
           label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
           value: gp.id
@@ -439,36 +420,17 @@ const handleStartSession = () => {
   }
 }
 
-const handleEndSession = () => {
-  // Open dialog instead of directly ending
-  isSessionEndDialogOpen.value = true
-}
-
-const handleConfirmEndSession = () => {
-  petStoreManager.endGameSession()
-  selectedGuineaPig1.value = ''
-  selectedGuineaPig2.value = ''
-  isSessionEndDialogOpen.value = false
-}
-
-const handleCancelEndSession = () => {
-  isSessionEndDialogOpen.value = false
-}
-
-const handleFavoriteNonFavorites = () => {
-  // Get non-favorited guinea pigs in active session
-  if (!petStoreManager.activeGameSession) return
-
-  const { guineaPigIds, wasFromFavorites } = petStoreManager.activeGameSession
-  const nonFavoritedIds = guineaPigIds.filter(id => !wasFromFavorites[id])
-
-  // Favorite each non-favorited guinea pig
-  for (const id of nonFavoritedIds) {
-    petStoreManager.addToFavorites(id)
+const handleReturnToStore = () => {
+  // Phase 4: Can only return to store when all guinea pigs are in Sanctuary
+  // The button is disabled if there are active guinea pigs
+  if (petStoreManager.canAccessStore) {
+    // Navigate to pet store or just show message
+    loggingStore.addPlayerAction(
+      'Ready to return to the pet store! 🏪',
+      '🏪',
+      { activeGuineaPigs: guineaPigStore.activeGuineaPigs.length }
+    )
   }
-
-  // Close dialog - user can now end session for free
-  isSessionEndDialogOpen.value = false
 }
 
 // Game Control State
