@@ -24,13 +24,7 @@ export interface GameSession {
 }
 
 interface PetStoreSettings {
-  storeRefreshCost: number
   endGamePenalty: number
-  allowUnlimitedRefresh: boolean
-  autoRefreshEnabled: boolean
-  autoRefreshIntervalMs: number
-  refreshCostSequence: number[]
-  currentRefreshIndex: number
 }
 
 export const usePetStoreManager = defineStore('petStoreManager', () => {
@@ -46,47 +40,11 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const favoriteGuineaPigs = ref<GuineaPig[]>([])
   const maxFavoriteSlots = ref<number>(3)
   const activeGameSession = ref<GameSession | null>(null)
-  const nextAutoRefreshTime = ref<number>(0)
 
   const settings = ref<PetStoreSettings>({
-    storeRefreshCost: 100,
-    endGamePenalty: 50,
-    allowUnlimitedRefresh: false,
-    autoRefreshEnabled: true,
-    autoRefreshIntervalMs: 86400000, // 24 hours in milliseconds
-    refreshCostSequence: [100, 300, 500, 800, 1600, 3200],
-    currentRefreshIndex: 0
+    endGamePenalty: 50
   })
 
-  // Auto-refresh interval reference
-  let autoRefreshInterval: ReturnType<typeof setInterval> | null = null
-
-  const canRefreshPetStore = computed(() => {
-    return settings.value.allowUnlimitedRefresh
-  })
-
-  const timeUntilAutoRefresh = computed(() => {
-    if (!settings.value.autoRefreshEnabled || nextAutoRefreshTime.value === 0) return 0
-    const remaining = nextAutoRefreshTime.value - Date.now()
-    return Math.max(0, remaining)
-  })
-
-  const formattedAutoRefreshTime = computed(() => {
-    const ms = timeUntilAutoRefresh.value
-    if (ms === 0) return 'Disabled'
-
-    const hours = Math.floor(ms / (1000 * 60 * 60))
-    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
-    const seconds = Math.floor((ms % (1000 * 60)) / 1000)
-
-    if (hours > 0) {
-      return `${hours}h ${minutes}m ${seconds}s`
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds}s`
-    } else {
-      return `${seconds}s`
-    }
-  })
 
   const activeSessionGuineaPigs = computed(() => {
     if (!activeGameSession.value) return []
@@ -110,12 +68,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const canPurchaseMoreSlots = computed(() =>
     maxFavoriteSlots.value < 10
   )
-
-  const nextRefreshCost = computed(() => {
-    const { refreshCostSequence, currentRefreshIndex } = settings.value
-    const index = Math.min(currentRefreshIndex, refreshCostSequence.length - 1)
-    return refreshCostSequence[index]
-  })
 
   function generateGuineaPigId(): string {
     return `gp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
@@ -445,6 +397,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       },
       lastHungerResetLevel: 100,
 
+      // Phase 0: Interaction cooldowns
+      lastPlayTime: null,
+      lastSocialTime: null,
+
       totalInteractions: 0,
       lifetimeHappiness: 100,
       achievementsUnlocked: []
@@ -570,112 +526,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     return true
   }
 
-  function refreshPetStore(isAutoRefresh: boolean = false): void {
-    // Charge penalty for manual refresh (not auto-refresh) using escalating cost
-    // Skip charging if allowUnlimitedRefresh is enabled (debug mode)
-    let currentCost = 0
-    if (!isAutoRefresh && !settings.value.allowUnlimitedRefresh) {
-      const playerProgression = usePlayerProgression()
-      const { refreshCostSequence, currentRefreshIndex } = settings.value
-
-      // Get current cost from sequence (capped at max)
-      const sequenceIndex = Math.min(currentRefreshIndex, refreshCostSequence.length - 1)
-      currentCost = refreshCostSequence[sequenceIndex]
-
-      playerProgression.deductCurrency(currentCost, 'pet_store_refresh')
-
-      // Increment index for next manual refresh (cap at max)
-      settings.value.currentRefreshIndex = Math.min(
-        currentRefreshIndex + 1,
-        refreshCostSequence.length - 1
-      )
-    } else if (isAutoRefresh) {
-      // Auto-refresh resets the index to 0
-      settings.value.currentRefreshIndex = 0
-    }
-
-    // Active sessions are preserved during refresh because:
-    // 1. Active guinea pigs are stored in guineaPigStore.collection (separate from pet store)
-    // 2. Their IDs don't change during refresh
-    // 3. Refresh only regenerates availableGuineaPigs, not active guinea pigs
-    // Therefore: We NEVER end active sessions during refresh!
-
-    const sessionWasActive = activeGameSession.value !== null
-
-    // Preserve active guinea pigs during refresh
-    const activeGuineaPigs: GuineaPig[] = []
-    if (sessionWasActive) {
-      const guineaPigStore = useGuineaPigStore()
-      for (const id of activeGameSession.value!.guineaPigIds) {
-        const gp = guineaPigStore.getGuineaPig(id)
-        if (gp) {
-          activeGuineaPigs.push(gp)
-        }
-      }
-
-      const logging = getLoggingStore()
-      const names = activeGuineaPigs.map(gp => gp.name).join(' & ')
-      logging.addPlayerAction(
-        `✅ Preserving active session with ${names} during refresh`,
-        '✅',
-        { preservedSession: activeGameSession.value?.id }
-      )
-    }
-
-    // Preserve favorites during refresh (key feature!)
-    const favoritesBackup = [...favoriteGuineaPigs.value]
-
-    // Preserve favorite guinea pigs in the available list
-    // Get favorites that are currently in the available list
-    const favoriteGuineaPigsInAvailableList: GuineaPig[] = []
-    for (const favorite of favoriteGuineaPigs.value) {
-      // Find the guinea pig in available list (to get latest state)
-      const availableGP = availableGuineaPigs.value.find(gp => gp.id === favorite.id)
-      if (availableGP) {
-        // Only add if not already in active list (avoid duplicates)
-        const isAlreadyInActiveList = activeGuineaPigs.some(gp => gp.id === favorite.id)
-        if (!isAlreadyInActiveList) {
-          favoriteGuineaPigsInAvailableList.push(availableGP)
-        }
-      }
-    }
-
-    // Calculate how many new guinea pigs we need
-    const preservedCount = activeGuineaPigs.length + favoriteGuineaPigsInAvailableList.length
-    const newGuineaPigsCount = 10 - preservedCount
-    const newGuineaPigs: GuineaPig[] = []
-    for (let i = 0; i < newGuineaPigsCount; i++) {
-      newGuineaPigs.push(generateRandomGuineaPig())
-    }
-
-    // Place active guinea pigs first, then favorites, then new ones
-    availableGuineaPigs.value = [...activeGuineaPigs, ...favoriteGuineaPigsInAvailableList, ...newGuineaPigs]
-
-    // Restore favorites
-    favoriteGuineaPigs.value = favoritesBackup
-
-    // Reset auto-refresh timer whenever any refresh occurs (manual or auto)
-    if (settings.value.autoRefreshEnabled) {
-      nextAutoRefreshTime.value = Date.now() + settings.value.autoRefreshIntervalMs
-    }
-
-    const logging = getLoggingStore()
-    const refreshType = isAutoRefresh ? 'Auto-refreshed' : 'Refreshed'
-    const penaltyMsg = isAutoRefresh ? '' : ` (cost: $${currentCost})`
-    const nextCostIndex = Math.min(settings.value.currentRefreshIndex, settings.value.refreshCostSequence.length - 1)
-    const nextCost = settings.value.refreshCostSequence[nextCostIndex]
-    logging.addPlayerAction(`${refreshType} pet store with new guinea pigs${penaltyMsg} 🔄`, '🔄', {
-      isAutoRefresh,
-      penalty: isAutoRefresh ? 0 : currentCost,
-      nextRefreshCost: nextCost,
-      nextAutoRefresh: nextAutoRefreshTime.value,
-      favoritesPreserved: favoritesBackup.length,
-      sessionPreserved: sessionWasActive,
-      activeGuineaPigsPreserved: activeGuineaPigs.length,
-      favoriteGuineaPigsPreserved: favoriteGuineaPigsInAvailableList.length,
-      newGuineaPigsGenerated: newGuineaPigsCount
-    })
-  }
 
   function startGameSession(guineaPigIds: string[]): void {
     if (guineaPigIds.length < 1 || guineaPigIds.length > 2) {
@@ -922,66 +772,12 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     activeGameSession.value = null
   }
 
-  function startAutoRefresh(): void {
-    if (!settings.value.autoRefreshEnabled) return
-
-    // Clear any existing interval
-    stopAutoRefresh()
-
-    // Set next refresh time if not already set
-    if (nextAutoRefreshTime.value === 0) {
-      nextAutoRefreshTime.value = Date.now() + settings.value.autoRefreshIntervalMs
-    }
-
-    // Check every minute if it's time to refresh
-    autoRefreshInterval = setInterval(() => {
-      if (Date.now() >= nextAutoRefreshTime.value) {
-        refreshPetStore(true)
-      }
-    }, 60000) // Check every minute
-
-    const logging = getLoggingStore()
-    logging.logInfo('Auto-refresh started for pet store', {
-      interval: settings.value.autoRefreshIntervalMs,
-      nextRefresh: nextAutoRefreshTime.value
-    })
-  }
-
-  function stopAutoRefresh(): void {
-    if (autoRefreshInterval) {
-      clearInterval(autoRefreshInterval)
-      autoRefreshInterval = null
-    }
-  }
-
-  function toggleAutoRefresh(): void {
-    settings.value.autoRefreshEnabled = !settings.value.autoRefreshEnabled
-
-    if (settings.value.autoRefreshEnabled) {
-      startAutoRefresh()
-    } else {
-      stopAutoRefresh()
-      nextAutoRefreshTime.value = 0
-      const logging = getLoggingStore()
-      logging.logInfo('Auto-refresh stopped for pet store')
-    }
-  }
 
   function initializeStore(): void {
     const logging = getLoggingStore()
 
     if (availableGuineaPigs.value.length === 0) {
       generateRandomGuineaPigs(10)
-    }
-
-    // Check if an auto-refresh is due (in case app was closed and reopened)
-    if (settings.value.autoRefreshEnabled) {
-      if (nextAutoRefreshTime.value > 0 && Date.now() >= nextAutoRefreshTime.value) {
-        logging.logInfo('Auto-refresh was due, refreshing pet store')
-        refreshPetStore(true)
-      }
-      // Start or restart the auto-refresh interval
-      startAutoRefresh()
     }
 
     logging.logInfo(`Pet Store Manager initialized with ${availableGuineaPigs.value.length} guinea pigs`)
@@ -993,13 +789,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     maxFavoriteSlots,
     activeGameSession,
     settings,
-    nextAutoRefreshTime,
 
-    canRefreshPetStore,
     activeSessionGuineaPigs,
-    timeUntilAutoRefresh,
-    formattedAutoRefreshTime,
-    nextRefreshCost,
 
     // Favorites computed properties
     favoriteCount,
@@ -1025,13 +816,9 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     getRarity,
 
     generateRandomGuineaPigs,
-    refreshPetStore,
     startGameSession,
     endGameSession,
     initializeStore,
-    startAutoRefresh,
-    stopAutoRefresh,
-    toggleAutoRefresh,
 
     // Favorites methods
     addToFavorites,

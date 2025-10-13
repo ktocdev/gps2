@@ -38,6 +38,10 @@
         <FeedingDebugView />
       </template>
 
+      <template #friendship>
+        <FriendshipDebug />
+      </template>
+
       <template #logging>
         <LoggingSystemView />
       </template>
@@ -59,6 +63,7 @@ import InventoryDebugView from './InventoryDebugView.vue'
 import NeedsDebugView from './NeedsDebugView.vue'
 import PersonalityDebugView from './PersonalityDebugView.vue'
 import FeedingDebugView from './FeedingDebugView.vue'
+import FriendshipDebug from '../components/debug/FriendshipDebug.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
 import { useGameController } from '../stores/gameController'
@@ -91,6 +96,12 @@ const debugTabs: Tab[] = [
     id: 'feeding',
     label: 'Feeding System',
     icon: '🥕',
+    panelClass: 'tab-container__panel--constrained'
+  },
+  {
+    id: 'friendship',
+    label: 'Friendship',
+    icon: '💖',
     panelClass: 'tab-container__panel--constrained'
   },
   {

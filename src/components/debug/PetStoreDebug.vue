@@ -468,58 +468,6 @@
       </div>
     </div>
 
-    <!-- Refresh Settings - Single Column -->
-    <div class="panel panel--compact">
-      <div class="panel__header">
-        <h3>Refresh Settings</h3>
-      </div>
-      <div class="panel__content">
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-label">Can Refresh:</span>
-            <span class="stat-value">{{ petStoreManager.canRefreshPetStore ? 'Yes' : 'No' }}</span>
-          </div>
-          <div class="stat-item" v-if="petStoreManager.settings.autoRefreshEnabled">
-            <span class="stat-label">Auto-refresh in:</span>
-            <span class="stat-value">{{ liveAutoRefreshCountdown }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Next Manual Refresh Cost:</span>
-            <span class="stat-value">${{ petStoreManager.nextRefreshCost }}</span>
-          </div>
-        </div>
-        <div class="flex flex-col gap-4 mt-4">
-          <CheckboxField
-            v-model="petStoreManager.settings.allowUnlimitedRefresh"
-            label="No Charge for Refresh (Debug)"
-          />
-          <hr class="divider">
-          <div class="cost-sequence-display">
-            <label class="text-label">Escalating Refresh Cost Sequence:</label>
-            <div class="cost-sequence">
-              <span
-                v-for="(cost, index) in petStoreManager.settings.refreshCostSequence"
-                :key="index"
-                :class="['cost-badge', { 'cost-badge--current': index === petStoreManager.settings.currentRefreshIndex, 'cost-badge--past': index < petStoreManager.settings.currentRefreshIndex }]"
-              >
-                ${{ cost }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel__footer mt-4">
-        <Button
-          @click="handleRefresh"
-          :disabled="isRefreshAtMaxCost"
-          :title="isRefreshAtMaxCost ? 'Maximum refresh cost reached ($3,200). Wait for 24-hour auto-refresh or enable No Charge mode.' : 'Refresh pet store with new guinea pigs'"
-          full-width
-        >
-          Refresh Pet Store
-        </Button>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -531,7 +479,6 @@ import type { GuineaPig } from '../../stores/guineaPigStore'
 import SliderField from '../basic/SliderField.vue'
 import Button from '../basic/Button.vue'
 import Badge from '../basic/Badge.vue'
-import CheckboxField from '../basic/CheckboxField.vue'
 import Select from '../basic/Select.vue'
 import Details from '../basic/Details.vue'
 import BlockMessage from '../basic/BlockMessage.vue'
@@ -594,42 +541,6 @@ const sortedAvailableGuineaPigs = computed(() => {
     // Keep original order for same status
     return 0
   })
-})
-
-// Check if refresh is at max cost (disabled unless "No Charge" is enabled)
-const isRefreshAtMaxCost = computed(() => {
-  if (petStoreManager.settings.allowUnlimitedRefresh) {
-    return false // Never disable if "No Charge" is enabled
-  }
-  const { currentRefreshIndex, refreshCostSequence } = petStoreManager.settings
-  return currentRefreshIndex >= refreshCostSequence.length - 1
-})
-
-// Computed property that uses currentTime to trigger reactivity
-const liveAutoRefreshCountdown = computed(() => {
-  // Access currentTime.value to establish reactive dependency
-  const now = currentTime.value
-
-  if (!petStoreManager.settings.autoRefreshEnabled || petStoreManager.nextAutoRefreshTime === 0) {
-    return 'Disabled'
-  }
-
-  const remaining = petStoreManager.nextAutoRefreshTime - now
-  const ms = Math.max(0, remaining)
-
-  if (ms === 0) return 'Refreshing...'
-
-  const hours = Math.floor(ms / (1000 * 60 * 60))
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((ms % (1000 * 60)) / 1000)
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`
-  } else if (minutes > 0) {
-    return `${minutes}m ${seconds}s`
-  } else {
-    return `${seconds}s`
-  }
 })
 
 // Dynamic option arrays from pet store manager
@@ -999,11 +910,6 @@ watch(() => petStoreManager.availableGuineaPigs, (guineaPigs) => {
     }
   }
 }, { immediate: true })
-
-const handleRefresh = () => {
-  petStoreManager.refreshPetStore()
-  // The watcher will handle re-selecting the guinea pig after refresh
-}
 
 // Favorites debug handlers
 const handleForceAddSlot = () => {
