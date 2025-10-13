@@ -20,16 +20,43 @@
                 {{ petStoreManager.activeGameSession ? 'Game in Session' : 'Start Session' }}
               </Button>
             </div>
+
+            <!-- Needs Processing Control -->
+            <div class="stats-grid mt-4">
+              <div class="stat-item">
+                <span class="stat-label">Needs Processing:</span>
+                <span v-if="needsController.isPausedManually" class="stat-value text--warning">
+                  Paused (Manual) ⚠️
+                </span>
+                <span v-else-if="!needsController.processingEnabled" class="stat-value text--muted">
+                  Paused (Auto)
+                </span>
+                <span v-else class="stat-value text--success">
+                  Active ✓
+                </span>
+              </div>
+            </div>
+
             <Button
-              @click="handleReturnToStore"
-              variant="secondary"
+              @click="toggleNeedsProcessing"
+              :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
+              :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
+              :title="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : '')"
+              size="sm"
               full-width
-              class="mt-3"
-              :disabled="!petStoreManager.canAccessStore"
-              :title="petStoreManager.canAccessStore ? 'Return to pet store to adopt more guinea pigs' : 'Move all active guinea pigs to Stardust Sanctuary to return to store'"
+              class="needs-processing-button mt-3"
             >
-              Return to Store
+              {{ needsController.processingEnabled ? 'Pause Needs Processing' : 'Resume Needs Processing' }}
             </Button>
+
+            <!-- Warning: Needs Manually Paused -->
+            <div v-if="needsController.isPausedManually" class="panel__subpanel panel__subpanel--warning mt-3">
+              <div class="panel__subpanel-content">
+                <p class="panel__subpanel-text panel__subpanel-text--warning">
+                  ⚠️ Needs manually paused in Needs System
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -148,51 +175,6 @@
           </div>
         </div>
 
-        <!-- System Controls -->
-        <div class="panel panel--compact">
-          <div class="panel__header">
-            <h3>System Controls</h3>
-          </div>
-          <div class="panel__content">
-            <!-- Needs Processing Control -->
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">Needs Processing:</span>
-                <span v-if="needsController.isPausedManually" class="stat-value text--warning">
-                  Paused (Manual) ⚠️
-                </span>
-                <span v-else-if="!needsController.processingEnabled" class="stat-value text--muted">
-                  Paused (Auto)
-                </span>
-                <span v-else class="stat-value text--success">
-                  Active ✓
-                </span>
-              </div>
-            </div>
-
-            <Button
-              @click="toggleNeedsProcessing"
-              :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
-              :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
-              :title="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : '')"
-              size="sm"
-              full-width
-              class="needs-processing-button mt-3"
-            >
-              {{ needsController.processingEnabled ? 'Pause Needs Processing' : 'Resume Needs Processing' }}
-            </Button>
-
-            <!-- Warning: Needs Manually Paused -->
-            <div v-if="needsController.isPausedManually" class="panel__subpanel panel__subpanel--warning mt-3">
-              <div class="panel__subpanel-content">
-                <p class="panel__subpanel-text panel__subpanel-text--warning">
-                  ⚠️ Needs manually paused in Needs System
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Computed Properties -->
         <div class="panel panel--border-secondary">
           <div class="panel__header">
@@ -300,7 +282,6 @@ import { usePetStoreManager } from '../../stores/petStoreManager'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { usePlayerProgression } from '../../stores/playerProgression'
 import { useNeedsController } from '../../stores/needsController'
-import { useLoggingStore } from '../../stores/loggingStore'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
 
@@ -310,7 +291,6 @@ const petStoreManager = usePetStoreManager()
 const guineaPigStore = useGuineaPigStore()
 const playerProgression = usePlayerProgression()
 const needsController = useNeedsController()
-const loggingStore = useLoggingStore()
 
 // Pet Store Session State
 const selectedGuineaPig1 = ref<string | number>('')
@@ -417,19 +397,6 @@ const handleStartSession = () => {
 
   if (guineaPigIds.length > 0) {
     petStoreManager.startGameSession(guineaPigIds)
-  }
-}
-
-const handleReturnToStore = () => {
-  // Phase 4: Can only return to store when all guinea pigs are in Sanctuary
-  // The button is disabled if there are active guinea pigs
-  if (petStoreManager.canAccessStore) {
-    // Navigate to pet store or just show message
-    loggingStore.addPlayerAction(
-      'Ready to return to the pet store! 🏪',
-      '🏪',
-      { activeGuineaPigs: guineaPigStore.activeGuineaPigs.length }
-    )
   }
 }
 

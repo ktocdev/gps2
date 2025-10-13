@@ -1,14 +1,9 @@
 <template>
   <div class="friendship-debug debug-view__constrained">
     <h2>Friendship</h2>
-    <div v-if="activeGuineaPigs.length === 0" class="panel panel--compact">
-      <div class="panel__header">
-        <h3>Friendship Progress</h3>
-      </div>
-      <div class="panel__content">
-        <div class="empty-state">
-          <p>No active guinea pigs. Start a game session to test friendship mechanics.</p>
-        </div>
+    <div v-if="activeGuineaPigs.length === 0" class="panel panel--compact panel--warning mb-6">
+      <div class="panel__content text-center">
+        <p>No active guinea pigs. Start a game session from the Pet Store tab to test friendship system.</p>
       </div>
     </div>
 

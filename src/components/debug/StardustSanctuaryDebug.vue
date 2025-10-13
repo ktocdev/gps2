@@ -8,8 +8,10 @@
         <h3>Active Guinea Pigs ({{ activeGuineaPigs.length }}/2)</h3>
       </div>
       <div class="panel__content">
-        <div v-if="activeGuineaPigs.length === 0" class="empty-state">
-          <p>No active guinea pigs. Select from store or activate from Sanctuary.</p>
+        <div v-if="activeGuineaPigs.length === 0" class="panel panel--compact panel--warning">
+          <div class="panel__content text-center">
+            <p>No active guinea pigs. Start a game session from the Pet Store tab to test Stardust Sanctuary.</p>
+          </div>
         </div>
         <div v-else class="sanctuary-debug__guinea-pig-list">
           <div
@@ -51,8 +53,10 @@
         <h3>Stardust Sanctuary ({{ petStoreManager.sanctuaryCount }}/{{ petStoreManager.maxSanctuarySlots }})</h3>
       </div>
       <div class="panel__content">
-        <div v-if="petStoreManager.sanctuaryCount === 0" class="empty-state">
-          <p>No guinea pigs in Stardust Sanctuary yet. Build friendship to 85% to unlock!</p>
+        <div v-if="petStoreManager.sanctuaryCount === 0" class="panel panel--compact panel--warning">
+          <div class="panel__content text-center">
+            <p>No guinea pigs in Stardust Sanctuary yet. Build friendship to 85% to unlock!</p>
+          </div>
         </div>
         <div v-else class="sanctuary-debug__guinea-pig-list">
           <div

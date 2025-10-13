@@ -163,9 +163,9 @@
     </div>
 
     <!-- No Active Guinea Pigs -->
-    <div v-else class="panel panel--compact panel--bordered">
-      <div class="panel__content">
-        <p class="text-muted">No active guinea pigs. Adopt guinea pigs from the Pet Store to test personality traits.</p>
+    <div v-else class="panel panel--compact panel--warning mb-6">
+      <div class="panel__content text-center">
+        <p>No active guinea pigs. Start a game session from the Pet Store tab to test personality system.</p>
       </div>
     </div>
   </div>

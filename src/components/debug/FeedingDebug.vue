@@ -149,7 +149,7 @@
     </div>
 
     <!-- No Active Guinea Pigs -->
-    <div v-else class="panel panel--warning">
+    <div v-else class="panel panel--compact panel--warning mb-6">
       <div class="panel__content text-center">
         <p>No active guinea pigs. Start a game session from the Pet Store tab to test feeding system.</p>
       </div>
