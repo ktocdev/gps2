@@ -1,5 +1,6 @@
 <template>
-  <div class="feeding-debug">
+  <div class="feeding-debug debug-view__constrained">
+    <h2>Feeding System</h2>
     <!-- Individual Guinea Pig Feeding -->
     <div v-if="hasActiveGuineaPigs">
       <div class="guinea-pigs-grid">
@@ -148,7 +149,7 @@
     </div>
 
     <!-- No Active Guinea Pigs -->
-    <div v-else class="panel panel--warning">
+    <div v-else class="panel panel--compact panel--warning mb-6">
       <div class="panel__content text-center">
         <p>No active guinea pigs. Start a game session from the Pet Store tab to test feeding system.</p>
       </div>
@@ -345,9 +346,6 @@ const getHungerStatusClass = (value: number): string => {
 </script>
 
 <style scoped>
-.feeding-debug {
-  max-inline-size: 100%;
-}
 
 .food-categories-grid {
   display: grid;

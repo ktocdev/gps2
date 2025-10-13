@@ -1,5 +1,6 @@
 <template>
   <div class="game-controller">
+    <h2>Game Controller</h2>
     <!-- Pet Store Game Session -->
     <div class="mb-8">
       <div class="panel-row">
@@ -19,27 +20,43 @@
                 {{ petStoreManager.activeGameSession ? 'Game in Session' : 'Start Session' }}
               </Button>
             </div>
+
+            <!-- Needs Processing Control -->
+            <div class="stats-grid mt-4">
+              <div class="stat-item">
+                <span class="stat-label">Needs Processing:</span>
+                <span v-if="needsController.isPausedManually" class="stat-value text--warning">
+                  Paused (Manual) ⚠️
+                </span>
+                <span v-else-if="!needsController.processingEnabled" class="stat-value text--muted">
+                  Paused (Auto)
+                </span>
+                <span v-else class="stat-value text--success">
+                  Active ✓
+                </span>
+              </div>
+            </div>
+
             <Button
-              @click="handleEndSession"
-              variant="secondary"
-              full-width
-              class="mt-3"
-              :disabled="!petStoreManager.activeGameSession"
-              :title="!petStoreManager.activeGameSession ? 'No active session' : 'Return guinea pigs to store and end session'"
-            >
-              Return Guinea Pigs & End Session
-            </Button>
-            <hr class="divider mt-4">
-            <SliderField
-              v-model="petStoreManager.settings.endGamePenalty"
-              :min="0"
-              :max="500"
-              :step="10"
-              class="mt-3"
-              label="End Game Penalty (non-favorite rescue)"
+              @click="toggleNeedsProcessing"
+              :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
+              :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
+              :title="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : '')"
               size="sm"
-              prefix="$"
-            />
+              full-width
+              class="needs-processing-button mt-3"
+            >
+              {{ needsController.processingEnabled ? 'Pause Needs Processing' : 'Resume Needs Processing' }}
+            </Button>
+
+            <!-- Warning: Needs Manually Paused -->
+            <div v-if="needsController.isPausedManually" class="panel__subpanel panel__subpanel--warning mt-3">
+              <div class="panel__subpanel-content">
+                <p class="panel__subpanel-text panel__subpanel-text--warning">
+                  ⚠️ Needs manually paused in Needs System
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -158,51 +175,6 @@
           </div>
         </div>
 
-        <!-- System Controls -->
-        <div class="panel panel--compact">
-          <div class="panel__header">
-            <h3>System Controls</h3>
-          </div>
-          <div class="panel__content">
-            <!-- Needs Processing Control -->
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">Needs Processing:</span>
-                <span v-if="needsController.isPausedManually" class="stat-value text--warning">
-                  Paused (Manual) ⚠️
-                </span>
-                <span v-else-if="!needsController.processingEnabled" class="stat-value text--muted">
-                  Paused (Auto)
-                </span>
-                <span v-else class="stat-value text--success">
-                  Active ✓
-                </span>
-              </div>
-            </div>
-
-            <Button
-              @click="toggleNeedsProcessing"
-              :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
-              :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
-              :title="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : '')"
-              size="sm"
-              full-width
-              class="needs-processing-button mt-3"
-            >
-              {{ needsController.processingEnabled ? 'Pause Needs Processing' : 'Resume Needs Processing' }}
-            </Button>
-
-            <!-- Warning: Needs Manually Paused -->
-            <div v-if="needsController.isPausedManually" class="panel__subpanel panel__subpanel--warning mt-3">
-              <div class="panel__subpanel-content">
-                <p class="panel__subpanel-text panel__subpanel-text--warning">
-                  ⚠️ Needs manually paused in Needs System
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Computed Properties -->
         <div class="panel panel--border-secondary">
           <div class="panel__header">
@@ -300,13 +272,6 @@
         </div>
       </div>
     </div>
-    <!-- Session Ending Dialog -->
-    <SessionEndingDialog
-      :is-open="isSessionEndDialogOpen"
-      @confirm="handleConfirmEndSession"
-      @cancel="handleCancelEndSession"
-      @favoriteNonFavorites="handleFavoriteNonFavorites"
-    />
   </div>
 </template>
 
@@ -319,8 +284,6 @@ import { usePlayerProgression } from '../../stores/playerProgression'
 import { useNeedsController } from '../../stores/needsController'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
-import SliderField from '../basic/SliderField.vue'
-import SessionEndingDialog from '../game/SessionEndingDialog.vue'
 
 // Stores
 const gameController = useGameController()
@@ -332,7 +295,6 @@ const needsController = useNeedsController()
 // Pet Store Session State
 const selectedGuineaPig1 = ref<string | number>('')
 const selectedGuineaPig2 = ref<string | number>('')
-const isSessionEndDialogOpen = ref(false)
 
 // Restore guinea pig selection from active session
 watch([() => petStoreManager.activeGameSession], ([session]) => {
@@ -341,8 +303,8 @@ watch([() => petStoreManager.activeGameSession], ([session]) => {
     // Active guinea pigs are always valid because they're stored in guineaPigStore.collection
     const sessionGuineaPigIds = session.guineaPigIds || []
 
-    // Set guinea pig selections directly from session
-    // They exist in guineaPigStore.collection even if not in available/favorites
+    // Phase 6: Set guinea pig selections directly from session
+    // They exist in guineaPigStore.collection even if not in available/sanctuary
     selectedGuineaPig1.value = sessionGuineaPigIds[0] || ''
     selectedGuineaPig2.value = sessionGuineaPigIds[1] || ''
   } else if (!session) {
@@ -357,15 +319,15 @@ const getGenderEmoji = (gender: 'male' | 'female') => {
 }
 
 const guineaPigOptions = computed(() => {
-  // Combine available, favorite, and active guinea pigs for selection
-  const availableAndFavorites = [
+  // Phase 6: Combine available, sanctuary, and active guinea pigs for selection (no more favorites)
+  const availableAndSanctuary = [
     ...petStoreManager.availableGuineaPigs,
-    ...petStoreManager.favoriteGuineaPigs
+    ...petStoreManager.sanctuaryGuineaPigs
   ]
 
   // Add active guinea pigs from guineaPigStore if they're not already in the list
   const activeGuineaPigs = petStoreManager.activeSessionGuineaPigs || []
-  const allGuineaPigs = [...availableAndFavorites]
+  const allGuineaPigs = [...availableAndSanctuary]
 
   for (const activeGp of activeGuineaPigs) {
     if (!allGuineaPigs.some(gp => gp.id === activeGp.id)) {
@@ -376,9 +338,9 @@ const guineaPigOptions = computed(() => {
   return [
     { label: 'None', value: '' },
     ...allGuineaPigs.map(gp => {
-      const isFavorite = petStoreManager.favoriteGuineaPigs.some(f => f.id === gp.id)
+      const isInSanctuary = petStoreManager.sanctuaryGuineaPigs.some(s => s.id === gp.id)
       const isActive = activeGuineaPigs.some(a => a.id === gp.id)
-      const prefix = isFavorite ? '⭐ ' : isActive ? '🎮 ' : ''
+      const prefix = isInSanctuary ? '✨ ' : isActive ? '🎮 ' : ''
       return {
         label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
         value: gp.id
@@ -388,15 +350,15 @@ const guineaPigOptions = computed(() => {
 })
 
 const guineaPig2Options = computed(() => {
-  // Combine available, favorite, and active guinea pigs for selection
-  const availableAndFavorites = [
+  // Phase 6: Combine available, sanctuary, and active guinea pigs for selection (no more favorites)
+  const availableAndSanctuary = [
     ...petStoreManager.availableGuineaPigs,
-    ...petStoreManager.favoriteGuineaPigs
+    ...petStoreManager.sanctuaryGuineaPigs
   ]
 
   // Add active guinea pigs from guineaPigStore if they're not already in the list
   const activeGuineaPigs = petStoreManager.activeSessionGuineaPigs || []
-  const allGuineaPigs = [...availableAndFavorites]
+  const allGuineaPigs = [...availableAndSanctuary]
 
   for (const activeGp of activeGuineaPigs) {
     if (!allGuineaPigs.some(gp => gp.id === activeGp.id)) {
@@ -409,9 +371,9 @@ const guineaPig2Options = computed(() => {
     ...allGuineaPigs
       .filter(gp => gp.id !== selectedGuineaPig1.value)
       .map(gp => {
-        const isFavorite = petStoreManager.favoriteGuineaPigs.some(f => f.id === gp.id)
+        const isInSanctuary = petStoreManager.sanctuaryGuineaPigs.some(s => s.id === gp.id)
         const isActive = activeGuineaPigs.some(a => a.id === gp.id)
-        const prefix = isFavorite ? '⭐ ' : isActive ? '🎮 ' : ''
+        const prefix = isInSanctuary ? '✨ ' : isActive ? '🎮 ' : ''
         return {
           label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
           value: gp.id
@@ -436,38 +398,6 @@ const handleStartSession = () => {
   if (guineaPigIds.length > 0) {
     petStoreManager.startGameSession(guineaPigIds)
   }
-}
-
-const handleEndSession = () => {
-  // Open dialog instead of directly ending
-  isSessionEndDialogOpen.value = true
-}
-
-const handleConfirmEndSession = () => {
-  petStoreManager.endGameSession()
-  selectedGuineaPig1.value = ''
-  selectedGuineaPig2.value = ''
-  isSessionEndDialogOpen.value = false
-}
-
-const handleCancelEndSession = () => {
-  isSessionEndDialogOpen.value = false
-}
-
-const handleFavoriteNonFavorites = () => {
-  // Get non-favorited guinea pigs in active session
-  if (!petStoreManager.activeGameSession) return
-
-  const { guineaPigIds, wasFromFavorites } = petStoreManager.activeGameSession
-  const nonFavoritedIds = guineaPigIds.filter(id => !wasFromFavorites[id])
-
-  // Favorite each non-favorited guinea pig
-  for (const id of nonFavoritedIds) {
-    petStoreManager.addToFavorites(id)
-  }
-
-  // Close dialog - user can now end session for free
-  isSessionEndDialogOpen.value = false
 }
 
 // Game Control State

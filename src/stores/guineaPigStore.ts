@@ -103,6 +103,14 @@ export interface GuineaPigAppearance {
   size: 'small' | 'medium' | 'large' // Relative size
 }
 
+// Phase 5: Bond preservation system
+export interface GuineaPigBond {
+  partnerId: string         // ID of bonded guinea pig
+  relationshipLevel: number // 0-100: Strength of bond
+  bondedAt: number          // Timestamp when bond was created
+  timesTogether: number     // Number of sessions together
+}
+
 export interface GuineaPig {
   id: string
   name: string
@@ -120,12 +128,22 @@ export interface GuineaPig {
 
   // Relationship data
   friendship: number          // 0-100: Relationship with player
+  friendshipFrozen: boolean   // True when in Stardust Sanctuary (Phase 4)
   relationships: Record<string, number> // guinea pig ID -> friendship level (0-100)
+  bonds: Record<string, GuineaPigBond> // Phase 5: Preserved bonds with Sanctuary guinea pigs
 
   // System 2.5: Fulfillment Limitation System
   consumptionLimits: ConsumptionLimits
   interactionRejection: InteractionRejection
   lastHungerResetLevel: number
+
+  // Phase 0: Interaction cooldowns
+  lastPlayTime: number | null        // Timestamp of last play interaction
+  lastSocialTime: number | null      // Timestamp of last social interaction
+
+  // Phase 2: Adoption timers (for store guinea pigs)
+  adoptionTimer: number | null       // Timestamp when guinea pig entered store
+  adoptionDuration: number           // How long available in store (ms)
 
   // Tracking data
   totalInteractions: number
@@ -415,6 +433,78 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return Math.max(0.5, Math.min(2.0, modifier))
   }
 
+  /**
+   * Calculate interaction cooldown based on personality, friendship, and wellness
+   * Phase 0: Interaction Cooldowns
+   */
+  const calculateInteractionCooldown = (guineaPig: GuineaPig, interactionType: 'play' | 'social'): number => {
+    const needsController = useNeedsController()
+    const wellness = needsController.calculateWellness(guineaPig.id)
+
+    // Base cooldowns (in seconds)
+    const baseCooldowns = {
+      play: 60,    // 1 minute base
+      social: 45   // 45 seconds base
+    }
+
+    let cooldown = baseCooldowns[interactionType]
+
+    // Personality modifier
+    const relevantTrait = interactionType === 'play' ? guineaPig.personality.playfulness : guineaPig.personality.friendliness
+    // High trait (8-10): 0.5x cooldown, Medium (4-7): 1.0x, Low (1-3): 1.5x
+    let personalityMod = 1.0
+    if (relevantTrait >= 8) {
+      personalityMod = 0.5
+    } else if (relevantTrait <= 3) {
+      personalityMod = 1.5
+    }
+
+    // Friendship modifier
+    const friendship = guineaPig.friendship
+    let friendshipMod = 1.0
+    if (friendship >= 71) {
+      friendshipMod = 0.7  // High friendship: 30% faster cooldown
+    } else if (friendship <= 40) {
+      friendshipMod = 1.5  // Low friendship: 50% longer cooldown
+    }
+
+    // Wellness modifier
+    let wellnessMod = 1.0
+    if (wellness > 70) {
+      wellnessMod = 0.8  // High wellness: 20% faster cooldown
+    } else if (wellness < 30) {
+      wellnessMod = 2.0  // Low wellness: 100% longer cooldown (needs rest)
+    }
+
+    // Apply all modifiers
+    cooldown = cooldown * personalityMod * friendshipMod * wellnessMod
+
+    // Clamp to reasonable range: 30s minimum, 180s (3 min) maximum
+    return Math.max(30, Math.min(180, Math.round(cooldown)))
+  }
+
+  /**
+   * Check if interaction is currently on cooldown
+   * Phase 0: Interaction Cooldowns
+   */
+  const checkInteractionCooldown = (guineaPigId: string, interactionType: 'play' | 'social'): { onCooldown: boolean, remainingSeconds: number } => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return { onCooldown: false, remainingSeconds: 0 }
+
+    const lastTime = interactionType === 'play' ? guineaPig.lastPlayTime : guineaPig.lastSocialTime
+    if (lastTime === null) return { onCooldown: false, remainingSeconds: 0 }
+
+    const cooldownMs = calculateInteractionCooldown(guineaPig, interactionType) * 1000
+    const elapsed = Date.now() - lastTime
+    const remaining = cooldownMs - elapsed
+
+    if (remaining > 0) {
+      return { onCooldown: true, remainingSeconds: Math.ceil(remaining / 1000) }
+    }
+
+    return { onCooldown: false, remainingSeconds: 0 }
+  }
+
   const processNeedsDecay = (guineaPigId: string, deltaTimeMs: number): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig || !settings.value.autoNeedsDecay) return false
@@ -518,6 +608,31 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       // Process decay on every game tick (every 5 seconds)
       if (deltaTime >= 1000) {
         processNeedsDecay(guineaPig.id, deltaTime)
+
+        // Phase 0: Passive friendship gain/loss based on wellness
+        const needsController = useNeedsController()
+        const wellness = needsController.calculateWellness(guineaPig.id)
+
+        if (wellness > 50) {
+          // Good care: passive friendship gain
+          adjustFriendship(guineaPig.id, 0.1)
+        } else if (wellness < 50) {
+          // Poor care: friendship loss
+          // Scale loss based on how bad wellness is
+          if (wellness < 30) {
+            adjustFriendship(guineaPig.id, -2) // Very poor care: -2 per tick
+          } else {
+            adjustFriendship(guineaPig.id, -1) // Poor care: -1 per tick
+          }
+        }
+
+        // Phase 0: Additional friendship loss for critically low needs
+        // Check individual needs below 30%
+        const criticalNeeds = Object.entries(guineaPig.needs).filter(([_, value]) => value < 30)
+        if (criticalNeeds.length > 0) {
+          // -0.5 friendship per critically low need (stacks with wellness penalty)
+          adjustFriendship(guineaPig.id, -0.5 * criticalNeeds.length)
+        }
       }
     })
   }
@@ -551,7 +666,35 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
   const satisfyNeed = (guineaPigId: string, needType: keyof GuineaPigNeeds, amount: number): boolean => {
     // Satisfy means increase the satisfaction level (needs are 100=satisfied, 0=empty)
-    return adjustNeed(guineaPigId, needType, amount)
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    const oldValue = guineaPig.needs[needType]
+    const success = adjustNeed(guineaPigId, needType, amount)
+
+    if (success && amount > 0) {
+      // Phase 0: Friendship gain from need fulfillment
+      // Calculate friendship based on how much the need was satisfied
+      // Scale: +0.5 for small satisfaction (5-15 points), +2 for large satisfaction (30+ points)
+      const actualSatisfaction = Math.min(100, oldValue + amount) - oldValue
+      let friendshipGain = 0
+
+      if (actualSatisfaction >= 30) {
+        friendshipGain = 2
+      } else if (actualSatisfaction >= 20) {
+        friendshipGain = 1.5
+      } else if (actualSatisfaction >= 10) {
+        friendshipGain = 1
+      } else if (actualSatisfaction >= 5) {
+        friendshipGain = 0.5
+      }
+
+      if (friendshipGain > 0) {
+        adjustFriendship(guineaPigId, friendshipGain)
+      }
+    }
+
+    return success
   }
 
   // Needs satisfaction mechanics for user interactions
@@ -595,10 +738,14 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const isFavorite = guineaPig.preferences.favoriteFood.includes(foodType)
     const isDisliked = guineaPig.preferences.dislikedFood.includes(foodType)
 
+    // Phase 0: Friendship gain calculation
+    let friendshipGain = 1 // Base friendship gain for normal food
+
     if (isFavorite) {
       // Favorite: +50% satisfaction, +15 happiness
       hungerSatisfaction *= 1.5
       happinessChange = 15
+      friendshipGain = 5 // +5 friendship for favorite food
     } else if (isDisliked) {
       // Disliked: 50% chance of rejection
       if (Math.random() < 0.5) {
@@ -622,6 +769,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       // Accepted but with penalty: -30% satisfaction, -8 happiness
       hungerSatisfaction *= 0.7
       happinessChange = -8
+      friendshipGain = 0 // No friendship gain for disliked food
     }
 
     // Feed the guinea pig
@@ -631,6 +779,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     if (foodType === 'vegetables' || foodType === 'fruit') {
       satisfyNeed(guineaPigId, 'thirst', 5)
     }
+
+    // Phase 0: Apply friendship gain
+    adjustFriendship(guineaPigId, friendshipGain)
 
     // System 2.5: Track consumption (except hay)
     if (foodType !== 'hay') {
@@ -655,6 +806,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
         foodType,
         hungerSatisfaction,
         happinessChange,
+        friendshipGain,
         wasFavorite: isFavorite,
         wasDisliked: isDisliked
       }
@@ -695,6 +847,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     // Cleaning improves hygiene
     satisfyNeed(guineaPigId, 'hygiene', 35)
 
+    // Phase 0: Friendship gain for grooming
+    adjustFriendship(guineaPigId, 2)
+
     // Update interaction tracking
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
@@ -706,7 +861,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       emoji,
       {
         guineaPigId,
-        hygieneImprovement: 35
+        hygieneImprovement: 35,
+        friendshipGain: 2
       }
     )
 
@@ -716,6 +872,21 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   const playWithGuineaPig = (guineaPigId: string, activityType: string = 'general_play'): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
+
+    // Phase 0: Check cooldown
+    const cooldownCheck = checkInteractionCooldown(guineaPigId, 'play')
+    if (cooldownCheck.onCooldown) {
+      getLoggingStore().addPlayerAction(
+        `${guineaPig.name} needs a break from playing. Try again in ${cooldownCheck.remainingSeconds}s ⏱️`,
+        '⏱️',
+        {
+          guineaPigId,
+          interactionType: 'play',
+          remainingSeconds: cooldownCheck.remainingSeconds
+        }
+      )
+      return false
+    }
 
     // Base satisfaction values (Phase 2.5 - System 2)
     let playGain = 20
@@ -760,6 +931,12 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       adjustNeed(guineaPigId, 'energy', energyCost)
     }
 
+    // Phase 0: Friendship gain for play
+    adjustFriendship(guineaPigId, 3)
+
+    // Phase 0: Update play cooldown timestamp
+    guineaPig.lastPlayTime = Date.now()
+
     // Update interaction tracking
     guineaPig.lastInteraction = Date.now()
     guineaPig.totalInteractions += 1
@@ -779,7 +956,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
         guineaPigId,
         activityType,
         playGain,
-        preferenceLevel
+        preferenceLevel,
+        friendshipGain: 3
       }
     )
 
@@ -790,11 +968,32 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
 
+    // Phase 0: Check cooldown
+    const cooldownCheck = checkInteractionCooldown(guineaPigId, 'social')
+    if (cooldownCheck.onCooldown) {
+      getLoggingStore().addPlayerAction(
+        `${guineaPig.name} needs some alone time. Try again in ${cooldownCheck.remainingSeconds}s ⏱️`,
+        '⏱️',
+        {
+          guineaPigId,
+          interactionType: 'social',
+          remainingSeconds: cooldownCheck.remainingSeconds
+        }
+      )
+      return false
+    }
+
     // Socializing improves social need
     const socialGain = 25
 
     // Apply effects
     satisfyNeed(guineaPigId, 'social', socialGain)
+
+    // Phase 0: Friendship gain for socializing (petting/handling)
+    adjustFriendship(guineaPigId, 2)
+
+    // Phase 0: Update social cooldown timestamp
+    guineaPig.lastSocialTime = Date.now()
 
     // Update interaction tracking
     guineaPig.lastInteraction = Date.now()
@@ -807,7 +1006,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       emoji,
       {
         guineaPigId,
-        socialGain
+        socialGain,
+        friendshipGain: 2
       }
     )
 
@@ -1153,6 +1353,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const guineaPig = collection.value.guineaPigs[id]
     if (!guineaPig) return false
 
+    // Phase 4: Don't adjust friendship if frozen (in Stardust Sanctuary)
+    if (guineaPig.friendshipFrozen) return false
+
     guineaPig.friendship = Math.max(0, Math.min(100, guineaPig.friendship + amount))
     collection.value.lastUpdated = Date.now()
 
@@ -1428,9 +1631,12 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     calculateRejectionProbability,
     calculateRejectionCooldown,
     applyRejectionPenalty,
-    isInteractionOnCooldown,
     getRemainingCooldown,
     attemptInteraction,
+
+    // Phase 0: Interaction cooldowns
+    calculateInteractionCooldown,
+    checkInteractionCooldown,
 
     // Interaction methods
     feedGuineaPig,

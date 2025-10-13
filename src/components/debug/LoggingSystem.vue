@@ -1,5 +1,7 @@
 <template>
-  <div class="panel-grid">
+  <div class="logging-system">
+    <h2>Activity Feed</h2>
+    <div class="panel-grid">
     <!-- Test Controls Panel -->
     <div class="panel panel--compact panel--primary">
       <div class="panel__header">
@@ -172,6 +174,7 @@
           </div>
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>

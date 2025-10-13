@@ -1,5 +1,7 @@
 <template>
   <div class="pet-store-debug">
+    <h2>Pet Store</h2>
+    <div class="panel-row">
     <!-- First Row: 3 columns on desktop -->
     <div class="panel panel--compact">
       <div class="panel__header">
@@ -22,7 +24,6 @@
                 <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
                 <div class="pet-store-debug__guinea-pig-badges">
                   <Badge v-if="isGuineaPigActive(guineaPig.id)" variant="info" size="sm">ACTIVE</Badge>
-                  <Badge v-if="isGuineaPigFavorited(guineaPig.id)" variant="warning" size="sm">FAVORITED</Badge>
                   <Badge
                     v-if="shouldShowRarityBadge(guineaPig.breed)"
                     :variant="getRarityBadgeVariant(guineaPig.breed)"
@@ -34,20 +35,12 @@
                   <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furColor }}</Badge>
                   <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furPattern }}</Badge>
                 </div>
+                <div class="pet-store-debug__adoption-timer" v-if="guineaPig.adoptionTimer">
+                  ⏱️ {{ getAdoptionTimerDisplay(guineaPig.id) }}
+                </div>
               </div>
               <div class="pet-store-debug__guinea-pig-right">
                 <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
-                <Button
-                  @click.stop="handleAddToFavorites(guineaPig.id)"
-                  :disabled="!petStoreManager.canAddToFavorites || isGuineaPigFavorited(guineaPig.id)"
-                  variant="secondary"
-                  size="sm"
-                  icon-only
-                  :tooltip="isGuineaPigFavorited(guineaPig.id) ? 'Already in Favorites' : 'Add to Favorites'"
-                  tooltip-position="top"
-                >
-                  ⭐
-                </Button>
               </div>
             </div>
           </div>
@@ -410,115 +403,6 @@
       </div>
     </div>
 
-    <div class="panel-row">
-      <FavoritesPanel v-if="petStoreManager.favoriteGuineaPigs.length > 0 || petStoreManager.canAddToFavorites" />
-
-      <div class="panel panel--compact">
-        <div class="panel__header">
-          <h3>Favorites System Debug</h3>
-        </div>
-        <div class="panel__content">
-          <div class="stats-grid">
-            <div class="stat-item">
-              <span class="stat-label">Favorite Slots:</span>
-              <span class="stat-value">
-                {{ petStoreManager.favoriteGuineaPigs.length }}/{{ petStoreManager.maxFavoriteSlots }}
-              </span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Can Purchase More:</span>
-              <span class="stat-value">
-                {{ petStoreManager.maxFavoriteSlots < 10 ? 'Yes' : 'No (Max)' }}
-              </span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Next Slot Cost:</span>
-              <span class="stat-value">
-                ${{ playerProgression.nextFavoriteSlotCost.toLocaleString() }}
-              </span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">Can Afford:</span>
-              <span class="stat-value">
-                {{ playerProgression.canAffordFavoriteSlot ? 'Yes' : 'No' }}
-              </span>
-            </div>
-          </div>
-
-          <div class="flex flex-col gap-3 mt-4">
-            <Button
-              @click="handleForceAddSlot"
-              :disabled="petStoreManager.maxFavoriteSlots >= 10"
-              variant="secondary"
-              full-width
-            >
-              Force Add Slot (No Cost)
-            </Button>
-
-            <Button
-              @click="handleClearFavorites"
-              :disabled="petStoreManager.favoriteGuineaPigs.length === 0"
-              variant="danger"
-              full-width
-            >
-              Clear All Favorites
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Refresh Settings - Single Column -->
-    <div class="panel panel--compact">
-      <div class="panel__header">
-        <h3>Refresh Settings</h3>
-      </div>
-      <div class="panel__content">
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-label">Can Refresh:</span>
-            <span class="stat-value">{{ petStoreManager.canRefreshPetStore ? 'Yes' : 'No' }}</span>
-          </div>
-          <div class="stat-item" v-if="petStoreManager.settings.autoRefreshEnabled">
-            <span class="stat-label">Auto-refresh in:</span>
-            <span class="stat-value">{{ liveAutoRefreshCountdown }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Next Manual Refresh Cost:</span>
-            <span class="stat-value">${{ petStoreManager.nextRefreshCost }}</span>
-          </div>
-        </div>
-        <div class="flex flex-col gap-4 mt-4">
-          <CheckboxField
-            v-model="petStoreManager.settings.allowUnlimitedRefresh"
-            label="No Charge for Refresh (Debug)"
-          />
-          <hr class="divider">
-          <div class="cost-sequence-display">
-            <label class="text-label">Escalating Refresh Cost Sequence:</label>
-            <div class="cost-sequence">
-              <span
-                v-for="(cost, index) in petStoreManager.settings.refreshCostSequence"
-                :key="index"
-                :class="['cost-badge', { 'cost-badge--current': index === petStoreManager.settings.currentRefreshIndex, 'cost-badge--past': index < petStoreManager.settings.currentRefreshIndex }]"
-              >
-                ${{ cost }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel__footer mt-4">
-        <Button
-          @click="handleRefresh"
-          :disabled="isRefreshAtMaxCost"
-          :title="isRefreshAtMaxCost ? 'Maximum refresh cost reached ($3,200). Wait for 24-hour auto-refresh or enable No Charge mode.' : 'Refresh pet store with new guinea pigs'"
-          full-width
-        >
-          Refresh Pet Store
-        </Button>
-      </div>
     </div>
   </div>
 </template>
@@ -526,19 +410,14 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { usePetStoreManager } from '../../stores/petStoreManager'
-import { usePlayerProgression } from '../../stores/playerProgression'
 import type { GuineaPig } from '../../stores/guineaPigStore'
 import SliderField from '../basic/SliderField.vue'
-import Button from '../basic/Button.vue'
 import Badge from '../basic/Badge.vue'
-import CheckboxField from '../basic/CheckboxField.vue'
 import Select from '../basic/Select.vue'
 import Details from '../basic/Details.vue'
 import BlockMessage from '../basic/BlockMessage.vue'
-import FavoritesPanel from '../petstore/FavoritesPanel.vue'
 
 const petStoreManager = usePetStoreManager()
-const playerProgression = usePlayerProgression()
 const selectedGuineaPig = ref<GuineaPig | null>(null)
 
 // Reactive time ref to trigger updates
@@ -564,72 +443,23 @@ const isGuineaPigActive = (guineaPigId: string): boolean => {
   return petStoreManager.activeGameSession?.guineaPigIds.includes(guineaPigId) ?? false
 }
 
-const isGuineaPigFavorited = (guineaPigId: string): boolean => {
-  return petStoreManager.favoriteGuineaPigs.some(gp => gp.id === guineaPigId)
-}
-
 const isSelectedGuineaPigActive = computed(() => {
   if (!selectedGuineaPig.value) return false
   return isGuineaPigActive(selectedGuineaPig.value.id)
 })
 
-// Computed property to sort guinea pigs with active ones at the top, then favorites
+// Phase 6: Sort guinea pigs with active ones at the top
 const sortedAvailableGuineaPigs = computed(() => {
   return [...petStoreManager.availableGuineaPigs].sort((a, b) => {
     const aIsActive = isGuineaPigActive(a.id)
     const bIsActive = isGuineaPigActive(b.id)
-    const aIsFavorite = isGuineaPigFavorited(a.id)
-    const bIsFavorite = isGuineaPigFavorited(b.id)
 
     // Active guinea pigs come first
     if (aIsActive && !bIsActive) return -1
     if (!aIsActive && bIsActive) return 1
 
-    // If both have same active status, favorites come next
-    if (aIsActive === bIsActive) {
-      if (aIsFavorite && !bIsFavorite) return -1
-      if (!aIsFavorite && bIsFavorite) return 1
-    }
-
-    // Keep original order for same status
     return 0
   })
-})
-
-// Check if refresh is at max cost (disabled unless "No Charge" is enabled)
-const isRefreshAtMaxCost = computed(() => {
-  if (petStoreManager.settings.allowUnlimitedRefresh) {
-    return false // Never disable if "No Charge" is enabled
-  }
-  const { currentRefreshIndex, refreshCostSequence } = petStoreManager.settings
-  return currentRefreshIndex >= refreshCostSequence.length - 1
-})
-
-// Computed property that uses currentTime to trigger reactivity
-const liveAutoRefreshCountdown = computed(() => {
-  // Access currentTime.value to establish reactive dependency
-  const now = currentTime.value
-
-  if (!petStoreManager.settings.autoRefreshEnabled || petStoreManager.nextAutoRefreshTime === 0) {
-    return 'Disabled'
-  }
-
-  const remaining = petStoreManager.nextAutoRefreshTime - now
-  const ms = Math.max(0, remaining)
-
-  if (ms === 0) return 'Refreshing...'
-
-  const hours = Math.floor(ms / (1000 * 60 * 60))
-  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((ms % (1000 * 60)) / 1000)
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m ${seconds}s`
-  } else if (minutes > 0) {
-    return `${minutes}m ${seconds}s`
-  } else {
-    return `${seconds}s`
-  }
 })
 
 // Dynamic option arrays from pet store manager
@@ -1000,43 +830,14 @@ watch(() => petStoreManager.availableGuineaPigs, (guineaPigs) => {
   }
 }, { immediate: true })
 
-const handleRefresh = () => {
-  petStoreManager.refreshPetStore()
-  // The watcher will handle re-selecting the guinea pig after refresh
-}
-
-// Favorites debug handlers
-const handleForceAddSlot = () => {
-  if (petStoreManager.maxFavoriteSlots < 10) {
-    petStoreManager.maxFavoriteSlots++
-  }
-}
-
-const handleClearFavorites = () => {
-  petStoreManager.favoriteGuineaPigs.length = 0
-}
-
-const handleAddToFavorites = (guineaPigId: string) => {
-  petStoreManager.addToFavorites(guineaPigId)
+// Phase 2: Adoption timer display
+const getAdoptionTimerDisplay = (guineaPigId: string) => {
+  const remaining = petStoreManager.getAdoptionTimeRemaining(guineaPigId)
+  return petStoreManager.formatAdoptionTimer(remaining)
 }
 </script>
 
 <style>
-/* === Base Layout === */
-.pet-store-debug {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  padding-block: 1rem;
-}
-
-/* Desktop Layout: 3 columns in first row, 2 columns in second row */
-@media (min-width: 1024px) {
-  .pet-store-debug {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
 /* === Guinea Pig List Section === */
 .pet-store-debug__guinea-pig-list {
   display: grid;
@@ -1094,6 +895,13 @@ const handleAddToFavorites = (guineaPigId: string) => {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.pet-store-debug__adoption-timer {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  margin-block-start: var(--space-2);
+  font-weight: 500;
 }
 
 .pet-store-debug__guinea-pig-right {
@@ -1242,18 +1050,5 @@ const handleAddToFavorites = (guineaPigId: string) => {
   border-color: var(--color-success);
   color: var(--color-success);
   opacity: 0.7;
-}
-
-/* === Responsive Layout === */
-@media (min-width: 768px) {
-  .pet-store-debug {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .pet-store-debug {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 </style>

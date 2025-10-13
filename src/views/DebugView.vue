@@ -8,57 +8,46 @@
       <UtilityNav />
     </div>
 
-    <TabContainer
-      :tabs="debugTabs"
-      v-model="activeTab"
-      class="debug-view__tabs"
-      @tab-change="onTabChange"
-    >
-      <template #controller>
-        <GameControllerView />
-      </template>
+    <!-- Category dropdowns -->
+    <div class="debug-view__nav">
+      <CategoryDropdown
+        v-for="category in tabCategories"
+        :key="category.id"
+        :category-label="category.label"
+        :tabs="category.tabs"
+        v-model="activeTab"
+      />
+    </div>
 
-      <template #pet-store>
-        <PetStoreDebugView />
-      </template>
-
-      <template #inventory>
-        <InventoryDebugView />
-      </template>
-
-      <template #needs>
-        <NeedsDebugView />
-      </template>
-
-      <template #personality>
-        <PersonalityDebugView />
-      </template>
-
-      <template #feeding>
-        <FeedingDebugView />
-      </template>
-
-      <template #logging>
-        <LoggingSystemView />
-      </template>
-
-      <template #error-tracking>
-        <SystemMonitorView />
-      </template>
-    </TabContainer>
+    <!-- Content panels -->
+    <div class="debug-view__content">
+      <GameControllerView v-if="activeTab === 'controller'" />
+      <PetStoreDebugView v-if="activeTab === 'pet-store'" />
+      <StardustSanctuaryDebug v-if="activeTab === 'sanctuary'" />
+      <NeedsDebugView v-if="activeTab === 'needs'" />
+      <FeedingDebugView v-if="activeTab === 'feeding'" />
+      <FriendshipDebug v-if="activeTab === 'friendship'" />
+      <PersonalityDebugView v-if="activeTab === 'personality'" />
+      <InventoryDebugView v-if="activeTab === 'inventory'" />
+      <LoggingSystemView v-if="activeTab === 'logging'" />
+      <SystemMonitorView v-if="activeTab === 'error-tracking'" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import TabContainer, { type Tab } from '../components/layout/TabContainer.vue'
+import CategoryDropdown from '../components/layout/CategoryDropdown.vue'
 import UtilityNav from '../components/layout/UtilityNav.vue'
+import type { Tab } from '../components/layout/TabContainer.vue'
 import GameControllerView from './GameControllerView.vue'
 import PetStoreDebugView from './PetStoreDebugView.vue'
 import InventoryDebugView from './InventoryDebugView.vue'
 import NeedsDebugView from './NeedsDebugView.vue'
 import PersonalityDebugView from './PersonalityDebugView.vue'
 import FeedingDebugView from './FeedingDebugView.vue'
+import FriendshipDebug from '../components/debug/FriendshipDebug.vue'
+import StardustSanctuaryDebug from '../components/debug/StardustSanctuaryDebug.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
 import { useGameController } from '../stores/gameController'
@@ -68,62 +57,93 @@ const gameController = useGameController()
 // State
 const activeTab = ref('controller')
 
-// Debug tabs configuration
-const debugTabs: Tab[] = [
-  {
-    id: 'controller',
-    label: 'Game Controller',
-    icon: '🎮',
-    panelClass: 'tab-container__panel--constrained'
-  },
-  {
-    id: 'pet-store',
-    label: 'Pet Store',
-    icon: '🏪',
-    panelClass: 'tab-container__panel--constrained'
-  },
-  {
-    id: 'needs',
-    label: 'Needs System',
-    icon: '🍎',
-  },
-  {
-    id: 'feeding',
-    label: 'Feeding System',
-    icon: '🥕',
-    panelClass: 'tab-container__panel--constrained'
-  },
-  {
-    id: 'personality',
-    label: 'Personality',
-    icon: '🎭',
-    panelClass: 'tab-container__panel--constrained'
-  },
-  {
-    id: 'inventory',
-    label: 'Inventory',
-    icon: '🎒',
-    panelClass: 'tab-container__panel--constrained'
-  },
-  {
-    id: 'logging',
-    label: 'Logging System',
-    icon: '📝',
-    panelClass: 'tab-container__panel--constrained'
-  },
-  {
-    id: 'error-tracking',
-    label: 'Error Tracking',
-    icon: '🐛',
-    panelClass: 'tab-container__panel--constrained'
-  }
-]
-
-// Methods
-const onTabChange = (tabId: string, previousTabId: string | null) => {
-  console.log(`Tab changed from ${previousTabId || 'none'} to ${tabId}`)
+// Category interface
+interface TabCategory {
+  id: string
+  label: string
+  tabs: Tab[]
 }
 
+// Organized tab categories for dropdown navigation
+const tabCategories: TabCategory[] = [
+  {
+    id: 'core',
+    label: 'Core Systems',
+    tabs: [
+      {
+        id: 'controller',
+        label: 'Game Controller',
+        icon: '🎮',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'pet-store',
+        label: 'Pet Store',
+        icon: '🏪',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'sanctuary',
+        label: 'Stardust Sanctuary',
+        icon: '✨',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'logging',
+        label: 'Activity Feed',
+        icon: '📝',
+        panelClass: 'tab-container__panel--constrained'
+      }
+    ]
+  },
+  {
+    id: 'gameplay',
+    label: 'Gameplay Systems',
+    tabs: [
+      {
+        id: 'needs',
+        label: 'Needs System',
+        icon: '🍎'
+      },
+      {
+        id: 'feeding',
+        label: 'Feeding System',
+        icon: '🥕',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'friendship',
+        label: 'Friendship',
+        icon: '💖',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'personality',
+        label: 'Personality',
+        icon: '🎭',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'inventory',
+        label: 'Inventory',
+        icon: '🎒',
+        panelClass: 'tab-container__panel--constrained'
+      }
+    ]
+  },
+  {
+    id: 'development',
+    label: 'Development Tools',
+    tabs: [
+      {
+        id: 'error-tracking',
+        label: 'Error Tracking',
+        icon: '🐛',
+        panelClass: 'tab-container__panel--constrained'
+      }
+    ]
+  }
+]
 
 // Page lifecycle management for automatic pause
 onMounted(() => {
@@ -148,6 +168,8 @@ onUnmounted(() => {
   inline-size: 100%;
   min-block-size: 100vh;
   background-color: var(--color-bg-primary);
+  container-type: inline-size;
+  container-name: debug-view;
 }
 
 .debug-view__header {
@@ -177,10 +199,41 @@ onUnmounted(() => {
   font-weight: var(--font-weight-normal);
 }
 
-.debug-view__tabs {
+/* Category dropdowns navigation - Mobile first: inline with wrap */
+.debug-view__nav {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+  padding-inline: var(--space-4);
+  background: var(--color-bg-primary);
+  border-block-end: 1px solid var(--color-border-light);
+}
+
+/* Content area */
+.debug-view__content {
   flex: 1;
   display: flex;
   flex-direction: column;
+  overflow: auto;
+  padding-block: var(--space-6);
+  padding-inline: var(--space-6);
+}
+
+/* Content area: constrained width for better readability */
+.debug-view__content > * {
+  max-inline-size: 1440px;
+  inline-size: 100%;
+  margin-inline: auto;
+}
+
+/* Container query: Adjust spacing for medium containers */
+@container debug-view (min-width: 481px) {
+  .debug-view__nav {
+    padding-block: var(--space-5);
+    padding-inline: var(--space-5);
+  }
 }
 
 /* Responsive adjustments */
@@ -199,6 +252,11 @@ onUnmounted(() => {
   .debug-view__subtitle {
     font-size: var(--font-size-base);
   }
+
+  .debug-view__content {
+    padding-block: var(--space-4);
+    padding-inline: var(--space-4);
+  }
 }
 
 @media (max-width: 480px) {
@@ -213,6 +271,16 @@ onUnmounted(() => {
 
   .debug-view__subtitle {
     font-size: var(--font-size-sm);
+  }
+
+  .debug-view__nav {
+    padding-block: var(--space-3);
+    padding-inline: var(--space-3);
+  }
+
+  .debug-view__content {
+    padding-block: var(--space-3);
+    padding-inline: var(--space-3);
   }
 }
 
