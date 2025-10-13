@@ -1,5 +1,6 @@
 <template>
   <div class="game-controller">
+    <h2>Game Controller</h2>
     <!-- Pet Store Game Session -->
     <div class="mb-8">
       <div class="panel-row">

@@ -41,6 +41,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const maxFavoriteSlots = ref<number>(3)
   const activeGameSession = ref<GameSession | null>(null)
 
+  // Phase 3: Stardust Sanctuary
+  const sanctuaryGuineaPigs = ref<GuineaPig[]>([])
+  const maxSanctuarySlots = ref<number>(10)
+
   const settings = ref<PetStoreSettings>({
     endGamePenalty: 50
   })
@@ -67,6 +71,17 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
   const canPurchaseMoreSlots = computed(() =>
     maxFavoriteSlots.value < 10
+  )
+
+  // Phase 3: Sanctuary computed properties
+  const sanctuaryCount = computed(() => sanctuaryGuineaPigs.value.length)
+
+  const availableSanctuarySlots = computed(() =>
+    maxSanctuarySlots.value - sanctuaryCount.value
+  )
+
+  const canAddToSanctuary = computed(() =>
+    sanctuaryCount.value < maxSanctuarySlots.value
   )
 
   function generateGuineaPigId(): string {
@@ -379,7 +394,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         size: ['small', 'medium', 'large'][Math.floor(Math.random() * 3)] as 'small' | 'medium' | 'large'
       },
 
-      friendship: 50,
+      friendship: 0,
       relationships: {},
 
       // System 2.5: Fulfillment Limitation System
@@ -524,6 +539,117 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     getLoggingStore().addPlayerAction(
       `${guineaPig.name} is heading back to the store to hang out with friends! 🏪`,
       '🏪',
+      { guineaPigId, name: guineaPig.name }
+    )
+
+    return true
+  }
+
+  // Phase 3: Stardust Sanctuary Management
+  /**
+   * Move a guinea pig to Stardust Sanctuary
+   * Requires 85% friendship (validation should be done by caller)
+   */
+  function moveToSanctuary(guineaPigId: string): boolean {
+    const guineaPigStore = useGuineaPigStore()
+    const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
+
+    if (!guineaPig) {
+      getLoggingStore().logWarn('Guinea pig not found')
+      return false
+    }
+
+    // Check if already in sanctuary
+    const isAlreadyInSanctuary = sanctuaryGuineaPigs.value.some(gp => gp.id === guineaPigId)
+    if (isAlreadyInSanctuary) {
+      getLoggingStore().logWarn('Guinea pig is already in Stardust Sanctuary')
+      return false
+    }
+
+    // Check slot availability
+    if (!canAddToSanctuary.value) {
+      getLoggingStore().logWarn('No available sanctuary slots')
+      return false
+    }
+
+    // Check friendship threshold (85%)
+    if (guineaPig.friendship < 85) {
+      getLoggingStore().addPlayerAction(
+        `${guineaPig.name} needs ${Math.ceil(85 - guineaPig.friendship)}% more friendship to enter Stardust Sanctuary 💫`,
+        '💫',
+        { guineaPigId, currentFriendship: guineaPig.friendship, required: 85 }
+      )
+      return false
+    }
+
+    // Remove from active session if applicable
+    const isActive = activeGameSession.value?.guineaPigIds.includes(guineaPigId) ?? false
+    if (isActive && activeGameSession.value) {
+      const index = activeGameSession.value.guineaPigIds.indexOf(guineaPigId)
+      if (index !== -1) {
+        activeGameSession.value.guineaPigIds.splice(index, 1)
+      }
+      guineaPigStore.removeFromActivePair(guineaPigId)
+    }
+
+    // Add to sanctuary (create copy to avoid reference issues)
+    sanctuaryGuineaPigs.value.push({ ...guineaPig })
+
+    // Reset needs to 100% and freeze friendship
+    guineaPigStore.resetGuineaPigNeeds(guineaPigId)
+    // TODO Phase 4: Freeze friendship here
+
+    getLoggingStore().addPlayerAction(
+      `${guineaPig.name} has moved to Stardust Sanctuary! ✨`,
+      '✨',
+      { guineaPigId, name: guineaPig.name, friendship: guineaPig.friendship }
+    )
+
+    return true
+  }
+
+  /**
+   * Move a guinea pig from Stardust Sanctuary back to active
+   */
+  function moveFromSanctuary(guineaPigId: string): boolean {
+    const index = sanctuaryGuineaPigs.value.findIndex(gp => gp.id === guineaPigId)
+    if (index === -1) {
+      getLoggingStore().logWarn('Guinea pig not found in sanctuary')
+      return false
+    }
+
+    // Check if can add to active session (max 2)
+    const currentActive = activeGameSession.value?.guineaPigIds.length ?? 0
+    if (currentActive >= 2) {
+      getLoggingStore().addPlayerAction(
+        `Cannot activate more than 2 guinea pigs at once. Deactivate one first 🚫`,
+        '🚫',
+        { guineaPigId }
+      )
+      return false
+    }
+
+    const guineaPig = sanctuaryGuineaPigs.value[index]
+
+    // Remove from sanctuary
+    sanctuaryGuineaPigs.value.splice(index, 1)
+
+    // Add to active session
+    const guineaPigStore = useGuineaPigStore()
+    if (!activeGameSession.value) {
+      // Create new session
+      startGameSession([guineaPigId])
+    } else {
+      // Add to existing session
+      activeGameSession.value.guineaPigIds.push(guineaPigId)
+      guineaPigStore.addToActivePair(guineaPigId)
+    }
+
+    // TODO Phase 4: Unfreeze friendship here
+
+    getLoggingStore().addPlayerAction(
+      `${guineaPig.name} has returned from Stardust Sanctuary! 💚`,
+      '💚',
       { guineaPigId, name: guineaPig.name }
     )
 
@@ -882,6 +1008,13 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     canAddToFavorites,
     canPurchaseMoreSlots,
 
+    // Phase 3: Sanctuary state and computed
+    sanctuaryGuineaPigs,
+    maxSanctuarySlots,
+    sanctuaryCount,
+    availableSanctuarySlots,
+    canAddToSanctuary,
+
     // Data arrays for UI components
     furColors,
     furPatterns,
@@ -912,7 +1045,11 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Favorites methods
     addToFavorites,
     removeFromFavorites,
-    moveFromFavoritesToStore
+    moveFromFavoritesToStore,
+
+    // Phase 3: Sanctuary methods
+    moveToSanctuary,
+    moveFromSanctuary
   }
 }, {
   persist: {

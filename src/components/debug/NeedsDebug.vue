@@ -1,27 +1,31 @@
 <template>
-  <div class="needs-debug">
+  <div class="needs-debug debug-view__constrained">
+    <h2>Needs System</h2>
     <!-- Individual Guinea Pig Needs -->
     <div v-if="hasActiveGuineaPigs">
       <div class="guinea-pigs-grid mb-6">
         <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id">
         <div class="panel panel--compact">
           <div class="panel__header">
-            <h4>{{ guineaPig.name }} ({{ guineaPig.breed }})</h4>
+            <h3>{{ guineaPig.name }} ({{ guineaPig.breed }})</h3>
           </div>
           <div class="panel__content">
             <div class="guinea-pig-layout">
               <!-- Needs Section -->
               <section class="guinea-pig-layout__needs">
                 <div class="panel panel--compact panel--accent">
-                  <div class="panel__header">
-                    <h5>Needs</h5>
+                  <div class="panel__header needs-panel-header">
+                    <h4>Needs</h4>
+                    <Button @click="() => replenishAllNeeds(guineaPig.id)" variant="primary" size="sm" :disabled="gameController.isPaused || !needsController.processingEnabled" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : 'Replenish all needs to 100%')">
+                      Replenish All Needs
+                    </Button>
                   </div>
                   <div class="panel__content">
                     <!-- Critical Needs -->
                     <div class="needs-category">
                       <div class="panel panel--compact panel--bordered">
                         <div class="panel__header">
-                          <h6>Critical Needs</h6>
+                          <h4>Critical Needs</h4>
                         </div>
                         <div class="panel__content">
                           <div class="needs-list">
@@ -67,7 +71,7 @@
                     <div class="needs-category">
                       <div class="panel panel--compact panel--bordered">
                         <div class="panel__header">
-                          <h6>Environmental Needs</h6>
+                          <h4>Environmental Needs</h4>
                         </div>
                         <div class="panel__content">
                           <div class="needs-list">
@@ -113,7 +117,7 @@
                     <div class="needs-category">
                       <div class="panel panel--compact panel--bordered">
                         <div class="panel__header">
-                          <h6>Maintenance Needs</h6>
+                          <h4>Maintenance Needs</h4>
                         </div>
                         <div class="panel__content">
                           <div class="needs-list">
@@ -154,45 +158,39 @@
                         </div>
                       </div>
                     </div>
+                    <!-- Stats & Wellness -->
+                    <div class="needs-category">
+                      <div class="panel panel--compact panel--bordered">
+                        <div class="panel__header">
+                          <h4>Stats & Wellness</h4>
+                        </div>
+                        <div class="panel__content">
+                          <div class="stats-grid">
+                            <div class="stat-item">
+                              <span class="stat-label">Friendship:</span>
+                              <span class="stat-value">{{ guineaPig.friendship.toFixed(1) }}%</span>
+                            </div>
+                            <div class="stat-item">
+                              <span class="stat-label">Wellness:</span>
+                              <span class="stat-value" :class="getWellnessStatusClass(calculateWellness(guineaPig.id))">
+                                {{ calculateWellness(guineaPig.id).toFixed(1) }}%
+                              </span>
+                            </div>
+                            <div class="stat-item">
+                              <span class="stat-label">Last Interaction:</span>
+                              <span class="stat-value">{{ formatTimestamp(guineaPig.lastInteraction) }}</span>
+                            </div>
+                            <div class="stat-item">
+                              <span class="stat-label">Total Interactions:</span>
+                              <span class="stat-value">{{ guineaPig.totalInteractions }}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </section>
-
-              <!-- Actions & Stats Sidebar -->
-              <aside class="guinea-pig-layout__sidebar">
-                <!-- Quick Actions -->
-                <section class="sidebar-section">
-                  <h5 class="section-title">Quick Actions</h5>
-                  <Button @click="() => replenishAllNeeds(guineaPig.id)" variant="primary" size="md" full-width :disabled="gameController.isPaused || !needsController.processingEnabled" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : 'Replenish all needs to 100%')">
-                    Replenish All Needs
-                  </Button>
-                </section>
-
-                <!-- Stats & Wellness -->
-                <section class="sidebar-section">
-                  <h5 class="section-title">Stats & Wellness</h5>
-                  <div class="stats-grid">
-                    <div class="stat-item">
-                      <span class="stat-label">Friendship:</span>
-                      <span class="stat-value">{{ guineaPig.friendship.toFixed(1) }}%</span>
-                    </div>
-                    <div class="stat-item">
-                      <span class="stat-label">Wellness:</span>
-                      <span class="stat-value" :class="getWellnessStatusClass(calculateWellness(guineaPig.id))">
-                        {{ calculateWellness(guineaPig.id).toFixed(1) }}%
-                      </span>
-                    </div>
-                    <div class="stat-item">
-                      <span class="stat-label">Last Interaction:</span>
-                      <span class="stat-value">{{ formatTimestamp(guineaPig.lastInteraction) }}</span>
-                    </div>
-                    <div class="stat-item">
-                      <span class="stat-label">Total Interactions:</span>
-                      <span class="stat-value">{{ guineaPig.totalInteractions }}</span>
-                    </div>
-                  </div>
-                </section>
-              </aside>
             </div>
           </div>
         </div>
@@ -512,9 +510,6 @@ const getNeedUrgency = (value: number): string => {
 </script>
 
 <style scoped>
-.needs-debug {
-  max-inline-size: 100%;
-}
 
 /* Mobile-first: Stack vertically */
 .guinea-pig-layout {
@@ -543,6 +538,13 @@ const getNeedUrgency = (value: number): string => {
   letter-spacing: 0.05em;
 }
 
+.needs-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
 /* Desktop: Side-by-side layout */
 @media (min-width: 1800px) {
   .guinea-pig-layout {
@@ -552,7 +554,6 @@ const getNeedUrgency = (value: number): string => {
 
   .guinea-pig-layout__needs {
     flex: 3;
-    max-inline-size: calc(75% - var(--space-6));
   }
 
   .guinea-pig-layout__sidebar {
@@ -783,7 +784,7 @@ const getNeedUrgency = (value: number): string => {
 }
 
 /* Desktop: side-by-side controls */
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   .needs-list__item {
     flex-direction: row;
     align-items: center;

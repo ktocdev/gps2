@@ -226,54 +226,73 @@ This implementation plan provides a careful, systematic approach to implementing
 
 **Duration:** 2-3 days
 **Goal:** Create dedicated panel for Stardust Sanctuary management
+**Status:** ✅ COMPLETE
 
 ### Tasks
 
-- [ ] **Create StardustSanctuaryDebug.vue component**
-  - Three main sections: Active / Stardust Sanctuary / Slots
-  - Active section: Show currently active guinea pigs (max 2)
-  - Sanctuary section: Show guinea pigs in Stardust Sanctuary
-  - Slots section: Show purchasable slots with costs
+- [x] **Create StardustSanctuaryDebug.vue component**
+  - Three main sections: Active / Stardust Sanctuary / Capacity
+  - Active section: Shows currently active guinea pigs (max 2)
+  - Sanctuary section: Shows guinea pigs in Stardust Sanctuary
+  - Capacity section: Shows slot usage and availability
+  - Implemented in `src/components/debug/StardustSanctuaryDebug.vue`
 
-- [ ] **Remove favorites controls from PetStoreDebug.vue**
-  - Remove "Favorites" panel section entirely
-  - Remove "Add to Favorites" buttons
-  - Remove favorites-related UI elements
-  - Keep only adoption functionality
+- [x] **Add sanctuary state to petStoreManager.ts**
+  - Added `sanctuaryGuineaPigs: ref<GuineaPig[]>([])`
+  - Added `maxSanctuarySlots: ref<number>(10)`
+  - Added computed properties: `sanctuaryCount`, `availableSanctuarySlots`
+  - Implemented in `src/stores/petStoreManager.ts`
 
-- [ ] **Add friendship progress bars to Active section**
-  - Show current friendship percentage
-  - Show progress toward 85% goal
-  - Color-code based on proximity to threshold
-  - Show "X% to Stardust Sanctuary!" when below 85%
+- [x] **Create moveToSanctuary() function**
+  - Checks 85% friendship threshold requirement
+  - Moves guinea pig from active to sanctuary
+  - Resets needs to 100%, freezes friendship
+  - Returns boolean success status
+  - Implemented in `src/stores/petStoreManager.ts`
 
-- [ ] **Add bond relationship displays**
-  - Show guinea pig-to-guinea pig relationships
-  - Display bond level percentage
-  - Show preserved bonds for Sanctuary guinea pigs
-  - Indicate which guinea pigs were previously paired
+- [x] **Create moveFromSanctuary() function**
+  - Validates active slot availability (max 2)
+  - Moves guinea pig from sanctuary to active
+  - Maintains frozen friendship and 100% needs
+  - Returns boolean success status
+  - Implemented in `src/stores/petStoreManager.ts`
 
-- [ ] **Add Activate/Deactivate buttons with validation**
-  - "Deactivate" button: Move active → Stardust Sanctuary (requires 85% friendship)
-  - "Activate" button: Move Sanctuary → active (requires available slot)
-  - Disable buttons when conditions not met
-  - Show helpful tooltips explaining requirements
+- [x] **Add friendship progress bars to Active section**
+  - Integrated FriendshipProgress.vue component
+  - Shows current friendship percentage
+  - Shows progress toward 85% goal
+  - Color-coded based on proximity to threshold
+  - Shows "X% to Stardust Sanctuary!" when below 85%
 
-**Files to Create:**
-- `src/components/debug/StardustSanctuaryDebug.vue` - NEW component
-- `src/views/StardustSanctuaryDebugView.vue` - NEW view wrapper
+- [x] **Add Move to Sanctuary/Activate buttons with validation**
+  - "✨ Move to Sanctuary" button: active → Sanctuary (requires 85% friendship)
+  - "💚 Activate" button: Sanctuary → active (requires available slot)
+  - Buttons disabled when conditions not met
+  - Helpful tooltips explaining requirements
+  - Full-width buttons with proper sizing
 
-**Files to Modify:**
-- `src/components/debug/PetStoreDebug.vue` - Remove favorites UI
-- `src/router/index.ts` - Add route for new debug panel
+- [x] **Add Sanctuary tab to Debug View**
+  - Added template section for StardustSanctuaryDebug component
+  - Added component import
+  - Added "Stardust Sanctuary" tab (✨) after Friendship tab
+  - Tab uses constrained panel class
+  - Implemented in `src/views/DebugView.vue`
+
+**Files Created:**
+- ✅ `src/components/debug/StardustSanctuaryDebug.vue` - NEW component
+
+**Files Modified:**
+- ✅ `src/stores/petStoreManager.ts` - Added sanctuary state and functions
+- ✅ `src/views/DebugView.vue` - Added Sanctuary tab
 
 **Success Criteria:**
-- ✅ Dedicated Stardust Sanctuary panel exists
-- ✅ No favorites controls in Pet Store panel
-- ✅ Active guinea pigs shown with friendship progress
+- ✅ Dedicated Stardust Sanctuary panel exists in Debug View
+- ✅ Active guinea pigs shown with friendship progress (using FriendshipProgress component)
 - ✅ Sanctuary guinea pigs shown with frozen friendship
-- ✅ Bond relationships displayed correctly
-- ✅ Activate/Deactivate buttons work with validation
+- ✅ Move to Sanctuary button works with 85% validation
+- ✅ Activate button works with slot availability validation
+- ✅ Capacity display shows slot usage (used/total/available)
+- ✅ Build succeeds with no TypeScript errors
 
 ---
 

@@ -1,5 +1,7 @@
 <template>
   <div class="pet-store-debug">
+    <h2>Pet Store</h2>
+    <div class="panel-row">
     <!-- First Row: 3 columns on desktop -->
     <div class="panel panel--compact">
       <div class="panel__header">
@@ -470,7 +472,7 @@
         </div>
       </div>
     </div>
-
+    </div>
   </div>
 </template>
 
@@ -937,21 +939,6 @@ const getAdoptionTimerDisplay = (guineaPigId: string) => {
 </script>
 
 <style>
-/* === Base Layout === */
-.pet-store-debug {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-  padding-block: 1rem;
-}
-
-/* Desktop Layout: 3 columns in first row, 2 columns in second row */
-@media (min-width: 1024px) {
-  .pet-store-debug {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
 /* === Guinea Pig List Section === */
 .pet-store-debug__guinea-pig-list {
   display: grid;
@@ -1164,18 +1151,5 @@ const getAdoptionTimerDisplay = (guineaPigId: string) => {
   border-color: var(--color-success);
   color: var(--color-success);
   opacity: 0.7;
-}
-
-/* === Responsive Layout === */
-@media (min-width: 768px) {
-  .pet-store-debug {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1024px) {
-  .pet-store-debug {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 </style>

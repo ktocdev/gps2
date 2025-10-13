@@ -1,5 +1,6 @@
 <template>
   <div class="personality-debug">
+    <h2>Personality</h2>
     <!-- Active Guinea Pigs Only -->
     <div v-if="hasActiveGuineaPigs">
       <div class="guinea-pigs-grid mb-6">

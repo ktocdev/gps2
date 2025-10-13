@@ -1,69 +1,29 @@
 <template>
-  <div class="friendship-debug">
-    <div class="panel panel--compact">
+  <div class="friendship-debug debug-view__constrained">
+    <h2>Friendship</h2>
+    <div v-if="activeGuineaPigs.length === 0" class="panel panel--compact">
       <div class="panel__header">
         <h3>Friendship Progress</h3>
       </div>
       <div class="panel__content">
-        <div v-if="!activeGuineaPig" class="empty-state">
-          <p>No active guinea pig. Start a game session to test friendship mechanics.</p>
+        <div class="empty-state">
+          <p>No active guinea pigs. Start a game session to test friendship mechanics.</p>
         </div>
-        <div v-else class="friendship-debug__content">
-          <div class="friendship-debug__guinea-pig-info">
-            <h4>{{ activeGuineaPig.name }}</h4>
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">Friendship:</span>
-                <span class="stat-value">{{ Math.round(activeGuineaPig.friendship) }}%</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Wellness:</span>
-                <span class="stat-value">{{ Math.round(currentWellness) }}%</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Friendliness:</span>
-                <span class="stat-value">{{ activeGuineaPig.personality.friendliness }}/10</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Playfulness:</span>
-                <span class="stat-value">{{ activeGuineaPig.personality.playfulness }}/10</span>
-              </div>
-            </div>
+      </div>
+    </div>
+
+    <div v-else>
+      <div class="panel-row">
+        <!-- Friendship Gains/Losses Legend Panel (Left Column) -->
+        <div class="panel panel--compact friendship-debug__legend">
+          <div class="panel__header">
+            <h3>Friendship Gains/Losses Legend</h3>
           </div>
-
-          <FriendshipProgress
-            :friendship="activeGuineaPig.friendship"
-            :threshold="85"
-            :show-message="true"
-          />
-
-          <Details summary="Cooldown Status" variant="bordered" default-open>
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">Play Cooldown:</span>
-                <span class="stat-value">{{ playCooldownStatus }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Social Cooldown:</span>
-                <span class="stat-value">{{ socialCooldownStatus }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Calculated Play CD:</span>
-                <span class="stat-value">{{ calculatedPlayCooldown }}s</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Calculated Social CD:</span>
-                <span class="stat-value">{{ calculatedSocialCooldown }}s</span>
-              </div>
-            </div>
-          </Details>
-
-          <Details summary="Friendship Gains/Losses" variant="bordered">
+          <div class="panel__content">
             <div class="friendship-debug__info-section">
               <h5>Active Gains:</h5>
               <ul>
-                <li v-if="currentWellness > 50">✅ Passive gain: +0.1 per tick (wellness &gt; 50%)</li>
-                <li v-else>❌ No passive gain (wellness ≤ 50%)</li>
+                <li>✅ Passive gain: +0.1 per tick (when wellness &gt; 50%)</li>
                 <li>🍎 Feed (normal): +1</li>
                 <li>💖 Feed (favorite): +5</li>
                 <li>🎮 Play: +3</li>
@@ -74,48 +34,118 @@
 
               <h5 class="mt-4">Active Losses:</h5>
               <ul>
-                <li v-if="currentWellness < 30" class="text-danger">⚠️ Very poor care: -2 per tick (wellness &lt; 30%)</li>
-                <li v-else-if="currentWellness < 50" class="text-warning">⚠️ Poor care: -1 per tick (wellness &lt; 50%)</li>
-                <li v-else>✅ No wellness penalty</li>
-                <li v-if="criticalNeedsCount > 0" class="text-danger">
-                  ⚠️ Critical needs: -{{ (criticalNeedsCount * 0.5).toFixed(1) }} per tick ({{ criticalNeedsCount }} needs &lt; 30%)
-                </li>
-                <li v-else>✅ No critical needs penalty</li>
+                <li class="text-danger">⚠️ Very poor care: -2 per tick (when wellness &lt; 30%)</li>
+                <li class="text-warning">⚠️ Poor care: -1 per tick (when wellness &lt; 50%)</li>
+                <li class="text-danger">⚠️ Critical needs: -0.5 per tick per need (when need &lt; 30%)</li>
               </ul>
+            </div>
+          </div>
+        </div>
 
-              <div class="friendship-debug__net-change mt-4">
-                <strong>Net Change per Tick (5s):</strong>
-                <span :class="netChangeClass">{{ netChangePerTick >= 0 ? '+' : '' }}{{ netChangePerTick.toFixed(2) }}</span>
+        <!-- Guinea Pig Panels (Right Column) -->
+        <div class="friendship-debug__guinea-pigs">
+          <div v-for="guineaPig in activeGuineaPigs" :key="guineaPig.id" class="mb-6">
+            <div class="panel-row">
+          <!-- Guinea Pig Info Panel -->
+          <div class="panel panel--compact">
+            <div class="panel__header">
+              <h3>{{ guineaPig.name }}</h3>
+            </div>
+            <div class="panel__content">
+              <div class="stats-grid mb-4">
+                <div class="stat-item">
+                  <span class="stat-label">Friendship:</span>
+                  <span class="stat-value">{{ Math.round(guineaPig.friendship) }}%</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Wellness:</span>
+                  <span class="stat-value">{{ Math.round(getWellness(guineaPig.id)) }}%</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Friendliness:</span>
+                  <span class="stat-value">{{ guineaPig.personality.friendliness }}/10</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Playfulness:</span>
+                  <span class="stat-value">{{ guineaPig.personality.playfulness }}/10</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Net Change per Tick (5s):</span>
+                  <span class="stat-value" :class="getNetChangeClass(guineaPig.id)">
+                    {{ getNetChange(guineaPig.id) >= 0 ? '+' : '' }}{{ getNetChange(guineaPig.id).toFixed(2) }}
+                  </span>
+                </div>
+              </div>
+
+              <FriendshipProgress
+                :friendship="guineaPig.friendship"
+                :threshold="85"
+                :show-message="true"
+              />
+            </div>
+          </div>
+
+          <!-- Cooldown Status Panel -->
+          <div class="panel panel--compact">
+            <div class="panel__header">
+              <h3>Cooldown Status</h3>
+            </div>
+            <div class="panel__content">
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <span class="stat-label">Play Cooldown:</span>
+                  <span class="stat-value">{{ getPlayCooldownStatus(guineaPig.id) }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Social Cooldown:</span>
+                  <span class="stat-value">{{ getSocialCooldownStatus(guineaPig.id) }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Calculated Play CD:</span>
+                  <span class="stat-value">{{ guineaPigStore.calculateInteractionCooldown(guineaPig, 'play') }}s</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Calculated Social CD:</span>
+                  <span class="stat-value">{{ guineaPigStore.calculateInteractionCooldown(guineaPig, 'social') }}s</span>
+                </div>
               </div>
             </div>
-          </Details>
+          </div>
 
-          <Details summary="Debug Controls" variant="bordered">
+          <!-- Debug Controls Panel -->
+          <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Debug Controls</h3>
+          </div>
+          <div class="panel__content">
             <div class="flex flex-col gap-3">
               <SliderField
-                v-model="activeGuineaPig.friendship"
+                v-model="guineaPig.friendship"
                 label="Friendship"
                 :min="0"
                 :max="100"
                 :step="1"
               />
               <div class="button-group">
-                <Button @click="addFriendship(5)" size="sm">+5 Friendship</Button>
-                <Button @click="addFriendship(10)" size="sm">+10 Friendship</Button>
-                <Button @click="addFriendship(-5)" variant="danger" size="sm">-5 Friendship</Button>
-                <Button @click="addFriendship(-10)" variant="danger" size="sm">-10 Friendship</Button>
+                <Button @click="addFriendship(guineaPig.id, 5)" size="sm">+5 Friendship</Button>
+                <Button @click="addFriendship(guineaPig.id, 10)" size="sm">+10 Friendship</Button>
+                <Button @click="addFriendship(guineaPig.id, -5)" variant="danger" size="sm">-5 Friendship</Button>
+                <Button @click="addFriendship(guineaPig.id, -10)" variant="danger" size="sm">-10 Friendship</Button>
               </div>
               <div class="button-group">
-                <Button @click="setFriendship(0)" variant="secondary" size="sm">Set to 0%</Button>
-                <Button @click="setFriendship(50)" variant="secondary" size="sm">Set to 50%</Button>
-                <Button @click="setFriendship(85)" variant="secondary" size="sm">Set to 85%</Button>
-                <Button @click="setFriendship(100)" variant="secondary" size="sm">Set to 100%</Button>
+                <Button @click="setFriendship(guineaPig.id, 0)" variant="secondary" size="sm">Set to 0%</Button>
+                <Button @click="setFriendship(guineaPig.id, 50)" variant="secondary" size="sm">Set to 50%</Button>
+                <Button @click="setFriendship(guineaPig.id, 85)" variant="secondary" size="sm">Set to 85%</Button>
+                <Button @click="setFriendship(guineaPig.id, 100)" variant="secondary" size="sm">Set to 100%</Button>
               </div>
               <hr class="divider">
-              <Button @click="testPlayInteraction" full-width>Test Play Interaction</Button>
-              <Button @click="testSocialInteraction" full-width>Test Social Interaction</Button>
+              <Button @click="testPlayInteraction(guineaPig.id)" full-width>Test Play Interaction</Button>
+              <Button @click="testSocialInteraction(guineaPig.id)" full-width>Test Social Interaction</Button>
             </div>
-          </Details>
+          </div>
+        </div>
+        </div>
+          </div>
         </div>
       </div>
     </div>
@@ -126,112 +156,106 @@
 import { computed } from 'vue'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useNeedsController } from '../../stores/needsController'
+import type { GuineaPig } from '../../stores/guineaPigStore'
 import FriendshipProgress from '../game/FriendshipProgress.vue'
-import Details from '../basic/Details.vue'
 import SliderField from '../basic/SliderField.vue'
 import Button from '../basic/Button.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()
 
-const activeGuineaPig = computed(() => guineaPigStore.activeGuineaPig)
+const activeGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs)
 
-const currentWellness = computed(() => {
-  if (!activeGuineaPig.value) return 0
-  return needsController.calculateWellness(activeGuineaPig.value.id)
-})
+const getWellness = (guineaPigId: string): number => {
+  return needsController.calculateWellness(guineaPigId)
+}
 
-const criticalNeedsCount = computed(() => {
-  if (!activeGuineaPig.value) return 0
-  return Object.values(activeGuineaPig.value.needs).filter(value => value < 30).length
-})
+const getCriticalNeedsCount = (guineaPig: GuineaPig): number => {
+  return Object.values(guineaPig.needs).filter(value => value < 30).length
+}
 
-const netChangePerTick = computed(() => {
+const getNetChange = (guineaPigId: string): number => {
   let change = 0
+  const wellness = getWellness(guineaPigId)
+  const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
+  if (!guineaPig) return 0
 
   // Passive gain/loss
-  if (currentWellness.value > 50) {
+  if (wellness > 50) {
     change += 0.1
-  } else if (currentWellness.value < 30) {
+  } else if (wellness < 30) {
     change -= 2
-  } else if (currentWellness.value < 50) {
+  } else if (wellness < 50) {
     change -= 1
   }
 
   // Critical needs penalty
-  if (criticalNeedsCount.value > 0) {
-    change -= 0.5 * criticalNeedsCount.value
+  const criticalCount = getCriticalNeedsCount(guineaPig)
+  if (criticalCount > 0) {
+    change -= 0.5 * criticalCount
   }
 
   return change
-})
+}
 
-const netChangeClass = computed(() => {
-  if (netChangePerTick.value > 0) return 'text-success'
-  if (netChangePerTick.value < 0) return 'text-danger'
+const getNetChangeClass = (guineaPigId: string): string => {
+  const netChange = getNetChange(guineaPigId)
+  if (netChange > 0) return 'text-success'
+  if (netChange < 0) return 'text-danger'
   return 'text-muted'
-})
+}
 
-const playCooldownStatus = computed(() => {
-  if (!activeGuineaPig.value) return 'N/A'
-  const cooldown = guineaPigStore.checkInteractionCooldown(activeGuineaPig.value.id, 'play')
+const getPlayCooldownStatus = (guineaPigId: string): string => {
+  const cooldown = guineaPigStore.checkInteractionCooldown(guineaPigId, 'play')
   if (cooldown.onCooldown) {
     return `⏱️ ${cooldown.remainingSeconds}s remaining`
   }
   return '✅ Ready'
-})
+}
 
-const socialCooldownStatus = computed(() => {
-  if (!activeGuineaPig.value) return 'N/A'
-  const cooldown = guineaPigStore.checkInteractionCooldown(activeGuineaPig.value.id, 'social')
+const getSocialCooldownStatus = (guineaPigId: string): string => {
+  const cooldown = guineaPigStore.checkInteractionCooldown(guineaPigId, 'social')
   if (cooldown.onCooldown) {
     return `⏱️ ${cooldown.remainingSeconds}s remaining`
   }
   return '✅ Ready'
-})
-
-const calculatedPlayCooldown = computed(() => {
-  if (!activeGuineaPig.value) return 0
-  return guineaPigStore.calculateInteractionCooldown(activeGuineaPig.value, 'play')
-})
-
-const calculatedSocialCooldown = computed(() => {
-  if (!activeGuineaPig.value) return 0
-  return guineaPigStore.calculateInteractionCooldown(activeGuineaPig.value, 'social')
-})
-
-const addFriendship = (amount: number) => {
-  if (!activeGuineaPig.value) return
-  guineaPigStore.adjustFriendship(activeGuineaPig.value.id, amount)
 }
 
-const setFriendship = (value: number) => {
-  if (!activeGuineaPig.value) return
-  activeGuineaPig.value.friendship = value
+const addFriendship = (guineaPigId: string, amount: number) => {
+  guineaPigStore.adjustFriendship(guineaPigId, amount)
 }
 
-const testPlayInteraction = () => {
-  if (!activeGuineaPig.value) return
-  guineaPigStore.playWithGuineaPig(activeGuineaPig.value.id, 'general_play')
+const setFriendship = (guineaPigId: string, value: number) => {
+  const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
+  if (!guineaPig) return
+  guineaPig.friendship = value
 }
 
-const testSocialInteraction = () => {
-  if (!activeGuineaPig.value) return
-  guineaPigStore.socializeWithGuineaPig(activeGuineaPig.value.id)
+const testPlayInteraction = (guineaPigId: string) => {
+  guineaPigStore.playWithGuineaPig(guineaPigId, 'general_play')
+}
+
+const testSocialInteraction = (guineaPigId: string) => {
+  guineaPigStore.socializeWithGuineaPig(guineaPigId)
 }
 </script>
 
 <style>
-.friendship-debug__content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
+.friendship-debug__legend {
+  max-inline-size: 100%;
 }
 
-.friendship-debug__guinea-pig-info h4 {
-  margin-block-end: var(--space-3);
-  color: var(--color-text);
-  font-size: 1.2rem;
+@media (min-width: 768px) {
+  .friendship-debug__legend {
+    max-inline-size: 320px;
+  }
+}
+
+.friendship-debug__guinea-pigs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
 }
 
 .friendship-debug__info-section h5 {
@@ -257,18 +281,14 @@ const testSocialInteraction = () => {
 }
 
 .friendship-debug__net-change {
-  padding: var(--space-3);
-  background-color: var(--color-bg-secondary);
-  border-radius: var(--radius-md);
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  font-size: 1rem;
 }
 
-.friendship-debug__net-change span {
+.friendship-debug__net-change-value {
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 2rem;
 }
 
 .text-success {

@@ -1,5 +1,6 @@
 <template>
   <div class="inventory-debug">
+    <h2>Inventory</h2>
     <!-- Currency Section -->
     <div class="panel panel--compact">
       <div class="panel__header">
