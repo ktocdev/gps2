@@ -1,7 +1,7 @@
 <template>
   <div class="panel-grid">
     <!-- Test Controls Panel -->
-    <div class="panel panel--primary">
+    <div class="panel panel--compact panel--primary">
       <div class="panel__header">
         <h3>Logging System Test Controls</h3>
       </div>
@@ -87,7 +87,7 @@
     </div>
 
     <!-- Activity Feed Panel -->
-    <div class="panel panel--secondary">
+    <div class="panel panel--compact panel--secondary">
       <div class="panel__header">
         <h3>Live Activity Feed</h3>
       </div>
@@ -102,7 +102,7 @@
     </div>
 
     <!-- Statistics Panel -->
-    <div class="panel panel--muted">
+    <div class="panel panel--compact panel--muted">
       <div class="panel__header">
         <h3>Logging Statistics</h3>
       </div>

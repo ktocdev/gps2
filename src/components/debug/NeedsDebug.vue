@@ -1,13 +1,10 @@
 <template>
   <div class="needs-debug">
-    <h2>Needs System Debug</h2>
-
     <!-- Individual Guinea Pig Needs -->
     <div v-if="hasActiveGuineaPigs">
-      <h3>Individual Guinea Pig Needs</h3>
       <div class="guinea-pigs-grid mb-6">
         <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id">
-        <div class="panel">
+        <div class="panel panel--compact">
           <div class="panel__header">
             <h4>{{ guineaPig.name }} ({{ guineaPig.breed }})</h4>
           </div>
@@ -15,7 +12,7 @@
             <div class="guinea-pig-layout">
               <!-- Needs Section -->
               <section class="guinea-pig-layout__needs">
-                <div class="panel panel--accent">
+                <div class="panel panel--compact panel--accent">
                   <div class="panel__header">
                     <h5>Needs</h5>
                   </div>
@@ -50,31 +47,7 @@
                           class="need-row__slider"
                         />
                       </div>
-                      <!-- Activity selection for play/stimulation needs (Phase 2.5 - System 2) -->
-                      <div v-if="(need as string) === 'play' || (need as string) === 'stimulation'" class="needs-list__food-action">
-                        <Select
-                          :modelValue="selectedActivityTypes[guineaPig.id] || ''"
-                          @update:modelValue="(value: string | number) => selectedActivityTypes[guineaPig.id] = String(value)"
-                          :options="activityOptions"
-                          placeholder="Select activity..."
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
-                          class="needs-list__food-select"
-                        />
-                        <Button
-                          @click="getNeedAction(need, guineaPig.id).handler"
-                          variant="tertiary"
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need]) || !selectedActivityTypes[guineaPig.id]"
-                          :title="!selectedActivityTypes[guineaPig.id] ? 'Select an activity first' : getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
-                          :class="['needs-list__action', `needs-list__action--${need}`]"
-                        >
-                          {{ getNeedAction(need, guineaPig.id).label }}
-                        </Button>
-                      </div>
-                      <!-- Standard button for other needs -->
                       <Button
-                        v-else
                         @click="getNeedAction(need, guineaPig.id).handler"
                         variant="tertiary"
                         size="sm"
@@ -120,31 +93,7 @@
                           class="need-row__slider"
                         />
                       </div>
-                      <!-- Activity selection for play/stimulation needs (Phase 2.5 - System 2) -->
-                      <div v-if="(need as string) === 'play' || (need as string) === 'stimulation'" class="needs-list__food-action">
-                        <Select
-                          :modelValue="selectedActivityTypes[guineaPig.id] || ''"
-                          @update:modelValue="(value: string | number) => selectedActivityTypes[guineaPig.id] = String(value)"
-                          :options="activityOptions"
-                          placeholder="Select activity..."
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
-                          class="needs-list__food-select"
-                        />
-                        <Button
-                          @click="getNeedAction(need, guineaPig.id).handler"
-                          variant="tertiary"
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need]) || !selectedActivityTypes[guineaPig.id]"
-                          :title="!selectedActivityTypes[guineaPig.id] ? 'Select an activity first' : getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
-                          :class="['needs-list__action', `needs-list__action--${need}`]"
-                        >
-                          {{ getNeedAction(need, guineaPig.id).label }}
-                        </Button>
-                      </div>
-                      <!-- Standard button for other needs -->
                       <Button
-                        v-else
                         @click="getNeedAction(need, guineaPig.id).handler"
                         variant="tertiary"
                         size="sm"
@@ -190,31 +139,7 @@
                           class="need-row__slider"
                         />
                       </div>
-                      <!-- Activity selection for play/stimulation needs (Phase 2.5 - System 2) -->
-                      <div v-if="(need as string) === 'play' || (need as string) === 'stimulation'" class="needs-list__food-action">
-                        <Select
-                          :modelValue="selectedActivityTypes[guineaPig.id] || ''"
-                          @update:modelValue="(value: string | number) => selectedActivityTypes[guineaPig.id] = String(value)"
-                          :options="activityOptions"
-                          placeholder="Select activity..."
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
-                          class="needs-list__food-select"
-                        />
-                        <Button
-                          @click="getNeedAction(need, guineaPig.id).handler"
-                          variant="tertiary"
-                          size="sm"
-                          :disabled="isQuickActionDisabled((guineaPig.needs as any)[need]) || !selectedActivityTypes[guineaPig.id]"
-                          :title="!selectedActivityTypes[guineaPig.id] ? 'Select an activity first' : getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
-                          :class="['needs-list__action', `needs-list__action--${need}`]"
-                        >
-                          {{ getNeedAction(need, guineaPig.id).label }}
-                        </Button>
-                      </div>
-                      <!-- Standard button for other needs -->
                       <Button
-                        v-else
                         @click="getNeedAction(need, guineaPig.id).handler"
                         variant="tertiary"
                         size="sm"
@@ -276,7 +201,7 @@
     </div>
 
     <!-- No Active Guinea Pigs -->
-    <div v-else class="panel panel--warning mb-6">
+    <div v-else class="panel panel--compact panel--warning mb-6">
       <div class="panel__content text-center">
         <p>No active guinea pigs. Start a game session from the Pet Store tab to test needs system.</p>
       </div>
@@ -407,7 +332,6 @@ import { usePetStoreManager } from '../../stores/petStoreManager'
 import Button from '../basic/Button.vue'
 import SliderField from '../basic/SliderField.vue'
 import Badge from '../basic/Badge.vue'
-import Select from '../basic/Select.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()
@@ -417,19 +341,8 @@ const petStoreManager = usePetStoreManager()
 // Reactive data
 const decayRateMultiplier = ref(guineaPigStore.settings.needsDecayRate)
 
-// Activity selection per guinea pig (Phase 2.5 - System 2: Preferences)
-const selectedActivityTypes = ref<Record<string, string>>({}) // guineaPigId -> selected activity type
-
 // Computed properties
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
-
-// Activity options for dropdowns (Phase 2.5 - System 2)
-const activityOptions = computed(() => {
-  return petStoreManager.activities.map(a => ({
-    label: formatPreferenceName(a),
-    value: a
-  }))
-})
 
 // Helper function to check if quick action is disabled
 const isQuickActionDisabled = (needValue: number) => {
@@ -499,10 +412,7 @@ const cleanGuineaPig = (guineaPigId: string) => {
 }
 
 const playWithGuineaPig = (guineaPigId: string) => {
-  const selectedActivity = selectedActivityTypes.value[guineaPigId]
-  if (!selectedActivity) return // No activity selected
-
-  guineaPigStore.playWithGuineaPig(guineaPigId, selectedActivity as any)
+  guineaPigStore.playWithGuineaPig(guineaPigId)
 }
 
 const provideChewToy = (guineaPigId: string) => {
@@ -530,12 +440,7 @@ const socializeWithGuineaPig = (guineaPigId: string) => {
 }
 
 const rearrangeCage = (guineaPigId: string) => {
-  const selectedActivity = selectedActivityTypes.value[guineaPigId]
-  if (!selectedActivity) return // No activity selected
-
-  // For stimulation need, we use the activity-based playWithGuineaPig
-  // which handles both play and stimulation needs
-  guineaPigStore.playWithGuineaPig(guineaPigId, selectedActivity as any)
+  guineaPigStore.playWithGuineaPig(guineaPigId)
 }
 
 const provideBedding = (guineaPigId: string) => {
@@ -578,13 +483,6 @@ const formatNeedName = (need: string): string => {
   return need.charAt(0).toUpperCase() + need.slice(1)
 }
 
-const formatPreferenceName = (name: string): string => {
-  return name
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ')
-}
-
 const formatTimestamp = (timestamp: number): string => {
   const date = new Date(timestamp)
   const now = new Date()
@@ -616,19 +514,6 @@ const getNeedUrgency = (value: number): string => {
 <style scoped>
 .needs-debug {
   max-inline-size: 100%;
-}
-
-/* Guinea Pigs Grid Layout */
-.guinea-pigs-grid {
-  display: grid;
-  gap: var(--space-6);
-  grid-template-columns: 1fr;
-}
-
-@media (min-width: 1400px) {
-  .guinea-pigs-grid {
-    grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-  }
 }
 
 /* Mobile-first: Stack vertically */
@@ -942,15 +827,4 @@ const getNeedUrgency = (value: number): string => {
   width: 100%;
 }
 
-/* Food selection for hunger need (Phase 2.5 - System 2) */
-.needs-list__food-action {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.needs-list__food-select {
-  flex: 1;
-  min-inline-size: 0; /* Allow shrinking */
-}
 </style>

@@ -1,10 +1,7 @@
 <template>
   <div class="feeding-debug">
-    <h2>Feeding System Debug</h2>
-
     <!-- Individual Guinea Pig Feeding -->
     <div v-if="hasActiveGuineaPigs">
-      <h3>Individual Guinea Pig Feeding</h3>
       <div class="guinea-pigs-grid">
         <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id" class="panel panel--compact">
           <div class="panel__header">
@@ -23,60 +20,113 @@
 
             <hr class="divider">
 
-            <!-- Food Selection -->
-            <div class="form-group">
-              <label :for="`food-select-${guineaPig.id}`" class="form-label">Food Type:</label>
-              <Select
-                :id="`food-select-${guineaPig.id}`"
-                :modelValue="selectedFoodTypes[guineaPig.id] || ''"
-                @update:modelValue="(value: string | number) => selectedFoodTypes[guineaPig.id] = String(value)"
-                :options="foodOptions"
-                placeholder="Select food..."
+            <!-- Food Category Selection -->
+            <div class="food-categories-grid">
+              <!-- Fruits -->
+              <div class="form-group">
+                <label :for="`fruit-select-${guineaPig.id}`" class="form-label">
+                  Fruits ({{ getRemainingServings(guineaPig.id, 'fruit') }}/{{ getLimit(guineaPig.id, 'fruit') }} remaining)
+                </label>
+                <Select
+                  :id="`fruit-select-${guineaPig.id}`"
+                  :modelValue="selectedFoodTypes[guineaPig.id]?.fruit || ''"
+                  @update:modelValue="(value: string | number) => updateSelectedFood(guineaPig.id, 'fruit', String(value))"
+                  :options="fruitOptions"
+                  placeholder="Select fruit..."
+                  size="sm"
+                  :disabled="gameController.isPaused || !needsController.processingEnabled"
+                />
+              </div>
+
+              <!-- Vegetables -->
+              <div class="form-group">
+                <label :for="`vegetable-select-${guineaPig.id}`" class="form-label">
+                  Vegetables ({{ getRemainingServings(guineaPig.id, 'vegetables') }}/{{ getLimit(guineaPig.id, 'vegetables') }} remaining)
+                </label>
+                <Select
+                  :id="`vegetable-select-${guineaPig.id}`"
+                  :modelValue="selectedFoodTypes[guineaPig.id]?.vegetables || ''"
+                  @update:modelValue="(value: string | number) => updateSelectedFood(guineaPig.id, 'vegetables', String(value))"
+                  :options="vegetableOptions"
+                  placeholder="Select vegetable..."
+                  size="sm"
+                  :disabled="gameController.isPaused || !needsController.processingEnabled"
+                />
+              </div>
+
+              <!-- Pellets -->
+              <div class="form-group">
+                <label :for="`pellet-select-${guineaPig.id}`" class="form-label">
+                  Pellets ({{ getRemainingServings(guineaPig.id, 'pellets') }}/{{ getLimit(guineaPig.id, 'pellets') }} remaining)
+                </label>
+                <Select
+                  :id="`pellet-select-${guineaPig.id}`"
+                  :modelValue="selectedFoodTypes[guineaPig.id]?.pellets || ''"
+                  @update:modelValue="(value: string | number) => updateSelectedFood(guineaPig.id, 'pellets', String(value))"
+                  :options="pelletOptions"
+                  placeholder="Select pellets..."
+                  size="sm"
+                  :disabled="gameController.isPaused || !needsController.processingEnabled"
+                />
+              </div>
+
+              <!-- Treats -->
+              <div class="form-group">
+                <label :for="`treat-select-${guineaPig.id}`" class="form-label">
+                  Treats ({{ getRemainingServings(guineaPig.id, 'treats') }}/{{ getLimit(guineaPig.id, 'treats') }} remaining)
+                </label>
+                <Select
+                  :id="`treat-select-${guineaPig.id}`"
+                  :modelValue="selectedFoodTypes[guineaPig.id]?.treats || ''"
+                  @update:modelValue="(value: string | number) => updateSelectedFood(guineaPig.id, 'treats', String(value))"
+                  :options="treatOptions"
+                  placeholder="Select treat..."
+                  size="sm"
+                  :disabled="gameController.isPaused || !needsController.processingEnabled"
+                />
+              </div>
+
+              <!-- Hay -->
+              <div class="form-group">
+                <label :for="`hay-select-${guineaPig.id}`" class="form-label">
+                  Hay (Unlimited ∞)
+                </label>
+                <Select
+                  :id="`hay-select-${guineaPig.id}`"
+                  :modelValue="selectedFoodTypes[guineaPig.id]?.hay || ''"
+                  @update:modelValue="(value: string | number) => updateSelectedFood(guineaPig.id, 'hay', String(value))"
+                  :options="hayOptions"
+                  placeholder="Select hay..."
+                  size="sm"
+                  :disabled="gameController.isPaused || !needsController.processingEnabled"
+                />
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+              <Button
+                @click="feedGuineaPig(guineaPig.id)"
+                variant="primary"
                 size="md"
-                :disabled="gameController.isPaused || !needsController.processingEnabled"
-              />
+                :disabled="isFeedDisabled(guineaPig.id)"
+                :title="getFeedTooltip(guineaPig.id)"
+                class="action-buttons__feed"
+              >
+                Feed {{ getSelectedFoodLabel(guineaPig.id) }}
+              </Button>
+
+              <Button
+                @click="fulfillSessionHunger(guineaPig.id)"
+                variant="secondary"
+                size="md"
+                :disabled="gameController.isPaused || !needsController.processingEnabled || guineaPig.needs.hunger >= 100"
+                :title="getFullfillHungerTooltip(guineaPig.needs.hunger)"
+                class="action-buttons__fulfill"
+              >
+                Fulfill Session Hunger (Reset Limits)
+              </Button>
             </div>
-
-            <!-- Consumption Limits (System 2.5) -->
-            <div v-if="selectedFoodTypes[guineaPig.id] && selectedFoodTypes[guineaPig.id] !== 'hay'" class="consumption-info">
-              <span class="consumption-label">Servings Remaining:</span>
-              <span class="consumption-value">
-                {{ getRemainingServings(guineaPig.id, selectedFoodTypes[guineaPig.id] as any) }} /
-                {{ getLimit(guineaPig.id, selectedFoodTypes[guineaPig.id] as any) }}
-              </span>
-            </div>
-            <div v-else-if="selectedFoodTypes[guineaPig.id] === 'hay'" class="consumption-info">
-              <span class="consumption-label">Servings Remaining:</span>
-              <span class="consumption-value text--success">Unlimited ∞</span>
-            </div>
-
-            <!-- Feed Button -->
-            <Button
-              @click="feedGuineaPig(guineaPig.id)"
-              variant="primary"
-              size="md"
-              full-width
-              :disabled="isFeedDisabled(guineaPig.id)"
-              :title="getFeedTooltip(guineaPig.id)"
-              class="feed-button"
-            >
-              Feed {{ selectedFoodTypes[guineaPig.id] ? formatPreferenceName(selectedFoodTypes[guineaPig.id]) : 'Food' }}
-            </Button>
-
-            <hr class="divider">
-
-            <!-- Fulfill Session Hunger Button -->
-            <Button
-              @click="fulfillSessionHunger(guineaPig.id)"
-              variant="secondary"
-              size="md"
-              full-width
-              :disabled="gameController.isPaused || !needsController.processingEnabled || guineaPig.needs.hunger >= 100"
-              :title="getFullfillHungerTooltip(guineaPig.needs.hunger)"
-              class="fulfill-button"
-            >
-              Fulfill Session Hunger (Reset Limits)
-            </Button>
 
             <!-- Preferences Display (Phase 2.5 - System 2) -->
             <div class="preferences-display">
@@ -120,43 +170,85 @@ const needsController = useNeedsController()
 const gameController = useGameController()
 const petStoreManager = usePetStoreManager()
 
-// Reactive data
-const selectedFoodTypes = ref<Record<string, string>>({}) // guineaPigId -> selected food type
+// Reactive data - Track selected food per category per guinea pig
+const selectedFoodTypes = ref<Record<string, {
+  fruit?: string
+  vegetables?: string
+  pellets?: string
+  treats?: string
+  hay?: string
+}>>({})
 
 // Computed properties
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 
-// Food options for dropdowns
-const foodOptions = computed(() => {
-  const options = [
-    { label: '--- Fruits ---', value: '', disabled: true },
-    ...petStoreManager.fruits.map(f => ({
-      label: formatPreferenceName(f),
-      value: f
-    })),
-    { label: '--- Vegetables ---', value: '', disabled: true },
-    ...petStoreManager.vegetables.map(v => ({
-      label: formatPreferenceName(v),
-      value: v
-    })),
-    { label: '--- Pellets ---', value: 'pellets' },
-    { label: '--- Treats ---', value: 'treats' },
-    { label: '--- Hay ---', value: '', disabled: true },
-    ...petStoreManager.hayTypes.map(h => ({
-      label: formatPreferenceName(h),
-      value: h
-    }))
-  ]
-  return options
+// Food category options
+const fruitOptions = computed(() => {
+  return petStoreManager.fruits.map(f => ({
+    label: formatPreferenceName(f),
+    value: f
+  }))
 })
 
-// System 2.5: Get remaining servings for a food type
-const getRemainingServings = (guineaPigId: string, foodType: FoodType): number => {
-  return guineaPigStore.getRemainingServings(guineaPigId, foodType)
+const vegetableOptions = computed(() => {
+  return petStoreManager.vegetables.map(v => ({
+    label: formatPreferenceName(v),
+    value: v
+  }))
+})
+
+const pelletOptions = computed(() => {
+  return [{ label: 'Pellets', value: 'pellets' }]
+})
+
+const treatOptions = computed(() => {
+  return [{ label: 'Treats', value: 'treats' }]
+})
+
+const hayOptions = computed(() => {
+  return petStoreManager.hayTypes.map(h => ({
+    label: formatPreferenceName(h),
+    value: h
+  }))
+})
+
+// Update selected food for a specific category
+const updateSelectedFood = (guineaPigId: string, category: string, value: string) => {
+  // Clear all other category selections when a new one is selected
+  // This ensures only one food item is selected at a time across all categories
+  selectedFoodTypes.value[guineaPigId] = {
+    [category]: value
+  } as any
 }
 
-// System 2.5: Get limit for a food type
-const getLimit = (guineaPigId: string, foodType: FoodType): number => {
+// Get the currently selected food item across all categories
+const getSelectedFood = (guineaPigId: string): { category: FoodType, item: string } | null => {
+  const selections = selectedFoodTypes.value[guineaPigId]
+  if (!selections) return null
+
+  // Check each category for a selection
+  if (selections.fruit) return { category: 'fruit', item: selections.fruit }
+  if (selections.vegetables) return { category: 'vegetables', item: selections.vegetables }
+  if (selections.pellets) return { category: 'pellets', item: selections.pellets }
+  if (selections.treats) return { category: 'treats', item: selections.treats }
+  if (selections.hay) return { category: 'hay', item: selections.hay }
+
+  return null
+}
+
+// Get label for feed button
+const getSelectedFoodLabel = (guineaPigId: string): string => {
+  const selected = getSelectedFood(guineaPigId)
+  return selected ? formatPreferenceName(selected.item) : 'Food'
+}
+
+// System 2.5: Get remaining servings for a food type category
+const getRemainingServings = (guineaPigId: string, foodType: FoodType | string): number => {
+  return guineaPigStore.getRemainingServings(guineaPigId, foodType as FoodType)
+}
+
+// System 2.5: Get limit for a food type category
+const getLimit = (guineaPigId: string, foodType: FoodType | string): number => {
   const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
   if (!guineaPig || foodType === 'hay') return 0
 
@@ -166,26 +258,10 @@ const getLimit = (guineaPigId: string, foodType: FoodType): number => {
 
 // Feed guinea pig
 const feedGuineaPig = (guineaPigId: string) => {
-  const selectedFood = selectedFoodTypes.value[guineaPigId]
-  if (!selectedFood) return
+  const selected = getSelectedFood(guineaPigId)
+  if (!selected) return
 
-  // Map hay types to 'hay' category, and fruit/veg items to 'fruit'/'vegetables' categories
-  let foodType: FoodType = selectedFood as FoodType
-
-  // Check if it's a hay type
-  if (petStoreManager.hayTypes.includes(selectedFood)) {
-    foodType = 'hay'
-  }
-  // Check if it's a fruit
-  else if (petStoreManager.fruits.includes(selectedFood)) {
-    foodType = 'fruit'
-  }
-  // Check if it's a vegetable
-  else if (petStoreManager.vegetables.includes(selectedFood)) {
-    foodType = 'vegetables'
-  }
-
-  guineaPigStore.feedGuineaPig(guineaPigId, foodType)
+  guineaPigStore.feedGuineaPig(guineaPigId, selected.category)
 }
 
 // Fulfill session hunger (resets consumption limits)
@@ -197,21 +273,13 @@ const fulfillSessionHunger = (guineaPigId: string) => {
 const isFeedDisabled = (guineaPigId: string): boolean => {
   if (gameController.isPaused || !needsController.processingEnabled) return true
 
-  const selectedFood = selectedFoodTypes.value[guineaPigId]
-  if (!selectedFood) return true
+  const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
+  if (guineaPig && guineaPig.needs.hunger >= 100) return true
 
-  // Map to food type category
-  let foodType: FoodType = selectedFood as FoodType
-  if (petStoreManager.hayTypes.includes(selectedFood)) {
-    foodType = 'hay'
-  } else if (petStoreManager.fruits.includes(selectedFood)) {
-    foodType = 'fruit'
-  } else if (petStoreManager.vegetables.includes(selectedFood)) {
-    foodType = 'vegetables'
-  }
+  const selected = getSelectedFood(guineaPigId)
+  if (!selected) return true
 
-  // Check consumption limit
-  const canConsume = guineaPigStore.checkConsumptionLimit(guineaPigId, foodType)
+  const canConsume = guineaPigStore.checkConsumptionLimit(guineaPigId, selected.category)
   return !canConsume
 }
 
@@ -224,24 +292,19 @@ const getFeedTooltip = (guineaPigId: string): string => {
     return 'Action disabled - Needs Processing Paused'
   }
 
-  const selectedFood = selectedFoodTypes.value[guineaPigId]
-  if (!selectedFood) {
-    return 'Select a food type first'
+  const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
+  if (guineaPig && guineaPig.needs.hunger >= 100) {
+    return 'Hunger already at 100%'
   }
 
-  // Map to food type category
-  let foodType: FoodType = selectedFood as FoodType
-  if (petStoreManager.hayTypes.includes(selectedFood)) {
-    foodType = 'hay'
-  } else if (petStoreManager.fruits.includes(selectedFood)) {
-    foodType = 'fruit'
-  } else if (petStoreManager.vegetables.includes(selectedFood)) {
-    foodType = 'vegetables'
+  const selected = getSelectedFood(guineaPigId)
+  if (!selected) {
+    return 'Select a food item from any category first'
   }
 
-  const canConsume = guineaPigStore.checkConsumptionLimit(guineaPigId, foodType)
+  const canConsume = guineaPigStore.checkConsumptionLimit(guineaPigId, selected.category)
   if (!canConsume) {
-    return `Consumption limit reached for ${foodType}. Fulfill hunger to reset limits.`
+    return `Consumption limit reached for ${selected.category}. Fulfill hunger to reset limits.`
   }
 
   return ''
@@ -286,15 +349,16 @@ const getHungerStatusClass = (value: number): string => {
   max-inline-size: 100%;
 }
 
-.guinea-pigs-grid {
+.food-categories-grid {
   display: grid;
-  gap: var(--space-4);
   grid-template-columns: 1fr;
+  gap: var(--space-3);
+  margin-block-end: var(--space-4);
 }
 
-@media (min-width: 768px) {
-  .guinea-pigs-grid {
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+@media (min-width: 1024px) {
+  .food-categories-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
@@ -363,12 +427,23 @@ const getHungerStatusClass = (value: number): string => {
   color: var(--color-text-primary);
 }
 
-.feed-button {
-  margin-block-end: var(--space-3);
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-block-end: var(--space-4);
 }
 
-.fulfill-button {
-  margin-block-end: var(--space-4);
+@media (min-width: 1024px) {
+  .action-buttons {
+    flex-direction: row;
+  }
+}
+
+.action-buttons__feed,
+.action-buttons__fulfill {
+  flex: 1;
+  white-space: break-spaces;
 }
 
 .preferences-display {
