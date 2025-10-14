@@ -14,17 +14,24 @@
         </h3>
       </div>
       <div class="panel__content">
-        <div class="pet-store-debug__guinea-pig-list">
+        <div class="pet-store-debug__cages">
           <div
-            v-for="guineaPig in sortedAvailableGuineaPigs"
-            :key="guineaPig.id"
-            class="pet-store-debug__guinea-pig-item"
-            :class="{
-              'pet-store-debug__guinea-pig-item--selected': selectedGuineaPig?.id === guineaPig.id,
-              'pet-store-debug__guinea-pig-item--active': isGuineaPigActive(guineaPig.id)
-            }"
-            @click="selectedGuineaPig = guineaPig"
+            v-for="[cageNumber, guineaPigs] in guineaPigsByCage"
+            :key="cageNumber"
+            class="pet-store-debug__cage"
           >
+            <h4 class="pet-store-debug__cage-label">Cage {{ cageNumber }}</h4>
+            <div class="pet-store-debug__guinea-pig-list">
+              <div
+                v-for="guineaPig in guineaPigs"
+                :key="guineaPig.id"
+                class="pet-store-debug__guinea-pig-item"
+                :class="{
+                  'pet-store-debug__guinea-pig-item--selected': selectedGuineaPig?.id === guineaPig.id,
+                  'pet-store-debug__guinea-pig-item--active': isGuineaPigActive(guineaPig.id)
+                }"
+                @click="selectedGuineaPig = guineaPig"
+              >
             <div class="pet-store-debug__guinea-pig-header">
               <div class="pet-store-debug__guinea-pig-left">
                 <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
@@ -56,6 +63,8 @@
                   Observe {{ guineaPig.name }}
                 </Button>
                 <span v-else class="pet-store-debug__observed-badge">Observed ✓</span>
+              </div>
+            </div>
               </div>
             </div>
           </div>
@@ -481,6 +490,22 @@ const sortedAvailableGuineaPigs = computed(() => {
   })
 })
 
+// Phase 7: Group guinea pigs by cage
+const guineaPigsByCage = computed(() => {
+  const grouped = new Map<number, GuineaPig[]>()
+
+  for (const guineaPig of sortedAvailableGuineaPigs.value) {
+    const cage = guineaPig.cageNumber ?? 0
+    if (!grouped.has(cage)) {
+      grouped.set(cage, [])
+    }
+    grouped.get(cage)!.push(guineaPig)
+  }
+
+  // Sort by cage number
+  return Array.from(grouped.entries()).sort((a, b) => a[0] - b[0])
+})
+
 // Dynamic option arrays from pet store manager
 const furColorOptions = petStoreManager.furColors
 const furPatternOptions = petStoreManager.furPatterns
@@ -882,6 +907,28 @@ const observeGuineaPig = (guineaPig: GuineaPig) => {
 </script>
 
 <style>
+/* === Cage Organization Section === */
+.pet-store-debug__cages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.pet-store-debug__cage {
+  border: 2px solid var(--color-border-medium);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  background-color: var(--color-bg-tertiary);
+}
+
+.pet-store-debug__cage-label {
+  margin: 0;
+  margin-block-end: var(--space-3);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
 /* === Guinea Pig List Section === */
 .pet-store-debug__guinea-pig-list {
   display: grid;
