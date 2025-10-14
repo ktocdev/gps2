@@ -72,6 +72,34 @@
   gap: var(--space-2);
 }
 
+/* Form Field - Alternative naming convention */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-field__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.form-field__input {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  background-color: var(--color-background-secondary);
+}
+
+.form-field__input--readonly {
+  background-color: var(--color-background-tertiary);
+  color: var(--color-text-primary);
+  cursor: default;
+}
+
 .form-label {
   font-weight: var(--font-weight-medium);
   color: var(--color-text);
