@@ -145,6 +145,9 @@ export interface GuineaPig {
   adoptionTimer: number | null       // Timestamp when guinea pig entered store
   adoptionDuration: number           // How long available in store (ms)
 
+  // Phase 7: Observe interaction
+  observed: boolean                  // True if player has used Observe on this guinea pig
+
   // Tracking data
   totalInteractions: number
   lifetimeHappiness: number   // Average happiness over lifetime

@@ -414,6 +414,9 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       adoptionTimer: Date.now(),
       adoptionDuration: Math.floor(Math.random() * (5 * 24 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000) + 2 * 24 * 60 * 60 * 1000), // 2-5 days in ms
 
+      // Phase 7: Observe interaction
+      observed: false,
+
       totalInteractions: 0,
       lifetimeHappiness: 100,
       achievementsUnlocked: []
