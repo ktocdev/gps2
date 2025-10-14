@@ -314,19 +314,15 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     const shuffledActivities = shuffleArray(activities)
     const favoriteActivity = pickRandomPreferences(shuffledActivities)
-    const dislikedActivity = pickRandomPreferences(shuffledActivities, favoriteActivity)
 
     const shuffledHabitat = shuffleArray(habitatFeatures)
     const habitatPreference = pickRandomPreferences(shuffledHabitat)
-    const dislikedHabitat = pickRandomPreferences(shuffledHabitat, habitatPreference)
 
     return {
       favoriteFood,
       dislikedFood,
       favoriteActivity,
-      dislikedActivity,
-      habitatPreference,
-      dislikedHabitat
+      habitatPreference
     }
   }
 
@@ -417,7 +413,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       // Phase 7: Observe interaction
       observed: false,
 
-      // Pet Store organization
+      // Pet Adoption organization
       cageNumber: null,
 
       totalInteractions: 0,
@@ -433,27 +429,27 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       guineaPigs.push(generateRandomGuineaPig())
     }
 
-    // Assign guinea pigs to cages (3-4 per cage)
-    let currentCage = 1
-    let guineaPigsInCurrentCage = 0
-    let guineaPigsPerCage = Math.floor(Math.random() * 2) + 3 // 3 or 4
+    // Assign guinea pigs to habitats (3-4 per habitat)
+    let currentHabitat = 1
+    let guineaPigsInCurrentHabitat = 0
+    let guineaPigsPerHabitat = Math.floor(Math.random() * 2) + 3 // 3 or 4
     const bonded: number[] = [] // Track which guinea pigs should form bonded pairs
 
     for (let i = 0; i < guineaPigs.length; i++) {
       const guineaPig = guineaPigs[i]
-      guineaPig.cageNumber = currentCage
-      guineaPigsInCurrentCage++
+      guineaPig.cageNumber = currentHabitat
+      guineaPigsInCurrentHabitat++
 
-      // If this is the start of a new cage, randomly decide if it should have a bonded pair
-      if (guineaPigsInCurrentCage === 1 && i + 1 < guineaPigs.length && Math.random() < 0.4) {
-        // 40% chance of creating a bonded pair in this cage
+      // If this is the start of a new habitat, randomly decide if it should have a bonded pair
+      if (guineaPigsInCurrentHabitat === 1 && i + 1 < guineaPigs.length && Math.random() < 0.4) {
+        // 40% chance of creating a bonded pair in this habitat
         bonded.push(i) // Mark these two indices as bonded
       }
 
-      if (guineaPigsInCurrentCage >= guineaPigsPerCage) {
-        currentCage++
-        guineaPigsInCurrentCage = 0
-        guineaPigsPerCage = Math.floor(Math.random() * 2) + 3 // 3 or 4 for next cage
+      if (guineaPigsInCurrentHabitat >= guineaPigsPerHabitat) {
+        currentHabitat++
+        guineaPigsInCurrentHabitat = 0
+        guineaPigsPerHabitat = Math.floor(Math.random() * 2) + 3 // 3 or 4 for next habitat
       }
     }
 

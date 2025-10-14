@@ -17,7 +17,7 @@
                 :disabled="!canStartSession || !!petStoreManager.activeGameSession"
                 :title="petStoreManager.activeGameSession ? 'Game session already active' : (!canStartSession ? 'Select 1-2 guinea pigs from pet store' : 'Start game session')"
               >
-                {{ petStoreManager.activeGameSession ? 'Game in Session' : 'Start Session' }}
+                {{ petStoreManager.activeGameSession ? 'Game in Session' : 'Adopt Guinea Pig(s)' }}
               </Button>
             </div>
 

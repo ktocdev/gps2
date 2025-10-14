@@ -78,7 +78,7 @@ const tabCategories: TabCategory[] = [
       },
       {
         id: 'pet-store',
-        label: 'Pet Store',
+        label: 'Pet Adoption',
         icon: '🏪',
         panelClass: 'tab-container__panel--constrained'
       },

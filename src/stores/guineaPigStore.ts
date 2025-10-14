@@ -24,9 +24,7 @@ export interface GuineaPigPreferences {
   favoriteFood: string[]     // Array of food items they prefer (up to 2 per category)
   dislikedFood: string[]     // Array of food items they dislike (up to 2 per category)
   favoriteActivity: string[] // Array of activities they enjoy (up to 2)
-  dislikedActivity: string[] // Array of activities they dislike (up to 2)
   habitatPreference: string[] // Preferred habitat features (up to 2)
-  dislikedHabitat: string[]   // Disliked habitat features (up to 2)
 }
 
 // System 2.5: Fulfillment Limitation System
@@ -148,8 +146,8 @@ export interface GuineaPig {
   // Phase 7: Observe interaction
   observed: boolean                  // True if player has used Observe on this guinea pig
 
-  // Pet Store organization
-  cageNumber: number | null          // Cage assignment in pet store (null if not in store)
+  // Pet Adoption organization
+  cageNumber: number | null          // Habitat assignment in pet adoption (null if not in adoption center)
 
   // Tracking data
   totalInteractions: number
@@ -901,32 +899,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
     // Check preferences (Phase 2.5 - System 2)
     const isFavorite = guineaPig.preferences.favoriteActivity.includes(activityType)
-    const isDisliked = guineaPig.preferences.dislikedActivity.includes(activityType)
 
     if (isFavorite) {
       // FAVORITE ACTIVITY: +50% satisfaction (happiness bonus removed - not in Phase 2)
       preferenceLevel = 'favorite'
       playGain = Math.floor(playGain * 1.5) // 30 instead of 20
-
-    } else if (isDisliked) {
-      // DISLIKED ACTIVITY: 70% rejection chance
-      preferenceLevel = 'disliked'
-
-      if (Math.random() < 0.7) {
-        // Rejection - guinea pig refuses to participate
-        const { message, emoji } = MessageGenerator.generatePlayMessage(
-          guineaPig.name,
-          activityType,
-          false,
-          true // rejected
-        )
-
-        getLoggingStore().addGuineaPigReaction(message, emoji)
-        return false
-      }
-
-      // 30% chance of reluctant participation: -40% satisfaction
-      playGain = Math.floor(playGain * 0.6) // 12 instead of 20
     }
 
     // Apply effects
@@ -951,8 +928,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       guineaPig.name,
       activityType,
       isFavorite,
-      false, // not rejected
-      isDisliked
+      false // not rejected
     )
 
     getLoggingStore().addPlayerAction(

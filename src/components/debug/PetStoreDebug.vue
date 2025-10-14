@@ -1,6 +1,6 @@
 <template>
   <div class="pet-store-debug">
-    <h2>Pet Store</h2>
+    <h2>Pet Adoption</h2>
     <div class="panel-row">
     <!-- First Row: 3 columns on desktop -->
     <div class="panel panel--compact">
@@ -14,13 +14,13 @@
         </h3>
       </div>
       <div class="panel__content">
-        <div class="pet-store-debug__cages">
+        <div class="pet-store-debug__habitats">
           <div
-            v-for="[cageNumber, guineaPigs] in guineaPigsByCage"
-            :key="cageNumber"
-            class="pet-store-debug__cage"
+            v-for="[habitatNumber, guineaPigs] in guineaPigsByHabitat"
+            :key="habitatNumber"
+            class="pet-store-debug__habitat"
           >
-            <h4 class="pet-store-debug__cage-label">Cage {{ cageNumber }}</h4>
+            <h4 class="pet-store-debug__habitat-label">Habitat {{ habitatNumber }}</h4>
             <div class="pet-store-debug__guinea-pig-list">
               <div
                 v-for="guineaPig in guineaPigs"
@@ -350,25 +350,6 @@
                       />
                     </div>
                   </div>
-                  <div class="preference-row__group">
-                    <span class="preference-row__group-label" aria-hidden="true">Dislikes</span>
-                    <div class="preference-row__selects">
-                      <Select
-                        v-model="activityDislike1"
-                        :options="selectActivityOptions"
-                        aria-label="First disliked activity"
-                        :disabled="isSelectedGuineaPigActive"
-                        size="sm"
-                      />
-                      <Select
-                        v-model="activityDislike2"
-                        :options="selectActivityOptions"
-                        aria-label="Second disliked activity"
-                        :disabled="isSelectedGuineaPigActive"
-                        size="sm"
-                      />
-                    </div>
-                  </div>
                 </div>
               </fieldset>
             </div>
@@ -393,25 +374,6 @@
                         v-model="habitatFavorite2"
                         :options="selectHabitatOptions"
                         aria-label="Second liked habitat feature"
-                        :disabled="isSelectedGuineaPigActive"
-                        size="sm"
-                      />
-                    </div>
-                  </div>
-                  <div class="preference-row__group">
-                    <span class="preference-row__group-label" aria-hidden="true">Dislikes</span>
-                    <div class="preference-row__selects">
-                      <Select
-                        v-model="habitatDislike1"
-                        :options="selectHabitatOptions"
-                        aria-label="First disliked habitat feature"
-                        :disabled="isSelectedGuineaPigActive"
-                        size="sm"
-                      />
-                      <Select
-                        v-model="habitatDislike2"
-                        :options="selectHabitatOptions"
-                        aria-label="Second disliked habitat feature"
                         :disabled="isSelectedGuineaPigActive"
                         size="sm"
                       />
@@ -490,19 +452,19 @@ const sortedAvailableGuineaPigs = computed(() => {
   })
 })
 
-// Phase 7: Group guinea pigs by cage
-const guineaPigsByCage = computed(() => {
+// Phase 7: Group guinea pigs by habitat
+const guineaPigsByHabitat = computed(() => {
   const grouped = new Map<number, GuineaPig[]>()
 
   for (const guineaPig of sortedAvailableGuineaPigs.value) {
-    const cage = guineaPig.cageNumber ?? 0
-    if (!grouped.has(cage)) {
-      grouped.set(cage, [])
+    const habitat = guineaPig.cageNumber ?? 0
+    if (!grouped.has(habitat)) {
+      grouped.set(habitat, [])
     }
-    grouped.get(cage)!.push(guineaPig)
+    grouped.get(habitat)!.push(guineaPig)
   }
 
-  // Sort by cage number
+  // Sort by habitat number
   return Array.from(grouped.entries()).sort((a, b) => a[0] - b[0])
 })
 
@@ -691,13 +653,9 @@ const hayDislike2 = ref('')
 
 const activityFavorite1 = ref('')
 const activityFavorite2 = ref('')
-const activityDislike1 = ref('')
-const activityDislike2 = ref('')
 
 const habitatFavorite1 = ref('')
 const habitatFavorite2 = ref('')
-const habitatDislike1 = ref('')
-const habitatDislike2 = ref('')
 
 // Helper function to extract category-specific preferences
 const getPreferencesForCategory = (allPreferences: string[], category: string[]): string[] => {
@@ -722,12 +680,8 @@ watch(() => selectedGuineaPig.value, (gp) => {
     hayDislike2.value = ''
     activityFavorite1.value = ''
     activityFavorite2.value = ''
-    activityDislike1.value = ''
-    activityDislike2.value = ''
     habitatFavorite1.value = ''
     habitatFavorite2.value = ''
-    habitatDislike1.value = ''
-    habitatDislike2.value = ''
     return
   }
 
@@ -757,13 +711,9 @@ watch(() => selectedGuineaPig.value, (gp) => {
 
   activityFavorite1.value = (gp.preferences.favoriteActivity || [])[0] || ''
   activityFavorite2.value = (gp.preferences.favoriteActivity || [])[1] || ''
-  activityDislike1.value = (gp.preferences.dislikedActivity || [])[0] || ''
-  activityDislike2.value = (gp.preferences.dislikedActivity || [])[1] || ''
 
   habitatFavorite1.value = (gp.preferences.habitatPreference || [])[0] || ''
   habitatFavorite2.value = (gp.preferences.habitatPreference || [])[1] || ''
-  habitatDislike1.value = (gp.preferences.dislikedHabitat || [])[0] || ''
-  habitatDislike2.value = (gp.preferences.dislikedHabitat || [])[1] || ''
 }, { immediate: true })
 
 // Watch selects and update guinea pig preferences
@@ -813,20 +763,6 @@ watch([activityFavorite1, activityFavorite2], () => {
   ].filter(v => v !== '')
 })
 
-watch([activityDislike1, activityDislike2], () => {
-  if (!selectedGuineaPig.value) return
-
-  // Initialize dislikedActivity if it doesn't exist (for old guinea pigs)
-  if (!selectedGuineaPig.value.preferences.dislikedActivity) {
-    selectedGuineaPig.value.preferences.dislikedActivity = []
-  }
-
-  selectedGuineaPig.value.preferences.dislikedActivity = [
-    activityDislike1.value,
-    activityDislike2.value
-  ].filter(v => v !== '')
-})
-
 watch([habitatFavorite1, habitatFavorite2], () => {
   if (!selectedGuineaPig.value) return
 
@@ -838,20 +774,6 @@ watch([habitatFavorite1, habitatFavorite2], () => {
   selectedGuineaPig.value.preferences.habitatPreference = [
     habitatFavorite1.value,
     habitatFavorite2.value
-  ].filter(v => v !== '')
-})
-
-watch([habitatDislike1, habitatDislike2], () => {
-  if (!selectedGuineaPig.value) return
-
-  // Initialize dislikedHabitat if it doesn't exist (for old guinea pigs)
-  if (!selectedGuineaPig.value.preferences.dislikedHabitat) {
-    selectedGuineaPig.value.preferences.dislikedHabitat = []
-  }
-
-  selectedGuineaPig.value.preferences.dislikedHabitat = [
-    habitatDislike1.value,
-    habitatDislike2.value
   ].filter(v => v !== '')
 })
 
@@ -907,21 +829,21 @@ const observeGuineaPig = (guineaPig: GuineaPig) => {
 </script>
 
 <style>
-/* === Cage Organization Section === */
-.pet-store-debug__cages {
+/* === Habitat Organization Section === */
+.pet-store-debug__habitats {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
 }
 
-.pet-store-debug__cage {
+.pet-store-debug__habitat {
   border: 2px solid var(--color-border-medium);
   border-radius: var(--radius-lg);
   padding: var(--space-3);
   background-color: var(--color-bg-tertiary);
 }
 
-.pet-store-debug__cage-label {
+.pet-store-debug__habitat-label {
   margin: 0;
   margin-block-end: var(--space-3);
   font-size: var(--font-size-base);
