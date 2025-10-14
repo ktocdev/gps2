@@ -25,6 +25,13 @@ Safety net system that automatically rescues guinea pigs when wellness drops cri
 6. **Needs processing paused**: System automatically pauses needs processing
 7. **Rescue notification**: Modal dialog explains what happened and offers choices
 
+**Stardust Sanctuary Integration** (System 6.95 REDESIGN):
+- **Guinea pigs in Stardust Sanctuary remain in Sanctuary** - Only active guinea pigs are rescued
+- **Active guinea pigs stay active** - With permanent adoption model, rescued guinea pigs' wellness is restored but they remain in your care (no returns to store)
+- **Sanctuary guinea pigs unaffected** - Wellness remains frozen at 100%, no rescue needed
+- **No guinea pigs removed** - Permanent adoption means rescue restores wellness but never removes guinea pigs
+- **Log message**: "[Name] received emergency care. Rescue fee: $200 💔"
+
 ### Why Both Guinea Pigs?
 - **Simpler logic**: All-or-nothing approach
 - **Stronger consequence**: Encourages attentive care of all guinea pigs
@@ -66,7 +73,10 @@ Integrated with Phase 2.5 System 1 (Enhanced Activity Messages) warning infrastr
 ### What Gets Reset
 
 **✅ Preserved**:
-- **First 3 favorite guinea pigs** (free slots 1-3)
+- **First 3 favorite guinea pigs** (free slots 1-3) - **LEGACY SYSTEM**
+- **ALL Stardust Sanctuary guinea pigs** (System 6.95 REDESIGN)
+- **ALL purchased Sanctuary slots** (System 6.95 REDESIGN)
+- **Active guinea pigs remain active** (System 6.95 REDESIGN)
 - **Total game sessions** (statistics)
 - **Total play time** (statistics)
 
@@ -75,8 +85,14 @@ Integrated with Phase 2.5 System 1 (Enhanced Activity Messages) warning infrastr
 - **All owned items** (cleared)
 - **All consumables** (cleared)
 - **All achievements** (cleared)
-- **Favorite slots 4-10** (if purchased)
-- **⚠️ Guinea pigs in slots 4-10** (permanently lost!)
+- **Favorite slots 4-10** (if purchased) - **LEGACY SYSTEM**
+- **⚠️ Guinea pigs in slots 4-10** (permanently lost!) - **LEGACY SYSTEM**
+
+**System 6.95 REDESIGN Changes**:
+- Fresh Start preserves ALL Stardust Sanctuary guinea pigs (not just first 3)
+- Preserves ALL purchased Sanctuary slots (investments protected)
+- Active guinea pigs remain active (permanent adoption model)
+- Log message: "Fresh Start! Currency reset to $1,000. Your X Stardust Sanctuary residents are safe! ✨"
 
 ### Economic Impact
 Losing purchased favorite slots represents significant investment:

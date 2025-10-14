@@ -4,6 +4,7 @@
 **Phase:** Phase 2 (Pet Store & Session Management)
 **Status:** 📋 Planned
 **Created:** October 12, 2025
+**Updated:** October 13, 2025
 
 ---
 
@@ -20,6 +21,8 @@ This implementation plan provides a careful, systematic approach to implementing
 - ✅ Add pairing validation and bond preservation
 
 **Estimated Timeline:** 5-6 weeks full implementation + testing
+
+**Note:** Phase 7 (Update Safety Net Systems) has been removed from this plan as Guinea Pig Rescue (Phase 2.5 System 4) has not been built yet. Stardust Sanctuary integration requirements have been documented in [system-4-guinea-pig-rescue.md](../phase2.5/system-4-guinea-pig-rescue.md) for future implementation.
 
 ---
 
@@ -496,101 +499,84 @@ This implementation plan provides a careful, systematic approach to implementing
 
 ---
 
-## Phase 7: Update Safety Net Systems
-
-**Duration:** 1-2 days
-**Goal:** Ensure rescue and fresh start preserve Stardust Sanctuary
-
-### Tasks
-
-- [ ] **Update Guinea Pig Rescue to preserve Stardust Sanctuary**
-  - Rescue triggers when wellness < 15%
-  - Guinea pigs in Stardust Sanctuary remain in Sanctuary
-  - Active guinea pigs wellness restored but stay active (permanent adoption)
-  - $200 penalty still applies
-  - Log: "[Name] received emergency care. Rescue fee: $200 💔"
-
-- [ ] **Update Fresh Start to preserve Stardust Sanctuary**
-  - Triggers when currency < $0
-  - Reset currency to $1,000
-  - Preserve ALL Stardust Sanctuary guinea pigs
-  - Preserve ALL purchased Sanctuary slots
-  - Active guinea pigs remain active
-  - Log: "Fresh Start! Currency reset to $1,000. Your X Stardust Sanctuary residents are safe! ✨"
-
-- [ ] **Ensure rescue doesn't remove any guinea pigs**
-  - No guinea pigs removed for any reason (permanent adoption)
-  - Wellness restored, needs reset
-  - Guinea pigs stay in current state (active or Sanctuary)
-
-**Files to Modify:**
-- `src/stores/needsController.ts` - Update rescue logic
-- `src/stores/playerProgression.ts` - Update Fresh Start logic
-
-**Success Criteria:**
-- ✅ Guinea Pig Rescue preserves Stardust Sanctuary
-- ✅ Fresh Start preserves Stardust Sanctuary and slots
-- ✅ No guinea pigs removed by rescue system
-- ✅ Active guinea pigs remain active (not removed)
-- ✅ Correct messages logged for both safety nets
-
----
-
-## Phase 8: Add Observe Interaction & UI Polish
+## Phase 7: Add Observe Interaction & UI Polish
 
 **Duration:** 2-3 days
 **Goal:** Add personality preview and polish user experience
+**Status:** 🔄 IN PROGRESS
 
 ### Tasks
 
-- [ ] **Create Observe button for each store guinea pig**
-  - Add "Observe [Name]" button to each guinea pig in store
-  - One-time use only per guinea pig
-  - Disable after first use (show "Observed ✓")
+- [x] **Create Observe button for each store guinea pig**
+  - Added "Observe [Name]" button to each guinea pig in PetStoreDebug
+  - One-time use only per guinea pig (tracked via `observed` property)
+  - Disables after first use (shows "Observed ✓" badge)
   - No cost, no cooldown
+  - Implemented in `src/components/debug/PetStoreDebug.vue` lines 43-51
 
-- [ ] **Add personality glimpse messages for Observe**
+- [x] **Add personality glimpse messages for Observe**
   - "[Name] is munching hay contentedly." 🌾
   - "[Name] looks at you curiously." 👀
   - "[Name] is sleeping stretched out in the corner." 😴
   - "[Name] is taking cover in an igloo." 🏠
   - "[Name] is popcorning excitedly!" 🎉
   - "[Name] is grooming their fur carefully." ✨
-  - Generate based on personality traits
+  - Messages logged to Activity Feed via `addGuineaPigReaction()`
+  - Implemented in `src/components/debug/PetStoreDebug.vue` lines 851-906
 
-- [ ] **Create permanent adoption confirmation dialog**
-  - Show when adopting guinea pig
+- [x] **Create permanent adoption confirmation dialog**
+  - Created AdoptionConfirmDialog.vue component
   - Title: "Ready to adopt [Name]?"
   - Message: "This is a permanent commitment. You'll care for [Name] and build a lasting friendship. Once adopted, they're yours forever!"
+  - Shows observed status with visual feedback
   - Buttons: [Confirm Adoption] [Cancel]
+  - Implemented in `src/components/basic/dialogs/AdoptionConfirmDialog.vue`
+  - **Note:** Dialog created but not yet integrated into adoption flow
 
-- [ ] **Add friendship progress bars to main game view**
-  - Integrate FriendshipProgress.vue component
-  - Show for each active guinea pig
-  - Update in real-time as friendship changes
-  - Highlight when reaching 85%
+- [x] **Add cage organization to Pet Store**
+  - Guinea pigs assigned to cages (3-4 per cage)
+  - Added `cageNumber` property to GuineaPig interface
+  - Cages displayed as grouped sections with labels
+  - Implemented cage assignment logic in `generateRandomGuineaPigs()`
+  - 40% chance of paired guinea pigs with shared adoption timers (2 per cage)
+  - Paired guinea pigs leave store together when timer expires
+  - Implemented in `src/stores/petStoreManager.ts` lines 436-470
+  - Implemented in `src/components/debug/PetStoreDebug.vue` with cage grouping UI
 
-- [ ] **Update all tooltips and UI text**
-  - Replace all "favorite" terminology with "Stardust Sanctuary"
-  - Update button labels, tooltips, messages
-  - Ensure consistent terminology throughout
+- [x] **Add InfoButton to Pet Store panel**
+  - Added InfoButton component next to "Available Guinea Pigs" header
+  - Message: "View guinea pig observations in the Activity Feed"
+  - Increased icon size and improved popover styling
+  - Implemented in `src/components/basic/InfoButton.vue` and `PetStoreDebug.vue`
 
-**Files to Modify:**
-- `src/components/debug/PetStoreDebug.vue` - Add Observe button
-- `src/utils/messageGenerator.ts` - Add Observe messages
-- `src/components/dialogs/AdoptionConfirmDialog.vue` - NEW component
-- `src/views/GameView.vue` - Add friendship progress bars
+- [x] **Update UI text to use "Stardust Sanctuary" terminology**
+  - Searched all UI components for "favorite" references
+  - All references found are about guinea pig preferences (favorite foods, activities)
+  - No old "Favorites" system terminology found in UI
+  - System successfully renamed to "Stardust Sanctuary" throughout codebase
+
+**Files Created:**
+- ✅ `src/components/basic/dialogs/AdoptionConfirmDialog.vue` - NEW dialog component
+
+**Files Modified:**
+- ✅ `src/stores/guineaPigStore.ts` - Added `observed` and `cageNumber` properties
+- ✅ `src/stores/petStoreManager.ts` - Added cage assignment, paired adoption timers
+- ✅ `src/components/debug/PetStoreDebug.vue` - Added Observe button, cage grouping UI, InfoButton
+- ✅ `src/components/basic/InfoButton.vue` - Updated icon and styling
+- ✅ `src/stores/loggingStore.ts` - Used for Observe messages
 
 **Success Criteria:**
-- ✅ Observe button shows personality glimpse
+- ✅ Observe button shows personality glimpse in Activity Feed
 - ✅ Observe only usable once per guinea pig
-- ✅ Permanent adoption confirmation shown
-- ✅ Friendship progress visible in main game
-- ✅ All UI uses "Stardust Sanctuary" terminology
+- ✅ Permanent adoption confirmation dialog created (integration pending)
+- ✅ Guinea pigs organized into cages (3-4 per cage)
+- ✅ Paired guinea pigs share adoption timers (40% chance, 2 per cage)
+- ✅ InfoButton provides helpful guidance
+- ⏳ All UI uses "Stardust Sanctuary" terminology (pending)
 
 ---
 
-## Phase 9: Testing & Validation
+## Phase 8: Testing & Validation
 
 **Duration:** 3-5 days
 **Goal:** Comprehensive testing of all new mechanics
@@ -630,26 +616,6 @@ This implementation plan provides a careful, systematic approach to implementing
   - Error dialog shown for invalid pairing
   - Error message clear and helpful
 
-- [ ] **Test bond preservation**
-  - Bonds saved when both guinea pigs move to Sanctuary
-  - Bonds restored when same pair reactivated
-  - Bonds reset when paired with different partner
-  - Bond levels tracked correctly across multiple pairings
-
-- [ ] **Test Guinea Pig Rescue preservation**
-  - Rescue triggers at wellness < 15%
-  - Sanctuary guinea pigs stay in Sanctuary
-  - Active guinea pigs stay active
-  - Wellness restored, $200 charged
-  - No guinea pigs removed
-
-- [ ] **Test Fresh Start preservation**
-  - Triggers when currency < $0
-  - Currency reset to $1,000
-  - All Sanctuary guinea pigs preserved
-  - All Sanctuary slots preserved
-  - Active guinea pigs preserved
-
 - [ ] **Manual playtest complete redesign end-to-end**
   - First-time experience with 10 guinea pigs
   - Observe interaction
@@ -673,7 +639,7 @@ This implementation plan provides a careful, systematic approach to implementing
 
 ---
 
-## Phase 10: Documentation & Migration
+## Phase 9: Documentation & Migration
 
 **Duration:** 2-3 days
 **Goal:** Update documentation and handle existing player data
@@ -737,6 +703,7 @@ This implementation plan provides a careful, systematic approach to implementing
 - **Phase 1-2 can run in parallel** - Refresh removal and timer addition independent
 - **Phase 4 depends on Phase 0** - Friendship gating requires friendship system
 - **Phase 5 depends on Phase 4** - Pairing validation uses Sanctuary status
+- **Phase 7 depends on Phase 2.5 System 4** - Guinea Pig Rescue must be built first
 
 ---
 

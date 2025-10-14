@@ -5,20 +5,33 @@
     <!-- First Row: 3 columns on desktop -->
     <div class="panel panel--compact">
       <div class="panel__header">
-        <h3>Available Guinea Pigs ({{ petStoreManager.availableGuineaPigs.length }})</h3>
+        <h3>
+          Available Guinea Pigs
+          <InfoButton
+            message="View guinea pig observations in the Activity Feed"
+            position="bottom"
+          />
+        </h3>
       </div>
       <div class="panel__content">
-        <div class="pet-store-debug__guinea-pig-list">
+        <div class="pet-store-debug__cages">
           <div
-            v-for="guineaPig in sortedAvailableGuineaPigs"
-            :key="guineaPig.id"
-            class="pet-store-debug__guinea-pig-item"
-            :class="{
-              'pet-store-debug__guinea-pig-item--selected': selectedGuineaPig?.id === guineaPig.id,
-              'pet-store-debug__guinea-pig-item--active': isGuineaPigActive(guineaPig.id)
-            }"
-            @click="selectedGuineaPig = guineaPig"
+            v-for="[cageNumber, guineaPigs] in guineaPigsByCage"
+            :key="cageNumber"
+            class="pet-store-debug__cage"
           >
+            <h4 class="pet-store-debug__cage-label">Cage {{ cageNumber }}</h4>
+            <div class="pet-store-debug__guinea-pig-list">
+              <div
+                v-for="guineaPig in guineaPigs"
+                :key="guineaPig.id"
+                class="pet-store-debug__guinea-pig-item"
+                :class="{
+                  'pet-store-debug__guinea-pig-item--selected': selectedGuineaPig?.id === guineaPig.id,
+                  'pet-store-debug__guinea-pig-item--active': isGuineaPigActive(guineaPig.id)
+                }"
+                @click="selectedGuineaPig = guineaPig"
+              >
             <div class="pet-store-debug__guinea-pig-header">
               <div class="pet-store-debug__guinea-pig-left">
                 <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
@@ -41,6 +54,17 @@
               </div>
               <div class="pet-store-debug__guinea-pig-right">
                 <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
+                <Button
+                  v-if="!guineaPig.observed"
+                  @click.stop="observeGuineaPig(guineaPig)"
+                  variant="tertiary"
+                  size="sm"
+                >
+                  Observe {{ guineaPig.name }}
+                </Button>
+                <span v-else class="pet-store-debug__observed-badge">Observed ✓</span>
+              </div>
+            </div>
               </div>
             </div>
           </div>
@@ -416,8 +440,12 @@ import Badge from '../basic/Badge.vue'
 import Select from '../basic/Select.vue'
 import Details from '../basic/Details.vue'
 import BlockMessage from '../basic/BlockMessage.vue'
+import Button from '../basic/Button.vue'
+import InfoButton from '../basic/InfoButton.vue'
+import { useLoggingStore } from '../../stores/loggingStore'
 
 const petStoreManager = usePetStoreManager()
+const loggingStore = useLoggingStore()
 const selectedGuineaPig = ref<GuineaPig | null>(null)
 
 // Reactive time ref to trigger updates
@@ -460,6 +488,22 @@ const sortedAvailableGuineaPigs = computed(() => {
 
     return 0
   })
+})
+
+// Phase 7: Group guinea pigs by cage
+const guineaPigsByCage = computed(() => {
+  const grouped = new Map<number, GuineaPig[]>()
+
+  for (const guineaPig of sortedAvailableGuineaPigs.value) {
+    const cage = guineaPig.cageNumber ?? 0
+    if (!grouped.has(cage)) {
+      grouped.set(cage, [])
+    }
+    grouped.get(cage)!.push(guineaPig)
+  }
+
+  // Sort by cage number
+  return Array.from(grouped.entries()).sort((a, b) => a[0] - b[0])
 })
 
 // Dynamic option arrays from pet store manager
@@ -835,9 +879,56 @@ const getAdoptionTimerDisplay = (guineaPigId: string) => {
   const remaining = petStoreManager.getAdoptionTimeRemaining(guineaPigId)
   return petStoreManager.formatAdoptionTimer(remaining)
 }
+
+// Phase 7: Observe interaction
+const observeGuineaPig = (guineaPig: GuineaPig) => {
+  if (guineaPig.observed) return
+
+  // Mark as observed
+  guineaPig.observed = true
+
+  // Generate personality glimpse message based on personality traits
+  const messages = [
+    `${guineaPig.name} is munching hay contentedly. 🌾`,
+    `${guineaPig.name} looks at you curiously. 👀`,
+    `${guineaPig.name} is sleeping stretched out in the corner. 😴`,
+    `${guineaPig.name} is taking cover in an igloo. 🏠`,
+    `${guineaPig.name} is popcorning excitedly! 🎉`,
+    `${guineaPig.name} is grooming their fur carefully. ✨`
+  ]
+
+  // Pick message based on personality (for now, random, but could be smarter)
+  const messageIndex = Math.floor(Math.random() * messages.length)
+  const message = messages[messageIndex]
+
+  // Log to activity feed
+  loggingStore.addGuineaPigReaction(message, undefined, { action: 'observe', guineaPigId: guineaPig.id })
+}
 </script>
 
 <style>
+/* === Cage Organization Section === */
+.pet-store-debug__cages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.pet-store-debug__cage {
+  border: 2px solid var(--color-border-medium);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  background-color: var(--color-bg-tertiary);
+}
+
+.pet-store-debug__cage-label {
+  margin: 0;
+  margin-block-end: var(--space-3);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+}
+
 /* === Guinea Pig List Section === */
 .pet-store-debug__guinea-pig-list {
   display: grid;
@@ -915,6 +1006,12 @@ const getAdoptionTimerDisplay = (guineaPigId: string) => {
   font-size: 0.9rem;
   color: var(--color-text-muted);
   text-align: end;
+}
+
+.pet-store-debug__observed-badge {
+  font-size: 0.85rem;
+  color: var(--color-success);
+  font-weight: 500;
 }
 
 /* === Editor Section === */

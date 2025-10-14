@@ -414,6 +414,12 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       adoptionTimer: Date.now(),
       adoptionDuration: Math.floor(Math.random() * (5 * 24 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000) + 2 * 24 * 60 * 60 * 1000), // 2-5 days in ms
 
+      // Phase 7: Observe interaction
+      observed: false,
+
+      // Pet Store organization
+      cageNumber: null,
+
       totalInteractions: 0,
       lifetimeHappiness: 100,
       achievementsUnlocked: []
@@ -427,13 +433,49 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       guineaPigs.push(generateRandomGuineaPig())
     }
 
+    // Assign guinea pigs to cages (3-4 per cage)
+    let currentCage = 1
+    let guineaPigsInCurrentCage = 0
+    let guineaPigsPerCage = Math.floor(Math.random() * 2) + 3 // 3 or 4
+    const bonded: number[] = [] // Track which guinea pigs should form bonded pairs
+
+    for (let i = 0; i < guineaPigs.length; i++) {
+      const guineaPig = guineaPigs[i]
+      guineaPig.cageNumber = currentCage
+      guineaPigsInCurrentCage++
+
+      // If this is the start of a new cage, randomly decide if it should have a bonded pair
+      if (guineaPigsInCurrentCage === 1 && i + 1 < guineaPigs.length && Math.random() < 0.4) {
+        // 40% chance of creating a bonded pair in this cage
+        bonded.push(i) // Mark these two indices as bonded
+      }
+
+      if (guineaPigsInCurrentCage >= guineaPigsPerCage) {
+        currentCage++
+        guineaPigsInCurrentCage = 0
+        guineaPigsPerCage = Math.floor(Math.random() * 2) + 3 // 3 or 4 for next cage
+      }
+    }
+
+    // Apply bonded pair timers (give both guinea pigs the same adoption timer)
+    for (const firstIndex of bonded) {
+      const firstGuineaPig = guineaPigs[firstIndex]
+      const secondGuineaPig = guineaPigs[firstIndex + 1]
+
+      if (secondGuineaPig && firstGuineaPig.cageNumber === secondGuineaPig.cageNumber) {
+        // Use the first guinea pig's timer for both
+        secondGuineaPig.adoptionTimer = firstGuineaPig.adoptionTimer
+        secondGuineaPig.adoptionDuration = firstGuineaPig.adoptionDuration
+      }
+    }
+
     availableGuineaPigs.value = guineaPigs
 
     const logging = getLoggingStore()
     logging.addPlayerAction(
-      `Generated ${count} random guinea pigs for pet store 🏪`,
+      `Generated ${count} random guinea pigs for pet store 🏪${bonded.length > 0 ? ` (${bonded.length} bonded pairs)` : ''}`,
       '🏪',
-      { count }
+      { count, bondedPairs: bonded.length }
     )
   }
 

@@ -3,7 +3,7 @@
     <h2>Game Controller</h2>
     <!-- Pet Store Game Session -->
     <div class="mb-8">
-      <div class="panel-row">
+      <div class="panel-row panel-row--three">
         <!-- Session Controls -->
         <div class="panel panel--compact">
           <div class="panel__header">
@@ -90,39 +90,55 @@
             </div>
           </div>
         </div>
-
         <!-- Guinea Pig Selection -->
         <div class="panel panel--compact">
           <div class="panel__header">
-            <h3>Select Guinea Pigs</h3>
+            <h3>{{ petStoreManager.activeGameSession ? 'Active Guinea Pigs' : 'Select Guinea Pigs' }}</h3>
           </div>
           <div class="panel__content">
             <div class="guinea-pig-selection">
-              <Select
-                v-model="selectedGuineaPig1"
-                :options="guineaPigOptions"
-                label="Guinea Pig 1"
-                placeholder="Select first guinea pig"
-                :disabled="!!petStoreManager.activeGameSession"
-                size="sm"
-              />
-              <Select
-                v-model="selectedGuineaPig2"
-                :options="guineaPig2Options"
-                label="Guinea Pig 2 (Optional)"
-                placeholder="Select second guinea pig"
-                :disabled="!!petStoreManager.activeGameSession"
-                size="sm"
-              />
+              <template v-if="petStoreManager.activeGameSession">
+                <div class="form-field">
+                  <label class="form-field__label">Guinea Pig 1</label>
+                  <input
+                    type="text"
+                    :value="getGuineaPigName(selectedGuineaPig1)"
+                    readonly
+                    class="form-field__input form-field__input--readonly"
+                  />
+                </div>
+                <div v-if="selectedGuineaPig2" class="form-field">
+                  <label class="form-field__label">Guinea Pig 2</label>
+                  <input
+                    type="text"
+                    :value="getGuineaPigName(selectedGuineaPig2)"
+                    readonly
+                    class="form-field__input form-field__input--readonly"
+                  />
+                </div>
+              </template>
+              <template v-else>
+                <Select
+                  v-model="selectedGuineaPig1"
+                  :options="guineaPigOptions"
+                  label="Guinea Pig 1"
+                  placeholder="Select first guinea pig"
+                  size="sm"
+                />
+                <Select
+                  v-model="selectedGuineaPig2"
+                  :options="guineaPig2Options"
+                  label="Guinea Pig 2 (Optional)"
+                  placeholder="Select second guinea pig"
+                  size="sm"
+                />
+              </template>
             </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Game State Display -->
-    <div class="mb-8">
-      <div class="panel-row">
+      <div class="panel-row panel-row--three">
         <!-- Game State & Controls -->
         <div class="panel panel--compact">
           <div class="panel__header">
@@ -160,75 +176,14 @@
                 <span class="stat-value">{{ gameController.gameState.pauseReason || 'None' }}</span>
               </div>
               <div class="stat-item">
-                <span class="stat-label">Has Guinea Pig:</span>
-                <span class="stat-value">{{ gameController.gameState.hasGuineaPig }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">First Time User:</span>
-                <span class="stat-value">{{ gameController.gameState.isFirstTimeUser }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Last Save:</span>
-                <span class="stat-value">{{ new Date(gameController.gameState.lastSaveTimestamp).toLocaleString() }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Computed Properties -->
-        <div class="panel panel--border-secondary">
-          <div class="panel__header">
-            <h3>Computed Properties</h3>
-          </div>
-          <div class="panel__content">
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">Is Game Active:</span>
-                <span class="stat-value">{{ gameController.isGameActive }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Is Paused:</span>
-                <span class="stat-value">{{ gameController.isPaused }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Is Manually Paused:</span>
-                <span class="stat-value">{{ gameController.isManuallyPaused }}</span>
-              </div>
-              <div class="stat-item">
                 <span class="stat-label">Is Orientation Paused:</span>
                 <span class="stat-value">{{ gameController.isOrientationPaused }}</span>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Settings Display -->
-    <div class="mb-8">
-      <div class="panel-row">
-        <!-- Tutorial Settings -->
-        <div class="panel panel--compact">
-          <div class="panel__header">
-            <h3>Tutorial</h3>
-          </div>
-          <div class="panel__content">
-            <div class="flex flex-column gap-3">
-              <Select
-                v-model="tutorialMode"
-                @change="updateTutorialMode"
-                :options="tutorialOptions"
-                label="Tutorial Mode"
-                size="sm"
-              />
-              <Button @click="resetFirstTimeUser" variant="tertiary" size="sm">
-                Reset First Time User
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Performance & Error Reporting -->
+        <!-- System Settings -->
         <div class="panel panel--compact">
           <div class="panel__header">
             <h3>System Settings</h3>
@@ -248,26 +203,31 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- Raw Store Data (Debug) -->
-    <div class="mb-8">
-      <div class="panel-row">
-        <div class="panel panel--accent">
+        <!-- Tutorial -->
+        <div class="panel panel--compact">
           <div class="panel__header">
-            <h3>Game State</h3>
+            <h3>Tutorial</h3>
           </div>
           <div class="panel__content">
-            <pre>{{ JSON.stringify(gameController.gameState, null, 2) }}</pre>
-          </div>
-        </div>
-        <div class="panel panel--accent">
-          <div class="panel__header">
-            <h3>Settings</h3>
-          </div>
-          <div class="panel__content">
-            <pre>{{ JSON.stringify(gameController.settings, null, 2) }}</pre>
+            <div class="flex flex-column gap-3">
+              <Select
+                v-model="tutorialMode"
+                @change="updateTutorialMode"
+                :options="tutorialOptions"
+                label="Tutorial Mode"
+                size="sm"
+              />
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <span class="stat-label">First Time User:</span>
+                  <span class="stat-value">{{ gameController.gameState.isFirstTimeUser }}</span>
+                </div>
+              </div>
+              <Button @click="resetFirstTimeUser" variant="tertiary" size="sm">
+                Reset First Time User
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -316,6 +276,15 @@ watch([() => petStoreManager.activeGameSession], ([session]) => {
 
 const getGenderEmoji = (gender: 'male' | 'female') => {
   return gender === 'male' ? '♂️' : '♀️'
+}
+
+const getGuineaPigName = (id: string | number) => {
+  if (!id) return ''
+  const gp = guineaPigStore.collection.guineaPigs[String(id)]
+  if (!gp) return 'Unknown'
+  const isInSanctuary = petStoreManager.sanctuaryGuineaPigs.some(s => s.id === gp.id)
+  const prefix = isInSanctuary ? '✨ ' : '🎮 '
+  return `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`
 }
 
 const guineaPigOptions = computed(() => {
@@ -468,36 +437,29 @@ const resetFirstTimeUser = () => {
   max-inline-size: 100%;
 }
 
-.panel-row {
+/* Override panel-row from panel.css for grid layout in debug panel */
+.game-controller .panel-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-4);
   margin-bottom: var(--space-6);
 }
 
-pre {
-  background-color: var(--color-background-tertiary);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  overflow-x: auto;
-  font-size: var(--font-size-sm);
-  line-height: 1.4;
+.game-controller .panel-row--three {
+  grid-template-columns: repeat(3, 1fr);
 }
 
-h2 {
-  margin-bottom: var(--space-4);
-  color: var(--color-text-primary);
+@media (max-width: 1200px) {
+  .game-controller .panel-row--three {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-h3 {
-  margin: 0;
-  color: var(--color-text-primary);
-}
-
-h4 {
-  margin: 0 0 var(--space-2) 0;
-  color: var(--color-text-primary);
-  font-size: var(--font-size-base);
+@media (max-width: 768px) {
+  .game-controller .panel-row,
+  .game-controller .panel-row--three {
+    grid-template-columns: 1fr;
+  }
 }
 
 .guinea-pig-selection {

@@ -9,7 +9,7 @@
       aria-haspopup="true"
       @click="togglePopover"
     >
-      ⓘ
+      <Icon icon="info-circle-solid" size="md" />
     </button>
     <div
       v-if="isOpen"
@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import Icon from './Icon.vue'
 
 interface Props {
   message: string
@@ -95,8 +96,8 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  inline-size: 20px;
-  block-size: 20px;
+  inline-size: 24px;
+  block-size: 24px;
   border-radius: 50%;
   border: 1.5px solid var(--color-primary);
   background-color: transparent;
@@ -130,7 +131,8 @@ onBeforeUnmount(() => {
   color: var(--color-text-inverse);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-normal);
   line-height: 1.4;
   max-inline-size: 250px;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
