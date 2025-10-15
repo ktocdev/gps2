@@ -3,7 +3,7 @@
     <h2>Game Controller</h2>
     <!-- Pet Store Game Session -->
     <div class="mb-8">
-      <div class="panel-row panel-row--three">
+      <div class="panel-row panel-row--grid-3">
         <!-- Session Controls -->
         <div class="panel panel--compact">
           <div class="panel__header">
@@ -138,7 +138,7 @@
         </div>
       </div>
 
-      <div class="panel-row panel-row--three">
+      <div class="panel-row panel-row--grid-3">
         <!-- Game State & Controls -->
         <div class="panel panel--compact">
           <div class="panel__header">
@@ -435,31 +435,6 @@ const resetFirstTimeUser = () => {
 /* Game Controller Styles */
 .game-controller {
   max-inline-size: 100%;
-}
-
-/* Override panel-row from panel.css for grid layout in debug panel */
-.game-controller .panel-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-6);
-}
-
-.game-controller .panel-row--three {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-@media (max-width: 1200px) {
-  .game-controller .panel-row--three {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .game-controller .panel-row,
-  .game-controller .panel-row--three {
-    grid-template-columns: 1fr;
-  }
 }
 
 .guinea-pig-selection {
