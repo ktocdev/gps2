@@ -9,7 +9,7 @@
       aria-haspopup="true"
       @click="togglePopover"
     >
-      <Icon icon="info-circle-solid" size="md" />
+      <Icon icon="info-circle-solid" family="flowbite" size="md" />
     </button>
     <div
       v-if="isOpen"
@@ -134,7 +134,8 @@ onBeforeUnmount(() => {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-normal);
   line-height: 1.4;
-  max-inline-size: 250px;
+  inline-size: 300px;
+  max-inline-size: 400px;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   white-space: normal;
 }

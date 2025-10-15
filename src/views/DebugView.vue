@@ -29,6 +29,7 @@
       <FriendshipDebug v-if="activeTab === 'friendship'" />
       <PersonalityDebugView v-if="activeTab === 'personality'" />
       <InventoryDebugView v-if="activeTab === 'inventory'" />
+      <HabitatDebugView v-if="activeTab === 'habitat'" />
       <LoggingSystemView v-if="activeTab === 'logging'" />
       <SystemMonitorView v-if="activeTab === 'error-tracking'" />
     </div>
@@ -48,6 +49,7 @@ import PersonalityDebugView from './PersonalityDebugView.vue'
 import FeedingDebugView from './FeedingDebugView.vue'
 import FriendshipDebug from '../components/debug/FriendshipDebug.vue'
 import StardustSanctuaryDebug from '../components/debug/StardustSanctuaryDebug.vue'
+import HabitatDebugView from './HabitatDebugView.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
 import { useGameController } from '../stores/gameController'
@@ -78,7 +80,7 @@ const tabCategories: TabCategory[] = [
       },
       {
         id: 'pet-store',
-        label: 'Pet Store',
+        label: 'Pet Adoption',
         icon: '🏪',
         panelClass: 'tab-container__panel--constrained'
       },
@@ -127,6 +129,18 @@ const tabCategories: TabCategory[] = [
         id: 'inventory',
         label: 'Inventory',
         icon: '🎒',
+        panelClass: 'tab-container__panel--constrained'
+      }
+    ]
+  },
+  {
+    id: 'environment',
+    label: 'Environment Systems',
+    tabs: [
+      {
+        id: 'habitat',
+        label: 'Habitat Debug',
+        icon: '🏠',
         panelClass: 'tab-container__panel--constrained'
       }
     ]

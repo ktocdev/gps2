@@ -3,7 +3,7 @@
     <h2>Game Controller</h2>
     <!-- Pet Store Game Session -->
     <div class="mb-8">
-      <div class="panel-row panel-row--three">
+      <div class="panel-row panel-row--grid-3">
         <!-- Session Controls -->
         <div class="panel panel--compact">
           <div class="panel__header">
@@ -17,7 +17,7 @@
                 :disabled="!canStartSession || !!petStoreManager.activeGameSession"
                 :title="petStoreManager.activeGameSession ? 'Game session already active' : (!canStartSession ? 'Select 1-2 guinea pigs from pet store' : 'Start game session')"
               >
-                {{ petStoreManager.activeGameSession ? 'Game in Session' : 'Start Session' }}
+                {{ petStoreManager.activeGameSession ? 'Game in Session' : 'Adopt Guinea Pig(s)' }}
               </Button>
             </div>
 
@@ -138,7 +138,7 @@
         </div>
       </div>
 
-      <div class="panel-row panel-row--three">
+      <div class="panel-row panel-row--grid-3">
         <!-- Game State & Controls -->
         <div class="panel panel--compact">
           <div class="panel__header">
@@ -263,7 +263,7 @@ watch([() => petStoreManager.activeGameSession], ([session]) => {
     // Active guinea pigs are always valid because they're stored in guineaPigStore.collection
     const sessionGuineaPigIds = session.guineaPigIds || []
 
-    // Phase 6: Set guinea pig selections directly from session
+    // Set guinea pig selections directly from session
     // They exist in guineaPigStore.collection even if not in available/sanctuary
     selectedGuineaPig1.value = sessionGuineaPigIds[0] || ''
     selectedGuineaPig2.value = sessionGuineaPigIds[1] || ''
@@ -288,7 +288,7 @@ const getGuineaPigName = (id: string | number) => {
 }
 
 const guineaPigOptions = computed(() => {
-  // Phase 6: Combine available, sanctuary, and active guinea pigs for selection (no more favorites)
+  // Combine available, sanctuary, and active guinea pigs for selection
   const availableAndSanctuary = [
     ...petStoreManager.availableGuineaPigs,
     ...petStoreManager.sanctuaryGuineaPigs
@@ -319,7 +319,7 @@ const guineaPigOptions = computed(() => {
 })
 
 const guineaPig2Options = computed(() => {
-  // Phase 6: Combine available, sanctuary, and active guinea pigs for selection (no more favorites)
+  // Combine available, sanctuary, and active guinea pigs for selection
   const availableAndSanctuary = [
     ...petStoreManager.availableGuineaPigs,
     ...petStoreManager.sanctuaryGuineaPigs
@@ -435,31 +435,6 @@ const resetFirstTimeUser = () => {
 /* Game Controller Styles */
 .game-controller {
   max-inline-size: 100%;
-}
-
-/* Override panel-row from panel.css for grid layout in debug panel */
-.game-controller .panel-row {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4);
-  margin-bottom: var(--space-6);
-}
-
-.game-controller .panel-row--three {
-  grid-template-columns: repeat(3, 1fr);
-}
-
-@media (max-width: 1200px) {
-  .game-controller .panel-row--three {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .game-controller .panel-row,
-  .game-controller .panel-row--three {
-    grid-template-columns: 1fr;
-  }
 }
 
 .guinea-pig-selection {

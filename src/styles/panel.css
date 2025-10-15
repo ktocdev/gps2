@@ -178,6 +178,11 @@
   padding-block-start: var(--space-4);
 }
 
+/* Overflow Visible Panel - For panels containing tooltips or popovers */
+.panel--overflow-visible {
+  overflow: visible;
+}
+
 /* Panel States */
 
 /* Loading Panel */
@@ -375,5 +380,43 @@
   .panel-row > .panel {
     flex: 1;
     min-inline-size: 280px;
+  }
+}
+
+/* Panel Grid - Responsive grid layout for panels */
+.panel-row--grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  flex-direction: unset;
+}
+
+.panel-row--grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  flex-direction: unset;
+}
+
+.panel-row--grid-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  flex-direction: unset;
+}
+
+@media (min-width: 769px) {
+  .panel-row--grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .panel-row--grid-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1201px) {
+  .panel-row--grid-3 {
+    grid-template-columns: repeat(3, 1fr);
   }
 }

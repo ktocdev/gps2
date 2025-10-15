@@ -8,18 +8,21 @@ import { computed } from 'vue'
 
 interface Props {
   icon: string
+  family?: string  // Icon family/collection (e.g., 'flowbite', 'mdi', 'heroicons', 'carbon', 'lucide')
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
   inline?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  family: 'flowbite',
   size: 'md',
   inline: false
 })
 
-// Automatically prefix with flowbite if no prefix provided
+// Automatically prefix with icon family if no prefix provided
+// If icon already has a family prefix (contains ':'), use as-is
 const iconName = computed(() => {
-  return props.icon.includes(':') ? props.icon : `flowbite:${props.icon}`
+  return props.icon.includes(':') ? props.icon : `${props.family}:${props.icon}`
 })
 
 const iconClasses = computed(() => {

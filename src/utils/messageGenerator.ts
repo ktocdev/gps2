@@ -410,8 +410,7 @@ export class MessageGenerator {
     guineaPigName: string,
     activityType: string = 'general_play',
     isFavorite: boolean = false,
-    isRejected: boolean = false,
-    isDisliked: boolean = false
+    isRejected: boolean = false
   ): { message: string; emoji: string } {
     const formattedActivity = activityType
       .split('_')
@@ -440,17 +439,6 @@ export class MessageGenerator {
       ]
       const message = templates[Math.floor(Math.random() * templates.length)]
       return { message, emoji: '🎉' }
-    }
-
-    // Disliked activity - reluctant participation (Phase 2.5 - System 2)
-    if (isDisliked) {
-      const templates = [
-        `${guineaPigName} participates in ${formattedActivity.toLowerCase()} halfheartedly`,
-        `${guineaPigName} tolerates ${formattedActivity.toLowerCase()} but seems uncomfortable`,
-        `${guineaPigName} doesn't seem to enjoy ${formattedActivity.toLowerCase()}`
-      ]
-      const message = templates[Math.floor(Math.random() * templates.length)]
-      return { message, emoji: '😕' }
     }
 
     // Neutral activity messages

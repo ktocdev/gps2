@@ -14,16 +14,15 @@ import { usePlayerProgression } from './playerProgression'
 import { useGuineaPigStore } from './guineaPigStore'
 import { useGameController } from './gameController'
 import { useNeedsController } from './needsController'
+import { useHabitatConditions } from './habitatConditions'
 
 export interface GameSession {
   id: string
   startedAt: number
   guineaPigIds: string[]
   sessionDuration: number
-  // Phase 6: Removed wasFromFavorites (no longer needed with permanent adoption)
 }
 
-// Phase 6: Settings interface kept for future use (currently empty after removing endGamePenalty)
 interface PetStoreSettings {
   // Future settings can be added here
 }
@@ -45,7 +44,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const maxSanctuarySlots = ref<number>(10)
 
   const settings = ref<PetStoreSettings>({
-    // Phase 6: Removed endGamePenalty (no longer needed with permanent adoption)
   })
 
 
@@ -56,8 +54,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       .map(id => guineaPigStore.getGuineaPig(id))
       .filter(Boolean) as GuineaPig[]
   })
-
-  // Phase 6: Removed all favorites-related computed properties (no longer needed with permanent adoption)
 
   // Phase 3: Sanctuary computed properties
   const sanctuaryCount = computed(() => sanctuaryGuineaPigs.value.length)
@@ -314,19 +310,15 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     const shuffledActivities = shuffleArray(activities)
     const favoriteActivity = pickRandomPreferences(shuffledActivities)
-    const dislikedActivity = pickRandomPreferences(shuffledActivities, favoriteActivity)
 
     const shuffledHabitat = shuffleArray(habitatFeatures)
     const habitatPreference = pickRandomPreferences(shuffledHabitat)
-    const dislikedHabitat = pickRandomPreferences(shuffledHabitat, habitatPreference)
 
     return {
       favoriteFood,
       dislikedFood,
       favoriteActivity,
-      dislikedActivity,
-      habitatPreference,
-      dislikedHabitat
+      habitatPreference
     }
   }
 
@@ -417,7 +409,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       // Phase 7: Observe interaction
       observed: false,
 
-      // Pet Store organization
+      // Pet Adoption organization
       cageNumber: null,
 
       totalInteractions: 0,
@@ -433,27 +425,27 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       guineaPigs.push(generateRandomGuineaPig())
     }
 
-    // Assign guinea pigs to cages (3-4 per cage)
-    let currentCage = 1
-    let guineaPigsInCurrentCage = 0
-    let guineaPigsPerCage = Math.floor(Math.random() * 2) + 3 // 3 or 4
+    // Assign guinea pigs to habitats (3-4 per habitat)
+    let currentHabitat = 1
+    let guineaPigsInCurrentHabitat = 0
+    let guineaPigsPerHabitat = Math.floor(Math.random() * 2) + 3 // 3 or 4
     const bonded: number[] = [] // Track which guinea pigs should form bonded pairs
 
     for (let i = 0; i < guineaPigs.length; i++) {
       const guineaPig = guineaPigs[i]
-      guineaPig.cageNumber = currentCage
-      guineaPigsInCurrentCage++
+      guineaPig.cageNumber = currentHabitat
+      guineaPigsInCurrentHabitat++
 
-      // If this is the start of a new cage, randomly decide if it should have a bonded pair
-      if (guineaPigsInCurrentCage === 1 && i + 1 < guineaPigs.length && Math.random() < 0.4) {
-        // 40% chance of creating a bonded pair in this cage
+      // If this is the start of a new habitat, randomly decide if it should have a bonded pair
+      if (guineaPigsInCurrentHabitat === 1 && i + 1 < guineaPigs.length && Math.random() < 0.4) {
+        // 40% chance of creating a bonded pair in this habitat
         bonded.push(i) // Mark these two indices as bonded
       }
 
-      if (guineaPigsInCurrentCage >= guineaPigsPerCage) {
-        currentCage++
-        guineaPigsInCurrentCage = 0
-        guineaPigsPerCage = Math.floor(Math.random() * 2) + 3 // 3 or 4 for next cage
+      if (guineaPigsInCurrentHabitat >= guineaPigsPerHabitat) {
+        currentHabitat++
+        guineaPigsInCurrentHabitat = 0
+        guineaPigsPerHabitat = Math.floor(Math.random() * 2) + 3 // 3 or 4 for next habitat
       }
     }
 
@@ -478,9 +470,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       { count, bondedPairs: bonded.length }
     )
   }
-
-  // Phase 6: Removed all favorites management functions (addToFavorites, removeFromFavorites, moveFromFavoritesToStore)
-  // No longer needed with permanent adoption model - guinea pigs go directly to Sanctuary at 85% friendship
 
   // Phase 3: Stardust Sanctuary Management
   /**
@@ -614,7 +603,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         const expirationTime = guineaPig.adoptionTimer + guineaPig.adoptionDuration
 
         if (now >= expirationTime) {
-          // Phase 6: Skip if guinea pig is in active session or sanctuary (no more favorites)
+          // Skip if guinea pig is in active session or sanctuary
           const isActive = activeGameSession.value?.guineaPigIds.includes(guineaPig.id) ?? false
           const isInSanctuary = sanctuaryGuineaPigs.value.some(gp => gp.id === guineaPig.id)
 
@@ -819,8 +808,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Phase 5: Restore bonds if both guinea pigs are from Sanctuary
     restoreBondsIfExists(guineaPigIds)
 
-    // Phase 6: Add guinea pigs to the guinea pig store collection before setting them as active
-    // Guinea pigs come from either available pool or sanctuary (no more favorites)
+    // Add guinea pigs to the guinea pig store collection before setting them as active
+    // Guinea pigs come from either available pool or sanctuary
     for (const guineaPigId of guineaPigIds) {
       let guineaPig = availableGuineaPigs.value.find(gp => gp.id === guineaPigId)
 
@@ -856,6 +845,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     const needsController = useNeedsController()
     needsController.resumeProcessing()
 
+    // Reset habitat conditions to 100% for fresh start
+    const habitatConditions = useHabitatConditions()
+    habitatConditions.resetHabitatConditions()
+
     const playerProgression = usePlayerProgression()
     playerProgression.incrementGameSessions()
     playerProgression.incrementGuineaPigsAdopted(guineaPigIds.length)
@@ -872,9 +865,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       { sessionId, guineaPigIds }
     )
   }
-
-  // Phase 6: Removed applyBondBreakingEffects - no longer needed with permanent adoption
-  // Guinea pigs are never removed, so bond breaking doesn't occur
 
   function initializeStore(): void {
     const logging = getLoggingStore()

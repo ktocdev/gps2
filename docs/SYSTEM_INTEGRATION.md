@@ -6,15 +6,23 @@ Comprehensive architecture documentation covering store communication patterns, 
 ## Store Communication Patterns
 
 ### Central Coordination
-- **Game Controller Store** ↔ All other stores (game state, pause/resume, settings)
-- **Interval Management** → All stores with time-based updates
+- **Game Controller Store** ✅ **Implemented** ↔ All other stores (game state, pause/resume, settings)
+- **Game Timing Store** ✅ **Implemented** → All stores with time-based updates (unified tick system, pause/resume)
 
 ### Core Entity Management
-- **Guinea Pig Store** ↔ Needs Controller Store (entity data, preference discovery)
-- **Guinea Pig Store** ↔ Habitat Conditions Store (habitat impact on guinea pig)
-- **Needs Controller Store** ✅ **Implemented** ↔ Habitat Conditions Store (cross-condition effects, Phase 3 integration)
-- **PetStoreManager Store** ↔ Guinea Pig Store (pet store inventory, active guinea pigs, session management)
-- **PlayerProgression Store** (persistent currency, items, achievements across sessions)
+- **Guinea Pig Store** ✅ **Implemented** ↔ Needs Controller Store (entity data, preference discovery, personality traits)
+- **Guinea Pig Store** ↔ Habitat Conditions Store (habitat impact on guinea pig - Phase 3)
+- **Needs Controller Store** ✅ **Implemented** ↔ Habitat Conditions Store (cross-condition effects - Phase 3 integration)
+- **Needs Controller Store** ✅ **Implemented** → Guinea Pig Store (wellness calculation triggers friendship penalties)
+- **Pet Store Manager Store** ✅ **Implemented** ↔ Guinea Pig Store (pet store inventory, active guinea pigs, session management, favorites system)
+- **Player Progression Store** (persistent currency, items, achievements across sessions - Phase 3+)
+
+### Supplies & Inventory Management (Phase 3)
+- **Supplies Store** → Inventory Store (item catalog, pricing, availability)
+- **Inventory Store** → Habitat Conditions Store (bedding, hay, water consumption)
+- **Inventory Store** → Habitat Item System (placed items, item availability)
+- **Inventory Store** → Needs Controller Store (food, treats consumption)
+- **Inventory Store** ← Player Progression Store (persistent item ownership)
 
 ### Data Flow Principles
 - **Reactive updates** through Pinia store connections
@@ -25,15 +33,24 @@ Comprehensive architecture documentation covering store communication patterns, 
 ## Component-Store Integration Map
 
 ### Information Display Components
-- **ActivityFeed** ← All stores (activity message generation)
-- **NeedBar, HappinessIndicator** ← Needs Controller Store
-- **FriendshipMeter** ← Guinea Pig Store (friendship + wellness penalties)
-- **HabitatStatusDisplay, ResourceCounter** ← Habitat Conditions Store
-- **PreferenceTracker, PreferenceLearningHint** ← Guinea Pig Store
+- **ActivityFeed** ✅ **Implemented** ← All stores (activity message generation)
+- **NeedBar** ✅ **Implemented** ← Needs Controller Store (10 needs display with quick actions)
+- **FriendshipMeter** ✅ **Implemented** ← Guinea Pig Store (friendship + wellness penalties)
+- **WellnessDisplay** ✅ **Implemented** ← Needs Controller Store (hidden wellness value, debug only)
+- **HabitatStatusDisplay, ResourceCounter** ← Habitat Conditions Store (Phase 3)
+- **PreferenceTracker** ✅ **Implemented** ← Guinea Pig Store (food preferences display)
+- **PersonalityDisplay** ✅ **Implemented** ← Guinea Pig Store (5 personality traits)
+- **SuppliesStoreUI, InventoryUI** ← Supplies Store + Inventory Store (Phase 3)
 
 ### System Control Components
-- **OrientationModal, ResponsiveDetector** ← Game Controller Store (responsive state, pause control)
-- **Debug Components** ↔ Respective system stores (bidirectional for testing)
+- **OrientationModal, ResponsiveDetector** ✅ **Implemented** ← Game Controller Store (responsive state, pause control)
+- **Debug Components** ✅ **Implemented** ↔ Respective system stores (bidirectional for testing)
+  - **GameStateDebug** ✅ ← Game Controller Store + Game Timing Store
+  - **NeedsDebug** ✅ ← Needs Controller Store
+  - **PersonalityDebug** ✅ ← Guinea Pig Store
+  - **FeedingDebug** ✅ ← Guinea Pig Store + Needs Controller Store
+  - **PetStoreDebug** ✅ ← Pet Store Manager Store
+  - **HabitatDebug** ✅ ← Habitat Conditions Store (foundation complete, awaiting Supplies/Inventory integration)
 
 ### UI Framework Integration
 - **Container-query components** adapt based on allocated space
@@ -61,12 +78,12 @@ Pet Store Generation → Pet Store Selection → Game Session Start → Guinea P
 
 ### 3. Game Loop Flow ✅ **Core Implemented**
 ```
-Interval Management → Needs Controller → Activity Generation → UI Updates
+Interval Management → Needs Controller → Habitat Conditions → Activity Generation → UI Updates
 ```
 - Time-based processing coordination ✅ **Implemented** (gameTimingStore.ts)
 - Batch needs processing and wellness calculation ✅ **Implemented**
+- Habitat condition updates ✅ **Implemented** (awaiting Inventory integration for consumption)
 - Activity feed message generation and UI synchronization ✅ **Implemented**
-- Habitat condition updates (Phase 3 integration)
 
 ### 4. Player Interaction Flow
 ```
@@ -150,21 +167,38 @@ Pet Store Selection → Favorites Storage → Pet Store Manager → Player Progr
 - **Debug system** enables testing of future systems
 - **UI framework** provides placeholders for all functionality
 
-### Phase 2 Dependencies (Core Entities)
+### Phase 2 Dependencies (Core Entities) ✅ **COMPLETED**
 - **Requires:** Complete Phase 1 foundation
 - **Depends on:** Game Controller Store, UI framework, debug systems
-- **Provides:** Core game entities, pet store system, session management, and timing for subsequent phases ✅ **Timing implemented**
+- **Provides:** Core game entities, pet store system, session management, and timing for subsequent phases
 - **Session Model:** Single-session gameplay with pet store selection (1-2 guinea pigs from pool of 10)
 - **Progression System:** Persistent player progression (currency, items) across game sessions
 - **Favorites System:** Emotional attachment benefits with up to 10 purchasable slots for preserving beloved guinea pigs
 - **Store Refresh Protection:** Favorites survive pet store refresh cycles, maintaining player investment while encouraging experimentation
+- **Game Timing System:** Unified tick system with pause/resume, automatic pause on navigation, manual pause tracking ✅ **Implemented**
+- **Needs System:** 10 needs categories (Hunger, Thirst, Energy, Comfort, Cleanliness, Entertainment, Shelter, Exercise, Stimulation, Social) with quick actions and smart disable states ✅ **Implemented**
+- **Wellness System:** Hidden wellness calculation (average of all needs) with friendship penalty when < 45% ✅ **Implemented**
+
+### Phase 2.5 Dependencies (Interactive Feedback Enhancement) 🚧 **IN PROGRESS**
+- **Requires:** Complete Phase 2 core entities and timing
+- **Depends on:** Guinea Pig Store, Needs Controller Store, Game Timing Store
+- **Provides:** Personality-based interactions, preference system, wellness-based reactions, and enhanced activity messaging
+- **Personality System:** 5 traits (Friendliness, Playfulness, Curiosity, Boldness, Cleanliness) affecting need decay, interaction effectiveness, and habitat tolerance ✅ **Implemented**
+- **Preference System:** Individual guinea pig likes/dislikes for food (hay, leafy greens, veggies) with hidden discovery mechanics ✅ **Implemented**
+- **Fulfillment Limitations:** Consumption limits per hunger cycle and interaction rejection based on personality + friendship + wellness 🚧 **In Progress**
+- **Wellness Reactions:** Interaction success rates and behavioral states affected by wellness levels
+- **Enhanced Activity Messages:** Guinea pig reactions, need warnings, wellness messages, preference discovery clues, friendship milestones
+- **Guinea Pig Rescue:** Safety net when wellness < 15% with $200 penalty and Fresh Start option
 
 ### Phase 3 Dependencies (Game World)
 - **Requires:** Guinea pig entity and needs framework from Phase 2
 - **Depends on:** Complete timing system and state management
-- **Provides:** Interactive environment with habitat conditions, resource management, and inventory systems for Phase 4 behaviors
-- **Habitat Integration:** Environmental conditions (cleanliness, bedding, water, hay) that affect guinea pig needs
-- **Resource Economy:** Bedding and hay as consumable resources creating ongoing economic gameplay
+- **Provides:** Interactive environment with supplies catalog, inventory management, habitat conditions, and resource systems for Phase 4 behaviors
+- **Supplies Store:** Central catalog of all purchasable items (bedding types, hay varieties, habitat items, food, treats) with pricing and availability
+- **Inventory Management:** Quantity tracking, consumption logic, and item organization bridging purchases to game mechanics
+- **Habitat Integration:** Environmental conditions (cleanliness, bedding freshness, water level, hay freshness) consuming inventory resources ✅ **Foundation Complete**
+- **Resource Economy:** Supplies → Inventory → Consumption creating ongoing economic gameplay loop
+- **Development Approach:** Habitat Conditions foundation implemented first with mock data, awaiting Supplies Store and Inventory integration for real data flow
 
 ### Phase 4 Dependencies (Interactions)
 - **Requires:** Complete game world and habitat system from Phase 3

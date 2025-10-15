@@ -146,6 +146,41 @@
           </div>
         </div>
       </div>
+
+      <!-- Feeding Cycle Controls -->
+      <div class="panel panel--compact mt-6">
+        <div class="panel__header">
+          <h3>Feeding Cycle Status</h3>
+        </div>
+        <div class="panel__content">
+          <BlockMessage variant="info">
+            <p><strong>How the Feeding Cycle Works:</strong></p>
+            <p>Consumption limits reset automatically when hunger reaches 100% (fully satisfied). This represents a complete feeding cycle.</p>
+          </BlockMessage>
+
+          <div class="stats-grid mt-4">
+            <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id" class="stat-item">
+              <span class="stat-label">{{ guineaPig.name }} Progress:</span>
+              <span class="stat-value">
+                {{ guineaPig.needs.hunger.toFixed(1) }}% / 100%
+              </span>
+            </div>
+          </div>
+
+          <div class="controls-grid mt-4">
+            <Button
+              v-for="guineaPig in guineaPigStore.activeGuineaPigs"
+              :key="guineaPig.id"
+              @click="guineaPigStore.resetConsumptionLimits(guineaPig.id)"
+              variant="secondary"
+              size="sm"
+              :disabled="gameController.isPaused"
+            >
+              Reset {{ guineaPig.name }}'s Limits
+            </Button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- No Active Guinea Pigs -->
@@ -165,6 +200,7 @@ import { useGameController } from '../../stores/gameController'
 import { usePetStoreManager } from '../../stores/petStoreManager'
 import Button from '../basic/Button.vue'
 import Select from '../basic/Select.vue'
+import BlockMessage from '../basic/BlockMessage.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()

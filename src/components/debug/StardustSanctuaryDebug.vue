@@ -1,6 +1,12 @@
 <template>
   <div class="sanctuary-debug">
-    <h2>Stardust Sanctuary</h2>
+    <h2>
+      Stardust Sanctuary
+      <InfoButton
+        message="Reach 85% friendship with a guinea pig to unlock Stardust Sanctuary. Guinea pigs in the Sanctuary have their friendship frozen at 100% wellness and can be brought back as companions at any time."
+        position="bottom"
+      />
+    </h2>
     <div class="panel-row">
     <!-- Active Guinea Pigs Section -->
     <div class="panel panel--compact">
@@ -135,6 +141,7 @@ import FriendshipProgress from '../game/FriendshipProgress.vue'
 import Button from '../basic/Button.vue'
 import Badge from '../basic/Badge.vue'
 import BlockMessage from '../basic/BlockMessage.vue'
+import InfoButton from '../basic/InfoButton.vue'
 
 const petStoreManager = usePetStoreManager()
 const guineaPigStore = useGuineaPigStore()
