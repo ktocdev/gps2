@@ -5,7 +5,7 @@
     <div v-if="hasActiveGuineaPigs">
       <div class="guinea-pigs-grid mb-6">
         <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id">
-        <div class="panel panel--compact">
+        <div class="panel panel--compact panel--overflow-visible">
           <div class="panel__header">
             <h3>{{ guineaPig.name }} ({{ guineaPig.breed }})</h3>
           </div>
@@ -13,17 +13,23 @@
             <div class="guinea-pig-layout">
               <!-- Needs Section -->
               <section class="guinea-pig-layout__needs">
-                <div class="panel panel--compact panel--accent">
+                <div class="panel panel--compact panel--accent panel--overflow-visible">
                   <div class="panel__header needs-panel-header">
                     <h4>Needs</h4>
-                    <Button @click="() => replenishAllNeeds(guineaPig.id)" variant="primary" size="sm" :disabled="gameController.isPaused || !needsController.processingEnabled" :title="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : 'Replenish all needs to 100%')">
+                    <Button
+                      @click="() => replenishAllNeeds(guineaPig.id)"
+                      variant="primary"
+                      size="sm"
+                      :disabled="gameController.isPaused || !needsController.processingEnabled"
+                      :tooltip="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : 'Replenish all needs to 100%')"
+                      tooltip-position="bottom"
+                    >
                       Replenish All Needs
-                    </Button>
-                  </div>
+                    </Button>                  </div>
                   <div class="panel__content">
                     <!-- Critical Needs -->
                     <div class="needs-category">
-                      <div class="panel panel--compact panel--bordered">
+                      <div class="panel panel--compact panel--bordered panel--overflow-visible">
                         <div class="panel__header">
                           <h4>Critical Needs</h4>
                         </div>
@@ -56,7 +62,7 @@
                         variant="tertiary"
                         size="sm"
                         :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
-                        :title="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
+                        :tooltip="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
                         :class="['needs-list__action', `needs-list__action--${need}`]"
                       >
                         {{ getNeedAction(need, guineaPig.id).label }}
@@ -69,7 +75,7 @@
 
                     <!-- Environmental Needs -->
                     <div class="needs-category">
-                      <div class="panel panel--compact panel--bordered">
+                      <div class="panel panel--compact panel--bordered panel--overflow-visible">
                         <div class="panel__header">
                           <h4>Environmental Needs</h4>
                         </div>
@@ -102,7 +108,7 @@
                         variant="tertiary"
                         size="sm"
                         :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
-                        :title="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
+                        :tooltip="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
                         :class="['needs-list__action', `needs-list__action--${need}`]"
                       >
                         {{ getNeedAction(need, guineaPig.id).label }}
@@ -115,7 +121,7 @@
 
                     <!-- Maintenance Needs -->
                     <div class="needs-category">
-                      <div class="panel panel--compact panel--bordered">
+                      <div class="panel panel--compact panel--bordered panel--overflow-visible">
                         <div class="panel__header">
                           <h4>Maintenance Needs</h4>
                         </div>
@@ -148,7 +154,7 @@
                         variant="tertiary"
                         size="sm"
                         :disabled="isQuickActionDisabled((guineaPig.needs as any)[need])"
-                        :title="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
+                        :tooltip="getQuickActionTooltip((guineaPig.needs as any)[need], formatNeedName(need))"
                         :class="['needs-list__action', `needs-list__action--${need}`]"
                       >
                         {{ getNeedAction(need, guineaPig.id).label }}
@@ -240,7 +246,7 @@
                 variant="tertiary"
                 full-width
                 :disabled="!hasActiveGuineaPigs || gameController.isPaused || !needsController.processingEnabled"
-                :title="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : (!hasActiveGuineaPigs ? 'No active guinea pigs' : ''))"
+                :tooltip="gameController.isPaused ? 'Action disabled - Game Paused' : (!needsController.processingEnabled ? 'Action disabled - Needs Processing Paused' : (!hasActiveGuineaPigs ? 'No active guinea pigs' : ''))"
                 class="needs-processing-button"
               >
                 Force Needs Update

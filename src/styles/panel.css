@@ -178,6 +178,11 @@
   padding-block-start: var(--space-4);
 }
 
+/* Overflow Visible Panel - For panels containing tooltips or popovers */
+.panel--overflow-visible {
+  overflow: visible;
+}
+
 /* Panel States */
 
 /* Loading Panel */

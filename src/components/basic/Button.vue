@@ -111,8 +111,11 @@ const handleClick = (event: MouseEvent) => {
 
 .button:disabled,
 .button--disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  filter: grayscale(40%) brightness(0.95);
+  box-shadow: none !important;
+  transform: none !important;
 }
 
 /* Button Variants */
@@ -349,6 +352,21 @@ const handleClick = (event: MouseEvent) => {
   inline-size: fit-content;
 }
 
+/* Disabled buttons within wrapper fill the wrapper */
+.button-wrapper > .button:disabled,
+.button-wrapper > .button--disabled {
+  inline-size: 100%;
+}
+
+/* Apply border-radius to wrapper when button is disabled (prevents background bleeding outside rounded corners) */
+.button-wrapper:has(.button:disabled),
+.button-wrapper:has(.button--disabled) {
+  border-start-start-radius: var(--radius-md);
+  border-start-end-radius: var(--radius-md);
+  border-end-start-radius: var(--radius-md);
+  border-end-end-radius: var(--radius-md);
+}
+
 .button__tooltip {
   position: absolute;
   background-color: var(--color-neutral-900);
@@ -369,7 +387,8 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .button-wrapper:hover .button__tooltip,
-.button-wrapper:focus-within .button__tooltip {
+.button-wrapper:focus-within .button__tooltip,
+.button-wrapper:has(button:disabled):hover .button__tooltip {
   opacity: 1;
 }
 
