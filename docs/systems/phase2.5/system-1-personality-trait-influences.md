@@ -12,10 +12,10 @@ Comprehensive system defining how the 4 core personality traits (Friendliness, P
 - **Meaningful choices**: Personality influences which care strategies work best
 - **Future-proof design**: Framework supports expansion as new systems are added
 
-## The Four Personality Traits
+## The Five Personality Traits
 
 ### Trait Structure
-Each guinea pig has 4 personality traits rated 1-10:
+Each guinea pig has 5 personality traits rated 1-10:
 - **1-3**: Low (trait is weak or minimal)
 - **4-6**: Moderate (balanced, middle-ground)
 - **7-10**: High (trait is strong or dominant)
@@ -117,6 +117,31 @@ Each guinea pig has 4 personality traits rated 1-10:
 - Cautiously curious
 - Steady adaptation
 
+#### Cleanliness (1-10)
+**Definition**: Sensitivity to habitat conditions - freshness of hay, bedding, and cage cleanliness
+
+**High Cleanliness / Picky (7-10)**:
+- Finicky about hay freshness (won't eat below 60% fresh)
+- Uncomfortable with stale bedding (below 50%)
+- Stressed by dirty cage (cleanliness below 50%)
+- Higher standards for habitat maintenance
+- Appreciates fresh, clean environment
+- Comfort penalties when conditions deteriorate
+
+**Low Cleanliness / Piggy (1-3)**:
+- Unbothered by mess
+- Will eat hay down to 20% freshness
+- Tolerant of old bedding (fine until 25%)
+- Unfazed by dirty cage (until below 30%)
+- Content in any conditions
+- Easy-going about habitat maintenance
+
+**Moderate Cleanliness (4-6)**:
+- Baseline sensitivity (40% thresholds)
+- Standard comfort expectations
+- Neither finicky nor unbothered
+- Normal habitat maintenance needs
+
 ## Current System Influences (Phase 2)
 
 ### Needs Decay Rate Modifiers
@@ -165,13 +190,47 @@ comfortDecayRate = baseDecayRate * (1 - (boldness - 5) * 0.05)
 // Boldness 1: 1.20x decay rate (+20%)
 ```
 
+**Cleanliness → Comfort Need with Habitat Conditions (Phase 3)**:
+```typescript
+// Cleanliness trait affects comfort based on habitat conditions
+if (habitatCleanliness < cleanlinessThreshold) {
+  const cleanlinessPersonality = guineaPig.personality.cleanliness
+
+  if (cleanlinessPersonality >= 7) {
+    // Picky: Strict thresholds, higher penalties
+    hayThreshold = 60
+    beddingThreshold = 50
+    cleanlinessThreshold = 50
+    comfortPenalty = (cleanlinessThreshold - habitatCleanliness) * 0.3
+  } else if (cleanlinessPersonality <= 3) {
+    // Piggy: Lenient thresholds, lower penalties
+    hayThreshold = 20
+    beddingThreshold = 25
+    cleanlinessThreshold = 30
+    comfortPenalty = habitatCleanliness < 30 ? (30 - habitatCleanliness) * 0.1 : 0
+  } else {
+    // Moderate: Baseline thresholds
+    hayThreshold = 40
+    beddingThreshold = 40
+    cleanlinessThreshold = 40
+    comfortPenalty = (40 - habitatCleanliness) * 0.2
+  }
+}
+
+// Examples:
+// Cleanliness 10 (Picky Princess): Comfort penalty at 50% cleanliness, won't eat hay < 60%
+// Cleanliness 5 (Balanced): Comfort penalty at 40% cleanliness, won't eat hay < 40%
+// Cleanliness 1 (Total Piggy): Comfort penalty at 30% cleanliness, will eat hay at 20%
+```
+
 **Combined Example**:
 ```
-Guinea Pig: High Curiosity (9) + Low Boldness (2)
+Guinea Pig: High Curiosity (9) + Low Boldness (2) + High Cleanliness (8)
   Curiosity modifier: 1 + (9 - 5) * 0.08 = 1.32x (+32% stimulation decay)
   Boldness modifier: 1 - (2 - 5) * 0.05 = 1.15x (+15% comfort decay)
+  Cleanliness: Won't eat hay below 60%, stressed by cage below 50%
 
-Result: Curious but timid guinea pig - loves to explore but gets stressed easily
+Result: Curious, timid, picky guinea pig - loves to explore but gets stressed easily and needs pristine habitat
 ```
 
 ### Interaction Effectiveness Modifiers
@@ -408,6 +467,31 @@ messMultiplier = 1 + (playfulness - 5) * 0.04
 // Low playfulness (1): 0.84x mess rate
 ```
 
+**Cleanliness → Habitat Condition Tolerance**:
+```typescript
+// Picky guinea pigs affected by poor habitat conditions
+if (cleanlinessPersonality >= 7) {
+  // Picky: Strict standards
+  hayFreshnessMinimum = 60  // Won't eat below this
+  beddingFreshnessComfort = 50  // Comfort penalty below this
+  cageCleanlinessComfort = 50  // Stress penalty below this
+} else if (cleanlinessPersonality <= 3) {
+  // Piggy: Very tolerant
+  hayFreshnessMinimum = 20
+  beddingFreshnessComfort = 25
+  cageCleanlinessComfort = 30
+} else {
+  // Moderate: Baseline
+  hayFreshnessMinimum = 40
+  beddingFreshnessComfort = 40
+  cageCleanlinessComfort = 40
+}
+
+// Activity messages vary:
+// Picky (8): "Guinea pig wrinkles nose at the stale hay"
+// Piggy (2): "Guinea pig happily munches the hay without concern"
+```
+
 **Curiosity → Item Rearrangement**:
 - High curiosity guinea pigs may autonomously move small items
 - Adds gameplay variety and "personality" to habitat
@@ -431,11 +515,13 @@ messMultiplier = 1 + (playfulness - 5) * 0.04
 │ Playfulness:     ███░░░░░░░ 3/10  │
 │ Curiosity:       ██████████ 10/10 │
 │ Boldness:        ██░░░░░░░░ 2/10  │
+│ Cleanliness:     █████████░ 9/10  │
 │                                   │
-│ Personality Type: Timid Explorer  │
+│ Personality Type: Picky Explorer  │
 │ - Curious but cautious            │
 │ - Social but reserved             │
 │ - Calm energy level               │
+│ - Very particular about cleanliness│
 └───────────────────────────────────┘
 ```
 

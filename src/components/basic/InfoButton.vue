@@ -9,7 +9,7 @@
       aria-haspopup="true"
       @click="togglePopover"
     >
-      <Icon icon="info-circle-solid" size="md" />
+      <Icon icon="info-circle-solid" family="flowbite" size="md" />
     </button>
     <div
       v-if="isOpen"
