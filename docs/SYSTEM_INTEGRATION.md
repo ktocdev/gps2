@@ -17,6 +17,13 @@ Comprehensive architecture documentation covering store communication patterns, 
 - **Pet Store Manager Store** ✅ **Implemented** ↔ Guinea Pig Store (pet store inventory, active guinea pigs, session management, favorites system)
 - **Player Progression Store** (persistent currency, items, achievements across sessions - Phase 3+)
 
+### Supplies & Inventory Management (Phase 3)
+- **Supplies Store** → Inventory Store (item catalog, pricing, availability)
+- **Inventory Store** → Habitat Conditions Store (bedding, hay, water consumption)
+- **Inventory Store** → Habitat Item System (placed items, item availability)
+- **Inventory Store** → Needs Controller Store (food, treats consumption)
+- **Inventory Store** ← Player Progression Store (persistent item ownership)
+
 ### Data Flow Principles
 - **Reactive updates** through Pinia store connections
 - **Event-driven communication** for loosely coupled systems
@@ -33,6 +40,7 @@ Comprehensive architecture documentation covering store communication patterns, 
 - **HabitatStatusDisplay, ResourceCounter** ← Habitat Conditions Store (Phase 3)
 - **PreferenceTracker** ✅ **Implemented** ← Guinea Pig Store (food preferences display)
 - **PersonalityDisplay** ✅ **Implemented** ← Guinea Pig Store (5 personality traits)
+- **SuppliesStoreUI, InventoryUI** ← Supplies Store + Inventory Store (Phase 3)
 
 ### System Control Components
 - **OrientationModal, ResponsiveDetector** ✅ **Implemented** ← Game Controller Store (responsive state, pause control)
@@ -42,6 +50,7 @@ Comprehensive architecture documentation covering store communication patterns, 
   - **PersonalityDebug** ✅ ← Guinea Pig Store
   - **FeedingDebug** ✅ ← Guinea Pig Store + Needs Controller Store
   - **PetStoreDebug** ✅ ← Pet Store Manager Store
+  - **HabitatDebug** ✅ ← Habitat Conditions Store (foundation complete, awaiting Supplies/Inventory integration)
 
 ### UI Framework Integration
 - **Container-query components** adapt based on allocated space
@@ -69,12 +78,12 @@ Pet Store Generation → Pet Store Selection → Game Session Start → Guinea P
 
 ### 3. Game Loop Flow ✅ **Core Implemented**
 ```
-Interval Management → Needs Controller → Activity Generation → UI Updates
+Interval Management → Needs Controller → Habitat Conditions → Activity Generation → UI Updates
 ```
 - Time-based processing coordination ✅ **Implemented** (gameTimingStore.ts)
 - Batch needs processing and wellness calculation ✅ **Implemented**
+- Habitat condition updates ✅ **Implemented** (awaiting Inventory integration for consumption)
 - Activity feed message generation and UI synchronization ✅ **Implemented**
-- Habitat condition updates (Phase 3 integration)
 
 ### 4. Player Interaction Flow
 ```
@@ -184,9 +193,12 @@ Pet Store Selection → Favorites Storage → Pet Store Manager → Player Progr
 ### Phase 3 Dependencies (Game World)
 - **Requires:** Guinea pig entity and needs framework from Phase 2
 - **Depends on:** Complete timing system and state management
-- **Provides:** Interactive environment with habitat conditions, resource management, and inventory systems for Phase 4 behaviors
-- **Habitat Integration:** Environmental conditions (cleanliness, bedding, water, hay) that affect guinea pig needs
-- **Resource Economy:** Bedding and hay as consumable resources creating ongoing economic gameplay
+- **Provides:** Interactive environment with supplies catalog, inventory management, habitat conditions, and resource systems for Phase 4 behaviors
+- **Supplies Store:** Central catalog of all purchasable items (bedding types, hay varieties, habitat items, food, treats) with pricing and availability
+- **Inventory Management:** Quantity tracking, consumption logic, and item organization bridging purchases to game mechanics
+- **Habitat Integration:** Environmental conditions (cleanliness, bedding freshness, water level, hay freshness) consuming inventory resources ✅ **Foundation Complete**
+- **Resource Economy:** Supplies → Inventory → Consumption creating ongoing economic gameplay loop
+- **Development Approach:** Habitat Conditions foundation implemented first with mock data, awaiting Supplies Store and Inventory integration for real data flow
 
 ### Phase 4 Dependencies (Interactions)
 - **Requires:** Complete game world and habitat system from Phase 3

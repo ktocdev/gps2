@@ -19,6 +19,7 @@
           v-for="option in options"
           :key="getOptionValue(option)"
           :value="getOptionValue(option)"
+          :disabled="getOptionDisabled(option)"
         >
           {{ getOptionLabel(option) }}
         </option>
@@ -50,7 +51,7 @@
 <script setup lang="ts">
 import { computed, getCurrentInstance } from 'vue'
 
-type SelectOption = string | number | { label: string; value: string | number }
+type SelectOption = string | number | { label: string; value: string | number; disabled?: boolean }
 
 interface Props {
   modelValue: string | number
@@ -108,6 +109,13 @@ const getOptionLabel = (option: SelectOption): string => {
     return option.label
   }
   return String(option)
+}
+
+const getOptionDisabled = (option: SelectOption): boolean => {
+  if (typeof option === 'object' && option !== null && 'disabled' in option) {
+    return option.disabled === true
+  }
+  return false
 }
 
 const handleChange = (event: Event) => {

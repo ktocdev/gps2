@@ -134,55 +134,65 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ---
 
-## Phase 3: Game World & Environment (Systems 11-14)
+## Phase 3: Game World & Environment (Systems 11-15)
 **Duration:** 2-3 weeks
-**Goal:** Build interactive habitat with item placement, inventory, and maintenance systems
+**Goal:** Build supplies store, inventory system, and habitat environmental management with proper data flow
 
 ### Systems
-11. **[Habitat Conditions Store](docs/systems/phase3/system-11-habitat-conditions.md)** - Environmental condition tracking (cleanliness, bedding freshness, water level) with resource management
-12. **Habitat Item System** - Item placement (connect to habitat grid placeholders)
-13. **Inventory & Store System** - Item and resource management including bedding (connect to inventory/store UI placeholders)
-14. **Habitat Maintenance & Hygiene System** - Enhanced poop system, cleanliness, bedding, and water management (connect to maintenance menu and habitat status display placeholders)
+11. **Supplies Store System** - Central catalog of all purchasable items (bedding types, hay varieties, habitat items, food, treats) with pricing, descriptions, and availability
+12. **Inventory Management System** - Track owned items, quantities, consumption tracking, and item usage across all game systems
+13. **[Habitat Conditions Store](docs/systems/phase3/system-11-habitat-conditions.md)** - Environmental condition tracking (cleanliness, bedding freshness, water level, hay freshness) consuming inventory resources ✅ **Foundation Complete** - Awaiting Supplies Store integration
+14. **Habitat Item System** - Item placement system using inventory data (connect to habitat grid placeholders)
+15. **Habitat Maintenance & Hygiene System** - Enhanced poop system, cleanliness, bedding, and water management (connect to maintenance menu and habitat status display placeholders)
 
 ### Debug Panel Development (Phase 3)
-- **Habitat Debug Panel** - Built alongside Habitat Conditions (System 11)
-- **Habitat Item Debug Panel** - Built alongside Habitat Item System (System 12)
-- **Inventory Debug Panel** - Built alongside Inventory & Store System (System 13) ⚡ **Currency controls implemented early** (September 28, 2025 | Branch: GPS2-11)
-- **Maintenance Debug Panel** - Built alongside Habitat Maintenance System (System 14)
+- **Supplies Store Debug Panel** - Built alongside Supplies Store System (System 11) - Item catalog, pricing adjustments, availability testing
+- **Inventory Debug Panel** - Built alongside Inventory Management System (System 12) ⚡ **Currency controls implemented early** (September 28, 2025 | Branch: GPS2-11) - Expand with item management
+- **Habitat Debug Panel** - ✅ **Foundation Complete** (October 14, 2025 | Branch: GPS2-25) - Built alongside Habitat Conditions, will integrate with Supplies Store and Inventory data
+- **Habitat Item Debug Panel** - Built alongside Habitat Item System (System 14)
+- **Maintenance Debug Panel** - Built alongside Habitat Maintenance System (System 15)
 
 ### Key Deliverables
-- **Habitat conditions tracking** with cleanliness, bedding freshness, water level, and hay management
-- **Resource management system** with bedding and hay as consumable resources
-- **Grid-based habitat layout** with drag & drop item placement
+- **Supplies store catalog** with all purchasable items, pricing structure, and item metadata
+- **Inventory management** with quantity tracking, item organization, and consumption logic
+- **Habitat conditions tracking** integrated with inventory consumption (bedding, hay, water)
+- **Resource management system** with strategic purchasing decisions and inventory planning
+- **Grid-based habitat layout** with drag & drop item placement from inventory
 - **Complete item interaction system** with guinea pig autonomous usage
-- **Store and inventory management** with currency and resource systems
 - **Enhanced poop and cleanliness system** with visual feedback
-- **Bedding as consumable resource** with strategic purchasing decisions
 - **Happiness-focused item categories** with effectiveness and rotation systems
 
 ### Economic Integration
-- **Bedding resource management** creating ongoing economic gameplay
+- **Supplies store** as primary source for all purchasable items
+- **Inventory system** bridging purchases to game mechanics
+- **Resource consumption** creating ongoing economic gameplay (bedding, hay, food)
 - **Item effectiveness system** with newness bonuses and familiarity decay
 - **Strategic purchasing decisions** balancing happiness items vs necessities
 - **Currency earning** through guinea pig care and achievement milestones
 
+### Development Notes
+- **Habitat Conditions foundation** (System 13) implemented first with mock data for testing
+- **Habitat Debug panel** contains UI patterns and resource management logic ready for integration
+- Once Supplies Store (System 11) and Inventory (System 12) complete, Habitat Conditions will consume real inventory data
+- This approach preserves debug UI work while establishing proper data architecture
+
 ---
 
-## Phase 4: Interactions & Behaviors (Systems 15-18)
+## Phase 4: Interactions & Behaviors (Systems 16-19)
 **Duration:** 2-3 weeks
 **Goal:** Implement direct interactions and guinea pig AI for complete gameplay loop
 
 ### Systems
-15. **Direct Interaction System** - User-guinea pig interactions (connect to interaction menu placeholders)
-16. **Guinea Pig Autonomy System** - AI behavior and pathfinding (connect to behavior indicator placeholders)
-17. **Guinea Pig Social Interactions** - Guinea pig to guinea pig interactions for enhanced social need satisfaction (cute, positive interactions initially)
-18. **Guinea Pig Bonding System** - Hidden compatibility and bonding mechanics with personality hints during selection for authentic relationship development
+16. **Direct Interaction System** - User-guinea pig interactions (connect to interaction menu placeholders)
+17. **Guinea Pig Autonomy System** - AI behavior and pathfinding (connect to behavior indicator placeholders)
+18. **Guinea Pig Social Interactions** - Guinea pig to guinea pig interactions for enhanced social need satisfaction (cute, positive interactions initially)
+19. **Guinea Pig Bonding System** - Hidden compatibility and bonding mechanics with personality hints during selection for authentic relationship development
 
 ### Debug Panel Development (Phase 4)
-- **Interaction Debug Panel** - Built alongside Direct Interaction System (System 15)
-- **AI Behavior Debug Panel** - Built alongside Guinea Pig Autonomy System (System 16)
-- **Social Interaction Debug Panel** - Built alongside Guinea Pig Social Interactions (System 17)
-- **Bonding Debug Panel** - Built alongside Guinea Pig Bonding System (System 18) - compatibility testing, bonding progression tracking, personality hint testing
+- **Interaction Debug Panel** - Built alongside Direct Interaction System (System 16)
+- **AI Behavior Debug Panel** - Built alongside Guinea Pig Autonomy System (System 17)
+- **Social Interaction Debug Panel** - Built alongside Guinea Pig Social Interactions (System 18)
+- **Bonding Debug Panel** - Built alongside Guinea Pig Bonding System (System 19) - compatibility testing, bonding progression tracking, personality hint testing
 
 ### Key Deliverables
 - **Complete interaction system** with varied interaction types and effects
@@ -204,15 +214,15 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ---
 
-## Phase 5: Polish & Enhancement (Systems 19-22)
+## Phase 5: Polish & Enhancement (Systems 20-23)
 **Duration:** 2-3 weeks
 **Goal:** Add polish, progression systems, and optional animation enhancements
 
 ### Systems
-19. **Achievement & Progression System** - Milestone tracking and rewards
-20. **Sound System** - Audio manager and interaction sound feedback
-21. **Settings & Preferences System** - User preferences and customization
-22. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement)
+20. **Achievement & Progression System** - Milestone tracking and rewards
+21. **Sound System** - Audio manager and interaction sound feedback
+22. **Settings & Preferences System** - User preferences and customization
+23. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement)
 
 ### Debug Panel Consolidation (Phase 5)
 - **Debug Menu Tab Creation** - Consolidate all debug panels into unified Debug Menu interface

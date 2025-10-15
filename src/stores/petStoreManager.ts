@@ -14,6 +14,7 @@ import { usePlayerProgression } from './playerProgression'
 import { useGuineaPigStore } from './guineaPigStore'
 import { useGameController } from './gameController'
 import { useNeedsController } from './needsController'
+import { useHabitatConditions } from './habitatConditions'
 
 export interface GameSession {
   id: string
@@ -843,6 +844,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Enable needs processing for the session
     const needsController = useNeedsController()
     needsController.resumeProcessing()
+
+    // Reset habitat conditions to 100% for fresh start
+    const habitatConditions = useHabitatConditions()
+    habitatConditions.resetHabitatConditions()
 
     const playerProgression = usePlayerProgression()
     playerProgression.incrementGameSessions()

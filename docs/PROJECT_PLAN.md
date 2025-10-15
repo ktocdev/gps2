@@ -50,10 +50,11 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 - **[System 5: Enhanced Activity Messages](systems/phase2.5/system-5-enhanced-activity-messages.md)** - Guinea pig reactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
 
 ##### Phase 3: Game World & Environment
-- **[System 11: Habitat Conditions](systems/phase3/system-11-habitat-conditions.md)** - Environmental state tracking with resource management
-- **[Inventory Store System](systems/phase3/inventory-store-system.md)** - Item management and purchasing
-- **[Habitat Item System](systems/phase3/habitat-item-system.md)** - Interactive environment objects
-- **[Habitat Maintenance Hygiene](systems/phase3/habitat-maintenance-hygiene-system.md)** - Environmental care and cleanliness
+- **[System 11: Supplies Store System](systems/phase3/supplies-store-system.md)** - Central catalog of all purchasable items (bedding, hay, habitat items, food, treats)
+- **[System 12: Inventory Management System](systems/phase3/inventory-management-system.md)** - Track owned items, quantities, and consumption
+- **[System 13: Habitat Conditions](systems/phase3/system-11-habitat-conditions.md)** - Environmental state tracking consuming inventory resources ✅ **Foundation Complete** - Awaiting integration
+- **[System 14: Habitat Item System](systems/phase3/habitat-item-system.md)** - Interactive environment objects using inventory data
+- **[System 15: Habitat Maintenance Hygiene](systems/phase3/habitat-maintenance-hygiene-system.md)** - Environmental care and cleanliness
 
 ##### Phase 4: Interactions & Behaviors
 - **[Direct Interaction System](systems/phase4/direct-interaction-system.md)** - Player-to-guinea pig interactions
