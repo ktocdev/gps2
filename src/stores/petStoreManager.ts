@@ -20,10 +20,8 @@ export interface GameSession {
   startedAt: number
   guineaPigIds: string[]
   sessionDuration: number
-  // Phase 6: Removed wasFromFavorites (no longer needed with permanent adoption)
 }
 
-// Phase 6: Settings interface kept for future use (currently empty after removing endGamePenalty)
 interface PetStoreSettings {
   // Future settings can be added here
 }
@@ -45,7 +43,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
   const maxSanctuarySlots = ref<number>(10)
 
   const settings = ref<PetStoreSettings>({
-    // Phase 6: Removed endGamePenalty (no longer needed with permanent adoption)
   })
 
 
@@ -56,8 +53,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       .map(id => guineaPigStore.getGuineaPig(id))
       .filter(Boolean) as GuineaPig[]
   })
-
-  // Phase 6: Removed all favorites-related computed properties (no longer needed with permanent adoption)
 
   // Phase 3: Sanctuary computed properties
   const sanctuaryCount = computed(() => sanctuaryGuineaPigs.value.length)
@@ -475,9 +470,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     )
   }
 
-  // Phase 6: Removed all favorites management functions (addToFavorites, removeFromFavorites, moveFromFavoritesToStore)
-  // No longer needed with permanent adoption model - guinea pigs go directly to Sanctuary at 85% friendship
-
   // Phase 3: Stardust Sanctuary Management
   /**
    * Move a guinea pig to Stardust Sanctuary
@@ -610,7 +602,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         const expirationTime = guineaPig.adoptionTimer + guineaPig.adoptionDuration
 
         if (now >= expirationTime) {
-          // Phase 6: Skip if guinea pig is in active session or sanctuary (no more favorites)
+          // Skip if guinea pig is in active session or sanctuary
           const isActive = activeGameSession.value?.guineaPigIds.includes(guineaPig.id) ?? false
           const isInSanctuary = sanctuaryGuineaPigs.value.some(gp => gp.id === guineaPig.id)
 
@@ -815,8 +807,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Phase 5: Restore bonds if both guinea pigs are from Sanctuary
     restoreBondsIfExists(guineaPigIds)
 
-    // Phase 6: Add guinea pigs to the guinea pig store collection before setting them as active
-    // Guinea pigs come from either available pool or sanctuary (no more favorites)
+    // Add guinea pigs to the guinea pig store collection before setting them as active
+    // Guinea pigs come from either available pool or sanctuary
     for (const guineaPigId of guineaPigIds) {
       let guineaPig = availableGuineaPigs.value.find(gp => gp.id === guineaPigId)
 
@@ -868,9 +860,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       { sessionId, guineaPigIds }
     )
   }
-
-  // Phase 6: Removed applyBondBreakingEffects - no longer needed with permanent adoption
-  // Guinea pigs are never removed, so bond breaking doesn't occur
 
   function initializeStore(): void {
     const logging = getLoggingStore()

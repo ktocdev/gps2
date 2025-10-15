@@ -438,7 +438,7 @@ const isSelectedGuineaPigActive = computed(() => {
   return isGuineaPigActive(selectedGuineaPig.value.id)
 })
 
-// Phase 6: Sort guinea pigs with active ones at the top
+// Sort guinea pigs with active ones at the top
 const sortedAvailableGuineaPigs = computed(() => {
   return [...petStoreManager.availableGuineaPigs].sort((a, b) => {
     const aIsActive = isGuineaPigActive(a.id)

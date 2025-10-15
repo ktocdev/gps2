@@ -263,7 +263,7 @@ watch([() => petStoreManager.activeGameSession], ([session]) => {
     // Active guinea pigs are always valid because they're stored in guineaPigStore.collection
     const sessionGuineaPigIds = session.guineaPigIds || []
 
-    // Phase 6: Set guinea pig selections directly from session
+    // Set guinea pig selections directly from session
     // They exist in guineaPigStore.collection even if not in available/sanctuary
     selectedGuineaPig1.value = sessionGuineaPigIds[0] || ''
     selectedGuineaPig2.value = sessionGuineaPigIds[1] || ''
@@ -288,7 +288,7 @@ const getGuineaPigName = (id: string | number) => {
 }
 
 const guineaPigOptions = computed(() => {
-  // Phase 6: Combine available, sanctuary, and active guinea pigs for selection (no more favorites)
+  // Combine available, sanctuary, and active guinea pigs for selection
   const availableAndSanctuary = [
     ...petStoreManager.availableGuineaPigs,
     ...petStoreManager.sanctuaryGuineaPigs
@@ -319,7 +319,7 @@ const guineaPigOptions = computed(() => {
 })
 
 const guineaPig2Options = computed(() => {
-  // Phase 6: Combine available, sanctuary, and active guinea pigs for selection (no more favorites)
+  // Combine available, sanctuary, and active guinea pigs for selection
   const availableAndSanctuary = [
     ...petStoreManager.availableGuineaPigs,
     ...petStoreManager.sanctuaryGuineaPigs
