@@ -1,6 +1,6 @@
-# Habitat Maintenance & Hygiene System
+# System 15: Habitat Maintenance & Hygiene
 
-**Phase 3, System 14 - Game World & Environment**
+**Phase:** 3.15 - Habitat & Environment
 
 ## Core System Overview
 

@@ -1,6 +1,6 @@
-# Habitat Conditions Store (Pinia) - System 11
+# System 13: Habitat Conditions
 
-**Phase 3: Game World & Environment**
+**Phase:** 3.13 - Habitat & Environment
 
 ## Overview
 Environmental condition tracking system managing cleanliness, bedding freshness, and water levels with resource management and guinea pig need integration.

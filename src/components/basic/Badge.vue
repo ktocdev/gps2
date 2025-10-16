@@ -8,7 +8,7 @@
 import { computed } from 'vue'
 
 interface Props {
-  variant?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'danger'
+  variant?: 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'danger' | 'seasonal'
   size?: 'sm' | 'md' | 'lg'
 }
 
@@ -88,6 +88,12 @@ const badgeClasses = computed(() => {
 
 .badge--danger {
   background-color: var(--color-error);
+  color: var(--color-text-inverse);
+  border: 1px solid transparent;
+}
+
+.badge--seasonal {
+  background-color: var(--color-need-stimulation);
   color: var(--color-text-inverse);
   border: 1px solid transparent;
 }

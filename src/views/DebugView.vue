@@ -30,6 +30,7 @@
       <PersonalityDebugView v-if="activeTab === 'personality'" />
       <InventoryDebugView v-if="activeTab === 'inventory'" />
       <HabitatDebugView v-if="activeTab === 'habitat'" />
+      <SuppliesStoreDebug v-if="activeTab === 'supplies-store'" />
       <LoggingSystemView v-if="activeTab === 'logging'" />
       <SystemMonitorView v-if="activeTab === 'error-tracking'" />
     </div>
@@ -50,6 +51,7 @@ import FeedingDebugView from './FeedingDebugView.vue'
 import FriendshipDebug from '../components/debug/FriendshipDebug.vue'
 import StardustSanctuaryDebug from '../components/debug/StardustSanctuaryDebug.vue'
 import HabitatDebugView from './HabitatDebugView.vue'
+import SuppliesStoreDebug from '../components/debug/SuppliesStoreDebug.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
 import { useGameController } from '../stores/gameController'
@@ -141,6 +143,12 @@ const tabCategories: TabCategory[] = [
         id: 'habitat',
         label: 'Habitat Debug',
         icon: '🏠',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'supplies-store',
+        label: 'Supplies Store',
+        icon: '🛒',
         panelClass: 'tab-container__panel--constrained'
       }
     ]

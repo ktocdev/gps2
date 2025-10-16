@@ -142,7 +142,7 @@ const handleChange = (event: Event) => {
 }
 
 .select__label {
-  font-family: 'Gaegu', var(--font-family-body);
+  font-family: var(--font-family-heading);
   font-weight: var(--font-weight-medium);
   font-size: var(--font-size-xl);
   color: var(--color-text-primary);

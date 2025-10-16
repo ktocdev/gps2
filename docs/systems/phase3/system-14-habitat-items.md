@@ -1,6 +1,6 @@
-# Habitat Item System - System 12
+# System 14: Habitat Items
 
-**Phase 3: Game World & Environment**
+**Phase:** 3.14 - Habitat & Environment
 
 ## Overview
 Interactive item placement system creating enriched habitat environments with drag & drop functionality, automatic guinea pig interaction, and strategic item rotation mechanics.

@@ -131,13 +131,12 @@ const getPanelClasses = (tabId: string) => {
   block-size: 100%;
 }
 
-/* Navigation */
+/* Navigation - Mobile First */
 .sub-tab-container__nav {
   display: flex;
   border-block-end: 2px solid var(--color-border-subtle);
   background-color: var(--color-background-secondary);
-  padding-inline: var(--space-4);
-  gap: var(--space-2);
+  gap: var(--space-1);
   overflow-x: auto;
   scrollbar-width: thin;
 }
@@ -155,23 +154,22 @@ const getPanelClasses = (tabId: string) => {
   border-radius: 2px;
 }
 
-/* Sub Tab Buttons (Pills Style) */
+/* Sub Tab Buttons (Pills Style) - Mobile First */
 .sub-tab-container__tab {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   padding-block: var(--space-2);
-  padding-inline: var(--space-3);
+  padding-inline: var(--space-2);
   border: 1px solid transparent;
   border-radius: 16px;
   background-color: transparent;
   color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
-  margin-block: var(--space-2);
 }
 
 .sub-tab-container__tab:hover:not(.sub-tab-container__tab--disabled) {
@@ -203,13 +201,14 @@ const getPanelClasses = (tabId: string) => {
   color: var(--color-text-muted);
 }
 
-/* Tab Content */
+/* Tab Content - Mobile First: hide text, show only icon */
 .sub-tab-container__tab-icon {
   font-size: var(--font-size-sm);
   line-height: 1;
 }
 
 .sub-tab-container__tab-text {
+  display: none;
   line-height: 1.2;
 }
 
@@ -233,10 +232,10 @@ const getPanelClasses = (tabId: string) => {
   color: var(--color-accent-primary);
 }
 
-/* Panel Content */
+/* Panel Content - Mobile First */
 .sub-tab-container__content {
   flex: 1;
-  padding: var(--space-4);
+  padding-block: var(--space-3);
   overflow-y: auto;
   background-color: var(--color-background-primary);
 }
@@ -257,30 +256,25 @@ const getPanelClasses = (tabId: string) => {
   display: none;
 }
 
-/* Responsive Design */
-@container (max-width: 600px) {
-  .sub-tab-container__nav {
-    padding-inline: var(--space-2);
-    gap: var(--space-1);
-  }
-
-  .sub-tab-container__tab {
-    padding-inline: var(--space-2);
-    font-size: var(--font-size-xs);
-  }
-
-  .sub-tab-container__content {
-    padding: var(--space-3);
+/* Responsive Design - Mobile First */
+@container (min-width: 401px) {
+  .sub-tab-container__tab-text {
+    display: block;
   }
 }
 
-@container (max-width: 400px) {
-  .sub-tab-container__tab-text {
-    display: none;
+@container (min-width: 601px) {
+  .sub-tab-container__nav {
+    gap: var(--space-2);
   }
 
   .sub-tab-container__tab {
-    padding-inline: var(--space-2);
+    padding-inline: var(--space-3);
+    font-size: var(--font-size-sm);
+  }
+
+  .sub-tab-container__content {
+    padding-block: var(--space-4);
   }
 }
 
@@ -321,7 +315,7 @@ const getPanelClasses = (tabId: string) => {
   }
 
   .sub-tab-container__content {
-    padding: 0;
+    padding-block: 0;
   }
 }
 </style>
