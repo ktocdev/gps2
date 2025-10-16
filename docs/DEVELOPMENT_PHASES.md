@@ -141,7 +141,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 ### Systems
 11. **Supplies Store System** - Central catalog of all purchasable items (bedding types, hay varieties, habitat items, food, treats) with pricing, descriptions, and availability
 12. **Inventory Management System** - Track owned items, quantities, consumption tracking, and item usage across all game systems
-13. **[Habitat Conditions Store](docs/systems/phase3/system-11-habitat-conditions.md)** - Environmental condition tracking (cleanliness, bedding freshness, water level, hay freshness) consuming inventory resources ✅ **Foundation Complete** - Awaiting Supplies Store integration
+13. **[Habitat Conditions Store](docs/systems/phase3/system-13-habitat-conditions.md)** - Environmental condition tracking (cleanliness, bedding freshness, water level, hay freshness) consuming inventory resources ✅ **Foundation Complete** - Awaiting Supplies Store integration
 14. **Habitat Item System** - Item placement system using inventory data (connect to habitat grid placeholders)
 15. **Habitat Maintenance & Hygiene System** - Enhanced poop system, cleanliness, bedding, and water management (connect to maintenance menu and habitat status display placeholders)
 

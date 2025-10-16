@@ -1,6 +1,6 @@
-# Inventory & Store System - System 13
+# System 12: Inventory Management
 
-**Phase 3: Game World & Environment**
+**Phase:** 3.12 - Habitat & Environment
 
 ## Overview
 Comprehensive economic system managing player inventory, store purchases, currency earning, and resource management with preference-based shopping and consumable resource tracking.
