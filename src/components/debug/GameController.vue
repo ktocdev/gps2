@@ -3,7 +3,7 @@
     <h2>Game Controller</h2>
     <!-- Pet Store Game Session -->
     <div class="mb-8">
-      <div class="panel-row panel-row--grid-3">
+      <div class="panel-row panel-row--grid-3 mb-4">
         <!-- Session Controls -->
         <div class="panel panel--compact">
           <div class="panel__header">

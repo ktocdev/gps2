@@ -88,6 +88,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   // Habitat Items (items currently placed in the habitat)
   const habitatItems = ref<string[]>([])
 
+  // Item positions (Map of itemId -> grid position)
+  const itemPositions = ref<Map<string, { x: number; y: number }>>(new Map())
+
   // Computed properties
   const overallCondition = computed(() => {
     return Math.floor(
@@ -292,7 +295,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     recordSnapshot()
   }
 
-  function addItemToHabitat(itemId: string) {
+  function addItemToHabitat(itemId: string, position?: { x: number; y: number }) {
     const inventoryStore = useInventoryStore()
 
     // Check if item is in inventory
@@ -312,6 +315,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Add to habitat
     habitatItems.value.push(itemId)
+
+    // Store position if provided
+    if (position) {
+      itemPositions.value.set(itemId, position)
+    }
+
     return true
   }
 
@@ -329,6 +338,10 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Remove from habitat
     habitatItems.value.splice(index, 1)
+
+    // Remove position tracking
+    itemPositions.value.delete(itemId)
+
     return true
   }
 
@@ -360,6 +373,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     activeAlerts,
     notificationSettings,
     habitatItems,
+    itemPositions,
 
     // Computed
     overallCondition,

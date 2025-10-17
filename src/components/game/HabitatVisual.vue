@@ -24,6 +24,10 @@
             'grid-cell--drop-target': isDragOver && isHoverCell(cell) && canPlaceAt(cell.x, cell.y),
             'grid-cell--drop-invalid': isDragOver && isHoverCell(cell) && !canPlaceAt(cell.x, cell.y)
           }"
+          :style="{
+            gridColumn: cell.x + 1,
+            gridRow: cell.y + 1
+          }"
           @dragover.prevent="handleDragOver($event, cell)"
           @dragleave="handleDragLeave"
           @drop="handleDrop($event, cell)"
@@ -33,11 +37,17 @@
           v-for="item in sortedPlacedItems"
           :key="item.instanceId"
           class="grid-item"
+          :class="{
+            'grid-item--dragging': draggedPlacedItemId === item.itemId
+          }"
           :style="{
             gridColumn: `${item.position.x + 1} / span ${item.size.width}`,
             gridRow: `${item.position.y + 1} / span ${item.size.height}`,
             zIndex: item.zIndex
           }"
+          draggable="true"
+          @dragstart="handlePlacedItemDragStart($event, item)"
+          @dragend="handlePlacedItemDragEnd"
           @click="selectItem(item.instanceId)"
         >
           <span class="grid-item__emoji">{{ item.emoji }}</span>
@@ -150,6 +160,8 @@ const isDragOver = ref(false)
 const draggedItemId = ref<string | null>(null)
 const draggedItemSize = ref<{ width: number; height: number }>({ width: 1, height: 1 })
 const hoverCell = ref<{ x: number; y: number } | null>(null)
+const draggedPlacedItemId = ref<string | null>(null)
+const isRepositioning = ref(false)
 
 function initializeGrid() {
   gridCells.value = []
@@ -182,10 +194,17 @@ const placedItems = computed(() => {
     const item = suppliesStore.getItemById(itemId)
     const size = getItemSize(item)
 
+    // Get stored position or default to auto-layout
+    const storedPosition = habitatConditions.itemPositions.get(itemId)
+    const position = storedPosition || {
+      x: (index * 2) % gridWidth.value,
+      y: Math.floor((index * 2) / gridWidth.value)
+    }
+
     return {
       itemId,
       instanceId: `${itemId}-${index}`,
-      position: { x: (index * 2) % gridWidth.value, y: Math.floor((index * 2) / gridWidth.value) },
+      position,
       size,
       zIndex: 0,
       name: item?.name || 'Unknown',
@@ -289,6 +308,37 @@ function clearDraggedItem() {
   hoverCell.value = null
 }
 
+// Handlers for dragging placed items
+function handlePlacedItemDragStart(event: DragEvent, item: any) {
+  if (props.readOnly) return
+
+  draggedPlacedItemId.value = item.itemId
+  draggedItemId.value = item.itemId
+  draggedItemSize.value = item.size
+  isRepositioning.value = true
+
+  const dragData = {
+    itemId: item.itemId,
+    size: item.size,
+    isRepositioning: true
+  }
+
+  event.dataTransfer!.effectAllowed = 'move'
+  event.dataTransfer!.setData('text/plain', JSON.stringify(dragData))
+
+  // Visual feedback
+  const target = event.currentTarget as HTMLElement
+  target.style.opacity = '0.5'
+}
+
+function handlePlacedItemDragEnd(event: DragEvent) {
+  draggedPlacedItemId.value = null
+  isRepositioning.value = false
+
+  const target = event.currentTarget as HTMLElement
+  target.style.opacity = '1'
+}
+
 // Drag-and-drop handlers
 function handleDragOver(event: DragEvent, cell: GridCell) {
   if (props.readOnly) return
@@ -321,9 +371,11 @@ function handleDrop(event: DragEvent, cell: GridCell) {
   if (!itemData) return
 
   let itemId: string
+  let isRepos = false
   try {
     const data = JSON.parse(itemData)
     itemId = data.itemId
+    isRepos = data.isRepositioning || false
   } catch {
     itemId = itemData
   }
@@ -333,12 +385,19 @@ function handleDrop(event: DragEvent, cell: GridCell) {
     return
   }
 
-  // Add item to habitat at this position
-  placeItemAt(itemId, cell.x, cell.y)
+  if (isRepos) {
+    // Repositioning existing item
+    repositionItemAt(itemId, cell.x, cell.y)
+  } else {
+    // Adding new item from inventory
+    placeItemAt(itemId, cell.x, cell.y)
+  }
 
   // Reset drag state
   draggedItemId.value = null
   draggedItemSize.value = { width: 1, height: 1 }
+  draggedPlacedItemId.value = null
+  isRepositioning.value = false
 }
 
 function isHoverCell(cell: GridCell): boolean {
@@ -356,22 +415,37 @@ function canPlaceAt(x: number, y: number): boolean {
     return false
   }
 
+  // Water bottles can only be on edges (x=0 or x=gridWidth-1)
+  if (draggedItemId.value.includes('water_bottle')) {
+    const isLeftEdge = x === 0
+    const isRightEdge = x === gridWidth.value - size.width
+    if (!isLeftEdge && !isRightEdge) {
+      return false
+    }
+  }
+
   // With stacking anarchy, we allow placement anywhere within bounds
   // No collision detection needed for Phase 2
   return true
 }
 
 function placeItemAt(itemId: string, x: number, y: number) {
-  // Add item to habitat from inventory
-  const success = habitatConditions.addItemToHabitat(itemId)
+  // Add item to habitat from inventory with position
+  const success = habitatConditions.addItemToHabitat(itemId, { x, y })
 
   if (success) {
     console.log(`Placed ${itemId} at (${x}, ${y})`)
-    // TODO: Store position in habitatConditions when store is updated
     updateGridCells()
   } else {
     console.warn(`Failed to place ${itemId} at (${x}, ${y})`)
   }
+}
+
+function repositionItemAt(itemId: string, x: number, y: number) {
+  // Update the position of an already-placed item
+  habitatConditions.itemPositions.set(itemId, { x, y })
+  console.log(`Repositioned ${itemId} to (${x}, ${y})`)
+  updateGridCells()
 }
 
 onMounted(() => {
@@ -484,7 +558,7 @@ defineExpose({
   background: rgba(255, 255, 255, 0.9);
   border: 2px solid var(--color-border);
   border-radius: var(--radius-md);
-  cursor: pointer;
+  cursor: grab;
   transition: all 0.2s ease;
   box-shadow: var(--shadow-sm);
 }
@@ -493,6 +567,15 @@ defineExpose({
   transform: scale(1.05);
   box-shadow: var(--shadow-md);
   border-color: var(--color-primary);
+}
+
+.grid-item:active {
+  cursor: grabbing;
+}
+
+.grid-item--dragging {
+  opacity: 0.5;
+  cursor: grabbing;
 }
 
 .grid-item__emoji {
