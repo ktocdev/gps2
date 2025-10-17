@@ -88,6 +88,17 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   // Habitat Items (items currently placed in the habitat)
   const habitatItems = ref<string[]>([])
 
+  // Item positions (Map of itemId -> grid position)
+  const itemPositions = ref<Map<string, { x: number; y: number }>>(new Map())
+
+  // Bowl contents (Map of bowlItemId -> array of food items)
+  interface FoodItem {
+    itemId: string
+    emoji: string
+    name: string
+  }
+  const bowlContents = ref<Map<string, FoodItem[]>>(new Map())
+
   // Computed properties
   const overallCondition = computed(() => {
     return Math.floor(
@@ -292,7 +303,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     recordSnapshot()
   }
 
-  function addItemToHabitat(itemId: string) {
+  function addItemToHabitat(itemId: string, position?: { x: number; y: number }) {
     const inventoryStore = useInventoryStore()
 
     // Check if item is in inventory
@@ -312,6 +323,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Add to habitat
     habitatItems.value.push(itemId)
+
+    // Store position if provided
+    if (position) {
+      itemPositions.value.set(itemId, position)
+    }
+
     return true
   }
 
@@ -329,12 +346,135 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Remove from habitat
     habitatItems.value.splice(index, 1)
+
+    // Remove position tracking
+    itemPositions.value.delete(itemId)
+
+    // Clear bowl contents if it's a bowl
+    if (bowlContents.value.has(itemId)) {
+      bowlContents.value.delete(itemId)
+    }
+
     return true
+  }
+
+  // Bowl management functions
+  function addFoodToBowl(bowlItemId: string, foodItemId: string): boolean {
+    const suppliesStore = useSuppliesStore()
+    const inventoryStore = useInventoryStore()
+
+    // Check if food item is in inventory
+    if (!inventoryStore.hasItem(foodItemId)) {
+      console.warn(`Food item ${foodItemId} not in inventory`)
+      return false
+    }
+
+    // Get bowl item to check capacity
+    const bowlItem = suppliesStore.getItemById(bowlItemId)
+    if (!bowlItem) {
+      console.warn(`Bowl ${bowlItemId} not found`)
+      return false
+    }
+
+    const capacity = bowlItem.stats?.foodCapacity || 2
+    const currentContents = bowlContents.value.get(bowlItemId) || []
+
+    // Check if bowl is full
+    if (currentContents.length >= capacity) {
+      console.warn(`Bowl is full (capacity: ${capacity})`)
+      return false
+    }
+
+    // Get food item details
+    const foodItem = suppliesStore.getItemById(foodItemId)
+    if (!foodItem) {
+      console.warn(`Food item ${foodItemId} not found`)
+      return false
+    }
+
+    // Remove food from inventory (consume it)
+    const removed = inventoryStore.removeItem(foodItemId, 1)
+    if (!removed) {
+      console.warn(`Failed to remove ${foodItemId} from inventory`)
+      return false
+    }
+
+    // Add food to bowl
+    const updatedContents = [
+      ...currentContents,
+      {
+        itemId: foodItemId,
+        emoji: foodItem.emoji || '🍽️',
+        name: foodItem.name
+      }
+    ]
+
+    bowlContents.value.set(bowlItemId, updatedContents)
+    console.log(`Added ${foodItem.name} to bowl (${updatedContents.length}/${capacity})`)
+    return true
+  }
+
+  function removeFoodFromBowl(bowlItemId: string, foodItemId: string): boolean {
+    const inventoryStore = useInventoryStore()
+    const currentContents = bowlContents.value.get(bowlItemId)
+    if (!currentContents) {
+      console.warn(`Bowl ${bowlItemId} has no contents`)
+      return false
+    }
+
+    const foodIndex = currentContents.findIndex(food => food.itemId === foodItemId)
+    if (foodIndex === -1) {
+      console.warn(`Food ${foodItemId} not found in bowl`)
+      return false
+    }
+
+    // Add food back to inventory
+    inventoryStore.addItem(foodItemId, 1)
+
+    // Remove food from bowl
+    const updatedContents = currentContents.filter((_, index) => index !== foodIndex)
+
+    if (updatedContents.length === 0) {
+      bowlContents.value.delete(bowlItemId)
+    } else {
+      bowlContents.value.set(bowlItemId, updatedContents)
+    }
+
+    console.log(`Removed food from bowl and returned to inventory`)
+    return true
+  }
+
+  function getBowlContents(bowlItemId: string): FoodItem[] {
+    return bowlContents.value.get(bowlItemId) || []
+  }
+
+  function clearBowl(bowlItemId: string): void {
+    bowlContents.value.delete(bowlItemId)
   }
 
   function initializeStarterHabitat(starterItemIds: string[]) {
     // Add starter items to habitat without checking inventory
     habitatItems.value = [...starterItemIds]
+
+    // Set default positions for starter items (centered and spaced apart)
+    // Assuming medium habitat: 14x10 grid
+    const defaultPositions: { [key: string]: { x: number; y: number } } = {
+      'habitat_plastic_igloo': { x: 3, y: 7 },         // Lower-left - 3 from left, 7 from top
+      'habitat_ceramic_bowl': { x: 9, y: 4 },          // Center-right - 9 from left, 4 from top
+      'habitat_basic_hay_rack': { x: 11, y: 4 },       // Right of dish - 11 from left, 4 from top
+      'habitat_basic_water_bottle': { x: 0, y: 0 }     // Top-left corner
+    }
+
+    // Apply default positions
+    starterItemIds.forEach(itemId => {
+      if (defaultPositions[itemId]) {
+        itemPositions.value.set(itemId, defaultPositions[itemId])
+        console.log(`Setting starter position for ${itemId}:`, defaultPositions[itemId])
+      } else {
+        console.warn(`No default position defined for ${itemId}`)
+      }
+    })
+    console.log('Item positions after init:', itemPositions.value)
 
     // Mark them as placed in habitat
     const inventoryStore = useInventoryStore()
@@ -360,6 +500,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     activeAlerts,
     notificationSettings,
     habitatItems,
+    itemPositions,
+    bowlContents,
 
     // Computed
     overallCondition,
@@ -377,6 +519,37 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     resetHabitatConditions,
     addItemToHabitat,
     removeItemFromHabitat,
-    initializeStarterHabitat
+    initializeStarterHabitat,
+    addFoodToBowl,
+    removeFoodFromBowl,
+    getBowlContents,
+    clearBowl
+  }
+}, {
+  persist: {
+    key: 'gps2-habitat-conditions',
+    storage: localStorage,
+    serializer: {
+      serialize: (state) => {
+        // Convert Maps to plain objects for serialization
+        const serialized = {
+          ...state,
+          itemPositions: Array.from((state.itemPositions as Map<string, { x: number; y: number }>).entries()),
+          bowlContents: Array.from((state.bowlContents as Map<string, any[]>).entries())
+        }
+        return JSON.stringify(serialized)
+      },
+      deserialize: (value) => {
+        const parsed = JSON.parse(value)
+        // Convert plain arrays back to Maps
+        if (parsed.itemPositions && Array.isArray(parsed.itemPositions)) {
+          parsed.itemPositions = new Map(parsed.itemPositions)
+        }
+        if (parsed.bowlContents && Array.isArray(parsed.bowlContents)) {
+          parsed.bowlContents = new Map(parsed.bowlContents)
+        }
+        return parsed
+      }
+    }
   }
 })

@@ -25,7 +25,6 @@
       <PetStoreDebugView v-if="activeTab === 'pet-store'" />
       <StardustSanctuaryDebug v-if="activeTab === 'sanctuary'" />
       <NeedsDebugView v-if="activeTab === 'needs'" />
-      <FeedingDebugView v-if="activeTab === 'feeding'" />
       <FriendshipDebug v-if="activeTab === 'friendship'" />
       <PersonalityDebugView v-if="activeTab === 'personality'" />
       <InventoryDebugView v-if="activeTab === 'inventory'" />
@@ -47,7 +46,6 @@ import PetStoreDebugView from './PetStoreDebugView.vue'
 import InventoryDebugView from './InventoryDebugView.vue'
 import NeedsDebugView from './NeedsDebugView.vue'
 import PersonalityDebugView from './PersonalityDebugView.vue'
-import FeedingDebugView from './FeedingDebugView.vue'
 import FriendshipDebug from '../components/debug/FriendshipDebug.vue'
 import StardustSanctuaryDebug from '../components/debug/StardustSanctuaryDebug.vue'
 import HabitatDebugView from './HabitatDebugView.vue'
@@ -108,12 +106,6 @@ const tabCategories: TabCategory[] = [
         id: 'needs',
         label: 'Needs System',
         icon: '🍎'
-      },
-      {
-        id: 'feeding',
-        label: 'Feeding System',
-        icon: '🥕',
-        panelClass: 'tab-container__panel--constrained'
       },
       {
         id: 'friendship',

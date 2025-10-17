@@ -283,7 +283,7 @@ import { usePlayerProgression } from '../../stores/playerProgression'
 import { useInventoryStore } from '../../stores/inventoryStore'
 import Button from '../basic/Button.vue'
 import SubTabContainer from '../layout/SubTabContainer.vue'
-import SupplyItemCard from './SupplyItemCard.vue'
+import SupplyItemCard from '../game/SupplyItemCard.vue'
 
 const suppliesStore = useSuppliesStore()
 const playerProgression = usePlayerProgression()

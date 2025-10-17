@@ -54,6 +54,7 @@ export interface SuppliesItem {
 
     // Bowls & Bottles specific
     capacity?: string // e.g., "8oz", "16oz", "12oz"
+    foodCapacity?: number // Number of food items bowl can hold (2 or 3)
     tipResistance?: boolean
     cleanlinessRating?: number // 1-10 scale
 

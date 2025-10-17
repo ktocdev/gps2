@@ -48,7 +48,6 @@ Comprehensive architecture documentation covering store communication patterns, 
   - **GameStateDebug** ✅ ← Game Controller Store + Game Timing Store
   - **NeedsDebug** ✅ ← Needs Controller Store
   - **PersonalityDebug** ✅ ← Guinea Pig Store
-  - **FeedingDebug** ✅ ← Guinea Pig Store + Needs Controller Store
   - **PetStoreDebug** ✅ ← Pet Store Manager Store
   - **HabitatDebug** ✅ ← Habitat Conditions Store (foundation complete, awaiting Supplies/Inventory integration)
 
