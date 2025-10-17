@@ -20,8 +20,13 @@
           class="grid-cell"
           :class="{
             'grid-cell--occupied': cell.occupied,
-            'grid-cell--accessible': cell.accessible
+            'grid-cell--accessible': cell.accessible,
+            'grid-cell--drop-target': isDragOver && isHoverCell(cell) && canPlaceAt(cell.x, cell.y),
+            'grid-cell--drop-invalid': isDragOver && isHoverCell(cell) && !canPlaceAt(cell.x, cell.y)
           }"
+          @dragover.prevent="handleDragOver($event, cell)"
+          @dragleave="handleDragLeave"
+          @drop="handleDrop($event, cell)"
         />
 
         <div
@@ -68,22 +73,6 @@
         <!-- Guinea pigs will be rendered here in Phase 3 -->
       </div>
     </div>
-
-    <div class="habitat-visual__controls">
-      <button
-        v-if="poopCount > 0"
-        @click="clearAllPoop"
-        class="habitat-visual__button"
-      >
-        Clear All Poop ({{ poopCount }})
-      </button>
-      <button
-        @click="addTestPoop"
-        class="habitat-visual__button habitat-visual__button--secondary"
-      >
-        Add Test Poop
-      </button>
-    </div>
   </div>
 </template>
 
@@ -128,9 +117,9 @@ const habitatConditions = useHabitatConditions()
 const suppliesStore = useSuppliesStore()
 
 const HABITAT_SIZES = {
-  small: { width: 10, height: 8, cellSize: 80 },
-  medium: { width: 14, height: 10, cellSize: 80 },
-  large: { width: 18, height: 12, cellSize: 80 }
+  small: { width: 10, height: 8, cellSize: 60 },
+  medium: { width: 14, height: 10, cellSize: 60 },
+  large: { width: 18, height: 12, cellSize: 60 }
 }
 
 const gridWidth = computed(() => HABITAT_SIZES[props.habitatSize].width)
@@ -155,6 +144,12 @@ const subgridStyle = computed(() => ({
 const gridCells = ref<GridCell[]>([])
 const subgridItems = ref<SubgridItem[]>([])
 const poopCount = computed(() => subgridItems.value.filter(i => i.type === 'poop').length)
+
+// Drag-and-drop state
+const isDragOver = ref(false)
+const draggedItemId = ref<string | null>(null)
+const draggedItemSize = ref<{ width: number; height: number }>({ width: 1, height: 1 })
+const hoverCell = ref<{ x: number; y: number } | null>(null)
 
 function initializeGrid() {
   gridCells.value = []
@@ -281,7 +276,110 @@ function getSubgridEmoji(type: string): string {
   }
 }
 
+// Methods to be called from parent
+function setDraggedItem(itemId: string, size: { width: number; height: number }) {
+  draggedItemId.value = itemId
+  draggedItemSize.value = size
+}
+
+function clearDraggedItem() {
+  draggedItemId.value = null
+  draggedItemSize.value = { width: 1, height: 1 }
+  isDragOver.value = false
+  hoverCell.value = null
+}
+
+// Drag-and-drop handlers
+function handleDragOver(event: DragEvent, cell: GridCell) {
+  if (props.readOnly) return
+
+  event.preventDefault()
+  isDragOver.value = true
+  hoverCell.value = { x: cell.x, y: cell.y }
+
+  // Set drop effect based on validity
+  if (canPlaceAt(cell.x, cell.y)) {
+    event.dataTransfer!.dropEffect = 'move'
+  } else {
+    event.dataTransfer!.dropEffect = 'none'
+  }
+}
+
+function handleDragLeave() {
+  isDragOver.value = false
+  hoverCell.value = null
+}
+
+function handleDrop(event: DragEvent, cell: GridCell) {
+  if (props.readOnly) return
+
+  event.preventDefault()
+  isDragOver.value = false
+  hoverCell.value = null
+
+  const itemData = event.dataTransfer!.getData('text/plain')
+  if (!itemData) return
+
+  let itemId: string
+  try {
+    const data = JSON.parse(itemData)
+    itemId = data.itemId
+  } catch {
+    itemId = itemData
+  }
+
+  if (!canPlaceAt(cell.x, cell.y)) {
+    console.warn('Cannot place item at this location')
+    return
+  }
+
+  // Add item to habitat at this position
+  placeItemAt(itemId, cell.x, cell.y)
+
+  // Reset drag state
+  draggedItemId.value = null
+  draggedItemSize.value = { width: 1, height: 1 }
+}
+
+function isHoverCell(cell: GridCell): boolean {
+  if (!hoverCell.value) return false
+  return cell.x === hoverCell.value.x && cell.y === hoverCell.value.y
+}
+
+function canPlaceAt(x: number, y: number): boolean {
+  if (!draggedItemId.value) return false
+
+  const size = draggedItemSize.value
+
+  // Check bounds
+  if (x + size.width > gridWidth.value || y + size.height > gridHeight.value) {
+    return false
+  }
+
+  // With stacking anarchy, we allow placement anywhere within bounds
+  // No collision detection needed for Phase 2
+  return true
+}
+
+function placeItemAt(itemId: string, x: number, y: number) {
+  // Add item to habitat from inventory
+  const success = habitatConditions.addItemToHabitat(itemId)
+
+  if (success) {
+    console.log(`Placed ${itemId} at (${x}, ${y})`)
+    // TODO: Store position in habitatConditions when store is updated
+    updateGridCells()
+  } else {
+    console.warn(`Failed to place ${itemId} at (${x}, ${y})`)
+  }
+}
+
 onMounted(() => {
+  // Initialize supplies catalog if not already loaded
+  if (!suppliesStore.catalogLoaded) {
+    suppliesStore.initializeCatalog()
+  }
+
   initializeGrid()
   updateGridCells()
 })
@@ -291,6 +389,15 @@ watch(
   () => updateGridCells(),
   { deep: true }
 )
+
+// Expose functions for parent component
+defineExpose({
+  addTestPoop,
+  clearAllPoop,
+  poopCount,
+  setDraggedItem,
+  clearDraggedItem
+})
 </script>
 
 <style>
@@ -351,6 +458,20 @@ watch(
 
 .grid-cell--accessible {
   cursor: default;
+}
+
+.grid-cell--drop-target {
+  background: rgba(16, 185, 129, 0.3);
+  border-color: var(--color-success);
+  border-width: 2px;
+  box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.3);
+}
+
+.grid-cell--drop-invalid {
+  background: rgba(239, 68, 68, 0.3);
+  border-color: var(--color-error);
+  border-width: 2px;
+  cursor: not-allowed;
 }
 
 .grid-item {
@@ -437,40 +558,5 @@ watch(
   inline-size: 100%;
   block-size: 100%;
   pointer-events: none;
-}
-
-.habitat-visual__controls {
-  display: flex;
-  gap: var(--space-3);
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.habitat-visual__button {
-  padding: var(--space-2) var(--space-4);
-  background: var(--color-primary);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.habitat-visual__button:hover {
-  background: var(--color-primary-hover);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.habitat-visual__button--secondary {
-  background: var(--color-bg-tertiary);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-}
-
-.habitat-visual__button--secondary:hover {
-  background: var(--color-bg-secondary);
 }
 </style>

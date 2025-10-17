@@ -3,13 +3,59 @@
     <h2>Habitat Conditions (Phase 1)</h2>
 
     <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
-    <!-- Visual Habitat -->
+    <!-- Visual Habitat with Items Sidebar -->
     <div class="panel panel--full-width">
       <div class="panel__header">
-        <h3>Habitat Visual (FPO)</h3>
+        <h3>Habitat Visual</h3>
       </div>
       <div class="panel__content">
-        <HabitatVisual :show-grid="true" />
+        <div class="habitat-layout">
+          <div class="habitat-layout__main">
+            <HabitatVisual ref="habitatVisualRef" :show-grid="true" habitat-size="medium" />
+          </div>
+          <div class="habitat-layout__sidebar">
+            <h4 class="habitat-layout__sidebar-title">Inventory</h4>
+            <div class="habitat-layout__items">
+              <div
+                v-for="item in availableHabitatItems"
+                :key="item.id"
+                class="draggable-item-card"
+                draggable="true"
+                @dragstart="handleDragStart($event, item)"
+                @dragend="handleDragEnd"
+              >
+                <span class="draggable-item-card__emoji">{{ item.emoji }}</span>
+                <span class="draggable-item-card__name">{{ item.name }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test Controls Panel -->
+    <div class="panel panel--compact">
+      <div class="panel__header">
+        <h3>Test Controls</h3>
+      </div>
+      <div class="panel__content">
+        <div class="test-controls">
+          <Button
+            @click="addTestPoop"
+            variant="secondary"
+            size="sm"
+          >
+            Add Test Poop
+          </Button>
+          <Button
+            @click="clearAllPoop"
+            variant="primary"
+            size="sm"
+            :disabled="!habitatVisualRef || habitatVisualRef.poopCount === 0"
+          >
+            Clear All Poop{{ habitatVisualRef && habitatVisualRef.poopCount > 0 ? ` (${habitatVisualRef.poopCount})` : '' }}
+          </Button>
+        </div>
       </div>
     </div>
 
@@ -173,34 +219,6 @@
       </div>
     </div>
 
-    <!-- Habitat Items Panel -->
-    <div class="panel panel--compact">
-      <div class="panel__header">
-        <h3>Habitat Items (FPO)</h3>
-        <span class="text-label text-muted">{{ habitatItemsWithDetails.length }} items</span>
-      </div>
-      <div class="panel__content">
-        <div v-if="habitatItemsWithDetails.length > 0" class="habitat-items-grid">
-          <div v-for="item in habitatItemsWithDetails" :key="item.id" class="habitat-item-card">
-            <div class="habitat-item-card__header">
-              <span class="habitat-item-card__emoji">{{ item.emoji }}</span>
-              <span class="habitat-item-card__name">{{ item.name }}</span>
-            </div>
-            <p class="habitat-item-card__description">{{ item.description }}</p>
-            <Button
-              @click="handleRemoveFromHabitat(item.id)"
-              variant="secondary"
-              size="sm"
-              full-width
-              class="w-full"
-            >
-              Move to Inventory
-            </Button>
-          </div>
-        </div>
-        <p v-else class="text-muted text-center">No items in habitat yet</p>
-      </div>
-    </div>
     </div>
 
     <!-- No Active Guinea Pigs -->
@@ -213,7 +231,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useInventoryStore } from '../../stores/inventoryStore'
@@ -228,21 +246,27 @@ const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 
-const hasActiveGuineaPigs = computed(() => {
-  return guineaPigStore.activeGuineaPigs.length > 0
+// Ref to HabitatVisual component
+const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
+
+// Initialize supplies catalog on mount
+onMounted(() => {
+  if (!suppliesStore.catalogLoaded) {
+    suppliesStore.initializeCatalog()
+  }
 })
 
-// Get habitat items with full details from supplies store
-const habitatItemsWithDetails = computed(() => {
-  return habitat.habitatItems.map(itemId => {
-    const item = suppliesStore.getItemById(itemId)
-    return {
-      id: itemId,
-      name: item?.name || 'Unknown Item',
-      description: item?.description || '',
-      emoji: item?.emoji || '📦'
-    }
-  })
+// Test control handlers
+function addTestPoop() {
+  habitatVisualRef.value?.addTestPoop()
+}
+
+function clearAllPoop() {
+  habitatVisualRef.value?.clearAllPoop()
+}
+
+const hasActiveGuineaPigs = computed(() => {
+  return guineaPigStore.activeGuineaPigs.length > 0
 })
 
 // Hay types list (data now managed by inventory store)
@@ -340,17 +364,72 @@ function handleGiveHayHandful() {
   habitat.consumeHayHandful()
 }
 
-function handleRemoveFromHabitat(itemId: string) {
-  const success = habitat.removeItemFromHabitat(itemId)
-  if (success) {
-    console.log(`Moved ${itemId} from habitat to inventory`)
-  }
-}
-
 function getConditionClass(value: number): string {
   if (value >= 80) return 'condition-value--good'
   if (value >= 40) return 'condition-value--warning'
   return 'condition-value--critical'
+}
+
+// Available habitat items from user's inventory
+const availableHabitatItems = computed(() => {
+  // Get habitat items from inventory that are NOT already placed in habitat
+  return inventoryStore.items
+    .filter(invItem => {
+      const item = suppliesStore.getItemById(invItem.itemId)
+      // Only show habitat items that aren't already placed
+      return item?.category === 'habitat_item' && !habitat.habitatItems.includes(invItem.itemId)
+    })
+    .map(invItem => {
+      const item = suppliesStore.getItemById(invItem.itemId)
+      return {
+        id: invItem.itemId,
+        name: item?.name || 'Unknown',
+        emoji: item?.emoji || '📦',
+        size: getItemSize(item),
+        quantity: invItem.quantity
+      }
+    })
+})
+
+function getItemSize(item: any): { width: number; height: number } {
+  const size = item.stats?.size
+  if (size === 'small') return { width: 1, height: 1 }
+  if (size === 'medium') return { width: 2, height: 1 }
+  if (size === 'large') return { width: 2, height: 2 }
+  return { width: 1, height: 1 }
+}
+
+// Drag handlers
+function handleDragStart(event: DragEvent, item: any) {
+  if (!event.dataTransfer) return
+
+  // Store item data for drop handler
+  const dragData = {
+    itemId: item.id,
+    size: item.size
+  }
+
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+
+  // Notify HabitatVisual about the drag
+  if (habitatVisualRef.value) {
+    habitatVisualRef.value.setDraggedItem(item.id, item.size)
+  }
+
+  // Visual feedback
+  const target = event.target as HTMLElement
+  target.style.opacity = '0.5'
+}
+
+function handleDragEnd(event: DragEvent) {
+  const target = event.target as HTMLElement
+  target.style.opacity = '1'
+
+  // Clear dragged item
+  if (habitatVisualRef.value) {
+    habitatVisualRef.value.clearDraggedItem()
+  }
 }
 </script>
 
@@ -456,40 +535,107 @@ function getConditionClass(value: number): string {
   margin-block-start: var(--space-2);
 }
 
-.habitat-items-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+/* Habitat Layout with Sidebar */
+.habitat-layout {
+  display: flex;
   gap: var(--space-4);
+  align-items: stretch;
 }
 
-.habitat-item-card {
+.habitat-layout__main {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.habitat-layout__sidebar {
+  inline-size: 140px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-4);
-  background-color: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
+  background: rgba(0, 0, 0, 0.08);
   border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
+  align-self: stretch;
 }
 
-.habitat-item-card__header {
+.habitat-layout__sidebar-title {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+  margin-block-end: var(--space-1);
+}
+
+.habitat-layout__items {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-block-size: 800px;
+  overflow-y: auto;
+  padding-inline-end: var(--space-2);
+  margin-inline-end: calc(var(--space-2) * -1);
+}
+
+.habitat-layout__items::-webkit-scrollbar {
+  inline-size: 6px;
+}
+
+.habitat-layout__items::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: var(--radius-full);
+}
+
+.habitat-layout__items::-webkit-scrollbar-thumb {
+  background: #ec4899;
+  border-radius: var(--radius-full);
+}
+
+.habitat-layout__items::-webkit-scrollbar-thumb:hover {
+  background: #db2777;
+}
+
+.draggable-item-card {
+  display: flex;
+  flex-direction: column;
   align-items: center;
   gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--color-border);
+  cursor: grab;
+  transition: all 0.2s ease;
 }
 
-.habitat-item-card__emoji {
-  font-size: var(--font-size-2xl);
+.draggable-item-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-.habitat-item-card__name {
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-base);
+.draggable-item-card:active {
+  cursor: grabbing;
 }
 
-.habitat-item-card__description {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  margin: 0;
+.draggable-item-card__emoji {
+  font-size: var(--font-size-3xl);
+}
+
+.draggable-item-card__name {
+  font-size: var(--font-size-xs);
+  text-align: center;
+  font-weight: var(--font-weight-medium);
+}
+
+.test-controls {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
 }
 </style>

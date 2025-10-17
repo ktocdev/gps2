@@ -379,4 +379,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     removeItemFromHabitat,
     initializeStarterHabitat
   }
+}, {
+  persist: {
+    key: 'gps2-habitat-conditions',
+    storage: localStorage
+  }
 })
