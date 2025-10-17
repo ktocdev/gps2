@@ -3,6 +3,16 @@
     <h2>Habitat Conditions (Phase 1)</h2>
 
     <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
+    <!-- Visual Habitat -->
+    <div class="panel panel--full-width">
+      <div class="panel__header">
+        <h3>Habitat Visual (FPO)</h3>
+      </div>
+      <div class="panel__content">
+        <HabitatVisual :show-grid="true" />
+      </div>
+    </div>
+
     <!-- Condition Management Panel -->
     <div class="panel panel--compact panel--accent">
       <div class="panel__header">
@@ -211,6 +221,7 @@ import { useSuppliesStore } from '../../stores/suppliesStore'
 import Button from '../basic/Button.vue'
 import SliderField from '../basic/SliderField.vue'
 import Select from '../basic/Select.vue'
+import HabitatVisual from '../game/HabitatVisual.vue'
 
 const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
