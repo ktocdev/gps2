@@ -169,11 +169,18 @@ export interface ItemSortOptions {
 // Inventory Types
 // ============================================================================
 
-export interface InventoryItem {
-  itemId: string
-  quantity: number
+export interface ItemInstance {
+  instanceId: string // Unique ID for this specific instance
   acquiredAt: number // timestamp
   lastUsedAt?: number // timestamp
+  isOpened?: boolean // For bags of hay/bedding - once opened, cannot be returned
+  isPlacedInHabitat?: boolean // If placed in habitat, cannot be returned
+}
+
+export interface InventoryItem {
+  itemId: string
+  instances: ItemInstance[] // Array of individual item instances
+  quantity: number // Computed from instances.length
 }
 
 export interface InventoryState {
@@ -194,4 +201,15 @@ export interface PurchaseResult {
     totalCost: number
   }[]
   remainingBalance?: number
+}
+
+export interface SellBackResult {
+  success: boolean
+  message: string
+  itemsSold?: {
+    itemId: string
+    quantity: number
+    totalRefund: number
+  }[]
+  newBalance?: number
 }

@@ -18,6 +18,12 @@
 
     <div v-if="owned > 0" class="supply-item-card__owned">
       <Badge variant="secondary" size="sm">Owned: {{ owned }}</Badge>
+      <Badge v-if="returnable > 0" variant="success" size="sm">
+        Returnable: {{ returnable }}
+      </Badge>
+      <Badge v-if="owned > 0 && returnable === 0" variant="warning" size="sm">
+        {{ nonReturnableReason }}
+      </Badge>
     </div>
 
     <div class="supply-item-card__purchase">
@@ -42,6 +48,16 @@
       >
         Buy ${{ totalCost.toFixed(2) }}
       </Button>
+
+      <Button
+        v-if="returnable > 0"
+        variant="danger"
+        size="sm"
+        :disabled="!canSellBack"
+        @click="$emit('sellback', item.id)"
+      >
+        Sell ${{ sellBackTotal.toFixed(2) }}
+      </Button>
     </div>
   </div>
 </template>
@@ -57,15 +73,22 @@ interface Props {
   quantity: number
   currentBalance: number
   owned?: number
+  returnable?: number
+  isOpened?: boolean
+  placedCount?: number
 }
 
 interface Emits {
   (e: 'purchase', itemId: string): void
+  (e: 'sellback', itemId: string): void
   (e: 'update:quantity', itemId: string, quantity: number): void
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  owned: 0
+  owned: 0,
+  returnable: 0,
+  isOpened: false,
+  placedCount: 0
 })
 
 const emit = defineEmits<Emits>()
@@ -76,6 +99,25 @@ const totalCost = computed(() => {
 
 const canAfford = computed(() => {
   return props.currentBalance >= totalCost.value
+})
+
+const sellBackTotal = computed(() => {
+  // 100% refund
+  return props.item.basePrice * props.quantity
+})
+
+const canSellBack = computed(() => {
+  return props.returnable >= props.quantity
+})
+
+const nonReturnableReason = computed(() => {
+  if (props.isOpened && (props.item.category === 'hay' || props.item.category === 'bedding')) {
+    return 'Opened'
+  }
+  if (props.placedCount > 0) {
+    return 'Placed'
+  }
+  return 'Non-returnable'
 })
 
 const handleQuantityChange = (event: Event) => {
@@ -131,6 +173,9 @@ const handleQuantityChange = (event: Event) => {
 
 .supply-item-card__owned {
   margin-block-start: var(--space-1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .supply-item-card__purchase {
@@ -138,6 +183,7 @@ const handleQuantityChange = (event: Event) => {
   gap: var(--space-2);
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   margin-block-start: var(--space-2);
   padding-block-start: var(--space-2);
   border-block-start: 1px solid var(--color-border-light);
