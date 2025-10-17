@@ -304,18 +304,15 @@ const guineaPigOptions = computed(() => {
     }
   }
 
-  return [
-    { label: 'None', value: '' },
-    ...allGuineaPigs.map(gp => {
-      const isInSanctuary = petStoreManager.sanctuaryGuineaPigs.some(s => s.id === gp.id)
-      const isActive = activeGuineaPigs.some(a => a.id === gp.id)
-      const prefix = isInSanctuary ? '✨ ' : isActive ? '🎮 ' : ''
-      return {
-        label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
-        value: gp.id
-      }
-    })
-  ]
+  return allGuineaPigs.map(gp => {
+    const isInSanctuary = petStoreManager.sanctuaryGuineaPigs.some(s => s.id === gp.id)
+    const isActive = activeGuineaPigs.some(a => a.id === gp.id)
+    const prefix = isInSanctuary ? '✨ ' : isActive ? '🎮 ' : ''
+    return {
+      label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
+      value: gp.id
+    }
+  })
 })
 
 const guineaPig2Options = computed(() => {
@@ -335,20 +332,17 @@ const guineaPig2Options = computed(() => {
     }
   }
 
-  return [
-    { label: 'None', value: '' },
-    ...allGuineaPigs
-      .filter(gp => gp.id !== selectedGuineaPig1.value)
-      .map(gp => {
-        const isInSanctuary = petStoreManager.sanctuaryGuineaPigs.some(s => s.id === gp.id)
-        const isActive = activeGuineaPigs.some(a => a.id === gp.id)
-        const prefix = isInSanctuary ? '✨ ' : isActive ? '🎮 ' : ''
-        return {
-          label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
-          value: gp.id
-        }
-      })
-  ]
+  return allGuineaPigs
+    .filter(gp => gp.id !== selectedGuineaPig1.value)
+    .map(gp => {
+      const isInSanctuary = petStoreManager.sanctuaryGuineaPigs.some(s => s.id === gp.id)
+      const isActive = activeGuineaPigs.some(a => a.id === gp.id)
+      const prefix = isInSanctuary ? '✨ ' : isActive ? '🎮 ' : ''
+      return {
+        label: `${prefix}${getGenderEmoji(gp.gender)} ${gp.name} (${gp.breed})`,
+        value: gp.id
+      }
+    })
 })
 
 const canStartSession = computed(() => {
