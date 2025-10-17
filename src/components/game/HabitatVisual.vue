@@ -415,11 +415,14 @@ function canPlaceAt(x: number, y: number): boolean {
     return false
   }
 
-  // Water bottles can only be on edges (x=0 or x=gridWidth-1)
+  // Water bottles can only be on edges (left, right, top, or bottom)
   if (draggedItemId.value.includes('water_bottle')) {
     const isLeftEdge = x === 0
     const isRightEdge = x === gridWidth.value - size.width
-    if (!isLeftEdge && !isRightEdge) {
+    const isTopEdge = y === 0
+    const isBottomEdge = y === gridHeight.value - size.height
+
+    if (!isLeftEdge && !isRightEdge && !isTopEdge && !isBottomEdge) {
       return false
     }
   }

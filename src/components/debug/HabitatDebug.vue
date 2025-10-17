@@ -372,12 +372,13 @@ function getConditionClass(value: number): string {
 
 // Available habitat items from user's inventory
 const availableHabitatItems = computed(() => {
-  // Get habitat items from inventory that are NOT already placed in habitat
+  // Get habitat items and food from inventory that are NOT already placed in habitat
   return inventoryStore.items
     .filter(invItem => {
       const item = suppliesStore.getItemById(invItem.itemId)
-      // Only show habitat items that aren't already placed
-      return item?.category === 'habitat_item' && !habitat.habitatItems.includes(invItem.itemId)
+      // Show habitat items and food items (consumables) that aren't already placed
+      const isPlaceable = item?.category === 'habitat_item' || item?.category === 'food'
+      return isPlaceable && !habitat.habitatItems.includes(invItem.itemId)
     })
     .map(invItem => {
       const item = suppliesStore.getItemById(invItem.itemId)

@@ -349,6 +349,26 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     // Add starter items to habitat without checking inventory
     habitatItems.value = [...starterItemIds]
 
+    // Set default positions for starter items (centered and spaced apart)
+    // Assuming medium habitat: 14x10 grid
+    const defaultPositions: { [key: string]: { x: number; y: number } } = {
+      'habitat_plastic_igloo': { x: 3, y: 7 },         // Lower-left - 3 from left, 7 from top
+      'habitat_ceramic_bowl': { x: 9, y: 4 },          // Center-right - 9 from left, 4 from top
+      'habitat_basic_hay_rack': { x: 11, y: 4 },       // Right of dish - 11 from left, 4 from top
+      'habitat_basic_water_bottle': { x: 0, y: 0 }     // Top-left corner
+    }
+
+    // Apply default positions
+    starterItemIds.forEach(itemId => {
+      if (defaultPositions[itemId]) {
+        itemPositions.value.set(itemId, defaultPositions[itemId])
+        console.log(`Setting starter position for ${itemId}:`, defaultPositions[itemId])
+      } else {
+        console.warn(`No default position defined for ${itemId}`)
+      }
+    })
+    console.log('Item positions after init:', itemPositions.value)
+
     // Mark them as placed in habitat
     const inventoryStore = useInventoryStore()
     starterItemIds.forEach(itemId => {
