@@ -477,6 +477,10 @@ img {
 .p-6 { padding: var(--space-6); }
 .p-8 { padding: var(--space-8); }
 
+.w-full {
+  inline-size: auto;
+}
+
 /* Button Group Utilities */
 .button-group {
   display: flex;

@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { useSuppliesStore } from './suppliesStore'
+import { useInventoryStore } from './inventoryStore'
 
 // Types
 interface HabitatSnapshot {
@@ -17,13 +19,6 @@ interface CurrentBedding {
   decayRate: number
   color?: string
   stimulationBonus?: number
-}
-
-interface BeddingInventory {
-  cheap: number
-  average: number
-  premium: number
-  colorfulPremium: { [color: string]: number }
 }
 
 interface CurrentHayBag {
@@ -66,35 +61,21 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   const lastWaterRefill = ref(Date.now())
   const conditionHistory = ref<HabitatSnapshot[]>([])
 
-  // Resource management
+  // Resource management (now connected to Supplies Store & Inventory)
   const currentBedding = ref<CurrentBedding>({
-    type: 'Average Bedding',
+    type: 'None',
     quality: 'average',
     absorbency: 1.0,
     decayRate: 1.0
   })
 
-  const beddingInventory = ref<BeddingInventory>({
-    cheap: 0,
-    average: 3,
-    premium: 0,
-    colorfulPremium: {}
-  })
-
-  const currentHayBag = ref<CurrentHayBag | null>({
-    type: 'Timothy Hay',
-    handfulsRemaining: 20,
-    bagId: 'hay-001'
-  })
+  const currentHayBag = ref<CurrentHayBag | null>(null)
 
   const consumptionRates = ref<ConsumptionData>({
     beddingUsageRate: 0,
     hayConsumptionRate: 0,
     waterConsumptionRate: 0
   })
-
-  // Debug testing flags
-  const freeResourcesEnabled = ref(false)
 
   // Alerts and notifications
   const activeAlerts = ref<HabitatAlert[]>([])
@@ -103,6 +84,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     warningThreshold: 40,
     criticalThreshold: 20
   })
+
+  // Habitat Items (items currently placed in the habitat)
+  const habitatItems = ref<string[]>([])
 
   // Computed properties
   const overallCondition = computed(() => {
@@ -136,60 +120,43 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     recordSnapshot()
   }
 
-  function refreshBedding(beddingType?: 'cheap' | 'average' | 'premium' | 'colorful-premium', color?: string) {
-    const type = beddingType || currentBedding.value.quality
+  function refreshBedding(itemId: string) {
+    const inventoryStore = useInventoryStore()
+    const suppliesStore = useSuppliesStore()
 
-    // Check inventory (unless free resources enabled)
-    if (!freeResourcesEnabled.value) {
-      if (type === 'colorful-premium' && color) {
-        if ((beddingInventory.value.colorfulPremium[color] || 0) <= 0) {
-          return false
-        }
-        beddingInventory.value.colorfulPremium[color]--
-      } else if (type !== 'colorful-premium') {
-        if (beddingInventory.value[type] <= 0) {
-          return false
-        }
-        beddingInventory.value[type]--
-      }
+    // Check if supplies catalog is loaded
+    if (!suppliesStore.catalogLoaded) {
+      suppliesStore.initializeCatalog()
     }
 
-    // Apply bedding type
-    switch (type) {
-      case 'cheap':
-        currentBedding.value = {
-          type: 'Cheap Bedding',
-          quality: 'cheap',
-          absorbency: 0.8,
-          decayRate: 1.2
-        }
-        break
-      case 'average':
-        currentBedding.value = {
-          type: 'Average Bedding',
-          quality: 'average',
-          absorbency: 1.0,
-          decayRate: 1.0
-        }
-        break
-      case 'premium':
-        currentBedding.value = {
-          type: 'Premium Bedding',
-          quality: 'premium',
-          absorbency: 1.3,
-          decayRate: 0.7
-        }
-        break
-      case 'colorful-premium':
-        currentBedding.value = {
-          type: `Colorful Premium Bedding (${color || 'Blue'})`,
-          quality: 'colorful-premium',
-          absorbency: 1.3,
-          decayRate: 0.7,
-          color: color || 'blue',
-          stimulationBonus: 7.5
-        }
-        break
+    // Get bedding item from supplies store
+    const beddingItem = suppliesStore.getItemById(itemId)
+    if (!beddingItem || beddingItem.category !== 'bedding') {
+      console.warn(`Invalid bedding item: ${itemId}`)
+      return false
+    }
+
+    // Check inventory
+    if (inventoryStore.getItemQuantity(itemId) <= 0) {
+      console.warn(`No ${beddingItem.name} in inventory`)
+      return false
+    }
+
+    // Mark bedding as opened (cannot be returned)
+    inventoryStore.markAsOpened(itemId, 1)
+
+    // Use one bedding from inventory
+    inventoryStore.useItem(itemId, 1)
+
+    // Apply bedding stats from supplies store
+    const stats = beddingItem.stats
+    currentBedding.value = {
+      type: beddingItem.name,
+      quality: beddingItem.quality as 'cheap' | 'average' | 'premium' | 'colorful-premium',
+      absorbency: stats?.absorbency || 1.0,
+      decayRate: stats?.decayRate || 1.0,
+      color: beddingItem.quality === 'premium' && beddingItem.tags?.includes('color') ? beddingItem.name.toLowerCase() : undefined,
+      stimulationBonus: stats?.stimulationBoost
     }
 
     beddingFreshness.value = 100
@@ -198,31 +165,53 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     return true
   }
 
-  function refillHay(handfuls: number = 20) {
-    if (!freeResourcesEnabled.value && !currentHayBag.value) {
+  function refillHay(itemId: string) {
+    const inventoryStore = useInventoryStore()
+    const suppliesStore = useSuppliesStore()
+
+    // Check if supplies catalog is loaded
+    if (!suppliesStore.catalogLoaded) {
+      suppliesStore.initializeCatalog()
+    }
+
+    // Get hay item from supplies store
+    const hayItem = suppliesStore.getItemById(itemId)
+    if (!hayItem || hayItem.category !== 'hay') {
+      console.warn(`Invalid hay item: ${itemId}`)
       return false
     }
 
+    // Check inventory
+    if (inventoryStore.getItemQuantity(itemId) <= 0) {
+      console.warn(`No ${hayItem.name} in inventory`)
+      return false
+    }
+
+    // Mark hay as opened (cannot be returned)
+    inventoryStore.markAsOpened(itemId, 1)
+
+    // Use one hay bag from inventory
+    inventoryStore.useItem(itemId, 1)
+
+    // All hay bags have 20 handfuls
+    const handfuls = 20
+
     if (!currentHayBag.value) {
       currentHayBag.value = {
-        type: 'Timothy Hay',
+        type: hayItem.name,
         handfulsRemaining: handfuls,
-        bagId: `hay-${Date.now()}`
+        bagId: `${itemId}-${Date.now()}`
       }
     } else {
       // No limit - can add unlimited handfuls
       currentHayBag.value.handfulsRemaining += handfuls
+      currentHayBag.value.type = hayItem.name
     }
 
     hayFreshness.value = 100
     lastHayRefill.value = Date.now()
     recordSnapshot()
     return true
-  }
-
-  function useMiniHayBale() {
-    // Mini-hay bale adds 3 handfuls
-    return refillHay(3)
   }
 
   function refillWater() {
@@ -282,21 +271,6 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     recordSnapshot()
   }
 
-  function toggleFreeResources() {
-    freeResourcesEnabled.value = !freeResourcesEnabled.value
-  }
-
-  function addBeddingToInventory(type: 'cheap' | 'average' | 'premium', quantity: number = 1) {
-    beddingInventory.value[type] += quantity
-  }
-
-  function addColorfulBeddingToInventory(color: string, quantity: number = 1) {
-    if (!beddingInventory.value.colorfulPremium[color]) {
-      beddingInventory.value.colorfulPremium[color] = 0
-    }
-    beddingInventory.value.colorfulPremium[color] += quantity
-  }
-
   function resetHabitatConditions() {
     // Reset all conditions to 100%
     cleanliness.value = 100
@@ -318,6 +292,57 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     recordSnapshot()
   }
 
+  function addItemToHabitat(itemId: string) {
+    const inventoryStore = useInventoryStore()
+
+    // Check if item is in inventory
+    if (!inventoryStore.hasItem(itemId)) {
+      console.warn(`Item ${itemId} not found in inventory`)
+      return false
+    }
+
+    // Check if already in habitat
+    if (habitatItems.value.includes(itemId)) {
+      console.warn(`Item ${itemId} already in habitat`)
+      return false
+    }
+
+    // Mark as placed in habitat (cannot be returned to store)
+    inventoryStore.markAsPlacedInHabitat(itemId, 1)
+
+    // Add to habitat
+    habitatItems.value.push(itemId)
+    return true
+  }
+
+  function removeItemFromHabitat(itemId: string) {
+    const index = habitatItems.value.indexOf(itemId)
+    if (index === -1) {
+      console.warn(`Item ${itemId} not found in habitat`)
+      return false
+    }
+
+    const inventoryStore = useInventoryStore()
+
+    // Remove placement flag
+    inventoryStore.unmarkAsPlacedInHabitat(itemId, 1)
+
+    // Remove from habitat
+    habitatItems.value.splice(index, 1)
+    return true
+  }
+
+  function initializeStarterHabitat(starterItemIds: string[]) {
+    // Add starter items to habitat without checking inventory
+    habitatItems.value = [...starterItemIds]
+
+    // Mark them as placed in habitat
+    const inventoryStore = useInventoryStore()
+    starterItemIds.forEach(itemId => {
+      inventoryStore.markAsPlacedInHabitat(itemId, 1)
+    })
+  }
+
   return {
     // State
     cleanliness,
@@ -330,12 +355,11 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     lastWaterRefill,
     conditionHistory,
     currentBedding,
-    beddingInventory,
     currentHayBag,
     consumptionRates,
-    freeResourcesEnabled,
     activeAlerts,
     notificationSettings,
+    habitatItems,
 
     // Computed
     overallCondition,
@@ -346,14 +370,13 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     cleanCage,
     refreshBedding,
     refillHay,
-    useMiniHayBale,
     refillWater,
     consumeHayHandful,
     updateCondition,
-    toggleFreeResources,
-    addBeddingToInventory,
-    addColorfulBeddingToInventory,
     recordSnapshot,
-    resetHabitatConditions
+    resetHabitatConditions,
+    addItemToHabitat,
+    removeItemFromHabitat,
+    initializeStarterHabitat
   }
 })

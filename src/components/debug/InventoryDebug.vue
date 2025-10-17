@@ -205,7 +205,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { usePlayerProgression } from '../../stores/playerProgression'
 import { useInventoryStore } from '../../stores/inventoryStore'
 import { useSuppliesStore } from '../../stores/suppliesStore'
@@ -215,11 +215,6 @@ import Badge from '../basic/Badge.vue'
 const playerProgression = usePlayerProgression()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
-
-// Migrate old inventory data on mount
-onMounted(() => {
-  inventoryStore.migrateOldData()
-})
 
 // Get inventory items with details
 const consumablesWithDetails = computed(() => {

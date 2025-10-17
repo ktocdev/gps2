@@ -25,55 +25,20 @@ export const useInventoryStore = defineStore('inventory', {
 
   getters: {
     // ========================================================================
-    // Migration Helper - ensures old data has instances array
-    // ========================================================================
-
-    migratedItems: (state): InventoryItem[] => {
-      return state.items.map(item => {
-        // If item doesn't have instances array, migrate it
-        if (!item.instances) {
-          const oldItem = item as any
-          const instances = []
-
-          // Create instances from old quantity
-          for (let i = 0; i < (oldItem.quantity || 0); i++) {
-            instances.push({
-              instanceId: generateInstanceId(),
-              acquiredAt: oldItem.acquiredAt || Date.now(),
-              lastUsedAt: oldItem.lastUsedAt,
-              isOpened: oldItem.isOpened || false,
-              isPlacedInHabitat: oldItem.placedInHabitat && i < oldItem.placedInHabitat
-            })
-          }
-
-          return {
-            itemId: item.itemId,
-            instances,
-            quantity: instances.length
-          }
-        }
-        return item
-      })
-    },
-    // ========================================================================
     // Item Queries
     // ========================================================================
 
-    getItemQuantity() {
-      return (itemId: string): number => {
-        const inventoryItem = this.migratedItems.find((item) => item.itemId === itemId)
-        return inventoryItem?.instances.length || 0
-      }
+    getItemQuantity: (state) => (itemId: string): number => {
+      const inventoryItem = state.items.find((item) => item.itemId === itemId)
+      return inventoryItem?.instances.length || 0
     },
 
-    hasItem() {
-      return (itemId: string): boolean => {
-        return this.migratedItems.some((item) => item.itemId === itemId && item.instances.length > 0)
-      }
+    hasItem: (state) => (itemId: string): boolean => {
+      return state.items.some((item) => item.itemId === itemId && item.instances.length > 0)
     },
 
-    allItems(): InventoryItem[] {
-      return this.migratedItems.filter((item) => item.instances.length > 0)
+    allItems: (state): InventoryItem[] => {
+      return state.items.filter((item) => item.instances.length > 0)
     },
 
     totalItemCount(): number {
@@ -106,7 +71,7 @@ export const useInventoryStore = defineStore('inventory', {
 
     getOpenedCount() {
       return (itemId: string): number => {
-        const inventoryItem = this.migratedItems.find((item) => item.itemId === itemId)
+        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
         if (!inventoryItem) return 0
         return inventoryItem.instances.filter(inst => inst.isOpened).length
       }
@@ -114,7 +79,7 @@ export const useInventoryStore = defineStore('inventory', {
 
     getUnopenedCount() {
       return (itemId: string): number => {
-        const inventoryItem = this.migratedItems.find((item) => item.itemId === itemId)
+        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
         if (!inventoryItem) return 0
         return inventoryItem.instances.filter(inst => !inst.isOpened).length
       }
@@ -122,7 +87,7 @@ export const useInventoryStore = defineStore('inventory', {
 
     getPlacedCount() {
       return (itemId: string): number => {
-        const inventoryItem = this.migratedItems.find((item) => item.itemId === itemId)
+        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
         if (!inventoryItem) return 0
         return inventoryItem.instances.filter(inst => inst.isPlacedInHabitat).length
       }
@@ -130,7 +95,7 @@ export const useInventoryStore = defineStore('inventory', {
 
     getUnplacedCount() {
       return (itemId: string): number => {
-        const inventoryItem = this.migratedItems.find((item) => item.itemId === itemId)
+        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
         if (!inventoryItem) return 0
         return inventoryItem.instances.filter(inst => !inst.isPlacedInHabitat).length
       }
@@ -155,7 +120,7 @@ export const useInventoryStore = defineStore('inventory', {
 
     getReturnableQuantity() {
       return (itemId: string): number => {
-        const inventoryItem = this.migratedItems.find((item) => item.itemId === itemId)
+        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
         if (!inventoryItem) return 0
 
         // Count instances that are not opened and not placed
@@ -165,7 +130,7 @@ export const useInventoryStore = defineStore('inventory', {
 
     canSellBack() {
       return (itemId: string, quantity: number = 1): boolean => {
-        const inventoryItem = this.migratedItems.find((item) => item.itemId === itemId)
+        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
         if (!inventoryItem) return false
 
         const returnableCount = inventoryItem.instances.filter(
@@ -177,21 +142,6 @@ export const useInventoryStore = defineStore('inventory', {
   },
 
   actions: {
-    // ========================================================================
-    // Migration - Run on store initialization
-    // ========================================================================
-
-    migrateOldData(): void {
-      // Replace state items with migrated items if needed
-      const needsMigration = this.items.some(item => !item.instances)
-
-      if (needsMigration) {
-        console.log('🔄 Migrating inventory to instance-based format...')
-        this.items = this.migratedItems
-        console.log('✅ Inventory migration complete')
-      }
-    },
-
     // ========================================================================
     // Add Items
     // ========================================================================
