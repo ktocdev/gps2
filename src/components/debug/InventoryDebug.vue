@@ -1,10 +1,123 @@
 <template>
   <div class="inventory-debug">
-    <h2>Inventory</h2>
-    <!-- Currency Section -->
+    <!-- Player Inventory -->
+    <div class="panel panel--compact">
+      <div class="inventory-debug__header">
+        <h2 class="panel__heading">My Inventory</h2>
+        <div class="inventory-debug__stats">
+          <Badge variant="secondary" size="md">{{ inventoryStore.totalItemCount }} Items</Badge>
+          <Badge variant="info" size="md">{{ inventoryStore.allItems.length }} Unique</Badge>
+        </div>
+      </div>
+
+      <div class="panel__section">
+        <div v-if="inventoryStore.allItems.length === 0" class="inventory-debug__empty">
+          <p>No items in inventory yet. Visit the store to purchase items!</p>
+        </div>
+
+        <div v-else class="inventory-debug__sections">
+          <h3 class="panel__subheading">Consumables</h3>
+          <div v-if="consumablesWithDetails.length === 0" class="inventory-debug__empty-section">
+            <p>No consumables yet</p>
+          </div>
+          <div v-else class="inventory-debug__grid">
+            <div
+              v-for="item in consumablesWithDetails"
+              :key="item.itemId"
+              class="inventory-item-card"
+            >
+              <div class="inventory-item-card__header">
+                <div class="inventory-item-card__name-section">
+                  <span class="inventory-item-card__name">{{ item.item?.name }}</span>
+                  <span class="inventory-item-card__category">{{ item.item?.category }}</span>
+                </div>
+                <div class="inventory-item-card__quantity">×{{ item.quantity }}</div>
+              </div>
+
+              <div class="inventory-item-card__badges">
+                <Badge v-if="inventoryStore.getOpenedCount(item.itemId) > 0" variant="warning" size="sm">
+                  Opened: {{ inventoryStore.getOpenedCount(item.itemId) }}
+                </Badge>
+                <Badge v-if="inventoryStore.getUnopenedCount(item.itemId) > 0" variant="success" size="sm">
+                  Unopened: {{ inventoryStore.getUnopenedCount(item.itemId) }}
+                </Badge>
+                <Badge v-if="inventoryStore.getReturnableQuantity(item.itemId) > 0" variant="info" size="sm">
+                  Returnable: {{ inventoryStore.getReturnableQuantity(item.itemId) }}
+                </Badge>
+              </div>
+
+              <div v-if="item.item?.category === 'hay' || item.item?.category === 'bedding'" class="inventory-item-card__actions">
+                <Button
+                  v-if="inventoryStore.getUnopenedCount(item.itemId) > 0"
+                  @click="markAsOpened(item.itemId)"
+                  variant="secondary"
+                  size="sm"
+                >
+                  Open One ({{ inventoryStore.getUnopenedCount(item.itemId) }} unopened)
+                </Button>
+                <span v-else class="inventory-item-card__note">All items opened - cannot return</span>
+              </div>
+            </div>
+          </div>
+
+          <h3 class="panel__subheading">Habitat Items</h3>
+          <div v-if="habitatItemsWithDetails.length === 0" class="inventory-debug__empty-section">
+            <p>No habitat items yet</p>
+          </div>
+          <div v-else class="inventory-debug__grid">
+            <div
+              v-for="item in habitatItemsWithDetails"
+              :key="item.itemId"
+              class="inventory-item-card"
+            >
+              <div class="inventory-item-card__header">
+                <div class="inventory-item-card__name-section">
+                  <span class="inventory-item-card__name">{{ item.item?.name }}</span>
+                  <span class="inventory-item-card__category">{{ item.item?.subCategory }}</span>
+                </div>
+                <div class="inventory-item-card__quantity">×{{ item.quantity }}</div>
+              </div>
+
+              <div class="inventory-item-card__badges">
+                <Badge v-if="inventoryStore.getPlacedCount(item.itemId) > 0" variant="info" size="sm">
+                  Placed: {{ inventoryStore.getPlacedCount(item.itemId) }}
+                </Badge>
+                <Badge v-if="inventoryStore.getUnplacedCount(item.itemId) > 0" variant="secondary" size="sm">
+                  Unplaced: {{ inventoryStore.getUnplacedCount(item.itemId) }}
+                </Badge>
+                <Badge v-if="inventoryStore.getReturnableQuantity(item.itemId) > 0" variant="success" size="sm">
+                  Returnable: {{ inventoryStore.getReturnableQuantity(item.itemId) }}
+                </Badge>
+              </div>
+
+              <div class="inventory-item-card__actions">
+                <Button
+                  @click="markAsPlaced(item.itemId)"
+                  variant="secondary"
+                  size="sm"
+                  :disabled="inventoryStore.getUnplacedCount(item.itemId) === 0"
+                >
+                  Place One ({{ inventoryStore.getUnplacedCount(item.itemId) }} available)
+                </Button>
+                <Button
+                  v-if="inventoryStore.getPlacedCount(item.itemId) > 0"
+                  @click="unmarkAsPlaced(item.itemId)"
+                  variant="tertiary"
+                  size="sm"
+                >
+                  Remove One ({{ inventoryStore.getPlacedCount(item.itemId) }} placed)
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Currency Controls Panel -->
     <div class="panel panel--compact">
       <div class="panel__header">
-        <h3>Currency Controls</h3>
+        <h3>Currency Controls (Debug)</h3>
       </div>
       <div class="panel__content">
         <div class="stats-grid">
@@ -88,71 +201,6 @@
         </div>
       </div>
     </div>
-
-    <!-- Player Inventory -->
-    <div class="panel panel--compact">
-      <div class="panel__header">
-        <h3>Player Inventory</h3>
-      </div>
-      <div class="panel__content">
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-label">Total Items:</span>
-            <span class="stat-value">{{ inventoryStore.totalItemCount }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Unique Items:</span>
-            <span class="stat-value">{{ inventoryStore.allItems.length }}</span>
-          </div>
-        </div>
-
-        <div v-if="inventoryStore.allItems.length === 0" class="text-center text-muted">
-          <p>No items in inventory yet. Visit the store to purchase items!</p>
-        </div>
-
-        <div v-else class="inventory-debug__sections">
-          <!-- Consumables Section -->
-          <div v-if="consumablesWithDetails.length > 0" class="inventory-debug__section">
-            <h4 class="panel__subheading">Consumables</h4>
-            <div class="inventory-debug__items">
-              <div
-                v-for="item in consumablesWithDetails"
-                :key="item.itemId"
-                class="inventory-debug__item"
-              >
-                <div class="inventory-debug__item-header">
-                  <span class="inventory-debug__item-name">{{ item.item?.name }}</span>
-                  <Badge variant="secondary" size="sm">Qty: {{ item.quantity }}</Badge>
-                </div>
-                <div class="inventory-debug__item-meta">
-                  <span class="text-label text-label--muted">{{ item.item?.category }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Habitat Items Section -->
-          <div v-if="habitatItemsWithDetails.length > 0" class="inventory-debug__section">
-            <h4 class="panel__subheading">Habitat Items</h4>
-            <div class="inventory-debug__items">
-              <div
-                v-for="item in habitatItemsWithDetails"
-                :key="item.itemId"
-                class="inventory-debug__item"
-              >
-                <div class="inventory-debug__item-header">
-                  <span class="inventory-debug__item-name">{{ item.item?.name }}</span>
-                  <Badge variant="secondary" size="sm">Qty: {{ item.quantity }}</Badge>
-                </div>
-                <div class="inventory-debug__item-meta">
-                  <span class="text-label text-label--muted">{{ item.item?.subCategory }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -210,62 +258,166 @@ const resetCurrency = () => {
   const resetAmount = 1000 - currentBalance
   playerProgression.updateCurrency(resetAmount)
 }
+
+const markAsOpened = (itemId: string) => {
+  inventoryStore.markAsOpened(itemId)
+}
+
+const markAsPlaced = (itemId: string) => {
+  inventoryStore.markAsPlacedInHabitat(itemId, 1)
+}
+
+const unmarkAsPlaced = (itemId: string) => {
+  inventoryStore.unmarkAsPlacedInHabitat(itemId, 1)
+}
 </script>
 
 <style>
 .inventory-debug {
+  container-type: inline-size;
+  container-name: inventory-debug;
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.inventory-debug__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.inventory-debug__header .panel__heading {
+  margin-block-end: 0;
+}
+
+.inventory-debug__stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.inventory-debug__empty {
+  text-align: center;
+  padding: var(--space-6);
+  color: var(--color-text-muted);
+}
+
+.inventory-debug__sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.inventory-debug__empty-section {
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.inventory-debug__grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-block-start: var(--space-3);
+}
+
+/* Inventory Item Card Styles - Different from Supply Item Card */
+.inventory-item-card {
+  padding: var(--space-3);
+  background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-primary) 100%);
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  transition: all 0.2s ease;
+}
+
+.inventory-item-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.inventory-item-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.inventory-item-card__name-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+}
+
+.inventory-item-card__name {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.inventory-item-card__category {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.inventory-item-card__quantity {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  font-family: var(--font-family-heading);
+  color: var(--color-secondary);
+  flex-shrink: 0;
+}
+
+.inventory-item-card__badges {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.inventory-item-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-block-start: var(--space-2);
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border-light);
+}
+
+.inventory-item-card__note {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 .controls-grid--compact {
   margin-block-start: var(--space-3);
 }
 
-.inventory-debug__sections {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  margin-block-start: var(--space-4);
+/* Container queries for responsive 3-column grid */
+@container inventory-debug (min-width: 641px) {
+  .inventory-debug__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.inventory-debug__section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.inventory-debug__items {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.inventory-debug__item {
-  padding: var(--space-3);
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-}
-
-.inventory-debug__item-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  margin-block-end: var(--space-2);
-}
-
-.inventory-debug__item-name {
-  font-size: var(--font-size-base);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-}
-
-.inventory-debug__item-meta {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+@container inventory-debug (min-width: 961px) {
+  .inventory-debug__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 </style>

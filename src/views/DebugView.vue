@@ -126,12 +126,6 @@ const tabCategories: TabCategory[] = [
         label: 'Personality',
         icon: '🎭',
         panelClass: 'tab-container__panel--constrained'
-      },
-      {
-        id: 'inventory',
-        label: 'Inventory',
-        icon: '🎒',
-        panelClass: 'tab-container__panel--constrained'
       }
     ]
   },
@@ -143,6 +137,12 @@ const tabCategories: TabCategory[] = [
         id: 'habitat',
         label: 'Habitat Debug',
         icon: '🏠',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'inventory',
+        label: 'Inventory',
+        icon: '🎒',
         panelClass: 'tab-container__panel--constrained'
       },
       {

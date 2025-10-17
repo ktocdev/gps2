@@ -15,6 +15,8 @@ import { useGuineaPigStore } from './guineaPigStore'
 import { useGameController } from './gameController'
 import { useNeedsController } from './needsController'
 import { useHabitatConditions } from './habitatConditions'
+import { useInventoryStore } from './inventoryStore'
+import { useSuppliesStore } from './suppliesStore'
 
 export interface GameSession {
   id: string
@@ -782,6 +784,69 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     }
   }
 
+  /**
+   * Give starter inventory to new players
+   * Called on first guinea pig adoption
+   */
+  function giveStarterInventory(): void {
+    const inventoryStore = useInventoryStore()
+    const suppliesStore = useSuppliesStore()
+    const habitatConditions = useHabitatConditions()
+    const logging = getLoggingStore()
+
+    // CRITICAL: Initialize supplies catalog first (required for item lookups)
+    if (!suppliesStore.catalogLoaded) {
+      suppliesStore.initializeCatalog()
+      console.log('📦 Initialized supplies catalog for starter inventory')
+    }
+
+    // Starter inventory items (based on item IDs from suppliesStore)
+    const starterItems = [
+      { itemId: 'hay_timothy', quantity: 1, name: 'Timothy Hay' },
+      { itemId: 'bedding_average', quantity: 1, name: 'Average Bedding' },
+      { itemId: 'food_pellets_standard', quantity: 1, name: 'Standard Pellets' },
+      { itemId: 'food_green_leaf_lettuce', quantity: 1, name: 'Green Leaf Lettuce' },
+      { itemId: 'food_carrot', quantity: 1, name: 'Carrot' },
+      { itemId: 'habitat_apple_wood_sticks', quantity: 1, name: 'Apple Wood Sticks' }
+    ]
+
+    // Starter habitat items (items that start in the habitat)
+    const starterHabitatItems = [
+      { itemId: 'habitat_basic_water_bottle', quantity: 1, name: 'Basic Water Bottle' },
+      { itemId: 'habitat_plastic_igloo', quantity: 1, name: 'Plastic Igloo' },
+      { itemId: 'habitat_ceramic_bowl', quantity: 1, name: 'Basic Ceramic Bowl' },
+      { itemId: 'habitat_basic_hay_rack', quantity: 1, name: 'Basic Hay Rack' }
+    ]
+
+    // Add inventory items
+    starterItems.forEach(({ itemId, quantity }) => {
+      inventoryStore.addItem(itemId, quantity)
+      console.log(`✨ Added starter item: ${itemId} x${quantity}`)
+    })
+
+    // Add habitat items to inventory first
+    starterHabitatItems.forEach(({ itemId, quantity }) => {
+      inventoryStore.addItem(itemId, quantity)
+      console.log(`✨ Added starter habitat item: ${itemId} x${quantity}`)
+    })
+
+    // Initialize habitat with starter items
+    const habitatItemIds = starterHabitatItems.map(item => item.itemId)
+    habitatConditions.initializeStarterHabitat(habitatItemIds)
+    console.log(`🏠 Initialized habitat with ${habitatItemIds.length} starter items`)
+
+    logging.addPlayerAction(
+      'Received starter supplies and habitat! 🎁',
+      '🎁',
+      {
+        items: starterItems.map(i => i.name),
+        habitatItems: starterHabitatItems.map(i => i.name)
+      }
+    )
+
+    console.log('✅ Starter inventory given to new player:', inventoryStore.allItems.length, 'item types')
+  }
+
   function startGameSession(guineaPigIds: string[]): void {
     if (guineaPigIds.length < 1 || guineaPigIds.length > 2) {
       const logging = getLoggingStore()
@@ -852,6 +917,11 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     const playerProgression = usePlayerProgression()
     playerProgression.incrementGameSessions()
     playerProgression.incrementGuineaPigsAdopted(guineaPigIds.length)
+
+    // Give starter inventory on first guinea pig adoption
+    if (playerProgression.guineaPigsAdopted === guineaPigIds.length) {
+      giveStarterInventory()
+    }
 
     // Start the game for the new session
     const gameController = useGameController()

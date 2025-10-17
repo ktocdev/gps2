@@ -1865,6 +1865,25 @@ export const useSuppliesStore = defineStore('supplies', {
       return [
         // Water Bottles
         {
+          id: 'habitat_basic_water_bottle',
+          name: 'Basic Water Bottle',
+          description: '8oz standard water bottle',
+          category: 'habitat_item',
+          subCategory: 'bowls_bottles',
+          basePrice: 5.99,
+          currency: 'dollars',
+          stats: {
+            durability: 8,
+            capacity: '8oz',
+            tipResistance: true,
+            cleanlinessRating: 7
+          },
+          availability: 'always',
+          emoji: '💧',
+          tier: 'basic',
+          tags: ['starter']
+        },
+        {
           id: 'habitat_large_capacity_bottle',
           name: 'Large Capacity Bottle',
           description: '16oz for multiple guinea pigs or longer periods',

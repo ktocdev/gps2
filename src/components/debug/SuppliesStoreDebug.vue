@@ -44,7 +44,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -59,7 +63,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -74,7 +82,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -89,7 +101,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -104,7 +120,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -119,7 +139,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -140,7 +164,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -155,7 +183,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -170,7 +202,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -185,7 +221,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -200,7 +240,11 @@
                 :quantity="getPurchaseQuantity(item.id)"
                 :current-balance="playerProgression.currency"
                 :owned="inventoryStore.getItemQuantity(item.id)"
+                :returnable="getItemDetails(item.id).returnable"
+                :is-opened="getItemDetails(item.id).isOpened"
+                :placed-count="getItemDetails(item.id).placedCount"
                 @purchase="handlePurchase"
+                @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
             </div>
@@ -219,7 +263,11 @@
             :quantity="getPurchaseQuantity(item.id)"
             :current-balance="playerProgression.currency"
             :owned="inventoryStore.getItemQuantity(item.id)"
+            :returnable="getItemDetails(item.id).returnable"
+            :is-opened="getItemDetails(item.id).isOpened"
+            :placed-count="getItemDetails(item.id).placedCount"
             @purchase="handlePurchase"
+            @sellback="handleSellBack"
             @update:quantity="setPurchaseQuantity"
           />
         </div>
@@ -270,6 +318,34 @@ const handlePurchase = (itemId: string) => {
   // Reset quantity to 1 after successful purchase
   if (result.success) {
     purchaseQuantities.value[itemId] = 1
+  }
+}
+
+const handleSellBack = (itemId: string) => {
+  const quantity = getPurchaseQuantity(itemId)
+  const result = inventoryStore.sellBackItem(itemId, quantity)
+
+  purchaseMessage.value = {
+    text: result.message,
+    type: result.success ? 'success' : 'error'
+  }
+
+  // Clear message after 3 seconds
+  setTimeout(() => {
+    purchaseMessage.value = null
+  }, 3000)
+
+  // Reset quantity to 1 after successful sell
+  if (result.success) {
+    purchaseQuantities.value[itemId] = 1
+  }
+}
+
+const getItemDetails = (itemId: string) => {
+  return {
+    returnable: inventoryStore.getReturnableQuantity(itemId),
+    isOpened: inventoryStore.getOpenedCount(itemId) > 0,
+    placedCount: inventoryStore.getPlacedCount(itemId)
   }
 }
 
