@@ -1955,7 +1955,8 @@ export const useSuppliesStore = defineStore('supplies', {
           stats: {
             durability: 10,
             tipResistance: true,
-            cleanlinessRating: 9
+            cleanlinessRating: 9,
+            foodCapacity: 2
           },
           availability: 'always',
           emoji: '🍽️',
@@ -1974,7 +1975,8 @@ export const useSuppliesStore = defineStore('supplies', {
             durability: 9,
             tipResistance: true,
             cleanlinessRating: 8,
-            spaceRequired: 'small'
+            spaceRequired: 'small',
+            foodCapacity: 2
           },
           availability: 'always',
           emoji: '🍽️',
@@ -1993,7 +1995,8 @@ export const useSuppliesStore = defineStore('supplies', {
             durability: 9,
             tipResistance: true,
             cleanlinessRating: 9,
-            comfortBoost: 3
+            comfortBoost: 3,
+            foodCapacity: 2
           },
           availability: 'always',
           emoji: '🍽️',
@@ -2011,7 +2014,8 @@ export const useSuppliesStore = defineStore('supplies', {
           stats: {
             durability: 10,
             tipResistance: true,
-            cleanlinessRating: 10
+            cleanlinessRating: 10,
+            foodCapacity: 3
           },
           availability: 'always',
           emoji: '🍱',

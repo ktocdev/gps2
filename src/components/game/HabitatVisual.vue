@@ -21,8 +21,8 @@
           :class="{
             'grid-cell--occupied': cell.occupied,
             'grid-cell--accessible': cell.accessible,
-            'grid-cell--drop-target': isDragOver && isHoverCell(cell) && canPlaceAt(cell.x, cell.y),
-            'grid-cell--drop-invalid': isDragOver && isHoverCell(cell) && !canPlaceAt(cell.x, cell.y)
+            'grid-cell--drop-target': isDragOver && isHoverCell(cell) && (draggedItemId ? canPlaceAt(cell.x, cell.y) : true),
+            'grid-cell--drop-invalid': isDragOver && isHoverCell(cell) && draggedItemId && !canPlaceAt(cell.x, cell.y)
           }"
           :style="{
             gridColumn: cell.x + 1,
@@ -38,19 +38,35 @@
           :key="item.instanceId"
           class="grid-item"
           :class="{
-            'grid-item--dragging': draggedPlacedItemId === item.itemId
+            'grid-item--dragging': draggedPlacedItemId === item.itemId,
+            'grid-item--bowl-locked': isBowl(item.itemId) && getBowlContents(item.itemId).length > 0
           }"
           :style="{
             gridColumn: `${item.position.x + 1} / span ${item.size.width}`,
             gridRow: `${item.position.y + 1} / span ${item.size.height}`,
             zIndex: item.zIndex
           }"
-          draggable="true"
+          :draggable="canDragItem(item)"
+          :title="getBowlLockTooltip(item)"
           @dragstart="handlePlacedItemDragStart($event, item)"
           @dragend="handlePlacedItemDragEnd"
           @click="selectItem(item.instanceId)"
         >
-          <span class="grid-item__emoji">{{ item.emoji }}</span>
+          <FoodBowl
+            v-if="isBowl(item.itemId)"
+            :bowl-item-id="item.itemId"
+            :bowl-emoji="item.emoji"
+            :capacity="getBowlCapacity(item.itemId)"
+            :foods="getBowlContents(item.itemId)"
+            @add-food="(foodId) => handleAddFoodToBowl(item.itemId, foodId)"
+            @remove-food="(foodId) => handleRemoveFoodFromBowl(item.itemId, foodId)"
+          />
+          <span
+            v-else
+            class="grid-item__emoji"
+          >
+            {{ item.emoji }}
+          </span>
           <span class="grid-item__name">{{ item.name }}</span>
 
           <span v-if="getStackCount(item.position) > 1" class="grid-item__stack">
@@ -91,6 +107,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 import type { SuppliesItem } from '../../types/supplies'
+import FoodBowl from './FoodBowl.vue'
 
 interface Props {
   habitatSize?: 'small' | 'medium' | 'large'
@@ -347,8 +364,24 @@ function handleDragOver(event: DragEvent, cell: GridCell) {
   isDragOver.value = true
   hoverCell.value = { x: cell.x, y: cell.y }
 
+  // For food items dragged from bowls, we need to set draggedItemId
+  // so canPlaceAt() doesn't reject them
+  const itemData = event.dataTransfer?.types.includes('text/plain')
+  if (itemData && !draggedItemId.value) {
+    try {
+      // Try to peek at the drag data to set draggedItemId for validation
+      // Note: getData() only works in drop event, but we can check types
+      // For now, allow all drops when draggedItemId is not set (food from bowls)
+    } catch (e) {
+      // Ignore parsing errors
+    }
+  }
+
   // Set drop effect based on validity
-  if (canPlaceAt(cell.x, cell.y)) {
+  // Allow drops for food items from bowls (when draggedItemId is not set)
+  const isValidDrop = draggedItemId.value ? canPlaceAt(cell.x, cell.y) : true
+
+  if (isValidDrop) {
     event.dataTransfer!.dropEffect = 'move'
   } else {
     event.dataTransfer!.dropEffect = 'none'
@@ -372,12 +405,52 @@ function handleDrop(event: DragEvent, cell: GridCell) {
 
   let itemId: string
   let isRepos = false
+  let isFromBowl = false
+  let bowlItemId: string | undefined
+
   try {
     const data = JSON.parse(itemData)
     itemId = data.itemId
     isRepos = data.isRepositioning || false
+    isFromBowl = data.isFromBowl || false
+    bowlItemId = data.bowlItemId
   } catch {
     itemId = itemData
+  }
+
+  // If dragging food from a bowl, remove it from the bowl
+  if (isFromBowl && bowlItemId) {
+    handleRemoveFoodFromBowl(bowlItemId, itemId)
+    console.log(`Removed food ${itemId} from bowl ${bowlItemId}`)
+
+    // Reset drag state
+    draggedItemId.value = null
+    draggedItemSize.value = { width: 1, height: 1 }
+    return
+  }
+
+  // If dropping food on a bowl, add it to the bowl
+  if (isFood(itemId) && !isRepos) {
+    // Find bowl that covers this cell position
+    const bowlAtPosition = placedItems.value.find(item => {
+      if (!isBowl(item.itemId)) return false
+
+      // Check if the drop cell is within the bowl's occupied area
+      const isWithinBowlX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
+      const isWithinBowlY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
+
+      return isWithinBowlX && isWithinBowlY
+    })
+
+    if (bowlAtPosition) {
+      // Add food to bowl
+      handleAddFoodToBowl(bowlAtPosition.itemId, itemId)
+
+      // Reset drag state
+      draggedItemId.value = null
+      draggedItemSize.value = { width: 1, height: 1 }
+      return
+    }
   }
 
   if (!canPlaceAt(cell.x, cell.y)) {
@@ -415,6 +488,21 @@ function canPlaceAt(x: number, y: number): boolean {
     return false
   }
 
+  // Food items can only be placed in bowls (not directly on habitat floor)
+  if (isFood(draggedItemId.value)) {
+    // Check if there's a bowl at this position
+    const bowlAtPosition = placedItems.value.find(item => {
+      if (!isBowl(item.itemId)) return false
+
+      // Check if the hover cell (x, y) is within the bowl's occupied area
+      const isWithinBowlX = x >= item.position.x && x < item.position.x + item.size.width
+      const isWithinBowlY = y >= item.position.y && y < item.position.y + item.size.height
+
+      return isWithinBowlX && isWithinBowlY
+    })
+    return bowlAtPosition !== undefined
+  }
+
   // Water bottles can only be on edges (left, right, top, or bottom)
   if (draggedItemId.value.includes('water_bottle')) {
     const isLeftEdge = x === 0
@@ -449,6 +537,54 @@ function repositionItemAt(itemId: string, x: number, y: number) {
   habitatConditions.itemPositions.set(itemId, { x, y })
   console.log(`Repositioned ${itemId} to (${x}, ${y})`)
   updateGridCells()
+}
+
+// Bowl helper functions
+function isBowl(itemId: string): boolean {
+  return itemId.includes('bowl') || itemId.includes('dish')
+}
+
+function isFood(itemId: string): boolean {
+  const item = suppliesStore.getItemById(itemId)
+  return item?.category === 'food'
+}
+
+function getBowlCapacity(itemId: string): number {
+  const item = suppliesStore.getItemById(itemId)
+  return item?.stats?.foodCapacity || 2
+}
+
+function getBowlContents(itemId: string) {
+  return habitatConditions.getBowlContents(itemId)
+}
+
+function canDragItem(item: any): boolean {
+  // Bowls with food cannot be dragged
+  if (isBowl(item.itemId)) {
+    return getBowlContents(item.itemId).length === 0
+  }
+  return true
+}
+
+function getBowlLockTooltip(item: any): string {
+  if (isBowl(item.itemId) && getBowlContents(item.itemId).length > 0) {
+    return `${item.name} (Remove food to move bowl)`
+  }
+  return item.name
+}
+
+function handleAddFoodToBowl(bowlItemId: string, foodItemId: string) {
+  const success = habitatConditions.addFoodToBowl(bowlItemId, foodItemId)
+  if (success) {
+    console.log(`Added food ${foodItemId} to bowl ${bowlItemId}`)
+  }
+}
+
+function handleRemoveFoodFromBowl(bowlItemId: string, foodItemId: string) {
+  const success = habitatConditions.removeFoodFromBowl(bowlItemId, foodItemId)
+  if (success) {
+    console.log(`Removed food ${foodItemId} from bowl ${bowlItemId}`)
+  }
 }
 
 onMounted(() => {
@@ -581,9 +717,25 @@ defineExpose({
   cursor: grabbing;
 }
 
+.grid-item--bowl-locked {
+  cursor: not-allowed;
+  opacity: 0.85;
+  border-color: var(--color-warning);
+  border-style: dashed;
+}
+
+.grid-item--bowl-locked:hover {
+  transform: none;
+  border-color: var(--color-error);
+}
+
 .grid-item__emoji {
   font-size: var(--font-size-2xl);
   line-height: 1;
+}
+
+.grid-item__emoji--bowl {
+  font-size: 3rem;
 }
 
 .grid-item__name {
