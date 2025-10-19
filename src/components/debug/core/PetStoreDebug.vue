@@ -395,16 +395,16 @@
 
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
-import { usePetStoreManager } from '../../stores/petStoreManager'
-import type { GuineaPig } from '../../stores/guineaPigStore'
-import SliderField from '../basic/SliderField.vue'
-import Badge from '../basic/Badge.vue'
-import Select from '../basic/Select.vue'
-import Details from '../basic/Details.vue'
-import BlockMessage from '../basic/BlockMessage.vue'
-import Button from '../basic/Button.vue'
-import InfoButton from '../basic/InfoButton.vue'
-import { useLoggingStore } from '../../stores/loggingStore'
+import { usePetStoreManager } from '../../../stores/petStoreManager'
+import type { GuineaPig } from '../../../stores/guineaPigStore'
+import SliderField from '../../basic/SliderField.vue'
+import Badge from '../../basic/Badge.vue'
+import Select from '../../basic/Select.vue'
+import Details from '../../basic/Details.vue'
+import BlockMessage from '../../basic/BlockMessage.vue'
+import Button from '../../basic/Button.vue'
+import InfoButton from '../../basic/InfoButton.vue'
+import { useLoggingStore } from '../../../stores/loggingStore'
 
 const petStoreManager = usePetStoreManager()
 const loggingStore = useLoggingStore()

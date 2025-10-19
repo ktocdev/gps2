@@ -329,13 +329,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useGuineaPigStore } from '../../stores/guineaPigStore'
-import { useNeedsController } from '../../stores/needsController'
-import { useGameController } from '../../stores/gameController'
-import { usePetStoreManager } from '../../stores/petStoreManager'
-import Button from '../basic/Button.vue'
-import SliderField from '../basic/SliderField.vue'
-import Badge from '../basic/Badge.vue'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import { useNeedsController } from '../../../stores/needsController'
+import { useGameController } from '../../../stores/gameController'
+import { usePetStoreManager } from '../../../stores/petStoreManager'
+import Button from '../../basic/Button.vue'
+import SliderField from '../../basic/SliderField.vue'
+import Badge from '../../basic/Badge.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()

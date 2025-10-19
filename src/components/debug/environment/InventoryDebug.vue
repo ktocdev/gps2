@@ -206,11 +206,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { usePlayerProgression } from '../../stores/playerProgression'
-import { useInventoryStore } from '../../stores/inventoryStore'
-import { useSuppliesStore } from '../../stores/suppliesStore'
-import Button from '../basic/Button.vue'
-import Badge from '../basic/Badge.vue'
+import { usePlayerProgression } from '../../../stores/playerProgression'
+import { useInventoryStore } from '../../../stores/inventoryStore'
+import { useSuppliesStore } from '../../../stores/suppliesStore'
+import Button from '../../basic/Button.vue'
+import Badge from '../../basic/Badge.vue'
 
 const playerProgression = usePlayerProgression()
 const inventoryStore = useInventoryStore()

@@ -218,15 +218,15 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
-import { useHabitatConditions } from '../../stores/habitatConditions'
-import { useGuineaPigStore } from '../../stores/guineaPigStore'
-import { useInventoryStore } from '../../stores/inventoryStore'
-import { useSuppliesStore } from '../../stores/suppliesStore'
-import Button from '../basic/Button.vue'
-import SliderField from '../basic/SliderField.vue'
-import Select from '../basic/Select.vue'
-import HabitatVisual from '../game/HabitatVisual.vue'
-import InventoryTileServing from '../game/InventoryTileServing.vue'
+import { useHabitatConditions } from '../../../stores/habitatConditions'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import { useInventoryStore } from '../../../stores/inventoryStore'
+import { useSuppliesStore } from '../../../stores/suppliesStore'
+import Button from '../../basic/Button.vue'
+import SliderField from '../../basic/SliderField.vue'
+import Select from '../../basic/Select.vue'
+import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
+import InventoryTileServing from '../../game/shop/InventoryTileServing.vue'
 
 const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()

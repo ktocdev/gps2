@@ -288,8 +288,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useLoggingStore, type LogLevel } from '../../stores/loggingStore'
-import Button from '../basic/Button.vue'
+import { useLoggingStore, type LogLevel } from '../../../stores/loggingStore'
+import Button from '../../basic/Button.vue'
 
 const loggingStore = useLoggingStore()
 

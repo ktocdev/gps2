@@ -237,13 +237,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useGameController } from '../../stores/gameController'
-import { usePetStoreManager } from '../../stores/petStoreManager'
-import { useGuineaPigStore } from '../../stores/guineaPigStore'
-import { usePlayerProgression } from '../../stores/playerProgression'
-import { useNeedsController } from '../../stores/needsController'
-import Button from '../basic/Button.vue'
-import Select from '../basic/Select.vue'
+import { useGameController } from '../../../stores/gameController'
+import { usePetStoreManager } from '../../../stores/petStoreManager'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import { usePlayerProgression } from '../../../stores/playerProgression'
+import { useNeedsController } from '../../../stores/needsController'
+import Button from '../../basic/Button.vue'
+import Select from '../../basic/Select.vue'
 
 // Stores
 const gameController = useGameController()

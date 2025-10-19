@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import LoggingSystem from '../components/debug/LoggingSystem.vue'
+import LoggingSystem from '../components/debug/core/LoggingSystem.vue'
 </script>
 
 <style>

@@ -181,11 +181,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useLoggingStore, type MessageCategory } from '../../stores/loggingStore'
-import { MessageGenerator } from '../../utils/messageGenerator'
-import Button from '../basic/Button.vue'
-import Select from '../basic/Select.vue'
-import ActivityFeed from '../game/ActivityFeed.vue'
+import { useLoggingStore, type MessageCategory } from '../../../stores/loggingStore'
+import { MessageGenerator } from '../../../utils/messageGenerator'
+import Button from '../../basic/Button.vue'
+import Select from '../../basic/Select.vue'
+import ActivityFeed from '../../game/ui/ActivityFeed.vue'
 
 const loggingStore = useLoggingStore()
 

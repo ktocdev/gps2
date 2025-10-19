@@ -112,9 +112,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useHabitatConditions } from '../../stores/habitatConditions'
-import { useSuppliesStore } from '../../stores/suppliesStore'
-import type { SuppliesItem } from '../../types/supplies'
+import { useHabitatConditions } from '../../../stores/habitatConditions'
+import { useSuppliesStore } from '../../../stores/suppliesStore'
+import type { SuppliesItem } from '../../../types/supplies'
 import FoodBowl from './FoodBowl.vue'
 import HayRack from './HayRack.vue'
 

@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useSuppliesStore } from '../../stores/suppliesStore'
+import { useSuppliesStore } from '../../../stores/suppliesStore'
 
 interface HayServing {
   itemId: string
