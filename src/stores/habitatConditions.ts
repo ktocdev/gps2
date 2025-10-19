@@ -2,6 +2,16 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useSuppliesStore } from './suppliesStore'
 import { useInventoryStore } from './inventoryStore'
+import {
+  HABITAT_CONDITIONS,
+  CONSUMPTION,
+  POOP_CONSTANTS,
+  TRACKING,
+  STARTER_HABITAT_POSITIONS,
+  clampCondition,
+  calculatePoopCleanlinessReduction
+} from '../constants/supplies'
+import { safeDeserializeMap, serializeMap } from '../utils/mapSerialization'
 
 // Types
 interface HabitatSnapshot {
@@ -56,10 +66,10 @@ interface AlertPreferences {
 
 export const useHabitatConditions = defineStore('habitatConditions', () => {
   // Core conditions (0-100)
-  const cleanliness = ref(85)
-  const beddingFreshness = ref(90)
-  const hayFreshness = ref(95)
-  const waterLevel = ref(100)
+  const cleanliness = ref<number>(HABITAT_CONDITIONS.DEFAULT_CLEANLINESS)
+  const beddingFreshness = ref<number>(HABITAT_CONDITIONS.DEFAULT_BEDDING_FRESHNESS)
+  const hayFreshness = ref<number>(HABITAT_CONDITIONS.DEFAULT_HAY_FRESHNESS)
+  const waterLevel = ref<number>(HABITAT_CONDITIONS.DEFAULT_WATER_LEVEL)
 
   // Tracking and history
   const lastCleaningTime = ref(Date.now())
@@ -72,8 +82,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   const currentBedding = ref<CurrentBedding>({
     type: 'None',
     quality: 'average',
-    absorbency: 1.0,
-    decayRate: 1.0
+    absorbency: CONSUMPTION.DEFAULT_ABSORBENCY,
+    decayRate: CONSUMPTION.DEFAULT_DECAY_RATE
   })
 
   const currentHayBag = ref<CurrentHayBag | null>(null)
@@ -88,8 +98,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   const activeAlerts = ref<HabitatAlert[]>([])
   const notificationSettings = ref<AlertPreferences>({
     enableAlerts: true,
-    warningThreshold: 40,
-    criticalThreshold: 20
+    warningThreshold: HABITAT_CONDITIONS.WARNING_THRESHOLD,
+    criticalThreshold: HABITAT_CONDITIONS.CRITICAL_THRESHOLD
   })
 
   // Habitat Items (items currently placed in the habitat)
@@ -125,25 +135,25 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
   const needsAttention = computed(() => {
     return (
-      cleanliness.value < 40 ||
-      beddingFreshness.value < 40 ||
-      hayFreshness.value < 40 ||
-      waterLevel.value < 40
+      cleanliness.value < HABITAT_CONDITIONS.WARNING_THRESHOLD ||
+      beddingFreshness.value < HABITAT_CONDITIONS.WARNING_THRESHOLD ||
+      hayFreshness.value < HABITAT_CONDITIONS.WARNING_THRESHOLD ||
+      waterLevel.value < HABITAT_CONDITIONS.WARNING_THRESHOLD
     )
   })
 
   const criticalConditions = computed(() => {
     const critical: string[] = []
-    if (cleanliness.value < 20) critical.push('Cleanliness')
-    if (beddingFreshness.value < 20) critical.push('Bedding')
-    if (hayFreshness.value < 20) critical.push('Hay')
-    if (waterLevel.value < 20) critical.push('Water')
+    if (cleanliness.value < HABITAT_CONDITIONS.CRITICAL_THRESHOLD) critical.push('Cleanliness')
+    if (beddingFreshness.value < HABITAT_CONDITIONS.CRITICAL_THRESHOLD) critical.push('Bedding')
+    if (hayFreshness.value < HABITAT_CONDITIONS.CRITICAL_THRESHOLD) critical.push('Hay')
+    if (waterLevel.value < HABITAT_CONDITIONS.CRITICAL_THRESHOLD) critical.push('Water')
     return critical
   })
 
   // Actions
   function cleanCage() {
-    cleanliness.value = 100
+    cleanliness.value = HABITAT_CONDITIONS.RESET_VALUE
     lastCleaningTime.value = Date.now()
     poops.value = [] // Remove all poops
     recordSnapshot()
@@ -151,7 +161,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
   function addPoop(x: number, y: number) {
     const poop: Poop = {
-      id: `poop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `poop_${crypto.randomUUID()}`,
       x,
       y,
       timestamp: Date.now()
@@ -159,9 +169,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     poops.value.push(poop)
 
     // Reduce cleanliness based on poop count
-    // Each poop reduces cleanliness by 2-5 points
-    const reduction = Math.floor(Math.random() * 4) + 2
-    cleanliness.value = Math.max(0, cleanliness.value - reduction)
+    const reduction = calculatePoopCleanlinessReduction()
+    cleanliness.value = Math.max(HABITAT_CONDITIONS.CONDITION_MIN, cleanliness.value - reduction)
     recordSnapshot()
   }
 
@@ -174,7 +183,10 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     poops.value.splice(index, 1)
 
     // Slightly improve cleanliness when removing poop
-    cleanliness.value = Math.min(100, cleanliness.value + 1)
+    cleanliness.value = Math.min(
+      HABITAT_CONDITIONS.CONDITION_MAX,
+      cleanliness.value + POOP_CONSTANTS.CLEANLINESS_RECOVERY_PER_REMOVAL
+    )
     recordSnapshot()
     return true
   }
@@ -212,13 +224,13 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     currentBedding.value = {
       type: beddingItem.name,
       quality: beddingItem.quality as 'cheap' | 'average' | 'premium' | 'colorful-premium',
-      absorbency: stats?.absorbency || 1.0,
-      decayRate: stats?.decayRate || 1.0,
+      absorbency: stats?.absorbency || CONSUMPTION.DEFAULT_ABSORBENCY,
+      decayRate: stats?.decayRate || CONSUMPTION.DEFAULT_DECAY_RATE,
       color: beddingItem.quality === 'premium' && beddingItem.tags?.includes('color') ? beddingItem.name.toLowerCase() : undefined,
       stimulationBonus: stats?.stimulationBoost
     }
 
-    beddingFreshness.value = 100
+    beddingFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
     lastBeddingRefresh.value = Date.now()
     recordSnapshot()
     return true
@@ -252,8 +264,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     // Use one hay bag from inventory
     inventoryStore.useItem(itemId, 1)
 
-    // All hay bags have 20 handfuls
-    const handfuls = 20
+    // All hay bags have standard handfuls per bag
+    const handfuls = CONSUMPTION.HAY_HANDFULS_PER_BAG
 
     if (!currentHayBag.value) {
       currentHayBag.value = {
@@ -267,14 +279,14 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       currentHayBag.value.type = hayItem.name
     }
 
-    hayFreshness.value = 100
+    hayFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
     lastHayRefill.value = Date.now()
     recordSnapshot()
     return true
   }
 
   function refillWater() {
-    waterLevel.value = 100
+    waterLevel.value = HABITAT_CONDITIONS.RESET_VALUE
     lastWaterRefill.value = Date.now()
     recordSnapshot()
   }
@@ -303,14 +315,14 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     conditionHistory.value.push(snapshot)
 
-    // Keep only last 100 snapshots
-    if (conditionHistory.value.length > 100) {
+    // Keep only last N snapshots
+    if (conditionHistory.value.length > TRACKING.CONDITION_HISTORY_MAX) {
       conditionHistory.value.shift()
     }
   }
 
   function updateCondition(condition: string, value: number) {
-    value = Math.max(0, Math.min(100, value))
+    value = clampCondition(value)
 
     switch (condition) {
       case 'cleanliness':
@@ -332,10 +344,10 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
   function resetHabitatConditions() {
     // Reset all conditions to 100%
-    cleanliness.value = 100
-    beddingFreshness.value = 100
-    hayFreshness.value = 100
-    waterLevel.value = 100
+    cleanliness.value = HABITAT_CONDITIONS.RESET_VALUE
+    beddingFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
+    hayFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
+    waterLevel.value = HABITAT_CONDITIONS.RESET_VALUE
 
     // Update all timestamps
     const now = Date.now()
@@ -424,7 +436,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       return false
     }
 
-    const capacity = bowlItem.stats?.foodCapacity || 2
+    const capacity = bowlItem.stats?.foodCapacity || CONSUMPTION.DEFAULT_FOOD_CAPACITY
     const currentContents = bowlContents.value.get(bowlItemId) || []
 
     // Check if bowl is full
@@ -532,9 +544,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     const currentContents = hayRackContents.value.get(hayRackItemId) || []
 
-    // Check if hay rack is full (max 4 servings)
-    if (currentContents.length >= 4) {
-      console.warn(`Hay rack is full (capacity: 4)`)
+    // Check if hay rack is full
+    if (currentContents.length >= CONSUMPTION.HAY_RACK_MAX_CAPACITY) {
+      console.warn(`Hay rack is full (capacity: ${CONSUMPTION.HAY_RACK_MAX_CAPACITY})`)
       return false
     }
 
@@ -550,12 +562,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       ...currentContents,
       {
         itemId: hayItemId,
-        instanceId: `hay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        instanceId: `hay_${crypto.randomUUID()}`
       }
     ]
 
     hayRackContents.value.set(hayRackItemId, updatedContents)
-    console.log(`Added hay to rack (${updatedContents.length}/4)`)
+    console.log(`Added hay to rack (${updatedContents.length}/${CONSUMPTION.HAY_RACK_MAX_CAPACITY})`)
     return true
   }
 
@@ -597,20 +609,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     // Add starter items to habitat without checking inventory
     habitatItems.value = [...starterItemIds]
 
-    // Set default positions for starter items (centered and spaced apart)
-    // Assuming medium habitat: 14x10 grid
-    const defaultPositions: { [key: string]: { x: number; y: number } } = {
-      'habitat_plastic_igloo': { x: 3, y: 7 },         // Lower-left - 3 from left, 7 from top
-      'habitat_ceramic_bowl': { x: 9, y: 4 },          // Center-right - 9 from left, 4 from top
-      'habitat_basic_hay_rack': { x: 11, y: 4 },       // Right of dish - 11 from left, 4 from top
-      'habitat_basic_water_bottle': { x: 0, y: 0 }     // Top-left corner
-    }
-
-    // Apply default positions
+    // Apply default positions from constants
     starterItemIds.forEach(itemId => {
-      if (defaultPositions[itemId]) {
-        itemPositions.value.set(itemId, defaultPositions[itemId])
-        console.log(`Setting starter position for ${itemId}:`, defaultPositions[itemId])
+      if (itemId in STARTER_HABITAT_POSITIONS) {
+        const position = STARTER_HABITAT_POSITIONS[itemId as keyof typeof STARTER_HABITAT_POSITIONS]
+        itemPositions.value.set(itemId, position)
+        console.log(`Setting starter position for ${itemId}:`, position)
       } else {
         console.warn(`No default position defined for ${itemId}`)
       }
@@ -680,31 +684,32 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     storage: localStorage,
     serializer: {
       serialize: (state) => {
-        // Convert Maps to plain objects for serialization
+        // Convert Maps to arrays for serialization
         const serialized = {
           ...state,
-          itemPositions: Array.from((state.itemPositions as Map<string, { x: number; y: number }>).entries()),
-          bowlContents: Array.from((state.bowlContents as Map<string, any[]>).entries()),
-          hayRackContents: Array.from((state.hayRackContents as Map<string, any[]>).entries()),
+          itemPositions: serializeMap(state.itemPositions as Map<string, { x: number; y: number }>),
+          bowlContents: serializeMap(state.bowlContents as Map<string, any[]>),
+          hayRackContents: serializeMap(state.hayRackContents as Map<string, any[]>),
           poops: state.poops || []
         }
         return JSON.stringify(serialized)
       },
       deserialize: (value) => {
         const parsed = JSON.parse(value)
-        // Convert plain arrays back to Maps
-        if (parsed.itemPositions && Array.isArray(parsed.itemPositions)) {
-          parsed.itemPositions = new Map(parsed.itemPositions)
-        }
-        if (parsed.bowlContents && Array.isArray(parsed.bowlContents)) {
-          parsed.bowlContents = new Map(parsed.bowlContents)
-        }
-        if (parsed.hayRackContents && Array.isArray(parsed.hayRackContents)) {
-          parsed.hayRackContents = new Map(parsed.hayRackContents)
-        }
-        if (!parsed.poops) {
-          parsed.poops = []
-        }
+        // Safely convert arrays back to Maps with fallback
+        parsed.itemPositions = safeDeserializeMap<string, { x: number; y: number }>(
+          parsed.itemPositions,
+          new Map()
+        )
+        parsed.bowlContents = safeDeserializeMap<string, any[]>(
+          parsed.bowlContents,
+          new Map()
+        )
+        parsed.hayRackContents = safeDeserializeMap<string, any[]>(
+          parsed.hayRackContents,
+          new Map()
+        )
+        parsed.poops = parsed.poops || []
         return parsed
       }
     }

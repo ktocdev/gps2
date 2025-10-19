@@ -14,7 +14,7 @@ import { useSuppliesStore } from './suppliesStore'
 import { usePlayerProgression } from './playerProgression'
 
 function generateInstanceId(): string {
-  return `instance_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  return `instance_${crypto.randomUUID()}`
 }
 
 export const useInventoryStore = defineStore('inventory', {
