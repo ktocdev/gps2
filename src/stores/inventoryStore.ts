@@ -9,7 +9,7 @@
  */
 
 import { defineStore } from 'pinia'
-import type { InventoryItem, InventoryState, SellBackResult } from '../types/supplies'
+import type { InventoryItem, InventoryState, SellBackResult, ItemInstance } from '../types/supplies'
 import { useSuppliesStore } from './suppliesStore'
 import { usePlayerProgression } from './playerProgression'
 
@@ -19,26 +19,43 @@ function generateInstanceId(): string {
 
 export const useInventoryStore = defineStore('inventory', {
   state: (): InventoryState => ({
-    items: [],
-    maxSlots: undefined
+    items: []
   }),
 
   getters: {
     // ========================================================================
-    // Item Queries
+    // Item Queries (O(1) with Map index)
     // ========================================================================
 
-    getItemQuantity: (state) => (itemId: string): number => {
-      const inventoryItem = state.items.find((item) => item.itemId === itemId)
-      return inventoryItem?.instances.length || 0
+    /**
+     * Internal: Get Map index for O(1) lookups
+     * Builds a Map of itemId -> InventoryItem for fast access
+     */
+    itemsById: (state): Map<string, InventoryItem> => {
+      const map = new Map<string, InventoryItem>()
+      for (const item of state.items) {
+        if (item.instances.length > 0) {
+          map.set(item.itemId, item)
+        }
+      }
+      return map
     },
 
-    hasItem: (state) => (itemId: string): boolean => {
-      return state.items.some((item) => item.itemId === itemId && item.instances.length > 0)
+    getItemQuantity(): (itemId: string) => number {
+      return (itemId: string): number => {
+        const inventoryItem = this.itemsById.get(itemId)
+        return inventoryItem?.instances.length || 0
+      }
     },
 
-    allItems: (state): InventoryItem[] => {
-      return state.items.filter((item) => item.instances.length > 0)
+    hasItem(): (itemId: string) => boolean {
+      return (itemId: string): boolean => {
+        return this.itemsById.has(itemId)
+      }
+    },
+
+    allItems(): InventoryItem[] {
+      return Array.from(this.itemsById.values())
     },
 
     totalItemCount(): number {
@@ -69,35 +86,44 @@ export const useInventoryStore = defineStore('inventory', {
     // Instance Counts
     // ========================================================================
 
-    getOpenedCount() {
-      return (itemId: string): number => {
-        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
+    /**
+     * Generic instance counter with optional predicate (O(1) lookup via Map)
+     * @param itemId - The item ID to count instances for
+     * @param predicate - Optional filter function for instances
+     * @returns Count of matching instances
+     */
+    getInstanceCount(): (itemId: string, predicate?: (inst: ItemInstance) => boolean) => number {
+      return (itemId: string, predicate?: (inst: ItemInstance) => boolean): number => {
+        const inventoryItem = this.itemsById.get(itemId)
         if (!inventoryItem) return 0
-        return inventoryItem.instances.filter(inst => inst.isOpened).length
+        return predicate
+          ? inventoryItem.instances.filter(predicate).length
+          : inventoryItem.instances.length
       }
     },
 
-    getUnopenedCount() {
+    // Convenience getters using the generic counter
+    getOpenedCount(): (itemId: string) => number {
       return (itemId: string): number => {
-        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
-        if (!inventoryItem) return 0
-        return inventoryItem.instances.filter(inst => !inst.isOpened).length
+        return this.getInstanceCount(itemId, inst => inst.isOpened === true)
       }
     },
 
-    getPlacedCount() {
+    getUnopenedCount(): (itemId: string) => number {
       return (itemId: string): number => {
-        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
-        if (!inventoryItem) return 0
-        return inventoryItem.instances.filter(inst => inst.isPlacedInHabitat).length
+        return this.getInstanceCount(itemId, inst => inst.isOpened !== true)
       }
     },
 
-    getUnplacedCount() {
+    getPlacedCount(): (itemId: string) => number {
       return (itemId: string): number => {
-        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
-        if (!inventoryItem) return 0
-        return inventoryItem.instances.filter(inst => !inst.isPlacedInHabitat).length
+        return this.getInstanceCount(itemId, inst => inst.isPlacedInHabitat === true)
+      }
+    },
+
+    getUnplacedCount(): (itemId: string) => number {
+      return (itemId: string): number => {
+        return this.getInstanceCount(itemId, inst => inst.isPlacedInHabitat !== true)
       }
     },
 
@@ -118,24 +144,16 @@ export const useInventoryStore = defineStore('inventory', {
     // Sell-Back Eligibility
     // ========================================================================
 
-    getReturnableQuantity() {
+    getReturnableQuantity(): (itemId: string) => number {
       return (itemId: string): number => {
-        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
-        if (!inventoryItem) return 0
-
         // Count instances that are not opened and not placed
-        return inventoryItem.instances.filter(inst => !inst.isOpened && !inst.isPlacedInHabitat).length
+        return this.getInstanceCount(itemId, inst => inst.isOpened !== true && inst.isPlacedInHabitat !== true)
       }
     },
 
-    canSellBack() {
+    canSellBack(): (itemId: string, quantity?: number) => boolean {
       return (itemId: string, quantity: number = 1): boolean => {
-        const inventoryItem = this.allItems.find((item) => item.itemId === itemId)
-        if (!inventoryItem) return false
-
-        const returnableCount = inventoryItem.instances.filter(
-          inst => !inst.isOpened && !inst.isPlacedInHabitat
-        ).length
+        const returnableCount = this.getInstanceCount(itemId, inst => inst.isOpened !== true && inst.isPlacedInHabitat !== true)
         return returnableCount >= quantity
       }
     }

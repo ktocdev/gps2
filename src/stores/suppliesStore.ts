@@ -16,6 +16,7 @@ import { usePlayerProgression } from './playerProgression'
 import { useInventoryStore } from './inventoryStore'
 import { loadCatalog } from '../utils/catalogLoader'
 import { QUALITY_ORDER } from '../constants/supplies'
+import { hasServingSystem, getServingCount } from '../utils/servingSystem'
 
 interface SuppliesStoreState {
   catalog: SuppliesItem[]
@@ -257,8 +258,8 @@ export const useSuppliesStore = defineStore('supplies', {
       const inventoryStore = useInventoryStore()
 
       // Check if item has serving-based system (hay, lettuce, carrots)
-      const servings = item.stats?.servings
-      if (servings) {
+      if (hasServingSystem(item)) {
+        const servings = getServingCount(item)
         // Add each item with serving tracking
         for (let i = 0; i < quantity; i++) {
           inventoryStore.addConsumableWithServings(itemId, servings)
@@ -320,9 +321,9 @@ export const useSuppliesStore = defineStore('supplies', {
       // Process each item - check if it has serving-based system
       for (const { itemId, quantity } of items) {
         const item = this.getItemById(itemId)
-        const servings = item?.stats?.servings
 
-        if (servings) {
+        if (hasServingSystem(item)) {
+          const servings = getServingCount(item)
           // Add each item with serving tracking
           for (let i = 0; i < quantity; i++) {
             inventoryStore.addConsumableWithServings(itemId, servings)

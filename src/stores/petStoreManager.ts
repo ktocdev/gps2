@@ -17,6 +17,7 @@ import { useNeedsController } from './needsController'
 import { useHabitatConditions } from './habitatConditions'
 import { useInventoryStore } from './inventoryStore'
 import { useSuppliesStore } from './suppliesStore'
+import { hasServingSystem, getServingCount } from '../utils/servingSystem'
 
 export interface GameSession {
   id: string
@@ -821,9 +822,9 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Add inventory items
     starterItems.forEach(({ itemId, quantity }) => {
       const item = suppliesStore.getItemById(itemId)
-      const servings = item?.stats?.servings
 
-      if (servings) {
+      if (hasServingSystem(item)) {
+        const servings = getServingCount(item)
         // Add consumable with serving tracking
         for (let i = 0; i < quantity; i++) {
           inventoryStore.addConsumableWithServings(itemId, servings)
