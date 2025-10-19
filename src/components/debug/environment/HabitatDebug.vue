@@ -571,12 +571,12 @@ function handleDragEnd(event: DragEvent) {
 }
 
 .habitat-layout__items::-webkit-scrollbar-thumb {
-  background: #ec4899;
+  background: var(--color-primary);
   border-radius: var(--radius-full);
 }
 
 .habitat-layout__items::-webkit-scrollbar-thumb:hover {
-  background: #db2777;
+  background: var(--color-primary-hover);
 }
 
 .draggable-item-card {

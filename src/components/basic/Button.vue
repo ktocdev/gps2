@@ -189,36 +189,36 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .button--danger:hover:not(:disabled) {
-  background-color: #dc2626;
-  border-color: #dc2626;
+  background-color: var(--color-error-hover);
+  border-color: var(--color-error-hover);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
 .button--danger:active:not(:disabled) {
-  background-color: #b91c1c;
-  border-color: #b91c1c;
+  background-color: var(--color-error-active);
+  border-color: var(--color-error-active);
   transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }
 
-/* Warning Variant - Orange */
+/* Warning Variant - Orange (now uses CSS variables) */
 .button--warning {
-  background-color: #ea580c; /* Orange with good contrast */
-  border-color: #ea580c;
+  background-color: var(--color-warning);
+  border-color: var(--color-warning);
   color: var(--color-text-inverse);
 }
 
 .button--warning:hover:not(:disabled) {
-  background-color: #c2410c; /* Darker orange on hover */
-  border-color: #c2410c;
+  background-color: var(--color-warning-hover);
+  border-color: var(--color-warning-hover);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
 }
 
 .button--warning:active:not(:disabled) {
-  background-color: #9a3412; /* Darkest orange on active */
-  border-color: #9a3412;
+  background-color: var(--color-warning-active);
+  border-color: var(--color-warning-active);
   transform: translateY(0);
   box-shadow: var(--shadow-sm);
 }

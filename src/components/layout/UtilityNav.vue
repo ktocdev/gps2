@@ -104,12 +104,12 @@ const clearAllStorage = () => {
 }
 
 .utility-nav__button--danger:hover {
-  background-color: #dc2626;
-  border-color: #dc2626;
+  background-color: var(--color-error-hover);
+  border-color: var(--color-error-hover);
 }
 
 .utility-nav__button--danger:active {
-  background-color: #b91c1c;
-  border-color: #b91c1c;
+  background-color: var(--color-error-active);
+  border-color: var(--color-error-active);
 }
 </style>
