@@ -189,7 +189,6 @@ export interface InventoryItem {
 
 export interface InventoryState {
   items: InventoryItem[]
-  maxSlots?: number // Future: inventory capacity limits
 }
 
 // ============================================================================
