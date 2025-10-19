@@ -161,21 +161,10 @@ function handleDialogClose(value: boolean) {
   justify-content: flex-end;
 }
 
-/* Mobile responsiveness */
-@media (max-width: 640px) {
-  .confirm-dialog__header,
-  .confirm-dialog__content,
-  .confirm-dialog__footer {
-    padding-inline: var(--space-4);
-  }
-
-  .confirm-dialog__header {
-    padding-block-start: var(--space-5);
-    padding-block-end: var(--space-3);
-  }
-
-  .confirm-dialog__content {
-    padding-block: var(--space-5);
+/* Enhanced for larger screens */
+@media (min-width: 641px) {
+  /* Dialog already has good padding defaults */
+}
   }
 
   .confirm-dialog__footer {

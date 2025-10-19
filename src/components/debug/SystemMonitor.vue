@@ -633,8 +633,8 @@ const testErrorGeneration = () => {
   font-weight: var(--font-weight-bold);
   padding: var(--space-2);
   border-radius: var(--radius-full);
-  inline-size: 90px;
-  block-size: 90px;
+  inline-size: 60px;
+  block-size: 60px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -672,12 +672,12 @@ const testErrorGeneration = () => {
 
 
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
+/* Enhanced for larger screens */
+@media (min-width: 769px) {
   .health-score {
-    inline-size: 60px;
-    block-size: 60px;
-    font-size: var(--font-size-2xl);
+    inline-size: 90px;
+    block-size: 90px;
+    font-size: var(--font-size-3xl);
   }
 }
 </style>

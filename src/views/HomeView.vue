@@ -54,15 +54,15 @@ onUnmounted(() => {
 </script>
 
 <style>
-/* Home View - Future Game Interface */
+/* Home View - Future Game Interface - Mobile First */
 .home-view {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   min-block-size: 100vh;
-  padding-block: var(--space-8);
-  padding-inline: var(--space-4);
+  padding-block: var(--space-6);
+  padding-inline: var(--space-3);
   background: linear-gradient(135deg, var(--color-primary-bg), var(--color-secondary-bg));
 }
 
@@ -74,7 +74,7 @@ onUnmounted(() => {
 
 .home-view__title {
   font-family: var(--font-family-heading);
-  font-size: var(--font-size-4xl);
+  font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin: 0;
@@ -82,7 +82,7 @@ onUnmounted(() => {
 }
 
 .home-view__subtitle {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
   margin: 0;
@@ -90,7 +90,7 @@ onUnmounted(() => {
 }
 
 .home-view__description {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   line-height: var(--line-height-relaxed);
   margin: 0;
@@ -140,7 +140,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   inline-size: 100%;
-  block-size: 400px;
+  block-size: 300px;
   background-color: var(--color-bg-secondary);
   border: 2px dashed var(--color-border-medium);
   border-radius: var(--radius-xl);
@@ -148,7 +148,7 @@ onUnmounted(() => {
 }
 
 .home-view__placeholder-icon {
-  font-size: 4rem;
+  font-size: 3rem;
   margin-block-end: var(--space-4);
   opacity: 0.6;
 }
@@ -159,31 +159,31 @@ onUnmounted(() => {
   margin: 0;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
+/* Enhanced for larger screens */
+@media (min-width: 769px) {
   .home-view {
-    padding-block: var(--space-6);
-    padding-inline: var(--space-3);
+    padding-block: var(--space-8);
+    padding-inline: var(--space-4);
   }
 
   .home-view__title {
-    font-size: var(--font-size-3xl);
+    font-size: var(--font-size-4xl);
   }
 
   .home-view__subtitle {
-    font-size: var(--font-size-lg);
+    font-size: var(--font-size-xl);
   }
 
   .home-view__description {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
   }
 
   .home-view__placeholder {
-    block-size: 300px;
+    block-size: 400px;
   }
 
   .home-view__placeholder-icon {
-    font-size: 3rem;
+    font-size: 4rem;
   }
 }
 

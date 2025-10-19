@@ -115,41 +115,41 @@ const handleClick = (event: MouseEvent) => {
   outline-offset: 2px;
 }
 
-/* === Position Variants === */
+/* === Position Variants - Mobile First === */
 .floating-action-button--position-bottom-right {
-  bottom: var(--space-6);
-  right: var(--space-6);
+  inset-block-end: var(--space-4);
+  inset-inline-end: var(--space-4);
 
-  /* Use standard properties for better browser support */
-  bottom: max(var(--space-6), env(safe-area-inset-bottom, var(--space-6)));
-  right: max(var(--space-6), env(safe-area-inset-right, var(--space-6)));
+  /* Safe area support */
+  inset-block-end: max(var(--space-4), env(safe-area-inset-bottom, var(--space-4)));
+  inset-inline-end: max(var(--space-4), env(safe-area-inset-right, var(--space-4)));
 }
 
 .floating-action-button--position-bottom-left {
-  bottom: var(--space-6);
-  left: var(--space-6);
+  inset-block-end: var(--space-4);
+  inset-inline-start: var(--space-4);
 
-  bottom: max(var(--space-6), env(safe-area-inset-bottom, var(--space-6)));
-  left: max(var(--space-6), env(safe-area-inset-left, var(--space-6)));
+  inset-block-end: max(var(--space-4), env(safe-area-inset-bottom, var(--space-4)));
+  inset-inline-start: max(var(--space-4), env(safe-area-inset-left, var(--space-4)));
 }
 
 .floating-action-button--position-top-right {
-  top: var(--space-6);
-  right: var(--space-6);
+  inset-block-start: var(--space-4);
+  inset-inline-end: var(--space-4);
 
-  top: max(var(--space-6), env(safe-area-inset-top, var(--space-6)));
-  right: max(var(--space-6), env(safe-area-inset-right, var(--space-6)));
+  inset-block-start: max(var(--space-4), env(safe-area-inset-top, var(--space-4)));
+  inset-inline-end: max(var(--space-4), env(safe-area-inset-right, var(--space-4)));
 }
 
 .floating-action-button--position-top-left {
-  top: var(--space-6);
-  left: var(--space-6);
+  inset-block-start: var(--space-4);
+  inset-inline-start: var(--space-4);
 
-  top: max(var(--space-6), env(safe-area-inset-top, var(--space-6)));
-  left: max(var(--space-6), env(safe-area-inset-left, var(--space-6)));
+  inset-block-start: max(var(--space-4), env(safe-area-inset-top, var(--space-4)));
+  inset-inline-start: max(var(--space-4), env(safe-area-inset-left, var(--space-4)));
 }
 
-/* === Size Variants === */
+/* === Size Variants - Mobile First === */
 .floating-action-button--size-sm {
   inline-size: 48px;
   block-size: 48px;
@@ -157,15 +157,15 @@ const handleClick = (event: MouseEvent) => {
 }
 
 .floating-action-button--size-md {
-  inline-size: 56px;
-  block-size: 56px;
-  font-size: var(--font-size-xl);
+  inline-size: 48px;
+  block-size: 48px;
+  font-size: var(--font-size-lg);
 }
 
 .floating-action-button--size-lg {
-  inline-size: 64px;
-  block-size: 64px;
-  font-size: var(--font-size-2xl);
+  inline-size: 56px;
+  block-size: 56px;
+  font-size: var(--font-size-xl);
 }
 
 /* === Color Variants === */
@@ -277,7 +277,7 @@ const handleClick = (event: MouseEvent) => {
   }
 }
 
-/* === Label Styles === */
+/* === Label Styles - Mobile First === */
 .floating-action-button__label {
   position: absolute;
   inset-inline-end: 100%;
@@ -292,7 +292,7 @@ const handleClick = (event: MouseEvent) => {
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border-medium);
 
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   white-space: nowrap;
 
@@ -340,45 +340,49 @@ const handleClick = (event: MouseEvent) => {
   line-height: 1;
 }
 
-/* === Mobile Responsive === */
-@media (max-width: 768px) {
-  /* Smaller sizes on mobile */
+/* === Enhanced for Larger Screens === */
+@media (min-width: 769px) {
+  /* Larger sizes on desktop */
   .floating-action-button--size-md {
-    inline-size: 48px;
-    block-size: 48px;
-    font-size: var(--font-size-lg);
-  }
-
-  .floating-action-button--size-lg {
     inline-size: 56px;
     block-size: 56px;
     font-size: var(--font-size-xl);
   }
 
-  /* Adjust spacing on mobile */
+  .floating-action-button--size-lg {
+    inline-size: 64px;
+    block-size: 64px;
+    font-size: var(--font-size-2xl);
+  }
+
+  /* More spacing on desktop */
   .floating-action-button--position-bottom-right,
   .floating-action-button--position-bottom-left {
-    inset-block-end: var(--space-4);
+    inset-block-end: var(--space-6);
+    inset-block-end: max(var(--space-6), env(safe-area-inset-bottom, var(--space-6)));
   }
 
   .floating-action-button--position-bottom-right,
   .floating-action-button--position-top-right {
-    inset-inline-end: var(--space-4);
+    inset-inline-end: var(--space-6);
+    inset-inline-end: max(var(--space-6), env(safe-area-inset-right, var(--space-6)));
   }
 
   .floating-action-button--position-bottom-left,
   .floating-action-button--position-top-left {
-    inset-inline-start: var(--space-4);
+    inset-inline-start: var(--space-6);
+    inset-inline-start: max(var(--space-6), env(safe-area-inset-left, var(--space-6)));
   }
 
   .floating-action-button--position-top-right,
   .floating-action-button--position-top-left {
-    inset-block-start: var(--space-4);
+    inset-block-start: var(--space-6);
+    inset-block-start: max(var(--space-6), env(safe-area-inset-top, var(--space-6)));
   }
 
-  /* Smaller label font on mobile */
+  /* Larger label font on desktop */
   .floating-action-button__label {
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
   }
 }
 
