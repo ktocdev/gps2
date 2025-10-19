@@ -300,6 +300,6 @@ function isActivityFeedQuiet(logging: LoggingStore): boolean {
 
 ## References
 - [Activity Feed Design](../../game-design/activity-feed-design.md)
-- [Logging System](../phase1/logging-activity-feed.md)
+- [Logging System](../phase1/system-3-logging-activity-feed.md)
 - [Needs System](../phase2/needs-happiness-wellness.md)
 - [Preference System](../../game-design/preferences-likes-dislikes.md)

@@ -268,6 +268,9 @@ export const useSuppliesStore = defineStore('supplies', {
           category: 'hay',
           basePrice: 12.99,
           currency: 'dollars',
+          stats: {
+            servings: 4
+          },
           availability: 'always',
           emoji: '🌾',
           tags: ['popular', 'best-value']
@@ -279,6 +282,9 @@ export const useSuppliesStore = defineStore('supplies', {
           category: 'hay',
           basePrice: 13.99,
           currency: 'dollars',
+          stats: {
+            servings: 4
+          },
           availability: 'always',
           emoji: '🌿',
           tags: []
@@ -290,6 +296,9 @@ export const useSuppliesStore = defineStore('supplies', {
           category: 'hay',
           basePrice: 11.99,
           currency: 'dollars',
+          stats: {
+            servings: 4
+          },
           availability: 'always',
           emoji: '🍀',
           tags: []
@@ -301,6 +310,9 @@ export const useSuppliesStore = defineStore('supplies', {
           category: 'hay',
           basePrice: 12.49,
           currency: 'dollars',
+          stats: {
+            servings: 4
+          },
           availability: 'always',
           emoji: '🌾',
           tags: []
@@ -312,6 +324,9 @@ export const useSuppliesStore = defineStore('supplies', {
           category: 'hay',
           basePrice: 14.99,
           currency: 'dollars',
+          stats: {
+            servings: 4
+          },
           availability: 'always',
           emoji: '🌾',
           tags: []
@@ -323,6 +338,9 @@ export const useSuppliesStore = defineStore('supplies', {
           category: 'hay',
           basePrice: 16.99,
           currency: 'dollars',
+          stats: {
+            servings: 4
+          },
           availability: 'always',
           emoji: '🌸',
           tags: []
@@ -334,6 +352,9 @@ export const useSuppliesStore = defineStore('supplies', {
           category: 'hay',
           basePrice: 13.49,
           currency: 'dollars',
+          stats: {
+            servings: 4
+          },
           availability: 'seasonal',
           emoji: '🌾',
           tags: []
@@ -345,6 +366,9 @@ export const useSuppliesStore = defineStore('supplies', {
           category: 'hay',
           basePrice: 12.99,
           currency: 'dollars',
+          stats: {
+            servings: 4
+          },
           availability: 'always',
           emoji: '🌿',
           tags: []
@@ -381,7 +405,8 @@ export const useSuppliesStore = defineStore('supplies', {
             nutrition: 7,
             hungerSatisfaction: 15,
             servingSize: '1-2 leaves',
-            shelfLife: '3-5 days'
+            shelfLife: '3-5 days',
+            servings: 6
           },
           availability: 'always',
           emoji: '🥬',
@@ -399,7 +424,8 @@ export const useSuppliesStore = defineStore('supplies', {
             nutrition: 8,
             hungerSatisfaction: 18,
             servingSize: '1-2 leaves',
-            shelfLife: '5-7 days'
+            shelfLife: '5-7 days',
+            servings: 6
           },
           availability: 'always',
           emoji: '🥬',
@@ -417,7 +443,8 @@ export const useSuppliesStore = defineStore('supplies', {
             nutrition: 7,
             hungerSatisfaction: 15,
             servingSize: '1-2 leaves',
-            shelfLife: '3-5 days'
+            shelfLife: '3-5 days',
+            servings: 6
           },
           availability: 'always',
           emoji: '🥬',
@@ -625,7 +652,8 @@ export const useSuppliesStore = defineStore('supplies', {
             nutrition: 7,
             hungerSatisfaction: 12,
             servingSize: '1-2 baby carrots',
-            shelfLife: '7-10 days'
+            shelfLife: '7-10 days',
+            servings: 8
           },
           availability: 'always',
           emoji: '🥕',
@@ -905,7 +933,8 @@ export const useSuppliesStore = defineStore('supplies', {
             nutrition: 6,
             hungerSatisfaction: 25,
             servingSize: '1/8 cup daily',
-            shelfLife: '6 months'
+            shelfLife: '6 months',
+            servings: 10
           },
           availability: 'always',
           emoji: '🌰',
@@ -925,7 +954,8 @@ export const useSuppliesStore = defineStore('supplies', {
             nutrition: 8,
             hungerSatisfaction: 30,
             servingSize: '1/8 cup daily',
-            shelfLife: '6 months'
+            shelfLife: '6 months',
+            servings: 10
           },
           availability: 'always',
           emoji: '🌰',
@@ -945,7 +975,8 @@ export const useSuppliesStore = defineStore('supplies', {
             nutrition: 10,
             hungerSatisfaction: 35,
             servingSize: '1/8 cup daily',
-            shelfLife: '6 months'
+            shelfLife: '6 months',
+            servings: 10
           },
           availability: 'always',
           emoji: '✨',
@@ -1163,7 +1194,7 @@ export const useSuppliesStore = defineStore('supplies', {
             size: 'medium'
           },
           availability: 'always',
-          emoji: '🏠',
+          emoji: '🛖',
           tier: 'basic',
           tags: ['popular']
         },
@@ -2536,7 +2567,18 @@ export const useSuppliesStore = defineStore('supplies', {
 
       // Add to inventory
       const inventoryStore = useInventoryStore()
-      inventoryStore.addItem(itemId, quantity)
+
+      // Check if item has serving-based system (hay, lettuce, carrots)
+      const servings = item.stats?.servings
+      if (servings) {
+        // Add each item with serving tracking
+        for (let i = 0; i < quantity; i++) {
+          inventoryStore.addConsumableWithServings(itemId, servings)
+        }
+      } else {
+        // Standard inventory addition
+        inventoryStore.addItem(itemId, quantity)
+      }
 
       console.log(`🛒 Purchase successful: ${quantity}x ${item.name} for $${totalCost.toFixed(2)}`)
 
@@ -2586,7 +2628,22 @@ export const useSuppliesStore = defineStore('supplies', {
 
       // Add all items to inventory
       const inventoryStore = useInventoryStore()
-      inventoryStore.addMultipleItems(items)
+
+      // Process each item - check if it has serving-based system
+      for (const { itemId, quantity } of items) {
+        const item = this.getItemById(itemId)
+        const servings = item?.stats?.servings
+
+        if (servings) {
+          // Add each item with serving tracking
+          for (let i = 0; i < quantity; i++) {
+            inventoryStore.addConsumableWithServings(itemId, servings)
+          }
+        } else {
+          // Standard inventory addition
+          inventoryStore.addItem(itemId, quantity)
+        }
+      }
 
       console.log(`🛒 Purchase successful: ${items.length} different items for $${totalCost.toFixed(2)}`)
 

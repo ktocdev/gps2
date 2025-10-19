@@ -22,7 +22,7 @@ This implementation plan provides a careful, systematic approach to implementing
 
 **Estimated Timeline:** 5-6 weeks full implementation + testing
 
-**Note:** Phase 7 (Update Safety Net Systems) has been removed from this plan as Guinea Pig Rescue (Phase 2.5 System 4) has not been built yet. Stardust Sanctuary integration requirements have been documented in [system-4-guinea-pig-rescue.md](../phase2.5/system-4-guinea-pig-rescue.md) for future implementation.
+**Note:** Phase 7 (Update Safety Net Systems) has been removed from this plan as Guinea Pig Rescue (Phase 2.5 System 10.4) has not been built yet. Stardust Sanctuary integration requirements have been documented in [system-10.4-guinea-pig-rescue.md](../phase2.5/system-10.4-guinea-pig-rescue.md) for future implementation.
 
 ---
 

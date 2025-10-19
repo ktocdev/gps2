@@ -11,7 +11,7 @@ Implementation plan for creating missing visual testing components to enable com
 
 **Parent Documentation:**
 - [Needs System Architecture](system-7-needs-system.md) - Complete system specification
-- [Needs System Implementation Plan](system-7-needs-system-implementation-plan.md) - Core implementation (if exists)
+- [Needs System Implementation Plan](system-7.1-implementation-plan.md) - Core implementation (if exists)
 - [Needs Controller Store](system-8-needs-controller-store.md) - Controller architecture
 - [Wellness System Design](../../game-design/wellness-system.md) - Game design philosophy
 

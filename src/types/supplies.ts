@@ -44,6 +44,7 @@ export interface SuppliesItem {
     hungerSatisfaction?: number
     servingSize?: string
     shelfLife?: string
+    servings?: number // Number of servings per item (for hay, lettuce, carrots)
 
     // Habitat item stats
     durability?: number
@@ -176,6 +177,8 @@ export interface ItemInstance {
   lastUsedAt?: number // timestamp
   isOpened?: boolean // For bags of hay/bedding - once opened, cannot be returned
   isPlacedInHabitat?: boolean // If placed in habitat, cannot be returned
+  servingsRemaining?: number // For consumables (hay, lettuce, carrots) - tracks remaining servings
+  maxServings?: number // Total servings when fresh/new
 }
 
 export interface InventoryItem {

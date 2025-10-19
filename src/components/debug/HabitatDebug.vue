@@ -16,8 +16,22 @@
           <div class="habitat-layout__sidebar">
             <h4 class="habitat-layout__sidebar-title">Inventory</h4>
             <div class="habitat-layout__items">
+              <!-- Serving-based consumables -->
+              <InventoryTileServing
+                v-for="item in servingBasedItems"
+                :key="item.instanceId"
+                :item-id="item.itemId"
+                :name="item.name"
+                :emoji="item.emoji"
+                :servings-remaining="item.servingsRemaining"
+                :max-servings="item.maxServings"
+                @dragstart="(_itemId, event) => handleServingDragStart(event, item)"
+                @dragend="handleDragEnd"
+              />
+
+              <!-- Regular habitat items and food -->
               <div
-                v-for="item in availableHabitatItems"
+                v-for="item in regularItems"
                 :key="item.id"
                 class="draggable-item-card"
                 draggable="true"
@@ -157,34 +171,6 @@
               suffix="%"
               @update:modelValue="(v: number) => habitat.updateCondition('hayFreshness', v)"
             />
-            <Select
-              v-model="selectedHayType"
-              :options="hayOptions"
-              placeholder="Select hay type"
-              label="Hay Type"
-            />
-            <div class="flex gap-2 w-full">
-              <Button
-                @click="handleRefillHay"
-                variant="tertiary"
-                size="sm"
-                class="condition-item__action flex-1 w-full"
-                :disabled="!canRefillHay"
-                :tooltip="!canRefillHay ? `No ${hayTypes.find(h => h.id === selectedHayType)?.name} in inventory` : `Use ${hayTypes.find(h => h.id === selectedHayType)?.name}`"
-              >
-                🌾 Refill Hay
-              </Button>
-              <Button
-                @click="handleGiveHayHandful"
-                variant="tertiary"
-                size="sm"
-                class="condition-item__action flex-1 w-full"
-                :disabled="!canGiveHayHandful"
-                :tooltip="!canGiveHayHandful ? 'No hay available in bag or inventory' : habitat.currentHayBag ? `${habitat.currentHayBag.handfulsRemaining} handfuls remaining` : 'Will open new bag'"
-              >
-                🌾 Handful of Hay
-              </Button>
-            </div>
           </div>
 
           <!-- Water Level -->
@@ -240,6 +226,7 @@ import Button from '../basic/Button.vue'
 import SliderField from '../basic/SliderField.vue'
 import Select from '../basic/Select.vue'
 import HabitatVisual from '../game/HabitatVisual.vue'
+import InventoryTileServing from '../game/InventoryTileServing.vue'
 
 const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
@@ -269,18 +256,6 @@ const hasActiveGuineaPigs = computed(() => {
   return guineaPigStore.activeGuineaPigs.length > 0
 })
 
-// Hay types list (data now managed by inventory store)
-const hayTypes = [
-  { id: 'timothy', name: 'Timothy Hay', shortName: 'Timothy' },
-  { id: 'orchard_grass', name: 'Orchard Grass', shortName: 'Orchard' },
-  { id: 'meadow', name: 'Meadow Hay', shortName: 'Meadow' },
-  { id: 'alfalfa', name: 'Alfalfa Hay', shortName: 'Alfalfa' },
-  { id: 'botanical', name: 'Botanical Hay', shortName: 'Botanical' },
-  { id: 'oat', name: 'Oat Hay', shortName: 'Oat' },
-  { id: 'bermuda_grass', name: 'Bermuda Grass', shortName: 'Bermuda' },
-  { id: 'western_timothy', name: 'Western Timothy', shortName: 'W. Timothy' }
-]
-
 // Bedding selection
 const selectedBeddingType = ref<string>('average')
 const beddingOptions = computed(() => [
@@ -288,14 +263,6 @@ const beddingOptions = computed(() => [
   { value: 'average', label: `Average Bedding (${inventoryStore.getItemQuantity('bedding_average')} in stock)`, disabled: !inventoryStore.hasItem('bedding_average') },
   { value: 'premium', label: `Premium Bedding (${inventoryStore.getItemQuantity('bedding_premium')} in stock)`, disabled: !inventoryStore.hasItem('bedding_premium') }
 ])
-
-// Hay selection
-const selectedHayType = ref<string>('timothy')
-const hayOptions = computed(() => hayTypes.map(h => ({
-  value: h.id,
-  label: `${h.name} (${inventoryStore.getItemQuantity(`hay_${h.id}`)} bags in stock)`,
-  disabled: !inventoryStore.hasItem(`hay_${h.id}`)
-})))
 
 // Map quality to item IDs
 const beddingItemIds: Record<'cheap' | 'average' | 'premium', string> = {
@@ -309,20 +276,6 @@ const canRefreshBedding = computed(() => {
   return inventoryStore.hasItem(itemId)
 })
 
-const canRefillHay = computed(() => {
-  const itemId = `hay_${selectedHayType.value}`
-  return inventoryStore.hasItem(itemId)
-})
-
-const canGiveHayHandful = computed(() => {
-  // Can give handful if there's hay in the current bag OR if there's hay in inventory to open
-  if (habitat.currentHayBag && habitat.currentHayBag.handfulsRemaining > 0) {
-    return true
-  }
-  const itemId = `hay_${selectedHayType.value}`
-  return inventoryStore.hasItem(itemId)
-})
-
 function handleRefreshBedding() {
   // Use the selected bedding type from the dropdown
   const itemId = beddingItemIds[selectedBeddingType.value as 'cheap' | 'average' | 'premium']
@@ -332,53 +285,45 @@ function handleRefreshBedding() {
   }
 }
 
-function handleRefillHay() {
-  // Use the selected hay type from the dropdown
-  const itemId = `hay_${selectedHayType.value}`
-  const success = habitat.refillHay(itemId)
-  if (!success) {
-    console.warn(`No ${selectedHayType.value} hay in inventory`)
-  }
-}
-
-function handleGiveHayHandful() {
-  // Smart hay handful - automatically refills from inventory if bag is empty
-  if (!habitat.currentHayBag || habitat.currentHayBag.handfulsRemaining <= 0) {
-    // Need to open a new bag from inventory
-    const itemId = `hay_${selectedHayType.value}`
-
-    if (!inventoryStore.hasItem(itemId)) {
-      console.warn(`No ${selectedHayType.value} hay in inventory to open`)
-      return
-    }
-
-    // Open a new bag (gives 20 handfuls)
-    const success = habitat.refillHay(itemId)
-    if (!success) {
-      console.warn(`Failed to open new hay bag`)
-      return
-    }
-  }
-
-  // Now give one handful (from the current bag)
-  habitat.consumeHayHandful()
-}
-
 function getConditionClass(value: number): string {
   if (value >= 80) return 'condition-value--good'
   if (value >= 40) return 'condition-value--warning'
   return 'condition-value--critical'
 }
 
-// Available habitat items from user's inventory
-const availableHabitatItems = computed(() => {
-  // Get habitat items and food from inventory that are NOT already placed in habitat
+// Serving-based consumables (hay, lettuce, carrots)
+const servingBasedItems = computed(() => {
   return inventoryStore.items
     .filter(invItem => {
       const item = suppliesStore.getItemById(invItem.itemId)
-      // Show habitat items and food items (consumables) that aren't already placed
+      // Only show items with serving metadata
+      return item?.stats?.servings !== undefined
+    })
+    .flatMap(invItem => {
+      const item = suppliesStore.getItemById(invItem.itemId)
+      // Map each instance to a serving tile
+      return invItem.instances
+        .filter(inst => inst.servingsRemaining !== undefined && inst.servingsRemaining > 0)
+        .map(inst => ({
+          instanceId: inst.instanceId,
+          itemId: invItem.itemId,
+          name: item?.name || 'Unknown',
+          emoji: item?.emoji || '📦',
+          servingsRemaining: inst.servingsRemaining || 0,
+          maxServings: inst.maxServings || 0
+        }))
+    })
+})
+
+// Regular habitat items and non-serving food
+const regularItems = computed(() => {
+  return inventoryStore.items
+    .filter(invItem => {
+      const item = suppliesStore.getItemById(invItem.itemId)
+      // Show habitat items and food WITHOUT serving metadata that aren't already placed
       const isPlaceable = item?.category === 'habitat_item' || item?.category === 'food'
-      return isPlaceable && !habitat.habitatItems.includes(invItem.itemId)
+      const hasNoServings = item?.stats?.servings === undefined
+      return isPlaceable && hasNoServings && !habitat.habitatItems.includes(invItem.itemId)
     })
     .map(invItem => {
       const item = suppliesStore.getItemById(invItem.itemId)
@@ -392,6 +337,7 @@ const availableHabitatItems = computed(() => {
     })
 })
 
+
 function getItemSize(item: any): { width: number; height: number } {
   const size = item.stats?.size
   if (size === 'small') return { width: 1, height: 1 }
@@ -401,8 +347,38 @@ function getItemSize(item: any): { width: number; height: number } {
 }
 
 // Drag handlers
+function handleServingDragStart(event: DragEvent, item: any) {
+  if (!event.dataTransfer) return
+
+  // Get item category for drag validation
+  const suppliesItem = suppliesStore.getItemById(item.itemId)
+  const category = suppliesItem?.category || 'unknown'
+
+  // Store serving data for drop handler
+  const dragData = {
+    itemId: item.itemId,
+    instanceId: item.instanceId,
+    isServingBased: true,
+    size: { width: 1, height: 1 } // Servings are always 1x1
+  }
+
+  event.dataTransfer.effectAllowed = 'move'
+  event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+  // Add category as custom MIME type so we can check it during dragover
+  event.dataTransfer.setData(`application/x-item-category-${category}`, '')
+
+  // Notify HabitatVisual about the drag
+  if (habitatVisualRef.value) {
+    habitatVisualRef.value.setDraggedItem(item.itemId, { width: 1, height: 1 })
+  }
+}
+
 function handleDragStart(event: DragEvent, item: any) {
   if (!event.dataTransfer) return
+
+  // Get item category for drag validation
+  const suppliesItem = suppliesStore.getItemById(item.id)
+  const category = suppliesItem?.category || 'unknown'
 
   // Store item data for drop handler
   const dragData = {
@@ -412,6 +388,8 @@ function handleDragStart(event: DragEvent, item: any) {
 
   event.dataTransfer.effectAllowed = 'move'
   event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
+  // Add category as custom MIME type so we can check it during dragover
+  event.dataTransfer.setData(`application/x-item-category-${category}`, '')
 
   // Notify HabitatVisual about the drag
   if (habitatVisualRef.value) {

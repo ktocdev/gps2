@@ -39,7 +39,8 @@
           class="grid-item"
           :class="{
             'grid-item--dragging': draggedPlacedItemId === item.itemId,
-            'grid-item--bowl-locked': isBowl(item.itemId) && getBowlContents(item.itemId).length > 0
+            'grid-item--bowl-locked': isBowl(item.itemId) && getBowlContents(item.itemId).length > 0,
+            'grid-item--hay-rack-locked': isHayRack(item.itemId) && getHayRackContents(item.itemId).length > 0
           }"
           :style="{
             gridColumn: `${item.position.x + 1} / span ${item.size.width}`,
@@ -61,13 +62,20 @@
             @add-food="(foodId) => handleAddFoodToBowl(item.itemId, foodId)"
             @remove-food="(foodId) => handleRemoveFoodFromBowl(item.itemId, foodId)"
           />
+          <HayRack
+            v-else-if="isHayRack(item.itemId)"
+            :hay-rack-item-id="item.itemId"
+            :hay-servings="getHayRackContents(item.itemId)"
+            :capacity="4"
+            @add-hay="(hayId) => handleAddHayToRack(item.itemId, hayId)"
+            @remove-hay="(index) => handleRemoveHayFromRack(item.itemId, index)"
+          />
           <span
             v-else
             class="grid-item__emoji"
           >
             {{ item.emoji }}
           </span>
-          <span class="grid-item__name">{{ item.name }}</span>
 
           <span v-if="getStackCount(item.position) > 1" class="grid-item__stack">
             ×{{ getStackCount(item.position) }}
@@ -108,6 +116,7 @@ import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 import type { SuppliesItem } from '../../types/supplies'
 import FoodBowl from './FoodBowl.vue'
+import HayRack from './HayRack.vue'
 
 interface Props {
   habitatSize?: 'small' | 'medium' | 'large'
@@ -169,8 +178,26 @@ const subgridStyle = computed(() => ({
 }))
 
 const gridCells = ref<GridCell[]>([])
-const subgridItems = ref<SubgridItem[]>([])
-const poopCount = computed(() => subgridItems.value.filter(i => i.type === 'poop').length)
+
+// Sync poops from habitat conditions store
+const subgridItems = computed(() => {
+  const items: SubgridItem[] = []
+
+  // Add poops from store
+  habitatConditions.poops.forEach(poop => {
+    // Convert grid coordinates to subgrid coordinates (x4 scale)
+    items.push({
+      id: poop.id,
+      type: 'poop',
+      position: { x: poop.x, y: poop.y },
+      timestamp: poop.timestamp
+    })
+  })
+
+  return items
+})
+
+const poopCount = computed(() => habitatConditions.poops.length)
 
 // Drag-and-drop state
 const isDragOver = ref(false)
@@ -281,24 +308,17 @@ function addTestPoop() {
   const randomX = Math.floor(Math.random() * subgridWidth.value)
   const randomY = Math.floor(Math.random() * subgridHeight.value)
 
-  subgridItems.value.push({
-    id: `poop-${Date.now()}-${Math.random()}`,
-    type: 'poop',
-    position: { x: randomX, y: randomY },
-    timestamp: Date.now()
-  })
+  habitatConditions.addPoop(randomX, randomY)
 }
 
 function clearAllPoop() {
-  subgridItems.value = subgridItems.value.filter(item => item.type !== 'poop')
+  // Remove all poops by cleaning the cage
+  habitatConditions.cleanCage()
 }
 
 function handleSubgridItemClick(item: SubgridItem) {
   if (item.type === 'poop') {
-    const index = subgridItems.value.findIndex(i => i.id === item.id)
-    if (index !== -1) {
-      subgridItems.value.splice(index, 1)
-    }
+    habitatConditions.removePoop(item.id)
   }
 }
 
@@ -563,12 +583,19 @@ function canDragItem(item: any): boolean {
   if (isBowl(item.itemId)) {
     return getBowlContents(item.itemId).length === 0
   }
+  // Hay racks with hay cannot be dragged
+  if (isHayRack(item.itemId)) {
+    return getHayRackContents(item.itemId).length === 0
+  }
   return true
 }
 
 function getBowlLockTooltip(item: any): string {
   if (isBowl(item.itemId) && getBowlContents(item.itemId).length > 0) {
     return `${item.name} (Remove food to move bowl)`
+  }
+  if (isHayRack(item.itemId) && getHayRackContents(item.itemId).length > 0) {
+    return `${item.name} (Remove hay to move rack)`
   }
   return item.name
 }
@@ -584,6 +611,29 @@ function handleRemoveFoodFromBowl(bowlItemId: string, foodItemId: string) {
   const success = habitatConditions.removeFoodFromBowl(bowlItemId, foodItemId)
   if (success) {
     console.log(`Removed food ${foodItemId} from bowl ${bowlItemId}`)
+  }
+}
+
+// Hay rack helper functions
+function isHayRack(itemId: string): boolean {
+  return itemId.includes('hay_rack')
+}
+
+function getHayRackContents(itemId: string) {
+  return habitatConditions.getHayRackContents(itemId)
+}
+
+function handleAddHayToRack(hayRackItemId: string, hayItemId: string) {
+  const success = habitatConditions.addHayToRack(hayRackItemId, hayItemId)
+  if (success) {
+    console.log(`Added hay ${hayItemId} to rack ${hayRackItemId}`)
+  }
+}
+
+function handleRemoveHayFromRack(hayRackItemId: string, servingIndex: number) {
+  const success = habitatConditions.removeHayFromRack(hayRackItemId, servingIndex)
+  if (success) {
+    console.log(`Removed hay from rack ${hayRackItemId}`)
   }
 }
 
@@ -717,14 +767,16 @@ defineExpose({
   cursor: grabbing;
 }
 
-.grid-item--bowl-locked {
+.grid-item--bowl-locked,
+.grid-item--hay-rack-locked {
   cursor: not-allowed;
   opacity: 0.85;
   border-color: var(--color-warning);
   border-style: dashed;
 }
 
-.grid-item--bowl-locked:hover {
+.grid-item--bowl-locked:hover,
+.grid-item--hay-rack-locked:hover {
   transform: none;
   border-color: var(--color-error);
 }
@@ -736,16 +788,6 @@ defineExpose({
 
 .grid-item__emoji--bowl {
   font-size: 3rem;
-}
-
-.grid-item__name {
-  font-size: var(--font-size-xs);
-  text-align: center;
-  font-weight: var(--font-weight-medium);
-  max-inline-size: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .grid-item__stack {

@@ -41,6 +41,13 @@ interface HabitatAlert {
   timestamp: number
 }
 
+interface Poop {
+  id: string
+  x: number
+  y: number
+  timestamp: number
+}
+
 interface AlertPreferences {
   enableAlerts: boolean
   warningThreshold: number
@@ -99,6 +106,16 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   }
   const bowlContents = ref<Map<string, FoodItem[]>>(new Map())
 
+  // Hay rack contents (Map of hayRackItemId -> array of hay servings)
+  interface HayServing {
+    itemId: string
+    instanceId: string
+  }
+  const hayRackContents = ref<Map<string, HayServing[]>>(new Map())
+
+  // Poop tracking
+  const poops = ref<Poop[]>([])
+
   // Computed properties
   const overallCondition = computed(() => {
     return Math.floor(
@@ -128,7 +145,38 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   function cleanCage() {
     cleanliness.value = 100
     lastCleaningTime.value = Date.now()
+    poops.value = [] // Remove all poops
     recordSnapshot()
+  }
+
+  function addPoop(x: number, y: number) {
+    const poop: Poop = {
+      id: `poop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      x,
+      y,
+      timestamp: Date.now()
+    }
+    poops.value.push(poop)
+
+    // Reduce cleanliness based on poop count
+    // Each poop reduces cleanliness by 2-5 points
+    const reduction = Math.floor(Math.random() * 4) + 2
+    cleanliness.value = Math.max(0, cleanliness.value - reduction)
+    recordSnapshot()
+  }
+
+  function removePoop(poopId: string) {
+    const index = poops.value.findIndex(p => p.id === poopId)
+    if (index === -1) {
+      return false
+    }
+
+    poops.value.splice(index, 1)
+
+    // Slightly improve cleanliness when removing poop
+    cleanliness.value = Math.min(100, cleanliness.value + 1)
+    recordSnapshot()
+    return true
   }
 
   function refreshBedding(itemId: string) {
@@ -393,7 +441,18 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     }
 
     // Remove food from inventory (consume it)
-    const removed = inventoryStore.removeItem(foodItemId, 1)
+    // Check if item uses serving system
+    const hasServings = foodItem.stats?.servings !== undefined
+    let removed = false
+
+    if (hasServings) {
+      // Consume one serving
+      removed = inventoryStore.consumeServing(foodItemId)
+    } else {
+      // Remove entire item (old system)
+      removed = inventoryStore.removeItem(foodItemId, 1)
+    }
+
     if (!removed) {
       console.warn(`Failed to remove ${foodItemId} from inventory`)
       return false
@@ -452,6 +511,88 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     bowlContents.value.delete(bowlItemId)
   }
 
+  // Hay rack management functions
+  function addHayToRack(hayRackItemId: string, hayItemId: string): boolean {
+    const inventoryStore = useInventoryStore()
+    const suppliesStore = useSuppliesStore()
+
+    // Validate that this is actually a hay item
+    const item = suppliesStore.getItemById(hayItemId)
+    if (!item || item.category !== 'hay') {
+      console.warn(`Item ${hayItemId} is not hay - hay racks only accept hay`)
+      return false
+    }
+
+    // Check if hay item is in inventory
+    const totalServings = inventoryStore.getTotalServings(hayItemId)
+    if (totalServings <= 0) {
+      console.warn(`No servings of ${hayItemId} in inventory`)
+      return false
+    }
+
+    const currentContents = hayRackContents.value.get(hayRackItemId) || []
+
+    // Check if hay rack is full (max 4 servings)
+    if (currentContents.length >= 4) {
+      console.warn(`Hay rack is full (capacity: 4)`)
+      return false
+    }
+
+    // Consume one serving from inventory
+    const consumed = inventoryStore.consumeServing(hayItemId)
+    if (!consumed) {
+      console.warn(`Failed to consume serving of ${hayItemId}`)
+      return false
+    }
+
+    // Add hay serving to rack
+    const updatedContents = [
+      ...currentContents,
+      {
+        itemId: hayItemId,
+        instanceId: `hay_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      }
+    ]
+
+    hayRackContents.value.set(hayRackItemId, updatedContents)
+    console.log(`Added hay to rack (${updatedContents.length}/4)`)
+    return true
+  }
+
+  function removeHayFromRack(hayRackItemId: string, servingIndex: number): boolean {
+    const currentContents = hayRackContents.value.get(hayRackItemId)
+    if (!currentContents || servingIndex >= currentContents.length) {
+      console.warn(`Invalid hay rack or serving index`)
+      return false
+    }
+
+    const serving = currentContents[servingIndex]
+    const inventoryStore = useInventoryStore()
+
+    // Add serving back to inventory
+    inventoryStore.addConsumableWithServings(serving.itemId, 1)
+
+    // Remove serving from rack
+    const updatedContents = currentContents.filter((_, index) => index !== servingIndex)
+
+    if (updatedContents.length === 0) {
+      hayRackContents.value.delete(hayRackItemId)
+    } else {
+      hayRackContents.value.set(hayRackItemId, updatedContents)
+    }
+
+    console.log(`Removed hay from rack and returned to inventory`)
+    return true
+  }
+
+  function getHayRackContents(hayRackItemId: string): HayServing[] {
+    return hayRackContents.value.get(hayRackItemId) || []
+  }
+
+  function clearHayRack(hayRackItemId: string): void {
+    hayRackContents.value.delete(hayRackItemId)
+  }
+
   function initializeStarterHabitat(starterItemIds: string[]) {
     // Add starter items to habitat without checking inventory
     habitatItems.value = [...starterItemIds]
@@ -502,6 +643,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     habitatItems,
     itemPositions,
     bowlContents,
+    hayRackContents,
+    poops,
 
     // Computed
     overallCondition,
@@ -510,6 +653,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Actions
     cleanCage,
+    addPoop,
+    removePoop,
     refreshBedding,
     refillHay,
     refillWater,
@@ -523,7 +668,11 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     addFoodToBowl,
     removeFoodFromBowl,
     getBowlContents,
-    clearBowl
+    clearBowl,
+    addHayToRack,
+    removeHayFromRack,
+    getHayRackContents,
+    clearHayRack
   }
 }, {
   persist: {
@@ -535,7 +684,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
         const serialized = {
           ...state,
           itemPositions: Array.from((state.itemPositions as Map<string, { x: number; y: number }>).entries()),
-          bowlContents: Array.from((state.bowlContents as Map<string, any[]>).entries())
+          bowlContents: Array.from((state.bowlContents as Map<string, any[]>).entries()),
+          hayRackContents: Array.from((state.hayRackContents as Map<string, any[]>).entries()),
+          poops: state.poops || []
         }
         return JSON.stringify(serialized)
       },
@@ -547,6 +698,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
         }
         if (parsed.bowlContents && Array.isArray(parsed.bowlContents)) {
           parsed.bowlContents = new Map(parsed.bowlContents)
+        }
+        if (parsed.hayRackContents && Array.isArray(parsed.hayRackContents)) {
+          parsed.hayRackContents = new Map(parsed.hayRackContents)
+        }
+        if (!parsed.poops) {
+          parsed.poops = []
         }
         return parsed
       }
