@@ -41,6 +41,13 @@ interface HabitatAlert {
   timestamp: number
 }
 
+interface Poop {
+  id: string
+  x: number
+  y: number
+  timestamp: number
+}
+
 interface AlertPreferences {
   enableAlerts: boolean
   warningThreshold: number
@@ -106,6 +113,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   }
   const hayRackContents = ref<Map<string, HayServing[]>>(new Map())
 
+  // Poop tracking
+  const poops = ref<Poop[]>([])
+
   // Computed properties
   const overallCondition = computed(() => {
     return Math.floor(
@@ -135,7 +145,38 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   function cleanCage() {
     cleanliness.value = 100
     lastCleaningTime.value = Date.now()
+    poops.value = [] // Remove all poops
     recordSnapshot()
+  }
+
+  function addPoop(x: number, y: number) {
+    const poop: Poop = {
+      id: `poop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      x,
+      y,
+      timestamp: Date.now()
+    }
+    poops.value.push(poop)
+
+    // Reduce cleanliness based on poop count
+    // Each poop reduces cleanliness by 2-5 points
+    const reduction = Math.floor(Math.random() * 4) + 2
+    cleanliness.value = Math.max(0, cleanliness.value - reduction)
+    recordSnapshot()
+  }
+
+  function removePoop(poopId: string) {
+    const index = poops.value.findIndex(p => p.id === poopId)
+    if (index === -1) {
+      return false
+    }
+
+    poops.value.splice(index, 1)
+
+    // Slightly improve cleanliness when removing poop
+    cleanliness.value = Math.min(100, cleanliness.value + 1)
+    recordSnapshot()
+    return true
   }
 
   function refreshBedding(itemId: string) {
@@ -603,6 +644,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     itemPositions,
     bowlContents,
     hayRackContents,
+    poops,
 
     // Computed
     overallCondition,
@@ -611,6 +653,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Actions
     cleanCage,
+    addPoop,
+    removePoop,
     refreshBedding,
     refillHay,
     refillWater,
@@ -641,7 +685,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
           ...state,
           itemPositions: Array.from((state.itemPositions as Map<string, { x: number; y: number }>).entries()),
           bowlContents: Array.from((state.bowlContents as Map<string, any[]>).entries()),
-          hayRackContents: Array.from((state.hayRackContents as Map<string, any[]>).entries())
+          hayRackContents: Array.from((state.hayRackContents as Map<string, any[]>).entries()),
+          poops: state.poops || []
         }
         return JSON.stringify(serialized)
       },
@@ -656,6 +701,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
         }
         if (parsed.hayRackContents && Array.isArray(parsed.hayRackContents)) {
           parsed.hayRackContents = new Map(parsed.hayRackContents)
+        }
+        if (!parsed.poops) {
+          parsed.poops = []
         }
         return parsed
       }

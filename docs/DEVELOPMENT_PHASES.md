@@ -8,12 +8,12 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 **Goal:** Establish core foundation with complete UI framework and essential development tools
 
 ### Systems
-1. **[Game Controller Store](docs/systems/phase1/game-controller-store.md)** - Central control system with save/load ✅ **Completed** (September 17, 2025 | Branch: GPS2-3)
-2. **[Unified Layout & Component Framework](docs/systems/phase1/layout-component-framework.md)** - Region-based development combining CSS foundation, component library, and responsive UI with adaptive FAB navigation
-3. **[Logging System & Activity Feed](docs/systems/phase1/logging-activity-feed.md)** - Centralized logging and natural language activity generation (implement early!)
+1. **[Game Controller Store](docs/systems/phase1/system-1-game-controller-store.md)** - Central control system with save/load ✅ **Completed** (September 17, 2025 | Branch: GPS2-3)
+2. **[Unified Layout & Component Framework](docs/systems/phase1/system-2-layout-component-framework.md)** - Region-based development combining CSS foundation, component library, and responsive UI with adaptive FAB navigation
+3. **[Logging System & Activity Feed](docs/systems/phase1/system-3-logging-activity-feed.md)** - Centralized logging and natural language activity generation (implement early!)
 
 ### Phase 1.5: Developer Tools
-4. **[Error Tracking System](docs/systems/phase1/error-tracking.md)** - Professional debugging interface with system monitoring, error analysis, and developer tools ✅ **Completed** (September 20, 2025 | Branch: GPS2-7)
+4. **[Error Tracking System](docs/systems/phase1/system-4-error-tracking.md)** - Professional debugging interface with system monitoring, error analysis, and developer tools ✅ **Completed** (September 20, 2025 | Branch: GPS2-7)
 
 **Note:** Debug Menu panels for specific game systems (Needs, Wellness, Habitat, etc.) will be built incrementally alongside each system in subsequent phases, ensuring debug interfaces have complete knowledge of actual system implementations.
 
@@ -82,18 +82,18 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ---
 
-## Phase 2.5: Interactive Feedback Enhancement (Systems 1-5) 🚧 **IN PROGRESS**
+## Phase 2.5: Interactive Feedback Enhancement (Systems 10.1-10.5) 🚧 **IN PROGRESS**
 **Duration:** 1-2 weeks
 **Status:** 🚧 **In Progress** | **Branch:** GPS2-20 | **Started:** October 7, 2025
 **Goal:** Enhance gameplay feedback through personality, preferences, wellness reactions, rescue system, and comprehensive activity messages
 
 ### Systems
-1. **[Personality Trait Influences](docs/systems/phase2.5/system-1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay rates, interaction effectiveness, and behavioral reactions ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
-2. **[Preferences: Likes & Dislikes](docs/systems/phase2.5/system-2-preferences-likes-dislikes.md)** - Individual guinea pig preferences system with hidden discovery mechanics (favorites +50% satisfaction, dislikes -30% with rejection chance) ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
-2.5. **[Fulfillment Limitation System](docs/systems/phase2.5/system-2.5-fulfillment-limitation.md)** - Consumption limits per hunger cycle (fruit:1, veg:3, pellets:2, treats:1, hay:unlimited), interaction rejection based on personality + friendship + wellness, cooldown system (30s-2min) 🚧 **In Progress** (October 9, 2025)
-3. **[Wellness-Based Interaction Reactions](docs/systems/phase2.5/system-3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates (95% excellent → 20% critical), behavioral states, and guinea pig responsiveness
-4. **[Guinea Pig Rescue System](docs/systems/phase2.5/system-4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty, needs reset to 100%, Fresh Start option (resets money to $1000, loses slots 4-10)
-5. **[Enhanced Activity Messages](docs/systems/phase2.5/system-5-enhanced-activity-messages.md)** - Guinea pig reactions to interactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
+10.1. **[Personality Trait Influences](docs/systems/phase2.5/system-10.1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay rates, interaction effectiveness, and behavioral reactions ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
+10.2. **[Preferences: Likes & Dislikes](docs/systems/phase2.5/system-10.2-preferences-likes-dislikes.md)** - Individual guinea pig preferences system with hidden discovery mechanics (favorites +50% satisfaction, dislikes -30% with rejection chance) ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
+10.2.5. **[Fulfillment Limitation System](docs/systems/phase2.5/system-10.2.5-fulfillment-limitation.md)** - Consumption limits per hunger cycle (fruit:1, veg:3, pellets:2, treats:1, hay:unlimited), interaction rejection based on personality + friendship + wellness, cooldown system (30s-2min) 🚧 **In Progress** (October 9, 2025)
+10.3. **[Wellness-Based Interaction Reactions](docs/systems/phase2.5/system-10.3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates (95% excellent → 20% critical), behavioral states, and guinea pig responsiveness
+10.4. **[Guinea Pig Rescue System](docs/systems/phase2.5/system-10.4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty, needs reset to 100%, Fresh Start option (resets money to $1000, loses slots 4-10)
+10.5. **[Enhanced Activity Messages](docs/systems/phase2.5/system-10.5-enhanced-activity-messages.md)** - Guinea pig reactions to interactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
 
 ### Debug Panel Development (Phase 2.5)
 - **Personality Debug Panel** - ✅ **Completed** (October 7, 2025) - PersonalityDebug.vue with trait sliders, decay rate preview, active guinea pigs only

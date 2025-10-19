@@ -76,7 +76,6 @@
           >
             {{ item.emoji }}
           </span>
-          <span class="grid-item__name">{{ item.name }}</span>
 
           <span v-if="getStackCount(item.position) > 1" class="grid-item__stack">
             ×{{ getStackCount(item.position) }}
@@ -179,8 +178,26 @@ const subgridStyle = computed(() => ({
 }))
 
 const gridCells = ref<GridCell[]>([])
-const subgridItems = ref<SubgridItem[]>([])
-const poopCount = computed(() => subgridItems.value.filter(i => i.type === 'poop').length)
+
+// Sync poops from habitat conditions store
+const subgridItems = computed(() => {
+  const items: SubgridItem[] = []
+
+  // Add poops from store
+  habitatConditions.poops.forEach(poop => {
+    // Convert grid coordinates to subgrid coordinates (x4 scale)
+    items.push({
+      id: poop.id,
+      type: 'poop',
+      position: { x: poop.x, y: poop.y },
+      timestamp: poop.timestamp
+    })
+  })
+
+  return items
+})
+
+const poopCount = computed(() => habitatConditions.poops.length)
 
 // Drag-and-drop state
 const isDragOver = ref(false)
@@ -291,24 +308,17 @@ function addTestPoop() {
   const randomX = Math.floor(Math.random() * subgridWidth.value)
   const randomY = Math.floor(Math.random() * subgridHeight.value)
 
-  subgridItems.value.push({
-    id: `poop-${Date.now()}-${Math.random()}`,
-    type: 'poop',
-    position: { x: randomX, y: randomY },
-    timestamp: Date.now()
-  })
+  habitatConditions.addPoop(randomX, randomY)
 }
 
 function clearAllPoop() {
-  subgridItems.value = subgridItems.value.filter(item => item.type !== 'poop')
+  // Remove all poops by cleaning the cage
+  habitatConditions.cleanCage()
 }
 
 function handleSubgridItemClick(item: SubgridItem) {
   if (item.type === 'poop') {
-    const index = subgridItems.value.findIndex(i => i.id === item.id)
-    if (index !== -1) {
-      subgridItems.value.splice(index, 1)
-    }
+    habitatConditions.removePoop(item.id)
   }
 }
 
@@ -778,16 +788,6 @@ defineExpose({
 
 .grid-item__emoji--bowl {
   font-size: 3rem;
-}
-
-.grid-item__name {
-  font-size: var(--font-size-xs);
-  text-align: center;
-  font-weight: var(--font-weight-medium);
-  max-inline-size: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .grid-item__stack {

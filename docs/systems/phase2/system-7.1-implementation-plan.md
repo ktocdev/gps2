@@ -10,10 +10,9 @@
 Complete implementation plan for the 10-need guinea pig care system with weighted wellness calculation, friendship penalties, and integrated game timing. This plan breaks down the complex needs architecture into manageable implementation phases.
 
 **Parent Documentation:**
-- [Needs System Architecture](system-7-needs-system.md) - Complete system specification
+- [Needs System Architecture](system-7-needs-system.md) - Complete system specification (includes happiness mechanics)
 - [Needs Controller Store](system-8-needs-controller-store.md) - Controller architecture
 - [Wellness System Design](../../game-design/wellness-system.md) - Game design philosophy
-- [Happiness Mechanics](../../game-design/happiness-mechanics.md) - Happiness need details
 
 ## Current State Assessment
 
@@ -1027,10 +1026,9 @@ After implementation, update:
 
 ## References
 
-- [Needs System Architecture](system-7-needs-system.md)
+- [Needs System Architecture](system-7-needs-system.md) - Includes happiness mechanics
 - [Needs Controller Store Specification](system-8-needs-controller-store.md)
 - [Wellness System Design](../../game-design/wellness-system.md)
-- [Happiness Mechanics](../../game-design/happiness-mechanics.md)
 - [Preferences System](../../game-design/preferences-system.md)
 - [System Integration](../../SYSTEM_INTEGRATION.md)
 - [Architecture Guidelines](../../technical/architecture-guidelines.md)

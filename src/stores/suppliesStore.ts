@@ -1194,7 +1194,7 @@ export const useSuppliesStore = defineStore('supplies', {
             size: 'medium'
           },
           availability: 'always',
-          emoji: '🏠',
+          emoji: '🛖',
           tier: 'basic',
           tags: ['popular']
         },

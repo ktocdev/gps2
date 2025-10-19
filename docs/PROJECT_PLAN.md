@@ -14,7 +14,6 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 #### Core Game Design
 **[game-design/](game-design/)** - Fundamental mechanics and design philosophy
 - **[Wellness System](game-design/wellness-system.md)** - Hidden wellness calculation and friendship penalties
-- **[Happiness Mechanics](game-design/happiness-mechanics.md)** - Entertainment system preventing boredom
 - **[Preferences System](game-design/preferences-system.md)** - Individual guinea pig personality through discovery
 - **[Habitat Conditions](game-design/habitat-conditions.md)** - Environmental management separate from needs
 - **[Activity Feed Design](game-design/activity-feed-design.md)** - Text-based communication before animations
@@ -23,12 +22,12 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 **[systems/](systems/)** - Detailed system specifications organized by development phase
 
 ##### Phase 1: Foundation & Infrastructure
-- **[Game Controller Store](systems/phase1/game-controller-store.md)** - Central control system with save/load ✅ **Completed** (September 17, 2025 | Branch: GPS2-3)
-- **[Layout Component Framework](systems/phase1/layout-component-framework.md)** - Region-based development with responsive UI
-- **[Logging Activity Feed](systems/phase1/logging-activity-feed.md)** - Centralized logging and natural language activity generation
+- **[Game Controller Store](systems/phase1/system-1-game-controller-store.md)** - Central control system with save/load ✅ **Completed** (September 17, 2025 | Branch: GPS2-3)
+- **[Layout Component Framework](systems/phase1/system-2-layout-component-framework.md)** - Region-based development with responsive UI
+- **[Logging Activity Feed](systems/phase1/system-3-logging-activity-feed.md)** - Centralized logging and natural language activity generation
 
 ##### Phase 1.5: Developer Tools
-- **[Error Tracking System](systems/phase1/error-tracking.md)** - Professional debugging interface with system monitoring, error analysis, and developer tools ✅ **Completed** (September 20, 2025 | Branch: GPS2-7)
+- **[Error Tracking System](systems/phase1/system-4-error-tracking.md)** - Professional debugging interface with system monitoring, error analysis, and developer tools ✅ **Completed** (September 20, 2025 | Branch: GPS2-7)
 
 **Note:** Debug Menu panels for specific game systems (Needs, Wellness, Habitat, etc.) are built incrementally alongside each system in subsequent phases, with final consolidation into a unified Debug Menu tab in Phase 5.
 
@@ -42,12 +41,12 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 - **[Systems 9-10: Game Timing](systems/phase2/system-9-10-game-timing.md)** - Unified tick system with pause/resume, automatic pause on navigation, Game State & Controls panel ✅ **Completed** (October 5, 2025 | Branch: GPS2-18)
 
 ##### Phase 2.5: Interactive Feedback Enhancement
-- **[System 1: Personality Trait Influences](systems/phase2.5/system-1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay, interaction effectiveness, and reactions ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
-- **[System 2: Preferences: Likes & Dislikes](systems/phase2.5/system-2-preferences-likes-dislikes.md)** - Individual guinea pig preferences with hidden discovery mechanics (favorites/neutral/disliked) ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
-- **[System 2.5: Fulfillment Limitation System](systems/phase2.5/system-2.5-fulfillment-limitation.md)** - Consumption limits per hunger cycle (fruit:1, veg:3, pellets:2, treats:1, hay:unlimited), interaction rejection based on personality + friendship + wellness with cooldown system (30s-2min) 🚧 **In Progress** (October 9, 2025)
-- **[System 3: Wellness-Based Interaction Reactions](systems/phase2.5/system-3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates, behavioral states, and guinea pig responsiveness
-- **[System 4: Guinea Pig Rescue](systems/phase2.5/system-4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty and Fresh Start option (slots 4-10 lost)
-- **[System 5: Enhanced Activity Messages](systems/phase2.5/system-5-enhanced-activity-messages.md)** - Guinea pig reactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
+- **[System 10.1: Personality Trait Influences](systems/phase2.5/system-10.1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay, interaction effectiveness, and reactions ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
+- **[System 10.2: Preferences: Likes & Dislikes](systems/phase2.5/system-10.2-preferences-likes-dislikes.md)** - Individual guinea pig preferences with hidden discovery mechanics (favorites/neutral/disliked) ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
+- **[System 10.2.5: Fulfillment Limitation System](systems/phase2.5/system-10.2.5-fulfillment-limitation.md)** - Consumption limits per hunger cycle (fruit:1, veg:3, pellets:2, treats:1, hay:unlimited), interaction rejection based on personality + friendship + wellness with cooldown system (30s-2min) 🚧 **In Progress** (October 9, 2025)
+- **[System 10.3: Wellness-Based Interaction Reactions](systems/phase2.5/system-10.3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates, behavioral states, and guinea pig responsiveness
+- **[System 10.4: Guinea Pig Rescue](systems/phase2.5/system-10.4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty and Fresh Start option (slots 4-10 lost)
+- **[System 10.5: Enhanced Activity Messages](systems/phase2.5/system-10.5-enhanced-activity-messages.md)** - Guinea pig reactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
 
 ##### Phase 3: Game World & Environment
 - **[System 11: Supplies Store System](systems/phase3/system-11-supplies-store.md)** - Central catalog of all purchasable items (bedding, hay, habitat items, food, treats) ✅ **Completed** (October 15, 2025 | Branch: GPS2-26)
@@ -92,7 +91,7 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 ### For Game Designers
 1. Explore **[game-design/](game-design/)** for core mechanics understanding
 2. Review **[Preferences System](game-design/preferences-system.md)** for personality mechanics
-3. Study **[Happiness Mechanics](game-design/happiness-mechanics.md)** for engagement strategy
+3. Study **[Needs System](systems/phase2/system-7-needs-system.md)** for need mechanics including happiness
 
 ### For Understanding Project Structure
 1. Begin with this **PROJECT_PLAN.md** for navigation overview
