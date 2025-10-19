@@ -339,6 +339,109 @@ export const useInventoryStore = defineStore('inventory', {
     },
 
     // ========================================================================
+    // Serving-Based System (System 15 - Hay Rack & Serving System)
+    // ========================================================================
+
+    /**
+     * Add a consumable item with serving tracking
+     */
+    addConsumableWithServings(itemId: string, servings: number): void {
+      let inventoryItem = this.items.find((item) => item.itemId === itemId)
+
+      if (!inventoryItem) {
+        inventoryItem = {
+          itemId,
+          instances: [],
+          quantity: 0
+        }
+        this.items.push(inventoryItem)
+      }
+
+      // Create new instance with serving tracking
+      inventoryItem.instances.push({
+        instanceId: generateInstanceId(),
+        acquiredAt: Date.now(),
+        servingsRemaining: servings,
+        maxServings: servings
+      })
+
+      inventoryItem.quantity = inventoryItem.instances.length
+      console.log(`✅ Added 1x ${itemId} with ${servings} servings`)
+    },
+
+    /**
+     * Consume one serving from an item
+     */
+    consumeServing(itemId: string): boolean {
+      const inventoryItem = this.items.find((item) => item.itemId === itemId)
+      if (!inventoryItem || inventoryItem.instances.length === 0) {
+        console.warn(`⚠️ No ${itemId} in inventory`)
+        return false
+      }
+
+      // Find first instance with servings remaining
+      const instance = inventoryItem.instances.find(inst =>
+        inst.servingsRemaining !== undefined && inst.servingsRemaining > 0
+      )
+
+      if (!instance) {
+        console.warn(`⚠️ No servings remaining for ${itemId}`)
+        return false
+      }
+
+      // Consume one serving
+      instance.servingsRemaining!--
+      instance.lastUsedAt = Date.now()
+
+      // Remove instance if depleted
+      if (instance.servingsRemaining === 0) {
+        const index = inventoryItem.instances.findIndex(inst => inst.instanceId === instance.instanceId)
+        if (index !== -1) {
+          inventoryItem.instances.splice(index, 1)
+          inventoryItem.quantity = inventoryItem.instances.length
+        }
+
+        // Remove from items if no instances left
+        if (inventoryItem.instances.length === 0) {
+          this.items = this.items.filter((item) => item.itemId !== itemId)
+        }
+      }
+
+      console.log(`✅ Consumed 1 serving of ${itemId} (${instance.servingsRemaining}/${instance.maxServings} remaining)`)
+      return true
+    },
+
+    /**
+     * Get total servings remaining across all instances
+     */
+    getTotalServings(itemId: string): number {
+      const inventoryItem = this.items.find((item) => item.itemId === itemId)
+      if (!inventoryItem) return 0
+
+      return inventoryItem.instances.reduce((total, inst) => {
+        return total + (inst.servingsRemaining || 0)
+      }, 0)
+    },
+
+    /**
+     * Get serving depletion percentage (0-100) for oldest instance
+     */
+    getServingDepletion(itemId: string): number {
+      const inventoryItem = this.items.find((item) => item.itemId === itemId)
+      if (!inventoryItem || inventoryItem.instances.length === 0) return 100
+
+      // Get oldest instance with servings
+      const instance = inventoryItem.instances.find(inst =>
+        inst.servingsRemaining !== undefined && inst.maxServings !== undefined
+      )
+
+      if (!instance || !instance.maxServings) return 0
+
+      const remaining = instance.servingsRemaining || 0
+      return Math.round((1 - remaining / instance.maxServings) * 100)
+    },
+
+    // ========================================================================
     // Debug/Testing
     // ========================================================================
 

@@ -39,7 +39,8 @@
           class="grid-item"
           :class="{
             'grid-item--dragging': draggedPlacedItemId === item.itemId,
-            'grid-item--bowl-locked': isBowl(item.itemId) && getBowlContents(item.itemId).length > 0
+            'grid-item--bowl-locked': isBowl(item.itemId) && getBowlContents(item.itemId).length > 0,
+            'grid-item--hay-rack-locked': isHayRack(item.itemId) && getHayRackContents(item.itemId).length > 0
           }"
           :style="{
             gridColumn: `${item.position.x + 1} / span ${item.size.width}`,
@@ -60,6 +61,14 @@
             :foods="getBowlContents(item.itemId)"
             @add-food="(foodId) => handleAddFoodToBowl(item.itemId, foodId)"
             @remove-food="(foodId) => handleRemoveFoodFromBowl(item.itemId, foodId)"
+          />
+          <HayRack
+            v-else-if="isHayRack(item.itemId)"
+            :hay-rack-item-id="item.itemId"
+            :hay-servings="getHayRackContents(item.itemId)"
+            :capacity="4"
+            @add-hay="(hayId) => handleAddHayToRack(item.itemId, hayId)"
+            @remove-hay="(index) => handleRemoveHayFromRack(item.itemId, index)"
           />
           <span
             v-else
@@ -108,6 +117,7 @@ import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 import type { SuppliesItem } from '../../types/supplies'
 import FoodBowl from './FoodBowl.vue'
+import HayRack from './HayRack.vue'
 
 interface Props {
   habitatSize?: 'small' | 'medium' | 'large'
@@ -563,12 +573,19 @@ function canDragItem(item: any): boolean {
   if (isBowl(item.itemId)) {
     return getBowlContents(item.itemId).length === 0
   }
+  // Hay racks with hay cannot be dragged
+  if (isHayRack(item.itemId)) {
+    return getHayRackContents(item.itemId).length === 0
+  }
   return true
 }
 
 function getBowlLockTooltip(item: any): string {
   if (isBowl(item.itemId) && getBowlContents(item.itemId).length > 0) {
     return `${item.name} (Remove food to move bowl)`
+  }
+  if (isHayRack(item.itemId) && getHayRackContents(item.itemId).length > 0) {
+    return `${item.name} (Remove hay to move rack)`
   }
   return item.name
 }
@@ -584,6 +601,29 @@ function handleRemoveFoodFromBowl(bowlItemId: string, foodItemId: string) {
   const success = habitatConditions.removeFoodFromBowl(bowlItemId, foodItemId)
   if (success) {
     console.log(`Removed food ${foodItemId} from bowl ${bowlItemId}`)
+  }
+}
+
+// Hay rack helper functions
+function isHayRack(itemId: string): boolean {
+  return itemId.includes('hay_rack')
+}
+
+function getHayRackContents(itemId: string) {
+  return habitatConditions.getHayRackContents(itemId)
+}
+
+function handleAddHayToRack(hayRackItemId: string, hayItemId: string) {
+  const success = habitatConditions.addHayToRack(hayRackItemId, hayItemId)
+  if (success) {
+    console.log(`Added hay ${hayItemId} to rack ${hayRackItemId}`)
+  }
+}
+
+function handleRemoveHayFromRack(hayRackItemId: string, servingIndex: number) {
+  const success = habitatConditions.removeHayFromRack(hayRackItemId, servingIndex)
+  if (success) {
+    console.log(`Removed hay from rack ${hayRackItemId}`)
   }
 }
 
@@ -717,14 +757,16 @@ defineExpose({
   cursor: grabbing;
 }
 
-.grid-item--bowl-locked {
+.grid-item--bowl-locked,
+.grid-item--hay-rack-locked {
   cursor: not-allowed;
   opacity: 0.85;
   border-color: var(--color-warning);
   border-style: dashed;
 }
 
-.grid-item--bowl-locked:hover {
+.grid-item--bowl-locked:hover,
+.grid-item--hay-rack-locked:hover {
   transform: none;
   border-color: var(--color-error);
 }

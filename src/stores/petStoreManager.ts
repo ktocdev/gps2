@@ -820,7 +820,18 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     // Add inventory items
     starterItems.forEach(({ itemId, quantity }) => {
-      inventoryStore.addItem(itemId, quantity)
+      const item = suppliesStore.getItemById(itemId)
+      const servings = item?.stats?.servings
+
+      if (servings) {
+        // Add consumable with serving tracking
+        for (let i = 0; i < quantity; i++) {
+          inventoryStore.addConsumableWithServings(itemId, servings)
+        }
+      } else {
+        // Standard inventory addition
+        inventoryStore.addItem(itemId, quantity)
+      }
       console.log(`✨ Added starter item: ${itemId} x${quantity}`)
     })
 
