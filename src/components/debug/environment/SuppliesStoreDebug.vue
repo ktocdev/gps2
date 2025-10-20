@@ -33,7 +33,7 @@
             </div>
           </div>
           <div class="supplies-store-view__controls-right">
-            <ViewToggle v-model="viewMode" />
+            <ItemViewToggle v-model="viewMode" />
           </div>
         </div>
       </div>
@@ -44,7 +44,7 @@
         <SubTabContainer :tabs="foodSubTabs" v-model="activeFoodSubTab">
           <template #greens>
             <!-- Card View -->
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.greens"
                 :key="item.id"
@@ -59,7 +59,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
 
             <!-- List View -->
             <ItemListView
@@ -97,7 +97,7 @@
 
           <template #herbs>
             <!-- Card View -->
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.herbs"
                 :key="item.id"
@@ -112,7 +112,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
 
             <!-- List View -->
             <ItemListView
@@ -148,7 +148,7 @@
 
           <template #vegetables>
             <!-- Card View -->
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.vegetables"
                 :key="item.id"
@@ -163,7 +163,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
 
             <!-- List View -->
             <ItemListView
@@ -199,7 +199,7 @@
 
           <template #fruits>
             <!-- Card View -->
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.fruits"
                 :key="item.id"
@@ -214,7 +214,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
 
             <!-- List View -->
             <ItemListView
@@ -250,7 +250,7 @@
 
           <template #pellets>
             <!-- Card View -->
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.pellets"
                 :key="item.id"
@@ -265,7 +265,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
 
             <!-- List View -->
             <ItemListView
@@ -301,7 +301,7 @@
 
           <template #treats>
             <!-- Card View -->
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.treats"
                 :key="item.id"
@@ -316,7 +316,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
 
             <!-- List View -->
             <ItemListView
@@ -357,7 +357,7 @@
         <h3 class="panel__subheading sr-only">Habitat Items</h3>
         <SubTabContainer :tabs="habitatSubTabs" v-model="activeHabitatSubTab">
           <template #hideaways>
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.hideaways"
                 :key="item.id"
@@ -372,7 +372,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
             <ItemListView
               v-else
               :items="suppliesStore.hideaways.map(item => ({
@@ -405,7 +405,7 @@
           </template>
 
           <template #toys>
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.toys"
                 :key="item.id"
@@ -420,7 +420,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
             <ItemListView
               v-else
               :items="suppliesStore.toys.map(item => ({
@@ -453,7 +453,7 @@
           </template>
 
           <template #chews>
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.chews"
                 :key="item.id"
@@ -468,7 +468,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
             <ItemListView
               v-else
               :items="suppliesStore.chews.map(item => ({
@@ -501,7 +501,7 @@
           </template>
 
           <template #bowls_bottles>
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.bowlsAndBottles"
                 :key="item.id"
@@ -516,7 +516,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
             <ItemListView
               v-else
               :items="suppliesStore.bowlsAndBottles.map(item => ({
@@ -549,7 +549,7 @@
           </template>
 
           <template #enrichment>
-            <ItemGrid v-if="viewMode === 'card'">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.enrichment"
                 :key="item.id"
@@ -564,7 +564,7 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </ItemGrid>
+            </ItemGridView>
             <ItemListView
               v-else
               :items="suppliesStore.enrichment.map(item => ({
@@ -601,7 +601,7 @@
       <!-- Other Categories - Simple List -->
       <div v-else class="panel__section">
         <h3 class="panel__subheading sr-only">{{ activeDepartmentLabel }}</h3>
-        <ItemGrid v-if="viewMode === 'card'">
+        <ItemGridView v-if="viewMode === 'card'">
           <SupplyItemCard
             v-for="item in filteredItems"
             :key="item.id"
@@ -616,7 +616,7 @@
             @sellback="handleSellBack"
             @update:quantity="setPurchaseQuantity"
           />
-        </ItemGrid>
+        </ItemGridView>
         <ItemListView
           v-else
           :items="filteredItems.map(item => ({
@@ -657,11 +657,11 @@ import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { usePlayerProgression } from '../../../stores/playerProgression'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import Button from '../../basic/Button.vue'
-import ViewToggle from '../../basic/ViewToggle.vue'
+import ItemViewToggle from '../../game/shop/ItemViewToggle.vue'
 import SubTabContainer from '../../layout/SubTabContainer.vue'
 import SupplyItemCard from '../../game/shop/SupplyItemCard.vue'
 import ItemListView from '../../game/shop/ItemListView.vue'
-import ItemGrid from '../../game/shop/ItemGrid.vue'
+import ItemGridView from '../../game/shop/ItemGridView.vue'
 
 const suppliesStore = useSuppliesStore()
 const playerProgression = usePlayerProgression()
@@ -728,7 +728,7 @@ const getItemDetails = (itemId: string) => {
 }
 
 // View mode toggle
-const viewMode = ref<'card' | 'list'>('card')
+const viewMode = ref<'card' | 'list'>('list')
 
 // Department navigation
 const activeDepartment = ref<'featured' | 'bedding' | 'hay' | 'food' | 'habitat_item' | 'all'>('featured')

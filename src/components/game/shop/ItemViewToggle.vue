@@ -1,24 +1,24 @@
 <template>
-  <div class="view-toggle">
+  <div class="item-view-toggle">
     <button
-      class="view-toggle__button"
-      :class="{ 'view-toggle__button--active': modelValue === 'card' }"
-      @click="$emit('update:modelValue', 'card')"
-      :aria-label="'Card view'"
-      :aria-pressed="modelValue === 'card'"
-    >
-      <span class="view-toggle__icon">▦</span>
-      <span class="view-toggle__label">Cards</span>
-    </button>
-    <button
-      class="view-toggle__button"
-      :class="{ 'view-toggle__button--active': modelValue === 'list' }"
+      class="item-view-toggle__button"
+      :class="{ 'item-view-toggle__button--active': modelValue === 'list' }"
       @click="$emit('update:modelValue', 'list')"
       :aria-label="'List view'"
       :aria-pressed="modelValue === 'list'"
     >
-      <span class="view-toggle__icon">☰</span>
-      <span class="view-toggle__label">List</span>
+      <span class="item-view-toggle__icon">☰</span>
+      <span class="item-view-toggle__label">List</span>
+    </button>
+    <button
+      class="item-view-toggle__button"
+      :class="{ 'item-view-toggle__button--active': modelValue === 'card' }"
+      @click="$emit('update:modelValue', 'card')"
+      :aria-label="'Card view'"
+      :aria-pressed="modelValue === 'card'"
+    >
+      <span class="item-view-toggle__icon">▦</span>
+      <span class="item-view-toggle__label">Cards</span>
     </button>
   </div>
 </template>
@@ -36,7 +36,7 @@ defineEmits<{
 </script>
 
 <style>
-.view-toggle {
+.item-view-toggle {
   display: inline-flex;
   background: var(--color-bg-tertiary);
   border: 1px solid var(--color-border);
@@ -45,7 +45,7 @@ defineEmits<{
   gap: 2px;
 }
 
-.view-toggle__button {
+.item-view-toggle__button {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -61,38 +61,38 @@ defineEmits<{
   outline: none;
 }
 
-.view-toggle__button:hover {
+.item-view-toggle__button:hover {
   background: var(--color-bg-secondary);
   color: var(--color-text-primary);
 }
 
-.view-toggle__button:focus-visible {
+.item-view-toggle__button:focus-visible {
   box-shadow: 0 0 0 2px var(--color-primary);
 }
 
-.view-toggle__button--active {
+.item-view-toggle__button--active {
   background: var(--color-bg-primary);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
   box-shadow: var(--shadow-sm);
 }
 
-.view-toggle__icon {
+.item-view-toggle__icon {
   font-size: var(--font-size-lg);
   line-height: 1;
 }
 
-.view-toggle__label {
+.item-view-toggle__label {
   line-height: 1;
 }
 
 /* Hide labels on small screens */
 @media (max-width: 640px) {
-  .view-toggle__label {
+  .item-view-toggle__label {
     display: none;
   }
 
-  .view-toggle__button {
+  .item-view-toggle__button {
     padding: var(--space-2);
   }
 }

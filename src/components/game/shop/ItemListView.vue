@@ -4,10 +4,11 @@
       <thead class="item-list-view__header">
         <tr>
           <th class="item-list-view__th">Item</th>
-          <th class="item-list-view__th item-list-view__th--center">Price</th>
+          <th v-if="showPrice" class="item-list-view__th item-list-view__th--center">Price</th>
           <th v-if="showOwned" class="item-list-view__th item-list-view__th--center">Owned</th>
+          <th v-if="showReturnable" class="item-list-view__th item-list-view__th--center">Returnable</th>
           <th v-if="showStatus" class="item-list-view__th item-list-view__th--center">Status</th>
-          <th class="item-list-view__th item-list-view__th--right">Actions</th>
+          <th v-if="showActions" class="item-list-view__th item-list-view__th--right">Actions</th>
         </tr>
       </thead>
       <tbody class="item-list-view__body">
@@ -19,18 +20,21 @@
           <!-- Item Name & Description -->
           <td class="item-list-view__td">
             <div class="item-list-view__item-info">
-              <div class="item-list-view__item-name">
-                {{ item.name }}
-                <Badge v-if="item.isEssential" variant="warning" size="sm">Essential</Badge>
-                <Badge v-if="item.availability === 'seasonal'" variant="seasonal" size="sm">Seasonal</Badge>
-                <Badge v-else-if="item.availability === 'limited'" variant="info" size="sm">Limited</Badge>
+              <span v-if="item.emoji" class="item-list-view__emoji">{{ item.emoji }}</span>
+              <div class="item-list-view__item-details">
+                <div class="item-list-view__item-name">
+                  {{ item.name }}
+                  <Badge v-if="item.isEssential" variant="warning" size="sm">Essential</Badge>
+                  <Badge v-if="item.availability === 'seasonal'" variant="seasonal" size="sm">Seasonal</Badge>
+                  <Badge v-else-if="item.availability === 'limited'" variant="info" size="sm">Limited</Badge>
+                </div>
+                <div class="item-list-view__item-description">{{ item.description }}</div>
               </div>
-              <div class="item-list-view__item-description">{{ item.description }}</div>
             </div>
           </td>
 
-          <!-- Price -->
-          <td class="item-list-view__td item-list-view__td--center">
+          <!-- Price (optional) -->
+          <td v-if="showPrice" class="item-list-view__td item-list-view__td--center">
             <span class="item-list-view__price">${{ item.basePrice.toFixed(2) }}</span>
           </td>
 
@@ -39,19 +43,20 @@
             <span class="item-list-view__owned">{{ item.owned || 0 }}</span>
           </td>
 
+          <!-- Returnable Count (optional) -->
+          <td v-if="showReturnable" class="item-list-view__td item-list-view__td--center">
+            <span class="item-list-view__returnable">{{ item.returnable || 0 }}</span>
+          </td>
+
           <!-- Status Badges (optional) -->
           <td v-if="showStatus" class="item-list-view__td item-list-view__td--center">
             <div class="item-list-view__status">
-              <slot name="status" :item="item">
-                <Badge v-if="item.returnable && item.returnable > 0" variant="success" size="sm">
-                  Returnable: {{ item.returnable }}
-                </Badge>
-              </slot>
+              <slot name="status" :item="item"></slot>
             </div>
           </td>
 
-          <!-- Actions -->
-          <td class="item-list-view__td item-list-view__td--right">
+          <!-- Actions (optional) -->
+          <td v-if="showActions" class="item-list-view__td item-list-view__td--right">
             <div class="item-list-view__actions">
               <slot name="actions" :item="item">
                 <!-- Default: Buy button -->
@@ -77,6 +82,7 @@ import Button from '../../basic/Button.vue'
 
 interface Item {
   id: string
+  emoji?: string
   name: string
   description?: string
   basePrice: number
@@ -91,11 +97,17 @@ interface Props {
   items: Item[]
   showOwned?: boolean
   showStatus?: boolean
+  showPrice?: boolean
+  showReturnable?: boolean
+  showActions?: boolean
 }
 
 withDefaults(defineProps<Props>(), {
   showOwned: false,
-  showStatus: false
+  showStatus: false,
+  showPrice: true,
+  showReturnable: false,
+  showActions: true
 })
 
 defineEmits<{
@@ -173,8 +185,22 @@ defineEmits<{
 
 .item-list-view__item-info {
   display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.item-list-view__emoji {
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.item-list-view__item-details {
+  display: flex;
   flex-direction: column;
   gap: var(--space-1);
+  flex: 1;
+  min-inline-size: 0;
 }
 
 .item-list-view__item-name {
@@ -199,6 +225,11 @@ defineEmits<{
 }
 
 .item-list-view__owned {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.item-list-view__returnable {
   font-weight: var(--font-weight-medium);
   color: var(--color-text-primary);
 }

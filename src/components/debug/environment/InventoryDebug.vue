@@ -13,7 +13,7 @@
             </div>
           </div>
           <div class="inventory-view__header-right">
-            <ViewToggle v-model="viewMode" />
+            <ItemViewToggle v-model="viewMode" />
           </div>
         </div>
 
@@ -29,13 +29,14 @@
             </div>
 
             <!-- Card View -->
-            <ItemGrid v-else-if="viewMode === 'card'">
+            <ItemGridView v-else-if="viewMode === 'card'">
               <div
                 v-for="item in consumablesWithDetails"
                 :key="item.itemId"
                 class="inventory-item-card"
               >
                 <div class="inventory-item-card__header">
+                  <span v-if="item.item?.emoji" class="inventory-item-card__emoji">{{ item.item.emoji }}</span>
                   <div class="inventory-item-card__name-section">
                     <span class="inventory-item-card__name">{{ item.item?.name }}</span>
                     <span class="inventory-item-card__category">{{ item.item?.category }}</span>
@@ -56,21 +57,25 @@
                 </div>
 
               </div>
-            </ItemGrid>
+            </ItemGridView>
 
             <!-- List View -->
             <ItemListView
               v-else
               :items="consumablesWithDetails.map(item => ({
                 id: item.itemId,
+                emoji: item.item?.emoji || '',
                 name: item.item?.name || 'Unknown',
                 description: item.item?.category || '',
                 basePrice: 0,
                 owned: item.quantity,
                 returnable: inventoryStore.getReturnableQuantity(item.itemId)
               }))"
+              :show-price="false"
               :show-owned="true"
+              :show-returnable="true"
               :show-status="true"
+              :show-actions="false"
             >
               <template #status="{ item }">
                 <Badge v-if="inventoryStore.getOpenedCount(item.id) > 0" variant="warning" size="sm">
@@ -80,9 +85,6 @@
                   Unopened: {{ inventoryStore.getUnopenedCount(item.id) }}
                 </Badge>
               </template>
-              <template #actions>
-                <!-- No actions for consumables -->
-              </template>
             </ItemListView>
 
             <h3 class="panel__subheading">Habitat Items</h3>
@@ -91,13 +93,14 @@
             </div>
 
             <!-- Card View -->
-            <ItemGrid v-else-if="viewMode === 'card'">
+            <ItemGridView v-else-if="viewMode === 'card'">
               <div
                 v-for="item in habitatItemsWithDetails"
                 :key="item.itemId"
                 class="inventory-item-card"
               >
                 <div class="inventory-item-card__header">
+                  <span v-if="item.item?.emoji" class="inventory-item-card__emoji">{{ item.item.emoji }}</span>
                   <div class="inventory-item-card__name-section">
                     <span class="inventory-item-card__name">{{ item.item?.name }}</span>
                     <span class="inventory-item-card__category">{{ item.item?.subCategory }}</span>
@@ -118,21 +121,25 @@
                 </div>
 
               </div>
-            </ItemGrid>
+            </ItemGridView>
 
             <!-- List View -->
             <ItemListView
               v-else
               :items="habitatItemsWithDetails.map(item => ({
                 id: item.itemId,
+                emoji: item.item?.emoji || '',
                 name: item.item?.name || 'Unknown',
                 description: item.item?.subCategory || '',
                 basePrice: 0,
                 owned: item.quantity,
                 returnable: inventoryStore.getReturnableQuantity(item.itemId)
               }))"
+              :show-price="false"
               :show-owned="true"
+              :show-returnable="true"
               :show-status="true"
+              :show-actions="false"
             >
               <template #status="{ item }">
                 <Badge v-if="inventoryStore.getPlacedCount(item.id) > 0" variant="info" size="sm">
@@ -141,9 +148,6 @@
                 <Badge v-if="inventoryStore.getUnplacedCount(item.id) > 0" variant="secondary" size="sm">
                   Unplaced: {{ inventoryStore.getUnplacedCount(item.id) }}
                 </Badge>
-              </template>
-              <template #actions>
-                <!-- No actions for habitat items -->
               </template>
             </ItemListView>
           </div>
@@ -248,16 +252,16 @@ import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import Button from '../../basic/Button.vue'
 import Badge from '../../basic/Badge.vue'
-import ViewToggle from '../../basic/ViewToggle.vue'
+import ItemViewToggle from '../../game/shop/ItemViewToggle.vue'
 import ItemListView from '../../game/shop/ItemListView.vue'
-import ItemGrid from '../../game/shop/ItemGrid.vue'
+import ItemGridView from '../../game/shop/ItemGridView.vue'
 
 const playerProgression = usePlayerProgression()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 
 // View mode toggle
-const viewMode = ref<'card' | 'list'>('card')
+const viewMode = ref<'card' | 'list'>('list')
 
 // Initialize supplies catalog on mount to fix empty inventory on first load
 onMounted(() => {
@@ -413,6 +417,12 @@ const resetCurrency = () => {
   justify-content: space-between;
   align-items: flex-start;
   gap: var(--space-3);
+}
+
+.inventory-item-card__emoji {
+  font-size: var(--font-size-3xl);
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .inventory-item-card__name-section {
