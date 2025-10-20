@@ -33,6 +33,8 @@ const fullnessClass = computed(() => {
   justify-content: center;
   inline-size: 100%;
   block-size: 100%;
+  border-radius: 8px;
+  transition: background-color 0.4s ease;
 }
 
 .water-bottle__water {
@@ -42,31 +44,48 @@ const fullnessClass = computed(() => {
   inset-block-start: 50%;
   inset-inline-start: 50%;
   transform: translate(-50%, -50%);
-  transition: opacity 0.3s ease, filter 0.3s ease;
+  transition: opacity 0.3s ease;
+  z-index: 1;
 }
 
-/* Water opacity based on fullness: fade out as it empties */
-.water-bottle--empty .water-bottle__water {
-  opacity: 0;
-}
-
-.water-bottle--low .water-bottle__water {
-  opacity: 0.3;
-  filter: brightness(0.8);
-}
-
-.water-bottle--half .water-bottle__water {
-  opacity: 0.6;
-  filter: brightness(0.9);
-}
-
-.water-bottle--three-quarters .water-bottle__water {
-  opacity: 0.85;
-  filter: brightness(1);
+/* Background color fades from blue (full) to white (empty) */
+.water-bottle--full {
+  background-color: rgba(59, 130, 246, 0.5); /* medium blue at 50% opacity */
 }
 
 .water-bottle--full .water-bottle__water {
   opacity: 1;
-  filter: brightness(1.1);
+}
+
+.water-bottle--three-quarters {
+  background-color: rgba(59, 130, 246, 0.35);
+}
+
+.water-bottle--three-quarters .water-bottle__water {
+  opacity: 0.95;
+}
+
+.water-bottle--half {
+  background-color: rgba(59, 130, 246, 0.2);
+}
+
+.water-bottle--half .water-bottle__water {
+  opacity: 0.85;
+}
+
+.water-bottle--low {
+  background-color: rgba(59, 130, 246, 0.08);
+}
+
+.water-bottle--low .water-bottle__water {
+  opacity: 0.7;
+}
+
+.water-bottle--empty {
+  background-color: rgba(255, 255, 255, 0); /* transparent/white */
+}
+
+.water-bottle--empty .water-bottle__water {
+  opacity: 0.5; /* emoji still visible but very faded */
 }
 </style>

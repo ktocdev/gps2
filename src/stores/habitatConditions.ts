@@ -423,6 +423,97 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
   // Note: Bowl and hay rack functions are now provided by useHabitatContainers composable
 
+  // ============================================================================
+  // Water Consumption System (System 16: Phase 2)
+  // ============================================================================
+
+  /**
+   * Consume water from bottle (called when guinea pig drinks)
+   * @param waterBottleItemId - ID of the water bottle item to drink from
+   * @returns True if water was consumed successfully
+   */
+  function consumeWater(waterBottleItemId?: string): boolean {
+    // If no specific bottle provided, find any water bottle in habitat
+    let bottleId = waterBottleItemId
+
+    if (!bottleId) {
+      const suppliesStore = useSuppliesStore()
+      bottleId = habitatItems.value.find(itemId => {
+        const item = suppliesStore.getItemById(itemId)
+        return item?.stats?.itemType === 'water_bottle'
+      })
+    }
+
+    if (!bottleId) {
+      console.warn('No water bottle found in habitat')
+      return false
+    }
+
+    // Check if water bottle exists in habitat
+    if (!habitatItems.value.includes(bottleId)) {
+      console.warn(`Water bottle ${bottleId} not in habitat`)
+      return false
+    }
+
+    // Check if item is actually a water bottle
+    const suppliesStore = useSuppliesStore()
+    const item = suppliesStore.getItemById(bottleId)
+    if (item?.stats?.itemType !== 'water_bottle') {
+      console.warn(`Item ${bottleId} is not a water bottle`)
+      return false
+    }
+
+    // Check if water level is sufficient
+    if (waterLevel.value < 5) {
+      console.warn('Water bottle is empty - cannot drink')
+      return false
+    }
+
+    // Consume water (10-15 units)
+    const consumption = Math.floor(Math.random() * 6) + 10
+    waterLevel.value = Math.max(0, waterLevel.value - consumption)
+
+    console.log(`💧 Water consumed: ${consumption} units. Remaining: ${waterLevel.value}%`)
+    recordSnapshot()
+    return true
+  }
+
+  /**
+   * Check if water is available for drinking
+   * @returns True if water bottle is present and has sufficient water
+   */
+  function hasWaterAvailable(): boolean {
+    // Check if any water bottle is placed in habitat
+    const suppliesStore = useSuppliesStore()
+    const waterBottle = habitatItems.value.find(itemId => {
+      const item = suppliesStore.getItemById(itemId)
+      return item?.stats?.itemType === 'water_bottle'
+    })
+
+    return waterBottle !== undefined && waterLevel.value >= 5
+  }
+
+  /**
+   * Find water bottle position for autonomy pathfinding
+   * @returns Position of first water bottle, or null if none found
+   */
+  function getWaterBottlePosition(): { x: number; y: number } | null {
+    const suppliesStore = useSuppliesStore()
+
+    // Find first water bottle in habitat
+    const waterBottleId = habitatItems.value.find(itemId => {
+      const item = suppliesStore.getItemById(itemId)
+      return item?.stats?.itemType === 'water_bottle'
+    })
+
+    if (!waterBottleId) {
+      return null
+    }
+
+    // Return stored position
+    return itemPositions.value.get(waterBottleId) || null
+  }
+
   function initializeStarterHabitat(starterItemIds: string[]) {
     // Add starter items to habitat without checking inventory
     habitatItems.value = [...starterItemIds]
@@ -496,7 +587,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     removeHayFromRack,
     getHayRackContents,
     clearHayRack,
-    clearAllHayRacks
+    clearAllHayRacks,
+
+    // System 16: Phase 2 - Water Consumption
+    consumeWater,
+    hasWaterAvailable,
+    getWaterBottlePosition
   }
 }, {
   persist: {

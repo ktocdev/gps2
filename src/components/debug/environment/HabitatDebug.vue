@@ -195,6 +195,14 @@
             >
               Clear Water
             </Button>
+            <Button
+              @click="testWaterConsumption"
+              variant="tertiary"
+              size="sm"
+              :disabled="!hasWaterAvailable"
+            >
+              Test Water Consumption {{ hasWaterAvailable ? `(${habitat.waterLevel.toFixed(0)}%)` : '(No Water)' }}
+            </Button>
           </div>
         </div>
       </div>
@@ -287,6 +295,24 @@ function clearAllHayRacks() {
 function clearWater() {
   habitat.waterLevel = 0
 }
+
+// System 16: Phase 2 - Water Consumption Test
+function testWaterConsumption() {
+  const beforeLevel = habitat.waterLevel
+  const success = habitat.consumeWater()
+  const afterLevel = habitat.waterLevel
+
+  if (success) {
+    console.log(`✅ Water consumption test successful! ${beforeLevel.toFixed(0)}% → ${afterLevel.toFixed(0)}% (consumed ${(beforeLevel - afterLevel).toFixed(0)} units)`)
+    console.log('💧 Visual opacity should update automatically via reactive waterLevel binding')
+  } else {
+    console.log('❌ Water consumption test failed')
+  }
+}
+
+const hasWaterAvailable = computed(() => {
+  return habitat.hasWaterAvailable()
+})
 
 const hasActiveGuineaPigs = computed(() => {
   return guineaPigStore.activeGuineaPigs.length > 0
