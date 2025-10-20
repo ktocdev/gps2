@@ -278,12 +278,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useSuppliesStore } from '../../stores/suppliesStore'
-import { usePlayerProgression } from '../../stores/playerProgression'
-import { useInventoryStore } from '../../stores/inventoryStore'
-import Button from '../basic/Button.vue'
-import SubTabContainer from '../layout/SubTabContainer.vue'
-import SupplyItemCard from '../game/SupplyItemCard.vue'
+import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { usePlayerProgression } from '../../../stores/playerProgression'
+import { useInventoryStore } from '../../../stores/inventoryStore'
+import Button from '../../basic/Button.vue'
+import SubTabContainer from '../../layout/SubTabContainer.vue'
+import SupplyItemCard from '../../game/shop/SupplyItemCard.vue'
 
 const suppliesStore = useSuppliesStore()
 const playerProgression = usePlayerProgression()

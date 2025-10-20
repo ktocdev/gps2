@@ -149,6 +149,11 @@ export function useHabitatContainers() {
     bowlContents.value.delete(bowlItemId)
   }
 
+  function clearAllBowls(): void {
+    bowlContents.value.clear()
+    console.log('Cleared all bowls')
+  }
+
   // ========================================================================
   // Hay Rack Management
   // ========================================================================
@@ -241,6 +246,11 @@ export function useHabitatContainers() {
     hayRackContents.value.delete(hayRackItemId)
   }
 
+  function clearAllHayRacks(): void {
+    hayRackContents.value.clear()
+    console.log('Cleared all hay racks')
+  }
+
   // ========================================================================
   // Return API
   // ========================================================================
@@ -255,12 +265,14 @@ export function useHabitatContainers() {
     removeFoodFromBowl,
     getBowlContents,
     clearBowl,
+    clearAllBowls,
 
     // Hay rack methods
     addHayToRack,
     removeHayFromRack,
     getHayRackContents,
-    clearHayRack
+    clearHayRack,
+    clearAllHayRacks
   }
 }
 

@@ -76,8 +76,8 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, watch } from 'vue'
-import { useLoggingStore, type ActivityMessage, type MessageCategory } from '../../stores/loggingStore'
-import Button from '../basic/Button.vue'
+import { useLoggingStore, type ActivityMessage, type MessageCategory } from '../../../stores/loggingStore'
+import Button from '../../basic/Button.vue'
 
 interface Props {
   maxMessages?: number

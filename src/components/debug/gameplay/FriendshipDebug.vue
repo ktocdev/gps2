@@ -149,12 +149,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useGuineaPigStore } from '../../stores/guineaPigStore'
-import { useNeedsController } from '../../stores/needsController'
-import type { GuineaPig } from '../../stores/guineaPigStore'
-import FriendshipProgress from '../game/FriendshipProgress.vue'
-import SliderField from '../basic/SliderField.vue'
-import Button from '../basic/Button.vue'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import { useNeedsController } from '../../../stores/needsController'
+import type { GuineaPig } from '../../../stores/guineaPigStore'
+import FriendshipProgress from '../../game/ui/FriendshipProgress.vue'
+import SliderField from '../../basic/SliderField.vue'
+import Button from '../../basic/Button.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const needsController = useNeedsController()

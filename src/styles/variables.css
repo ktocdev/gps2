@@ -60,6 +60,8 @@
   --color-accent-pink-500: #ec4899;
   --color-accent-pink-600: #db2777;
   --color-accent-pink-700: #be185d;
+  --color-accent-pink-800: #9f1239;
+  --color-accent-pink-900: #831843;
 
   /* Accent Colors - Light Green Theme */
   --color-accent-green-50: #f0fdf4;
@@ -68,19 +70,21 @@
   --color-accent-green-300: #86efac;
   --color-accent-green-400: #4ade80;
   --color-accent-green-500: #22c55e;
-  --color-accent-green-600: #16a34a;
+  --color-accent-green-600: #178740;  /* Darker for better contrast */
   --color-accent-green-700: #15803d;
+  --color-accent-green-800: #166534;
+  --color-accent-green-900: #14532d;
 
-  /* Primary Action Colors (Pink) */
-  --color-primary: var(--color-accent-pink-500);
-  --color-primary-hover: var(--color-accent-pink-600);
-  --color-primary-active: var(--color-accent-pink-700);
+  /* Primary Action Colors (Pink) - Updated for contrast */
+  --color-primary: var(--color-accent-pink-600);    /* Now #db2777 for better small text contrast */
+  --color-primary-hover: var(--color-accent-pink-700);
+  --color-primary-active: var(--color-accent-pink-800);
   --color-primary-bg: var(--color-accent-pink-50);
 
-  /* Secondary Action Colors (Light Green) */
-  --color-secondary: var(--color-accent-green-500);
-  --color-secondary-hover: var(--color-accent-green-600);
-  --color-secondary-active: var(--color-accent-green-700);
+  /* Secondary Action Colors (Light Green) - Updated for contrast */
+  --color-secondary: var(--color-accent-green-600);  /* Now #178740 for better contrast */
+  --color-secondary-hover: var(--color-accent-green-700);
+  --color-secondary-active: var(--color-accent-green-800);
   --color-secondary-bg: var(--color-accent-green-50);
 
   /* Neutral Colors */
@@ -100,47 +104,56 @@
   --color-border-medium: var(--color-neutral-300);
   --color-border-dark: var(--color-neutral-400);
 
-  /* Status Colors - Warning (Amber) */
-  --color-warning-50: #fffbeb;
-  --color-warning-100: #fef3c7;
-  --color-warning-200: #fde68a;
-  --color-warning-300: #fcd34d;
-  --color-warning-400: #fbbf24;
-  --color-warning-500: #f59e0b;
-  --color-warning-600: #d97706;
-  --color-warning-700: #b45309;
+  /* Status Colors - Warning (Amber/Orange) - Improved contrast spread */
+  --color-warning-50: #fffbeb;    /* Very light - backgrounds */
+  --color-warning-100: #fef3c7;  /* Light - hover backgrounds */
+  --color-warning-200: #fde68a;  /* Light - borders */
+  --color-warning-300: #fbbf24;  /* Mid-light - muted text */
+  --color-warning-400: #f59e0b;  /* Mid - standard amber */
+  --color-warning-500: #ea580c;  /* Mid-dark - primary orange (button default) */
+  --color-warning-600: #c2410c;  /* Dark - hover states */
+  --color-warning-700: #9a3412;  /* Darker - active states */
+  --color-warning-800: #7c2d12;  /* Very dark - emphasis */
+  --color-warning-900: #431407;  /* Darkest - maximum contrast */
 
-  /* Status Colors - Error (Red) */
-  --color-error-50: #fef2f2;
-  --color-error-100: #fee2e2;
-  --color-error-200: #fecaca;
-  --color-error-300: #fca5a5;
-  --color-error-400: #f87171;
-  --color-error-500: #ef4444;
-  --color-error-600: #dc2626;
-  --color-error-700: #b91c1c;
+  /* Status Colors - Error (Red) - Improved contrast spread */
+  --color-error-50: #fef2f2;    /* Very light - backgrounds */
+  --color-error-100: #fee2e2;  /* Light - hover backgrounds */
+  --color-error-200: #fecaca;  /* Light - borders */
+  --color-error-300: #f87171;  /* Mid-light - muted text */
+  --color-error-400: #ef4444;  /* Mid - standard red */
+  --color-error-500: #dc2626;  /* Mid-dark - primary error */
+  --color-error-600: #b91c1c;  /* Dark - hover states */
+  --color-error-700: #991b1b;  /* Darker - active states */
+  --color-error-800: #7f1d1d;  /* Very dark - emphasis */
+  --color-error-900: #450a0a;  /* Darkest - maximum contrast */
 
-  /* Status Colors - Info (Blue) */
-  --color-info-50: #eff6ff;
-  --color-info-100: #dbeafe;
-  --color-info-200: #bfdbfe;
-  --color-info-300: #93c5fd;
-  --color-info-400: #60a5fa;
-  --color-info-500: #3b82f6;
-  --color-info-600: #2563eb;
-  --color-info-700: #1d4ed8;
+  /* Status Colors - Info (Blue) - Improved contrast spread */
+  --color-info-50: #eff6ff;    /* Very light - backgrounds */
+  --color-info-100: #dbeafe;  /* Light - hover backgrounds */
+  --color-info-200: #bfdbfe;  /* Light - borders */
+  --color-info-300: #60a5fa;  /* Mid-light - muted text */
+  --color-info-400: #3b82f6;  /* Mid - standard blue */
+  --color-info-500: #2563eb;  /* Mid-dark - primary info */
+  --color-info-600: #1d4ed8;  /* Dark - hover states */
+  --color-info-700: #1e40af;  /* Darker - active states */
+  --color-info-800: #1e3a8a;  /* Very dark - emphasis */
+  --color-info-900: #172554;  /* Darkest - maximum contrast */
 
-  /* Status Color Aliases (for backwards compatibility) */
-  --color-success: var(--color-accent-green-500);
+  /* Status Color Aliases - Updated to use new scale midpoints */
+  --color-success: var(--color-accent-green-600);  /* Updated to #178740 for better contrast */
   --color-success-bg: var(--color-accent-green-50);
-  --color-warning: var(--color-warning-500);
-  --color-warning-hover: var(--color-warning-600);
+  --color-warning: var(--color-warning-500);        /* Now orange #ea580c */
+  --color-warning-hover: var(--color-warning-600);  /* Now #c2410c */
+  --color-warning-active: var(--color-warning-700); /* Now #9a3412 */
   --color-warning-bg: var(--color-warning-50);
-  --color-error: var(--color-error-500);
-  --color-error-hover: var(--color-error-600);
+  --color-error: var(--color-error-500);            /* Now #dc2626 */
+  --color-error-hover: var(--color-error-600);      /* Now #b91c1c */
+  --color-error-active: var(--color-error-700);     /* Now #991b1b */
   --color-error-bg: var(--color-error-50);
-  --color-info: var(--color-info-500);
-  --color-info-hover: var(--color-info-600);
+  --color-info: var(--color-info-500);              /* Now #2563eb */
+  --color-info-hover: var(--color-info-600);        /* Now #1d4ed8 */
+  --color-info-active: var(--color-info-700);       /* Now #1e40af */
   --color-info-bg: var(--color-info-50);
 
   /* Border Radius (Logical Properties) */

@@ -12,6 +12,7 @@
     <div class="inventory-tile-serving__servings">
       {{ servingsRemaining }}/{{ maxServings }} servings
     </div>
+    <span v-if="instanceCount && instanceCount > 1" class="inventory-tile-serving__count">×{{ instanceCount }}</span>
   </div>
 </template>
 
@@ -24,6 +25,7 @@ interface Props {
   emoji?: string
   servingsRemaining: number
   maxServings: number
+  instanceCount?: number
 }
 
 const props = defineProps<Props>()
@@ -77,6 +79,7 @@ function handleDragEnd(event: DragEvent) {
 
 <style>
 .inventory-tile-serving {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -168,5 +171,19 @@ function handleDragEnd(event: DragEvent) {
 
 .inventory-tile-serving--depleted .inventory-tile-serving__emoji {
   filter: grayscale(50%);
+}
+
+.inventory-tile-serving__count {
+  position: absolute;
+  inset-block-start: var(--space-1);
+  inset-inline-end: var(--space-1);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  padding: 2px 6px;
+  border-radius: var(--radius-full);
+  line-height: 1;
+  box-shadow: var(--shadow-sm);
 }
 </style>

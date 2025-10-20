@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-import PersonalityDebug from '../components/debug/PersonalityDebug.vue'
+import PersonalityDebug from '../components/debug/gameplay/PersonalityDebug.vue'
 </script>

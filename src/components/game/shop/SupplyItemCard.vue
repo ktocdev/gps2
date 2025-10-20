@@ -64,9 +64,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { SuppliesItem } from '../../types/supplies'
-import Button from '../basic/Button.vue'
-import Badge from '../basic/Badge.vue'
+import type { SuppliesItem } from '../../../types/supplies'
+import Button from '../../basic/Button.vue'
+import Badge from '../../basic/Badge.vue'
 
 interface Props {
   item: SuppliesItem

@@ -135,13 +135,13 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { usePetStoreManager } from '../../stores/petStoreManager'
-import { useGuineaPigStore } from '../../stores/guineaPigStore'
-import FriendshipProgress from '../game/FriendshipProgress.vue'
-import Button from '../basic/Button.vue'
-import Badge from '../basic/Badge.vue'
-import BlockMessage from '../basic/BlockMessage.vue'
-import InfoButton from '../basic/InfoButton.vue'
+import { usePetStoreManager } from '../../../stores/petStoreManager'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import FriendshipProgress from '../../game/ui/FriendshipProgress.vue'
+import Button from '../../basic/Button.vue'
+import Badge from '../../basic/Badge.vue'
+import BlockMessage from '../../basic/BlockMessage.vue'
+import InfoButton from '../../basic/InfoButton.vue'
 
 const petStoreManager = usePetStoreManager()
 const guineaPigStore = useGuineaPigStore()

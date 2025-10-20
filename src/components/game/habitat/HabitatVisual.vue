@@ -60,7 +60,6 @@
             :capacity="getBowlCapacity(item.itemId)"
             :foods="getBowlContents(item.itemId)"
             @add-food="(foodId) => handleAddFoodToBowl(item.itemId, foodId)"
-            @remove-food="(foodId) => handleRemoveFoodFromBowl(item.itemId, foodId)"
           />
           <HayRack
             v-else-if="isHayRack(item.itemId)"
@@ -68,7 +67,11 @@
             :hay-servings="getHayRackContents(item.itemId)"
             :capacity="4"
             @add-hay="(hayId) => handleAddHayToRack(item.itemId, hayId)"
-            @remove-hay="(index) => handleRemoveHayFromRack(item.itemId, index)"
+          />
+          <WaterBottle
+            v-else-if="isWaterBottle(item.itemId)"
+            :water-level="habitatConditions.waterLevel"
+            :bottle-emoji="item.emoji"
           />
           <span
             v-else
@@ -112,11 +115,12 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useHabitatConditions } from '../../stores/habitatConditions'
-import { useSuppliesStore } from '../../stores/suppliesStore'
-import type { SuppliesItem } from '../../types/supplies'
+import { useHabitatConditions } from '../../../stores/habitatConditions'
+import { useSuppliesStore } from '../../../stores/suppliesStore'
+import type { SuppliesItem } from '../../../types/supplies'
 import FoodBowl from './FoodBowl.vue'
 import HayRack from './HayRack.vue'
+import WaterBottle from './WaterBottle.vue'
 
 interface Props {
   habitatSize?: 'small' | 'medium' | 'large'
@@ -425,28 +429,13 @@ function handleDrop(event: DragEvent, cell: GridCell) {
 
   let itemId: string
   let isRepos = false
-  let isFromBowl = false
-  let bowlItemId: string | undefined
 
   try {
     const data = JSON.parse(itemData)
     itemId = data.itemId
     isRepos = data.isRepositioning || false
-    isFromBowl = data.isFromBowl || false
-    bowlItemId = data.bowlItemId
   } catch {
     itemId = itemData
-  }
-
-  // If dragging food from a bowl, remove it from the bowl
-  if (isFromBowl && bowlItemId) {
-    handleRemoveFoodFromBowl(bowlItemId, itemId)
-    console.log(`Removed food ${itemId} from bowl ${bowlItemId}`)
-
-    // Reset drag state
-    draggedItemId.value = null
-    draggedItemSize.value = { width: 1, height: 1 }
-    return
   }
 
   // If dropping food on a bowl, add it to the bowl
@@ -465,6 +454,30 @@ function handleDrop(event: DragEvent, cell: GridCell) {
     if (bowlAtPosition) {
       // Add food to bowl
       handleAddFoodToBowl(bowlAtPosition.itemId, itemId)
+
+      // Reset drag state
+      draggedItemId.value = null
+      draggedItemSize.value = { width: 1, height: 1 }
+      return
+    }
+  }
+
+  // If dropping hay on a hay rack, add it to the rack
+  if (isHay(itemId) && !isRepos) {
+    // Find hay rack that covers this cell position
+    const hayRackAtPosition = placedItems.value.find(item => {
+      if (!isHayRack(item.itemId)) return false
+
+      // Check if the drop cell is within the hay rack's occupied area
+      const isWithinRackX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
+      const isWithinRackY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
+
+      return isWithinRackX && isWithinRackY
+    })
+
+    if (hayRackAtPosition) {
+      // Add hay to rack
+      handleAddHayToRack(hayRackAtPosition.itemId, itemId)
 
       // Reset drag state
       draggedItemId.value = null
@@ -521,6 +534,21 @@ function canPlaceAt(x: number, y: number): boolean {
       return isWithinBowlX && isWithinBowlY
     })
     return bowlAtPosition !== undefined
+  }
+
+  // Hay items can only be placed in hay racks (not directly on habitat floor)
+  if (isHay(draggedItemId.value)) {
+    // Check if there's a hay rack at this position
+    const hayRackAtPosition = placedItems.value.find(item => {
+      if (!isHayRack(item.itemId)) return false
+
+      // Check if the hover cell (x, y) is within the hay rack's occupied area
+      const isWithinRackX = x >= item.position.x && x < item.position.x + item.size.width
+      const isWithinRackY = y >= item.position.y && y < item.position.y + item.size.height
+
+      return isWithinRackX && isWithinRackY
+    })
+    return hayRackAtPosition !== undefined
   }
 
   // Water bottles can only be on edges (left, right, top, or bottom)
@@ -592,10 +620,10 @@ function canDragItem(item: any): boolean {
 
 function getBowlLockTooltip(item: any): string {
   if (isBowl(item.itemId) && getBowlContents(item.itemId).length > 0) {
-    return `${item.name} (Remove food to move bowl)`
+    return `${item.name} (Contains food - cannot move)`
   }
   if (isHayRack(item.itemId) && getHayRackContents(item.itemId).length > 0) {
-    return `${item.name} (Remove hay to move rack)`
+    return `${item.name} (Contains hay - cannot move)`
   }
   return item.name
 }
@@ -607,16 +635,14 @@ function handleAddFoodToBowl(bowlItemId: string, foodItemId: string) {
   }
 }
 
-function handleRemoveFoodFromBowl(bowlItemId: string, foodItemId: string) {
-  const success = habitatConditions.removeFoodFromBowl(bowlItemId, foodItemId)
-  if (success) {
-    console.log(`Removed food ${foodItemId} from bowl ${bowlItemId}`)
-  }
-}
-
 // Hay rack helper functions
 function isHayRack(itemId: string): boolean {
   return itemId.includes('hay_rack')
+}
+
+function isHay(itemId: string): boolean {
+  const item = suppliesStore.getItemById(itemId)
+  return item?.category === 'hay'
 }
 
 function getHayRackContents(itemId: string) {
@@ -630,11 +656,9 @@ function handleAddHayToRack(hayRackItemId: string, hayItemId: string) {
   }
 }
 
-function handleRemoveHayFromRack(hayRackItemId: string, servingIndex: number) {
-  const success = habitatConditions.removeHayFromRack(hayRackItemId, servingIndex)
-  if (success) {
-    console.log(`Removed hay from rack ${hayRackItemId}`)
-  }
+// Water bottle helper function
+function isWaterBottle(itemId: string): boolean {
+  return itemId.includes('water_bottle')
 }
 
 onMounted(() => {

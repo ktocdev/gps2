@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import SystemMonitor from '../components/debug/SystemMonitor.vue'
+import SystemMonitor from '../components/debug/tools/SystemMonitor.vue'
 </script>
 
 <style>

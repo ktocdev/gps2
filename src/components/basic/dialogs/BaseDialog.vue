@@ -163,15 +163,9 @@ onUnmounted(() => {
   }
 }
 
-/* Mobile responsiveness */
-@media (max-width: 640px) {
-  .base-dialog {
-    max-block-size: calc(100vh - var(--space-4));
-  }
-
-  .base-dialog__content {
-    max-block-size: calc(100vh - var(--space-4));
-  }
+/* Enhanced for larger screens */
+@media (min-width: 641px) {
+  /* Dialog already has good defaults for desktop */
 }
 
 /* Reduced motion support */

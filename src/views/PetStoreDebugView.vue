@@ -3,5 +3,5 @@
 </template>
 
 <script setup lang="ts">
-import PetStoreDebug from '../components/debug/PetStoreDebug.vue'
+import PetStoreDebug from '../components/debug/core/PetStoreDebug.vue'
 </script>

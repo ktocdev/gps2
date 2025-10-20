@@ -46,10 +46,10 @@ import PetStoreDebugView from './PetStoreDebugView.vue'
 import InventoryDebugView from './InventoryDebugView.vue'
 import NeedsDebugView from './NeedsDebugView.vue'
 import PersonalityDebugView from './PersonalityDebugView.vue'
-import FriendshipDebug from '../components/debug/FriendshipDebug.vue'
-import StardustSanctuaryDebug from '../components/debug/StardustSanctuaryDebug.vue'
+import FriendshipDebug from '../components/debug/gameplay/FriendshipDebug.vue'
+import StardustSanctuaryDebug from '../components/debug/core/StardustSanctuaryDebug.vue'
 import HabitatDebugView from './HabitatDebugView.vue'
-import SuppliesStoreDebug from '../components/debug/SuppliesStoreDebug.vue'
+import SuppliesStoreDebug from '../components/debug/environment/SuppliesStoreDebug.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import SystemMonitorView from './SystemMonitorView.vue'
 import { useGameController } from '../stores/gameController'
@@ -188,18 +188,18 @@ onUnmounted(() => {
 
 .debug-view__header {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-4);
-  padding-block: var(--space-6);
-  padding-inline: var(--space-6);
+  padding-block: var(--space-3);
+  padding-inline: var(--space-3);
   background: linear-gradient(135deg, var(--color-primary-bg), var(--color-secondary-bg));
   border-block-end: 1px solid var(--color-border-light);
 }
 
 .debug-view__title {
   font-family: var(--font-family-heading);
-  font-size: var(--font-size-4xl);
+  font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin: 0;
@@ -207,7 +207,7 @@ onUnmounted(() => {
 }
 
 .debug-view__subtitle {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin: 0;
   font-weight: var(--font-weight-normal);
@@ -231,8 +231,8 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   overflow: auto;
-  padding-block: var(--space-6);
-  padding-inline: var(--space-6);
+  padding-block: var(--space-4);
+  padding-inline: var(--space-4);
 }
 
 /* Content area: constrained width for better readability */
@@ -250,51 +250,27 @@ onUnmounted(() => {
   }
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
+/* Enhanced for larger screens */
+@media (min-width: 769px) {
   .debug-view__header {
-    flex-direction: column;
-    align-items: flex-start;
-    padding-block: var(--space-4);
-    padding-inline: var(--space-4);
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding-block: var(--space-6);
+    padding-inline: var(--space-6);
   }
 
   .debug-view__title {
-    font-size: var(--font-size-3xl);
+    font-size: var(--font-size-4xl);
   }
 
   .debug-view__subtitle {
-    font-size: var(--font-size-base);
+    font-size: var(--font-size-lg);
   }
 
   .debug-view__content {
-    padding-block: var(--space-4);
-    padding-inline: var(--space-4);
-  }
-}
-
-@media (max-width: 480px) {
-  .debug-view__header {
-    padding-block: var(--space-3);
-    padding-inline: var(--space-3);
-  }
-
-  .debug-view__title {
-    font-size: var(--font-size-2xl);
-  }
-
-  .debug-view__subtitle {
-    font-size: var(--font-size-sm);
-  }
-
-  .debug-view__nav {
-    padding-block: var(--space-3);
-    padding-inline: var(--space-3);
-  }
-
-  .debug-view__content {
-    padding-block: var(--space-3);
-    padding-inline: var(--space-3);
+    padding-block: var(--space-6);
+    padding-inline: var(--space-6);
   }
 }
 

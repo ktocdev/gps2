@@ -173,8 +173,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useGuineaPigStore } from '../../stores/guineaPigStore'
-import SliderField from '../basic/SliderField.vue'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import SliderField from '../../basic/SliderField.vue'
 
 const guineaPigStore = useGuineaPigStore()
 
