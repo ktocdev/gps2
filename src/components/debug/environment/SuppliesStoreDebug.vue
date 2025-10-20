@@ -1,33 +1,40 @@
 <template>
-  <div class="supplies-store-debug">
+  <div class="supplies-store-view">
     <div class="panel panel--compact">
-      <div class="supplies-store-debug__header">
+      <div class="supplies-store-view__header">
         <h2 class="panel__heading">Supplies Store</h2>
-        <div class="supplies-store-debug__balance">
+        <div class="supplies-store-view__balance">
           <span class="text-label">Balance:</span>
-          <span class="supplies-store-debug__balance-amount">{{ playerProgression.formattedCurrency }}</span>
+          <span class="supplies-store-view__balance-amount">{{ playerProgression.formattedCurrency }}</span>
         </div>
       </div>
 
       <div class="panel__section">
-        <div v-if="purchaseMessage" :class="['supplies-store-debug__message', `supplies-store-debug__message--${purchaseMessage.type}`]">
+        <div v-if="purchaseMessage" :class="['supplies-store-view__message', `supplies-store-view__message--${purchaseMessage.type}`]">
           {{ purchaseMessage.text }}
         </div>
       </div>
 
-      <!-- Department Navigation -->
+      <!-- Department Navigation & View Toggle -->
       <div class="panel__section mb-8">
-        <h3 class="panel__subheading">Departments</h3>
-        <div class="supplies-store-debug__departments">
-          <Button
-            v-for="dept in departments"
-            :key="dept.id"
-            :variant="activeDepartment === dept.id ? 'primary' : 'secondary'"
-            size="sm"
-            @click="activeDepartment = dept.id"
-          >
-            {{ dept.icon }} {{ dept.label }}
-          </Button>
+        <div class="supplies-store-view__controls">
+          <div class="supplies-store-view__controls-left">
+            <h3 class="panel__subheading">Departments</h3>
+            <div class="supplies-store-view__departments">
+              <Button
+                v-for="dept in departments"
+                :key="dept.id"
+                :variant="activeDepartment === dept.id ? 'primary' : 'secondary'"
+                size="sm"
+                @click="activeDepartment = dept.id"
+              >
+                {{ dept.icon }} {{ dept.label }}
+              </Button>
+            </div>
+          </div>
+          <div class="supplies-store-view__controls-right">
+            <ItemViewToggle v-model="viewMode" />
+          </div>
         </div>
       </div>
 
@@ -36,7 +43,8 @@
         <h3 class="panel__subheading sr-only">Food Items</h3>
         <SubTabContainer :tabs="foodSubTabs" v-model="activeFoodSubTab">
           <template #greens>
-            <div class="supplies-store-debug__items">
+            <!-- Card View -->
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.greens"
                 :key="item.id"
@@ -51,11 +59,45 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+
+            <!-- List View -->
+            <ItemListView
+              v-else
+              :items="suppliesStore.greens.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+              @purchase="handlePurchase"
+              @sellback="handleSellBack"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
 
           <template #herbs>
-            <div class="supplies-store-debug__items">
+            <!-- Card View -->
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.herbs"
                 :key="item.id"
@@ -70,11 +112,43 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+
+            <!-- List View -->
+            <ItemListView
+              v-else
+              :items="suppliesStore.herbs.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
 
           <template #vegetables>
-            <div class="supplies-store-debug__items">
+            <!-- Card View -->
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.vegetables"
                 :key="item.id"
@@ -89,11 +163,43 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+
+            <!-- List View -->
+            <ItemListView
+              v-else
+              :items="suppliesStore.vegetables.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
 
           <template #fruits>
-            <div class="supplies-store-debug__items">
+            <!-- Card View -->
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.fruits"
                 :key="item.id"
@@ -108,11 +214,43 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+
+            <!-- List View -->
+            <ItemListView
+              v-else
+              :items="suppliesStore.fruits.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
 
           <template #pellets>
-            <div class="supplies-store-debug__items">
+            <!-- Card View -->
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.pellets"
                 :key="item.id"
@@ -127,11 +265,43 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+
+            <!-- List View -->
+            <ItemListView
+              v-else
+              :items="suppliesStore.pellets.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
 
           <template #treats>
-            <div class="supplies-store-debug__items">
+            <!-- Card View -->
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.treats"
                 :key="item.id"
@@ -146,7 +316,38 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+
+            <!-- List View -->
+            <ItemListView
+              v-else
+              :items="suppliesStore.treats.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
         </SubTabContainer>
       </div>
@@ -156,7 +357,7 @@
         <h3 class="panel__subheading sr-only">Habitat Items</h3>
         <SubTabContainer :tabs="habitatSubTabs" v-model="activeHabitatSubTab">
           <template #hideaways>
-            <div class="supplies-store-debug__items">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.hideaways"
                 :key="item.id"
@@ -171,11 +372,40 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+            <ItemListView
+              v-else
+              :items="suppliesStore.hideaways.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
 
           <template #toys>
-            <div class="supplies-store-debug__items">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.toys"
                 :key="item.id"
@@ -190,11 +420,40 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+            <ItemListView
+              v-else
+              :items="suppliesStore.toys.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
 
           <template #chews>
-            <div class="supplies-store-debug__items">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.chews"
                 :key="item.id"
@@ -209,11 +468,40 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+            <ItemListView
+              v-else
+              :items="suppliesStore.chews.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
 
           <template #bowls_bottles>
-            <div class="supplies-store-debug__items">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.bowlsAndBottles"
                 :key="item.id"
@@ -228,11 +516,40 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+            <ItemListView
+              v-else
+              :items="suppliesStore.bowlsAndBottles.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
 
           <template #enrichment>
-            <div class="supplies-store-debug__items">
+            <ItemGridView v-if="viewMode === 'card'">
               <SupplyItemCard
                 v-for="item in suppliesStore.enrichment"
                 :key="item.id"
@@ -247,7 +564,36 @@
                 @sellback="handleSellBack"
                 @update:quantity="setPurchaseQuantity"
               />
-            </div>
+            </ItemGridView>
+            <ItemListView
+              v-else
+              :items="suppliesStore.enrichment.map(item => ({
+                ...item,
+                owned: inventoryStore.getItemQuantity(item.id),
+                returnable: getItemDetails(item.id).returnable
+              }))"
+              :show-owned="true"
+              :show-status="true"
+            >
+              <template #actions="{ item }">
+                <Button
+                  :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+                  size="sm"
+                  :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+                  @click="handlePurchase(item.id)"
+                >
+                  Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+                </Button>
+                <Button
+                  v-if="item.returnable && item.returnable > 0"
+                  variant="danger"
+                  size="sm"
+                  @click="handleSellBack(item.id)"
+                >
+                  Sell
+                </Button>
+              </template>
+            </ItemListView>
           </template>
         </SubTabContainer>
       </div>
@@ -255,7 +601,7 @@
       <!-- Other Categories - Simple List -->
       <div v-else class="panel__section">
         <h3 class="panel__subheading sr-only">{{ activeDepartmentLabel }}</h3>
-        <div class="supplies-store-debug__items">
+        <ItemGridView v-if="viewMode === 'card'">
           <SupplyItemCard
             v-for="item in filteredItems"
             :key="item.id"
@@ -270,7 +616,36 @@
             @sellback="handleSellBack"
             @update:quantity="setPurchaseQuantity"
           />
-        </div>
+        </ItemGridView>
+        <ItemListView
+          v-else
+          :items="filteredItems.map(item => ({
+            ...item,
+            owned: inventoryStore.getItemQuantity(item.id),
+            returnable: getItemDetails(item.id).returnable
+          }))"
+          :show-owned="true"
+          :show-status="true"
+        >
+          <template #actions="{ item }">
+            <Button
+              :variant="item.basePrice * getPurchaseQuantity(item.id) <= playerProgression.currency ? 'primary' : 'secondary'"
+              size="sm"
+              :disabled="item.basePrice * getPurchaseQuantity(item.id) > playerProgression.currency"
+              @click="handlePurchase(item.id)"
+            >
+              Buy ${{ (item.basePrice * getPurchaseQuantity(item.id)).toFixed(2) }}
+            </Button>
+            <Button
+              v-if="item.returnable && item.returnable > 0"
+              variant="danger"
+              size="sm"
+              @click="handleSellBack(item.id)"
+            >
+              Sell
+            </Button>
+          </template>
+        </ItemListView>
       </div>
     </div>
   </div>
@@ -282,8 +657,11 @@ import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { usePlayerProgression } from '../../../stores/playerProgression'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import Button from '../../basic/Button.vue'
+import ItemViewToggle from '../../game/shop/ItemViewToggle.vue'
 import SubTabContainer from '../../layout/SubTabContainer.vue'
 import SupplyItemCard from '../../game/shop/SupplyItemCard.vue'
+import ItemListView from '../../game/shop/ItemListView.vue'
+import ItemGridView from '../../game/shop/ItemGridView.vue'
 
 const suppliesStore = useSuppliesStore()
 const playerProgression = usePlayerProgression()
@@ -348,6 +726,9 @@ const getItemDetails = (itemId: string) => {
     placedCount: inventoryStore.getPlacedCount(itemId)
   }
 }
+
+// View mode toggle
+const viewMode = ref<'card' | 'list'>('list')
 
 // Department navigation
 const activeDepartment = ref<'featured' | 'bedding' | 'hay' | 'food' | 'habitat_item' | 'all'>('featured')
@@ -418,29 +799,47 @@ onMounted(() => {
 
 <style>
 /* Supplies Store Debug Styles */
-.supplies-store-debug {
+.supplies-store-view {
   container-type: inline-size;
-  container-name: supplies-store-debug;
+  container-name: supplies-store-view;
 }
 
-.supplies-store-debug__header {
+.supplies-store-view__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: var(--space-4);
 }
 
-.supplies-store-debug__header .panel__heading {
+.supplies-store-view__header .panel__heading {
   margin-block-end: 0;
 }
 
-.supplies-store-debug__departments {
+.supplies-store-view__controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.supplies-store-view__controls-left {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.supplies-store-view__controls-right {
+  flex-shrink: 0;
+}
+
+.supplies-store-view__departments {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
+  margin-block-start: var(--space-2);
 }
 
-.supplies-store-debug__balance {
+.supplies-store-view__balance {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -452,7 +851,7 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-.supplies-store-debug__balance-amount {
+.supplies-store-view__balance-amount {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
   font-family: var(--font-family-heading);
@@ -460,7 +859,7 @@ onMounted(() => {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-.supplies-store-debug__message {
+.supplies-store-view__message {
   margin-block-start: var(--space-3);
   padding: var(--space-3);
   border-radius: var(--radius-md);
@@ -468,35 +867,15 @@ onMounted(() => {
   font-weight: var(--font-weight-medium);
 }
 
-.supplies-store-debug__message--success {
+.supplies-store-view__message--success {
   background-color: var(--color-success-bg);
   color: var(--color-success);
   border: 1px solid var(--color-success);
 }
 
-.supplies-store-debug__message--error {
+.supplies-store-view__message--error {
   background-color: var(--color-danger-bg);
   color: var(--color-danger);
   border: 1px solid var(--color-danger);
-}
-
-.supplies-store-debug__items {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-/* Container queries for responsive layout */
-@container supplies-store-debug (min-width: 641px) {
-  .supplies-store-debug__items {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@container supplies-store-debug (min-width: 961px) {
-  .supplies-store-debug__items {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 </style>

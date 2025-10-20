@@ -11,7 +11,10 @@
           Limited
         </Badge>
       </div>
-      <div class="supply-item-card__price">${{ item.basePrice.toFixed(2) }}</div>
+      <div class="supply-item-card__price-section">
+        <span v-if="item.emoji" class="supply-item-card__emoji">{{ item.emoji }}</span>
+        <div class="supply-item-card__price">${{ item.basePrice.toFixed(2) }}</div>
+      </div>
     </div>
 
     <div class="supply-item-card__description">{{ item.description }}</div>
@@ -157,12 +160,24 @@ const handleQuantityChange = (event: Event) => {
   color: var(--color-text-primary);
 }
 
+.supply-item-card__price-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.supply-item-card__emoji {
+  font-size: var(--font-size-3xl);
+  line-height: 1;
+}
+
 .supply-item-card__price {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   font-family: var(--font-family-heading);
   color: var(--color-primary);
-  flex-shrink: 0;
 }
 
 .supply-item-card__description {
