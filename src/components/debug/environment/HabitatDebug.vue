@@ -236,6 +236,35 @@ onMounted(() => {
   if (!suppliesStore.catalogLoaded) {
     suppliesStore.initializeCatalog()
   }
+
+  // System 16 Phase 1 Test - Log item type metadata
+  console.log('=== System 16: Phase 1 - Item Type Metadata Test ===')
+  console.log('Water bottles:', suppliesStore.getItemsByType('water_bottle').map(i => i.name))
+  console.log('Food bowls:', suppliesStore.getItemsByType('food_bowl').map(i => i.name))
+  console.log('Hay racks:', suppliesStore.getItemsByType('hay_rack').map(i => i.name))
+  console.log('Beds:', suppliesStore.getItemsByType('bed').map(i => i.name))
+  console.log('Shelters:', suppliesStore.getItemsByType('shelter').map(i => i.name))
+  console.log('Hideaways:', suppliesStore.getItemsByType('hideaway').map(i => i.name))
+  console.log('Tunnels:', suppliesStore.getItemsByType('tunnel').map(i => i.name))
+
+  // Test getItemsForNeed (using actual implemented needs)
+  console.log('\n=== Items by Need (Critical) ===')
+  console.log('Thirst:', suppliesStore.getItemsForNeed('thirst').map(i => i.name))
+  console.log('Hunger:', suppliesStore.getItemsForNeed('hunger').map(i => i.name))
+  console.log('Energy:', suppliesStore.getItemsForNeed('energy').map(i => i.name))
+  console.log('Shelter:', suppliesStore.getItemsForNeed('shelter').map(i => i.name))
+
+  console.log('\n=== Items by Need (Environmental) ===')
+  console.log('Play:', suppliesStore.getItemsForNeed('play').map(i => i.name))
+  console.log('Social:', suppliesStore.getItemsForNeed('social').map(i => i.name))
+  console.log('Stimulation:', suppliesStore.getItemsForNeed('stimulation').map(i => i.name))
+  console.log('Comfort:', suppliesStore.getItemsForNeed('comfort').map(i => i.name))
+
+  // Test individual item lookup
+  const basicBottle = 'habitat_basic_water_bottle'
+  console.log(`\n${basicBottle} type:`, suppliesStore.getItemType(basicBottle))
+  console.log(`${basicBottle} satisfies thirst:`, suppliesStore.itemSatisfiesNeed(basicBottle, 'thirst'))
+  console.log('==============================================')
 })
 
 // Test control handlers

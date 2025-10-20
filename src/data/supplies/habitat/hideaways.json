@@ -8,6 +8,10 @@
     "basePrice": 12.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "hideaway",
+      "needSatisfied": "shelter",
+      "satisfactionAmount": 30,
+      "usageDuration": 60,
       "durability": 9,
       "comfortBoost": 8,
       "size": "medium"
@@ -26,6 +30,10 @@
     "basePrice": 14.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "hideaway",
+      "needSatisfied": "shelter",
+      "satisfactionAmount": 30,
+      "usageDuration": 60,
       "durability": 6,
       "comfortBoost": 10,
       "size": "medium"
@@ -44,6 +52,10 @@
     "basePrice": 15.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "hideaway",
+      "needSatisfied": "shelter",
+      "satisfactionAmount": 30,
+      "usageDuration": 60,
       "durability": 7,
       "comfortBoost": 12,
       "size": "medium",
@@ -63,6 +75,10 @@
     "basePrice": 16.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "tunnel",
+      "needSatisfied": "play",
+      "satisfactionAmount": 25,
+      "usageDuration": 30,
       "durability": 8,
       "comfortBoost": 6,
       "playBoost": 8,
@@ -82,6 +98,10 @@
     "basePrice": 18.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "tunnel",
+      "needSatisfied": "play",
+      "satisfactionAmount": 25,
+      "usageDuration": 30,
       "durability": 8,
       "comfortBoost": 7,
       "playBoost": 10,
@@ -101,6 +121,10 @@
     "basePrice": 22.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "tunnel",
+      "needSatisfied": "play",
+      "satisfactionAmount": 25,
+      "usageDuration": 30,
       "durability": 9,
       "comfortBoost": 8,
       "playBoost": 12,
@@ -120,6 +144,10 @@
     "basePrice": 28.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "shelter",
+      "needSatisfied": "shelter",
+      "satisfactionAmount": 35,
+      "usageDuration": 60,
       "durability": 8,
       "comfortBoost": 15,
       "playBoost": 8,
@@ -139,6 +167,10 @@
     "basePrice": 26.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "shelter",
+      "needSatisfied": "shelter",
+      "satisfactionAmount": 35,
+      "usageDuration": 60,
       "durability": 7,
       "comfortBoost": 18,
       "size": "large"
@@ -157,6 +189,10 @@
     "basePrice": 24.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "bed",
+      "needSatisfied": "energy",
+      "satisfactionAmount": 25,
+      "usageDuration": 120,
       "durability": 6,
       "comfortBoost": 20,
       "size": "medium",
@@ -176,6 +212,10 @@
     "basePrice": 18.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "bed",
+      "needSatisfied": "energy",
+      "satisfactionAmount": 25,
+      "usageDuration": 120,
       "durability": 8,
       "comfortBoost": 16,
       "size": "medium",
@@ -195,6 +235,10 @@
     "basePrice": 22.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "bed",
+      "needSatisfied": "energy",
+      "satisfactionAmount": 25,
+      "usageDuration": 120,
       "durability": 7,
       "comfortBoost": 18,
       "size": "medium",
@@ -214,6 +258,10 @@
     "basePrice": 26.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "bed",
+      "needSatisfied": "energy",
+      "satisfactionAmount": 25,
+      "usageDuration": 120,
       "durability": 6,
       "comfortBoost": 22,
       "size": "medium",
@@ -233,6 +281,10 @@
     "basePrice": 24.99,
     "currency": "dollars",
     "stats": {
+      "itemType": "bed",
+      "needSatisfied": "energy",
+      "satisfactionAmount": 25,
+      "usageDuration": 120,
       "durability": 7,
       "comfortBoost": 20,
       "size": "medium",
