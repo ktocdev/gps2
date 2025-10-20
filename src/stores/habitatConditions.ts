@@ -118,10 +118,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     removeFoodFromBowl,
     getBowlContents,
     clearBowl,
+    clearAllBowls,
     addHayToRack,
     removeHayFromRack,
     getHayRackContents,
-    clearHayRack
+    clearHayRack,
+    clearAllHayRacks
   } = containers
 
   // Poop tracking
@@ -489,10 +491,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     removeFoodFromBowl,
     getBowlContents,
     clearBowl,
+    clearAllBowls,
     addHayToRack,
     removeHayFromRack,
     getHayRackContents,
-    clearHayRack
+    clearHayRack,
+    clearAllHayRacks
   }
 }, {
   persist: {

@@ -69,6 +69,27 @@
           >
             Clear All Poop{{ habitatVisualRef && habitatVisualRef.poopCount > 0 ? ` (${habitatVisualRef.poopCount})` : '' }}
           </Button>
+          <Button
+            @click="clearAllBowls"
+            variant="warning"
+            size="sm"
+          >
+            Clear All Bowls
+          </Button>
+          <Button
+            @click="clearAllHayRacks"
+            variant="warning"
+            size="sm"
+          >
+            Clear All Hay Racks
+          </Button>
+          <Button
+            @click="clearWater"
+            variant="warning"
+            size="sm"
+          >
+            Clear Water
+          </Button>
         </div>
       </div>
     </div>
@@ -250,6 +271,18 @@ function addTestPoop() {
 
 function clearAllPoop() {
   habitatVisualRef.value?.clearAllPoop()
+}
+
+function clearAllBowls() {
+  habitat.clearAllBowls()
+}
+
+function clearAllHayRacks() {
+  habitat.clearAllHayRacks()
+}
+
+function clearWater() {
+  habitat.waterLevel = 0
 }
 
 const hasActiveGuineaPigs = computed(() => {

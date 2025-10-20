@@ -8,10 +8,7 @@
         :key="`${food.itemId}-${index}`"
         class="food-bowl__food-item"
         :class="`food-bowl__food-item--count-${foods.length} food-bowl__food-item--index-${index}`"
-        :title="food.name"
-        draggable="true"
-        @dragstart="handleFoodDragStart($event, food, index)"
-        @dragend="handleFoodDragEnd"
+        :title="`${food.name}\nServing ${index + 1} of ${foods.length}`"
       >
         {{ food.emoji }}
       </span>
@@ -39,7 +36,6 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'add-food': [foodItemId: string]
-  'remove-food': [foodItemId: string, index: number]
 }>()
 
 const isDragOver = ref(false)
@@ -87,30 +83,6 @@ function handleDrop(event: DragEvent) {
     console.error('Failed to parse drag data:', error)
   }
 }
-
-function handleFoodDragStart(event: DragEvent, food: FoodItem, index: number) {
-  // Stop propagation to prevent bowl from being dragged
-  event.stopPropagation()
-
-  const dragData = {
-    itemId: food.itemId,
-    bowlItemId: props.bowlItemId,
-    index,
-    isFromBowl: true
-  }
-
-  event.dataTransfer!.effectAllowed = 'move'
-  event.dataTransfer!.setData('text/plain', JSON.stringify(dragData))
-
-  // Visual feedback
-  const target = event.currentTarget as HTMLElement
-  target.style.opacity = '0.5'
-}
-
-function handleFoodDragEnd(event: DragEvent) {
-  const target = event.currentTarget as HTMLElement
-  target.style.opacity = '1'
-}
 </script>
 
 <style>
@@ -147,17 +119,13 @@ function handleFoodDragEnd(event: DragEvent) {
 .food-bowl__food-item {
   position: absolute;
   line-height: 1;
-  cursor: grab;
   pointer-events: all;
-  transition: transform 0.2s ease;
+  cursor: help;
+  transition: filter 0.2s ease;
 }
 
 .food-bowl__food-item:hover {
-  transform: scale(1.1);
-}
-
-.food-bowl__food-item:active {
-  cursor: grabbing;
+  filter: brightness(1.2);
 }
 
 /* 1 food item: centered, full size */
@@ -166,10 +134,6 @@ function handleFoodDragEnd(event: DragEvent) {
   inset-inline-start: 50%;
   inset-block-start: 50%;
   transform: translate(-50%, -50%);
-}
-
-.food-bowl__food-item--count-1:hover {
-  transform: translate(-50%, -50%) scale(1.1);
 }
 
 /* 2 food items: half size, left and right */
@@ -183,17 +147,9 @@ function handleFoodDragEnd(event: DragEvent) {
   transform: translate(-50%, -50%);
 }
 
-.food-bowl__food-item--count-2.food-bowl__food-item--index-0:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 .food-bowl__food-item--count-2.food-bowl__food-item--index-1 {
   inset-inline-start: 70%;
   transform: translate(-50%, -50%);
-}
-
-.food-bowl__food-item--count-2.food-bowl__food-item--index-1:hover {
-  transform: translate(-50%, -50%) scale(1.1);
 }
 
 /* 3 food items: smaller size, left, center, right */
@@ -207,25 +163,13 @@ function handleFoodDragEnd(event: DragEvent) {
   transform: translate(-50%, -50%);
 }
 
-.food-bowl__food-item--count-3.food-bowl__food-item--index-0:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 .food-bowl__food-item--count-3.food-bowl__food-item--index-1 {
   inset-inline-start: 50%;
   transform: translate(-50%, -50%);
 }
 
-.food-bowl__food-item--count-3.food-bowl__food-item--index-1:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 .food-bowl__food-item--count-3.food-bowl__food-item--index-2 {
   inset-inline-start: 75%;
   transform: translate(-50%, -50%);
-}
-
-.food-bowl__food-item--count-3.food-bowl__food-item--index-2:hover {
-  transform: translate(-50%, -50%) scale(1.1);
 }
 </style>

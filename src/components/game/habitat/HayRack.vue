@@ -6,6 +6,7 @@
     @dragleave="handleDragLeave"
     @drop="handleDrop"
   >
+    <span class="hay-rack__ladder">🪜</span>
     <span class="hay-rack__emoji">🌾</span>
 
     <div v-if="hayServings.length > 0" class="hay-rack__contents">
@@ -14,10 +15,7 @@
         :key="`${serving.instanceId}`"
         class="hay-rack__hay-item"
         :class="`hay-rack__hay-item--count-${hayServings.length} hay-rack__hay-item--index-${index}`"
-        title="Hay serving (drag to remove)"
-        draggable="true"
-        @dragstart="handleHayDragStart($event, serving, index)"
-        @dragend="handleHayDragEnd"
+        :title="`Hay serving ${index + 1} of ${hayServings.length}\nCapacity: ${hayServings.length}/${capacity}`"
       >
         🌾
       </span>
@@ -44,7 +42,6 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'add-hay': [hayItemId: string]
-  'remove-hay': [servingIndex: number]
 }>()
 
 const suppliesStore = useSuppliesStore()
@@ -123,30 +120,6 @@ function handleDrop(event: DragEvent) {
     console.error('Failed to parse drag data:', error)
   }
 }
-
-function handleHayDragStart(event: DragEvent, serving: HayServing, index: number) {
-  // Stop propagation to prevent rack from being dragged
-  event.stopPropagation()
-
-  const dragData = {
-    itemId: serving.itemId,
-    hayRackItemId: props.hayRackItemId,
-    servingIndex: index,
-    isFromHayRack: true
-  }
-
-  event.dataTransfer!.effectAllowed = 'move'
-  event.dataTransfer!.setData('text/plain', JSON.stringify(dragData))
-
-  // Visual feedback
-  const target = event.currentTarget as HTMLElement
-  target.style.opacity = '0.5'
-}
-
-function handleHayDragEnd(event: DragEvent) {
-  const target = event.currentTarget as HTMLElement
-  target.style.opacity = '1'
-}
 </script>
 
 <style>
@@ -160,32 +133,48 @@ function handleHayDragEnd(event: DragEvent) {
   transition: filter 0.3s ease;
 }
 
+.hay-rack__ladder {
+  font-size: 2rem;
+  line-height: 1;
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  opacity: 0.6;
+}
+
 .hay-rack__emoji {
   font-size: 3rem;
   line-height: 1;
   position: relative;
   z-index: 1;
-  transition: filter 0.3s ease;
+  transition: filter 0.3s ease, opacity 0.3s ease;
 }
 
-/* Fullness color shifts: white → gold */
+/* Fullness opacity and color shifts: fade out hay when empty, white → gold when full */
 .hay-rack--empty .hay-rack__emoji {
+  opacity: 0;
   filter: brightness(2) saturate(0);
 }
 
 .hay-rack--quarter .hay-rack__emoji {
+  opacity: 1;
   filter: brightness(1.6) saturate(0.3);
 }
 
 .hay-rack--half .hay-rack__emoji {
+  opacity: 1;
   filter: brightness(1.3) saturate(0.6);
 }
 
 .hay-rack--three-quarters .hay-rack__emoji {
+  opacity: 1;
   filter: brightness(1.1) saturate(0.85);
 }
 
 .hay-rack--full .hay-rack__emoji {
+  opacity: 1;
   filter: brightness(1) saturate(1);
 }
 
@@ -206,17 +195,13 @@ function handleHayDragEnd(event: DragEvent) {
 .hay-rack__hay-item {
   position: absolute;
   line-height: 1;
-  cursor: grab;
   pointer-events: all;
-  transition: transform 0.2s ease;
+  cursor: help;
+  transition: filter 0.2s ease;
 }
 
 .hay-rack__hay-item:hover {
-  transform: scale(1.1);
-}
-
-.hay-rack__hay-item:active {
-  cursor: grabbing;
+  filter: brightness(1.2);
 }
 
 /* 1 hay serving: centered, full size */
@@ -225,10 +210,6 @@ function handleHayDragEnd(event: DragEvent) {
   inset-inline-start: 50%;
   inset-block-start: 50%;
   transform: translate(-50%, -50%);
-}
-
-.hay-rack__hay-item--count-1:hover {
-  transform: translate(-50%, -50%) scale(1.1);
 }
 
 /* 2 hay servings: half size, left and right */
@@ -242,17 +223,9 @@ function handleHayDragEnd(event: DragEvent) {
   transform: translate(-50%, -50%);
 }
 
-.hay-rack__hay-item--count-2.hay-rack__hay-item--index-0:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 .hay-rack__hay-item--count-2.hay-rack__hay-item--index-1 {
   inset-inline-start: 65%;
   transform: translate(-50%, -50%);
-}
-
-.hay-rack__hay-item--count-2.hay-rack__hay-item--index-1:hover {
-  transform: translate(-50%, -50%) scale(1.1);
 }
 
 /* 3 hay servings: smaller size, left, center, right */
@@ -266,26 +239,14 @@ function handleHayDragEnd(event: DragEvent) {
   transform: translate(-50%, -50%);
 }
 
-.hay-rack__hay-item--count-3.hay-rack__hay-item--index-0:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 .hay-rack__hay-item--count-3.hay-rack__hay-item--index-1 {
   inset-inline-start: 50%;
   transform: translate(-50%, -50%);
 }
 
-.hay-rack__hay-item--count-3.hay-rack__hay-item--index-1:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 .hay-rack__hay-item--count-3.hay-rack__hay-item--index-2 {
   inset-inline-start: 75%;
   transform: translate(-50%, -50%);
-}
-
-.hay-rack__hay-item--count-3.hay-rack__hay-item--index-2:hover {
-  transform: translate(-50%, -50%) scale(1.1);
 }
 
 /* 4 hay servings: smallest size, grid layout */
@@ -299,18 +260,10 @@ function handleHayDragEnd(event: DragEvent) {
   transform: translate(-50%, -50%);
 }
 
-.hay-rack__hay-item--count-4.hay-rack__hay-item--index-0:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 .hay-rack__hay-item--count-4.hay-rack__hay-item--index-1 {
   inset-inline-start: 70%;
   inset-block-start: 40%;
   transform: translate(-50%, -50%);
-}
-
-.hay-rack__hay-item--count-4.hay-rack__hay-item--index-1:hover {
-  transform: translate(-50%, -50%) scale(1.1);
 }
 
 .hay-rack__hay-item--count-4.hay-rack__hay-item--index-2 {
@@ -319,17 +272,9 @@ function handleHayDragEnd(event: DragEvent) {
   transform: translate(-50%, -50%);
 }
 
-.hay-rack__hay-item--count-4.hay-rack__hay-item--index-2:hover {
-  transform: translate(-50%, -50%) scale(1.1);
-}
-
 .hay-rack__hay-item--count-4.hay-rack__hay-item--index-3 {
   inset-inline-start: 70%;
   inset-block-start: 60%;
   transform: translate(-50%, -50%);
-}
-
-.hay-rack__hay-item--count-4.hay-rack__hay-item--index-3:hover {
-  transform: translate(-50%, -50%) scale(1.1);
 }
 </style>
