@@ -286,6 +286,7 @@ function handleDrop(event: DragEvent) {
   gap: var(--space-3);
   max-block-size: 800px;
   overflow-y: auto;
+  padding-block-start: var(--space-1);
   padding-inline-end: var(--space-2);
   margin-inline-end: calc(var(--space-2) * -1);
 }

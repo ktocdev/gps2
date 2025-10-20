@@ -18,179 +18,182 @@
       </div>
     </div>
 
-    <!-- Test Controls Panel -->
-    <div class="panel panel--compact">
-      <div class="panel__header">
-        <h3>Test Controls</h3>
-      </div>
-      <div class="panel__content">
-        <div class="test-controls">
-          <Button
-            @click="addTestPoop"
-            variant="secondary"
-            size="sm"
-          >
-            Add Test Poop
-          </Button>
-          <Button
-            @click="clearAllPoop"
-            variant="primary"
-            size="sm"
-            :disabled="!habitatVisualRef || habitatVisualRef.poopCount === 0"
-          >
-            Clear All Poop{{ habitatVisualRef && habitatVisualRef.poopCount > 0 ? ` (${habitatVisualRef.poopCount})` : '' }}
-          </Button>
-          <Button
-            @click="clearAllBowls"
-            variant="warning"
-            size="sm"
-          >
-            Clear All Bowls
-          </Button>
-          <Button
-            @click="clearAllHayRacks"
-            variant="warning"
-            size="sm"
-          >
-            Clear All Hay Racks
-          </Button>
-          <Button
-            @click="clearWater"
-            variant="warning"
-            size="sm"
-          >
-            Clear Water
-          </Button>
+    <!-- Habitat Conditions & Test Controls Row -->
+    <div class="habitat-debug__conditions-row">
+      <!-- Habitat Conditions Panel -->
+      <div class="panel panel--compact panel--accent">
+        <div class="panel__header">
+          <h3>Habitat Conditions</h3>
+          <div class="condition-summary">
+            <span class="condition-summary__label">Overall Condition:</span>
+            <span class="condition-summary__value" :class="getConditionClass(habitat.overallCondition)">
+              {{ habitat.overallCondition }}%
+            </span>
+          </div>
+        </div>
+        <div class="panel__content">
+          <!-- Individual Conditions -->
+          <div class="conditions-grid">
+            <!-- Cleanliness -->
+            <div class="condition-item">
+              <div class="condition-item__header">
+                <label for="cleanliness">Cleanliness</label>
+                <span class="condition-item__value" :class="getConditionClass(habitat.cleanliness)">
+                  {{ habitat.cleanliness.toFixed(0) }}%
+                </span>
+              </div>
+              <SliderField
+                id="cleanliness"
+                :modelValue="habitat.cleanliness"
+                :min="0"
+                :max="100"
+                :step="1"
+                prefix=""
+                suffix="%"
+                @update:modelValue="(v: number) => habitat.updateCondition('cleanliness', v)"
+              />
+              <Button
+                @click="habitat.cleanCage"
+                variant="tertiary"
+                size="sm"
+                full-width
+                class="condition-item__action w-full"
+              >
+                🧹 Clean Cage
+              </Button>
+            </div>
+
+            <!-- Bedding Freshness -->
+            <div class="condition-item">
+              <div class="condition-item__header">
+                <label for="bedding">Bedding Freshness</label>
+                <span class="condition-item__value" :class="getConditionClass(habitat.beddingFreshness)">
+                  {{ habitat.beddingFreshness.toFixed(0) }}%
+                </span>
+              </div>
+              <SliderField
+                id="bedding"
+                :modelValue="habitat.beddingFreshness"
+                :min="0"
+                :max="100"
+                :step="1"
+                prefix=""
+                suffix="%"
+                @update:modelValue="(v: number) => habitat.updateCondition('beddingFreshness', v)"
+              />
+              <Select
+                v-model="selectedBeddingType"
+                :options="beddingOptions"
+                placeholder="Select bedding type"
+                label="Bedding Type"
+              />
+              <Button
+                @click="handleRefreshBedding"
+                variant="tertiary"
+                size="sm"
+                full-width
+                class="condition-item__action w-full"
+                :disabled="!canRefreshBedding"
+                :tooltip="!canRefreshBedding ? `No ${selectedBeddingType} bedding in inventory` : `Use ${selectedBeddingType} bedding`"
+              >
+                🛏️ Refresh Bedding
+              </Button>
+            </div>
+
+            <!-- Hay Freshness -->
+            <div class="condition-item">
+              <div class="condition-item__header">
+                <label for="hay">Hay Freshness</label>
+                <span class="condition-item__value" :class="getConditionClass(habitat.hayFreshness)">
+                  {{ habitat.hayFreshness.toFixed(0) }}%
+                </span>
+              </div>
+              <SliderField
+                id="hay"
+                :modelValue="habitat.hayFreshness"
+                :min="0"
+                :max="100"
+                :step="1"
+                prefix=""
+                suffix="%"
+                @update:modelValue="(v: number) => habitat.updateCondition('hayFreshness', v)"
+              />
+            </div>
+
+            <!-- Water Level -->
+            <div class="condition-item">
+              <div class="condition-item__header">
+                <label for="water">Water Level</label>
+                <span class="condition-item__value" :class="getConditionClass(habitat.waterLevel)">
+                  {{ habitat.waterLevel.toFixed(0) }}%
+                </span>
+              </div>
+              <SliderField
+                id="water"
+                :modelValue="habitat.waterLevel"
+                :min="0"
+                :max="100"
+                :step="1"
+                prefix=""
+                suffix="%"
+                @update:modelValue="(v: number) => habitat.updateCondition('waterLevel', v)"
+              />
+              <Button
+                @click="habitat.refillWater"
+                variant="tertiary"
+                size="sm"
+                full-width
+                class="condition-item__action w-full"
+              >
+                💧 Refill Water
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Condition Management Panel -->
-    <div class="panel panel--compact panel--accent">
-      <div class="panel__header">
-        <h3>Habitat Conditions</h3>
-        <div class="condition-summary">
-          <span class="condition-summary__label">Overall Condition:</span>
-          <span class="condition-summary__value" :class="getConditionClass(habitat.overallCondition)">
-            {{ habitat.overallCondition }}%
-          </span>
+      <!-- Test Controls Panel -->
+      <div class="panel panel--compact">
+        <div class="panel__header">
+          <h3>Test Controls</h3>
         </div>
-      </div>
-      <div class="panel__content">
-        <!-- Individual Conditions -->
-        <div class="conditions-grid">
-          <!-- Cleanliness -->
-          <div class="condition-item">
-            <div class="condition-item__header">
-              <label for="cleanliness">Cleanliness</label>
-              <span class="condition-item__value" :class="getConditionClass(habitat.cleanliness)">
-                {{ habitat.cleanliness.toFixed(0) }}%
-              </span>
-            </div>
-            <SliderField
-              id="cleanliness"
-              :modelValue="habitat.cleanliness"
-              :min="0"
-              :max="100"
-              :step="1"
-              prefix=""
-              suffix="%"
-              @update:modelValue="(v: number) => habitat.updateCondition('cleanliness', v)"
-            />
+        <div class="panel__content">
+          <div class="test-controls">
             <Button
-              @click="habitat.cleanCage"
-              variant="tertiary"
+              @click="addTestPoop"
+              variant="secondary"
               size="sm"
-              full-width
-              class="condition-item__action w-full"
             >
-              🧹 Clean Cage
+              Add Test Poop
             </Button>
-          </div>
-
-          <!-- Bedding Freshness -->
-          <div class="condition-item">
-            <div class="condition-item__header">
-              <label for="bedding">Bedding Freshness</label>
-              <span class="condition-item__value" :class="getConditionClass(habitat.beddingFreshness)">
-                {{ habitat.beddingFreshness.toFixed(0) }}%
-              </span>
-            </div>
-            <SliderField
-              id="bedding"
-              :modelValue="habitat.beddingFreshness"
-              :min="0"
-              :max="100"
-              :step="1"
-              prefix=""
-              suffix="%"
-              @update:modelValue="(v: number) => habitat.updateCondition('beddingFreshness', v)"
-            />
-            <Select
-              v-model="selectedBeddingType"
-              :options="beddingOptions"
-              placeholder="Select bedding type"
-              label="Bedding Type"
-            />
             <Button
-              @click="handleRefreshBedding"
-              variant="tertiary"
+              @click="clearAllPoop"
+              variant="primary"
               size="sm"
-              full-width
-              class="condition-item__action w-full"
-              :disabled="!canRefreshBedding"
-              :tooltip="!canRefreshBedding ? `No ${selectedBeddingType} bedding in inventory` : `Use ${selectedBeddingType} bedding`"
+              :disabled="!habitatVisualRef || habitatVisualRef.poopCount === 0"
             >
-              🛏️ Refresh Bedding
+              Clear All Poop{{ habitatVisualRef && habitatVisualRef.poopCount > 0 ? ` (${habitatVisualRef.poopCount})` : '' }}
             </Button>
-          </div>
-
-          <!-- Hay Freshness -->
-          <div class="condition-item">
-            <div class="condition-item__header">
-              <label for="hay">Hay Freshness</label>
-              <span class="condition-item__value" :class="getConditionClass(habitat.hayFreshness)">
-                {{ habitat.hayFreshness.toFixed(0) }}%
-              </span>
-            </div>
-            <SliderField
-              id="hay"
-              :modelValue="habitat.hayFreshness"
-              :min="0"
-              :max="100"
-              :step="1"
-              prefix=""
-              suffix="%"
-              @update:modelValue="(v: number) => habitat.updateCondition('hayFreshness', v)"
-            />
-          </div>
-
-          <!-- Water Level -->
-          <div class="condition-item">
-            <div class="condition-item__header">
-              <label for="water">Water Level</label>
-              <span class="condition-item__value" :class="getConditionClass(habitat.waterLevel)">
-                {{ habitat.waterLevel.toFixed(0) }}%
-              </span>
-            </div>
-            <SliderField
-              id="water"
-              :modelValue="habitat.waterLevel"
-              :min="0"
-              :max="100"
-              :step="1"
-              prefix=""
-              suffix="%"
-              @update:modelValue="(v: number) => habitat.updateCondition('waterLevel', v)"
-            />
             <Button
-              @click="habitat.refillWater"
-              variant="tertiary"
+              @click="clearAllBowls"
+              variant="warning"
               size="sm"
-              full-width
-              class="condition-item__action w-full"
             >
-              💧 Refill Water
+              Clear All Bowls
+            </Button>
+            <Button
+              @click="clearAllHayRacks"
+              variant="warning"
+              size="sm"
+            >
+              Clear All Hay Racks
+            </Button>
+            <Button
+              @click="clearWater"
+              variant="warning"
+              size="sm"
+            >
+              Clear Water
             </Button>
           </div>
         </div>
@@ -410,10 +413,23 @@ function getConditionClass(value: number): string {
   min-inline-size: 0;
 }
 
+/* Habitat Conditions & Test Controls Row */
+.habitat-debug__conditions-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
+
+/* Desktop: 2 columns - Habitat Conditions (66%) / Test Controls (33%) */
+@media (min-width: 768px) {
+  .habitat-debug__conditions-row {
+    grid-template-columns: 2fr 1fr;
+  }
+}
 
 .test-controls {
   display: flex;
+  flex-direction: column;
   gap: var(--space-3);
-  flex-wrap: wrap;
 }
 </style>
