@@ -5,6 +5,8 @@
     @dragover.prevent="handleDragOver"
     @dragleave="handleDragLeave"
     @drop="handleDrop"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
   >
     <span class="hay-rack__ladder">🪜</span>
     <span class="hay-rack__emoji">🌾</span>
@@ -15,17 +17,25 @@
         :key="`${serving.instanceId}`"
         class="hay-rack__hay-item"
         :class="`hay-rack__hay-item--count-${hayServings.length} hay-rack__hay-item--index-${index}`"
-        :title="`Hay serving ${index + 1} of ${hayServings.length}\nCapacity: ${hayServings.length}/${capacity}\nFreshness: ${freshness?.toFixed(0) ?? 100}%`"
       >
         🌾
       </span>
     </div>
+
+    <HabitatItemPopover
+      v-if="hayServings.length > 0"
+      :title="popoverTitle"
+      :metadata="popoverMetadata"
+      :actions="popoverActions"
+      :is-hovered="isHovered"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import HabitatItemPopover from './HabitatItemPopover.vue'
 
 interface HayServing {
   itemId: string
@@ -43,11 +53,41 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'add-hay': [hayItemId: string]
+  'clear-rack': []
 }>()
 
 const suppliesStore = useSuppliesStore()
 
 const isDragOver = ref(false)
+const isHovered = ref(false)
+
+const STALE_THRESHOLD = 40 // Show clear button when freshness < 40%
+
+const popoverTitle = computed(() => 'Hay Rack')
+
+const popoverMetadata = computed(() => {
+  const currentFreshness = props.freshness ?? 100
+  return [
+    { label: 'Servings', value: `${props.hayServings.length}/${props.capacity}` },
+    { label: 'Freshness', value: `${currentFreshness.toFixed(0)}%` }
+  ]
+})
+
+const popoverActions = computed(() => {
+  const currentFreshness = props.freshness ?? 100
+  const actions = []
+
+  // Only show clear button if hay is stale
+  if (currentFreshness < STALE_THRESHOLD) {
+    actions.push({
+      label: '🗑️ Clear Stale Hay',
+      variant: 'warning' as const,
+      onClick: () => emit('clear-rack')
+    })
+  }
+
+  return actions
+})
 
 const fullnessClass = computed(() => {
   const count = props.hayServings.length

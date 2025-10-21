@@ -66,6 +66,7 @@
             :freshness="getHayRackFreshness(item.itemId)"
             :capacity="4"
             @add-hay="(hayId) => handleAddHayToRack(item.itemId, hayId)"
+            @clear-rack="handleClearHayRack(item.itemId)"
           />
           <WaterBottle
             v-else-if="isWaterBottle(item.itemId)"
@@ -664,6 +665,11 @@ function handleAddHayToRack(hayRackItemId: string, hayItemId: string) {
   }
 }
 
+function handleClearHayRack(hayRackItemId: string) {
+  habitatConditions.clearHayRack(hayRackItemId)
+  console.log(`Cleared hay rack ${hayRackItemId}`)
+}
+
 // Water bottle helper function
 function isWaterBottle(itemId: string): boolean {
   return itemId.includes('water_bottle')
@@ -691,7 +697,8 @@ defineExpose({
   clearAllPoop,
   poopCount,
   setDraggedItem,
-  clearDraggedItem
+  clearDraggedItem,
+  placedItems
 })
 </script>
 

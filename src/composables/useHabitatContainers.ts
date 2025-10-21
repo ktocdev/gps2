@@ -5,7 +5,11 @@
  * Manages food bowls and hay racks in the habitat:
  * - Food bowl contents and capacity
  * - Hay rack contents and serving tracking
+ * - Hay freshness tracking per rack with decay
  * - Adding/removing items from containers
+ *
+ * Note: Uses singleton pattern for shared state to ensure
+ * consistent data across all component instances.
  */
 
 import { ref } from 'vue'
@@ -33,10 +37,11 @@ interface HayRackData {
   lastDecayUpdate: number
 }
 
+// Shared state - singleton pattern to ensure same instance across all uses
+const bowlContents = ref<Map<string, FoodItem[]>>(new Map())
+const hayRackContents = ref<Map<string, HayRackData>>(new Map())
+
 export function useHabitatContainers() {
-  // State - Maps of container ID -> contents
-  const bowlContents = ref<Map<string, FoodItem[]>>(new Map())
-  const hayRackContents = ref<Map<string, HayRackData>>(new Map())
 
   // ========================================================================
   // Bowl Management
@@ -268,6 +273,26 @@ export function useHabitatContainers() {
     return data?.freshness ?? 100
   }
 
+  function setHayRackFreshness(hayRackItemId: string, freshness: number): void {
+    const data = hayRackContents.value.get(hayRackItemId)
+
+    // If hay rack doesn't exist in the map yet, initialize it
+    const rackData = data || {
+      servings: [],
+      freshness: 100,
+      lastDecayUpdate: Date.now()
+    }
+
+    // Create a new Map to trigger Vue reactivity
+    const newMap = new Map(hayRackContents.value)
+    newMap.set(hayRackItemId, {
+      servings: rackData.servings,
+      freshness: Math.max(0, Math.min(100, freshness)),
+      lastDecayUpdate: rackData.lastDecayUpdate
+    })
+    hayRackContents.value = newMap
+  }
+
   function clearHayRack(hayRackItemId: string): void {
     hayRackContents.value.delete(hayRackItemId)
   }
@@ -279,16 +304,21 @@ export function useHabitatContainers() {
 
   function applyHayRackDecay(decayAmount: number): void {
     const now = Date.now()
-    hayRackContents.value.forEach((data, rackId) => {
+    const newMap = new Map(hayRackContents.value)
+
+    newMap.forEach((data, rackId) => {
       // Apply decay
       const newFreshness = Math.max(0, Math.min(100, data.freshness - decayAmount))
 
-      hayRackContents.value.set(rackId, {
+      newMap.set(rackId, {
         servings: data.servings,
         freshness: newFreshness,
         lastDecayUpdate: now
       })
     })
+
+    // Assign new Map to trigger Vue reactivity
+    hayRackContents.value = newMap
   }
 
   // ========================================================================
@@ -312,6 +342,7 @@ export function useHabitatContainers() {
     removeHayFromRack,
     getHayRackContents,
     getHayRackFreshness,
+    setHayRackFreshness,
     clearHayRack,
     clearAllHayRacks,
     applyHayRackDecay

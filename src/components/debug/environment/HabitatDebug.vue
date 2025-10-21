@@ -18,6 +18,39 @@
       </div>
     </div>
 
+    <!-- Hay Racks Panel -->
+    <div v-if="hayRacks.length > 0" class="panel panel--compact">
+      <div class="panel__header">
+        <h3>Hay Racks</h3>
+      </div>
+      <div class="panel__content">
+        <div class="hay-racks-grid">
+          <div v-for="rack in hayRacks" :key="rack.itemId" class="hay-rack-item">
+            <div class="hay-rack-item__header">
+              <label :for="`hay-rack-${rack.itemId}`">{{ rack.name }}</label>
+              <span class="hay-rack-item__value" :class="getConditionClass(rack.freshness)">
+                {{ rack.freshness.toFixed(0) }}%
+              </span>
+            </div>
+            <SliderField
+              :id="`hay-rack-${rack.itemId}`"
+              :modelValue="rack.freshness"
+              :min="0"
+              :max="100"
+              :step="1"
+              prefix=""
+              suffix="%"
+              :disabled="rack.servingCount === 0"
+              @update:modelValue="(v: number) => updateHayRackFreshness(rack.itemId, v)"
+            />
+            <div class="hay-rack-item__info">
+              Servings: {{ rack.servingCount }} / {{ rack.capacity }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Habitat Conditions & Test Controls Row -->
     <div class="habitat-debug__conditions-row">
       <!-- Habitat Conditions Panel -->
@@ -98,26 +131,6 @@
               >
                 🛏️ Refresh Bedding
               </Button>
-            </div>
-
-            <!-- Hay Freshness -->
-            <div class="condition-item">
-              <div class="condition-item__header">
-                <label for="hay">Hay Freshness</label>
-                <span class="condition-item__value" :class="getConditionClass(habitat.hayFreshness)">
-                  {{ habitat.hayFreshness.toFixed(0) }}%
-                </span>
-              </div>
-              <SliderField
-                id="hay"
-                :modelValue="habitat.hayFreshness"
-                :min="0"
-                :max="100"
-                :step="1"
-                prefix=""
-                suffix="%"
-                @update:modelValue="(v: number) => habitat.updateCondition('hayFreshness', v)"
-              />
             </div>
 
             <!-- Water Level -->
@@ -271,6 +284,8 @@ import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useHabitatContainers } from '../../../composables/useHabitatContainers'
+import { CONSUMPTION } from '../../../constants/supplies'
 import Button from '../../basic/Button.vue'
 import SliderField from '../../basic/SliderField.vue'
 import Select from '../../basic/Select.vue'
@@ -281,6 +296,7 @@ const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const { getHayRackContents, getHayRackFreshness, setHayRackFreshness } = useHabitatContainers()
 
 // Ref to HabitatVisual component
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
@@ -397,6 +413,41 @@ function getConditionClass(value: number): string {
   if (value >= 80) return 'condition-value--good'
   if (value >= 40) return 'condition-value--warning'
   return 'condition-value--critical'
+}
+
+// Hay Racks Management
+const hayRacks = computed(() => {
+  if (!habitatVisualRef.value) return []
+
+  const items = habitatVisualRef.value.placedItems
+  if (!items) return []
+
+  const racks = items
+    .filter((item: any) => {
+      const itemData = suppliesStore.getItemById(item.itemId)
+      // Check if this is a hay rack (has hay rack in the name or is specifically a hay rack type)
+      return itemData?.name?.toLowerCase().includes('hay rack')
+    })
+    .map((item: any) => {
+      const itemData = suppliesStore.getItemById(item.itemId)
+      const servings = getHayRackContents(item.itemId)
+      const freshness = getHayRackFreshness(item.itemId)
+      const capacity = CONSUMPTION.HAY_RACK_MAX_CAPACITY
+
+      return {
+        itemId: item.itemId,
+        name: itemData?.name || 'Hay Rack',
+        freshness,
+        servingCount: servings.length,
+        capacity
+      }
+    })
+
+  return racks
+})
+
+function updateHayRackFreshness(hayRackItemId: string, freshness: number) {
+  setHayRackFreshness(hayRackItemId, freshness)
 }
 </script>
 
@@ -572,5 +623,42 @@ function getConditionClass(value: number): string {
 .button--active {
   background: var(--color-primary);
   color: var(--color-text-inverse);
+}
+
+.hay-racks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+.hay-rack-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.hay-rack-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.hay-rack-item__header label {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+}
+
+.hay-rack-item__value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.hay-rack-item__info {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
 }
 </style>
