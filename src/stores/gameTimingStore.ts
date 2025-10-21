@@ -11,6 +11,7 @@ import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
 import { useNeedsController } from './needsController'
 import { useGameController } from './gameController'
+import { useHabitatConditions } from './habitatConditions'
 
 export const useGameTimingStore = defineStore('gameTiming', () => {
   let loggingStore: any = null
@@ -30,6 +31,9 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
   // Timing configuration
   const intervalMs = ref<number>(5000) // 5 seconds default
   const maxDeltaTime = ref<number>(30000) // 30 seconds max delta to prevent large jumps
+
+  // System 16: Phase 5 - Item effectiveness recovery timing
+  const lastEffectivenessRecovery = ref<number>(Date.now())
 
   // Performance tracking
   const updateCount = ref<number>(0)
@@ -145,9 +149,22 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
 
       // Only process game systems if game is in playing state
       if (gameController.isGameActive) {
+        // Convert delta time to seconds for game systems
+        const deltaSeconds = deltaTime / 1000
+
         // Process needs system
         const needsController = useNeedsController()
         needsController.processBatchUpdate()
+
+        // System 16: Phase 3 - Apply environmental decay
+        const habitatConditions = useHabitatConditions()
+        habitatConditions.applyEnvironmentalDecay(deltaSeconds)
+
+        // System 16: Phase 5 - Apply effectiveness recovery once per hour
+        if (currentTime - lastEffectivenessRecovery.value > 3600000) {  // 1 hour
+          habitatConditions.applyEffectivenessRecovery()
+          lastEffectivenessRecovery.value = currentTime
+        }
 
         // Update timing stats
         totalGameTime.value += deltaTime

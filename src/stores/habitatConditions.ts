@@ -7,6 +7,7 @@ import {
   CONSUMPTION,
   POOP_CONSTANTS,
   TRACKING,
+  DECAY,
   STARTER_HABITAT_POSITIONS,
   clampCondition,
   calculatePoopCleanlinessReduction
@@ -63,6 +64,22 @@ interface AlertPreferences {
   enableAlerts: boolean
   warningThreshold: number
   criticalThreshold: number
+}
+
+interface GuineaPigPosition {
+  x: number
+  y: number
+  lastMoved: number
+  targetPosition?: { x: number; y: number }
+  isMoving: boolean
+}
+
+interface ItemUsage {
+  lastUsedAt: number
+  usageCount: number
+  lastUsedBy: string
+  effectiveness: number
+  freshnessBonus: boolean
 }
 
 export const useHabitatConditions = defineStore('habitatConditions', () => {
@@ -128,6 +145,16 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
   // Poop tracking
   const poops = ref<Poop[]>([])
+
+  // Guinea pig position tracking (System 16: Phase 4)
+  const guineaPigPositions = ref<Map<string, GuineaPigPosition>>(new Map())
+
+  // Habitat grid dimensions (medium habitat default)
+  const gridWidth = 14
+  const gridHeight = 10
+
+  // Item usage history (System 16: Phase 5)
+  const itemUsageHistory = ref<Map<string, ItemUsage>>(new Map())
 
   // Computed properties
   const overallCondition = computed(() => {
@@ -392,6 +419,17 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       itemPositions.value.set(itemId, position)
     }
 
+    // System 16: Phase 5 - Initialize item usage tracking with freshness bonus
+    if (!itemUsageHistory.value.has(itemId)) {
+      itemUsageHistory.value.set(itemId, {
+        lastUsedAt: Date.now(),
+        usageCount: 0,
+        lastUsedBy: '',
+        effectiveness: 100,
+        freshnessBonus: true
+      })
+    }
+
     return true
   }
 
@@ -418,10 +456,50 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       bowlContents.value.delete(itemId)
     }
 
+    // System 16: Phase 5 - Reset effectiveness when item is removed (rotation benefit)
+    resetItemEffectiveness(itemId)
+
     return true
   }
 
   // Note: Bowl and hay rack functions are now provided by useHabitatContainers composable
+
+  // ============================================================================
+  // Environmental Decay System (System 16: Phase 3)
+  // ============================================================================
+
+  /**
+   * Apply environmental decay to bedding and cleanliness
+   * @param deltaSeconds - Time elapsed since last update in seconds
+   */
+  function applyEnvironmentalDecay(deltaSeconds: number) {
+    // 1. Apply bedding decay (quality-modified)
+    const qualityMultiplier = DECAY.QUALITY_MULTIPLIERS[currentBedding.value.quality] || 1.0
+    const beddingDecay = DECAY.BEDDING_BASE_DECAY_PER_SECOND * qualityMultiplier * deltaSeconds
+    beddingFreshness.value = clampCondition(beddingFreshness.value - beddingDecay)
+
+    // 2. Apply cleanliness decay
+    const cleanlinessDecay = DECAY.CLEANLINESS_BASE_DECAY_PER_SECOND * deltaSeconds
+    cleanliness.value = clampCondition(cleanliness.value - cleanlinessDecay)
+
+    // Note: Activity-based decay will be recorded via recordGuineaPigActivity()
+  }
+
+  /**
+   * Record guinea pig activity to accelerate decay
+   * @param activityType - Type of activity ('movement', 'eating', 'drinking')
+   */
+  function recordGuineaPigActivity(activityType: 'movement' | 'eating' | 'drinking') {
+    const activityDecay = DECAY.ACTIVITY_DECAY[activityType]
+
+    // Activity primarily affects bedding freshness
+    beddingFreshness.value = clampCondition(beddingFreshness.value - activityDecay)
+
+    // Eating also affects cleanliness (food crumbs)
+    if (activityType === 'eating') {
+      cleanliness.value = clampCondition(cleanliness.value - (activityDecay * 0.5))
+    }
+  }
 
   // ============================================================================
   // Water Consumption System (System 16: Phase 2)
@@ -537,6 +615,244 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     })
   }
 
+  // ============================================================================
+  // Guinea Pig Position Tracking (System 16: Phase 4)
+  // ============================================================================
+
+  /**
+   * Find an empty cell not occupied by items
+   */
+  function findEmptyCell(): { x: number; y: number } | null {
+    const occupiedCells = new Set<string>()
+
+    // Mark cells occupied by items
+    habitatItems.value.forEach(itemId => {
+      const position = itemPositions.value.get(itemId)
+      if (position) {
+        // For now, assume all items are 1x1 (gridSize will be added to item metadata in future)
+        // const suppliesStore = useSuppliesStore()
+        // const item = suppliesStore.getItemById(itemId)
+        const width = 1
+        const height = 1
+
+        for (let dy = 0; dy < height; dy++) {
+          for (let dx = 0; dx < width; dx++) {
+            occupiedCells.add(`${position.x + dx},${position.y + dy}`)
+          }
+        }
+      }
+    })
+
+    // Find random empty cell
+    const attempts = 50
+    for (let i = 0; i < attempts; i++) {
+      const x = Math.floor(Math.random() * gridWidth)
+      const y = Math.floor(Math.random() * gridHeight)
+      const key = `${x},${y}`
+
+      if (!occupiedCells.has(key)) {
+        return { x, y }
+      }
+    }
+
+    return null // No empty cells found
+  }
+
+  /**
+   * Initialize guinea pig position (called when guinea pig becomes active)
+   */
+  function initializeGuineaPigPosition(guineaPigId: string) {
+    // Don't re-initialize if position already exists
+    if (guineaPigPositions.value.has(guineaPigId)) {
+      console.log(`Guinea pig ${guineaPigId} already has a position`)
+      return
+    }
+
+    // Find random unoccupied cell
+    const emptyCell = findEmptyCell()
+
+    if (emptyCell) {
+      guineaPigPositions.value.set(guineaPigId, {
+        x: emptyCell.x,
+        y: emptyCell.y,
+        lastMoved: Date.now(),
+        isMoving: false
+      })
+      console.log(`🐹 Guinea pig ${guineaPigId} placed at (${emptyCell.x}, ${emptyCell.y})`)
+    } else {
+      // Default to center if no empty cells (shouldn't happen)
+      const centerX = Math.floor(gridWidth / 2)
+      const centerY = Math.floor(gridHeight / 2)
+      guineaPigPositions.value.set(guineaPigId, {
+        x: centerX,
+        y: centerY,
+        lastMoved: Date.now(),
+        isMoving: false
+      })
+      console.log(`🐹 Guinea pig ${guineaPigId} placed at center (${centerX}, ${centerY})`)
+    }
+  }
+
+  /**
+   * Move guinea pig to new position
+   */
+  function moveGuineaPigTo(guineaPigId: string, x: number, y: number): boolean {
+    const currentPosition = guineaPigPositions.value.get(guineaPigId)
+    if (!currentPosition) {
+      console.warn(`Guinea pig ${guineaPigId} has no position`)
+      return false
+    }
+
+    // Bounds check
+    if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) {
+      console.warn(`Invalid position (${x}, ${y}) - out of bounds`)
+      return false
+    }
+
+    // Update position
+    guineaPigPositions.value.set(guineaPigId, {
+      x,
+      y,
+      lastMoved: Date.now(),
+      isMoving: false
+    })
+
+    // Record movement activity (increases decay)
+    recordGuineaPigActivity('movement')
+
+    return true
+  }
+
+  /**
+   * Get guinea pig position
+   */
+  function getGuineaPigPosition(guineaPigId: string): GuineaPigPosition | null {
+    return guineaPigPositions.value.get(guineaPigId) || null
+  }
+
+  /**
+   * Check if position is occupied by a guinea pig
+   */
+  function isPositionOccupiedByGuineaPig(x: number, y: number): boolean {
+    for (const position of guineaPigPositions.value.values()) {
+      if (position.x === x && position.y === y) {
+        return true
+      }
+    }
+    return false
+  }
+
+  // ============================================================================
+  // Item Usage History (System 16: Phase 5)
+  // ============================================================================
+
+  /**
+   * Record item usage by a guinea pig
+   */
+  function recordItemUsage(itemId: string, guineaPigId: string) {
+    const now = Date.now()
+    const existing = itemUsageHistory.value.get(itemId)
+
+    if (existing) {
+      // Update existing usage
+      const effectivenessDecay = Math.floor(Math.random() * 4) + 2  // 2-5 points
+
+      itemUsageHistory.value.set(itemId, {
+        lastUsedAt: now,
+        usageCount: existing.usageCount + 1,
+        lastUsedBy: guineaPigId,
+        effectiveness: Math.max(50, existing.effectiveness - effectivenessDecay),
+        freshnessBonus: existing.freshnessBonus  // Freshness bonus check happens in getItemEffectiveness
+      })
+    } else {
+      // First time usage - record initial placement time
+      itemUsageHistory.value.set(itemId, {
+        lastUsedAt: now,
+        usageCount: 1,
+        lastUsedBy: guineaPigId,
+        effectiveness: 100,
+        freshnessBonus: true
+      })
+    }
+
+    console.log(`📊 Item ${itemId} used by ${guineaPigId}. Effectiveness: ${itemUsageHistory.value.get(itemId)?.effectiveness}%`)
+  }
+
+  /**
+   * Get item effectiveness (0-100)
+   */
+  function getItemEffectiveness(itemId: string): number {
+    const usage = itemUsageHistory.value.get(itemId)
+    if (!usage) return 100  // New item, full effectiveness
+
+    // Check for freshness bonus
+    const now = Date.now()
+    const hoursSinceFirstUse = (now - usage.lastUsedAt) / (1000 * 60 * 60)
+
+    if (usage.freshnessBonus && hoursSinceFirstUse < 24) {
+      return 100  // Freshness bonus active
+    }
+
+    return usage.effectiveness
+  }
+
+  /**
+   * Apply daily effectiveness recovery (called periodically from game loop)
+   */
+  function applyEffectivenessRecovery() {
+    const now = Date.now()
+    const oneDayAgo = now - 86400000  // 24 hours
+
+    itemUsageHistory.value.forEach((usage, itemId) => {
+      // If item hasn't been used in 24 hours, recover 10% effectiveness
+      if (usage.lastUsedAt < oneDayAgo && usage.effectiveness < 100) {
+        usage.effectiveness = Math.min(100, usage.effectiveness + 10)
+        console.log(`🔄 Item ${itemId} effectiveness recovered to ${usage.effectiveness}%`)
+      }
+
+      // Disable freshness bonus after 24 hours
+      if (usage.freshnessBonus && (now - usage.lastUsedAt > 86400000)) {
+        usage.freshnessBonus = false
+      }
+    })
+  }
+
+  /**
+   * Reset effectiveness when item is rotated (removed and re-added)
+   */
+  function resetItemEffectiveness(itemId: string) {
+    const existing = itemUsageHistory.value.get(itemId)
+    if (existing) {
+      itemUsageHistory.value.set(itemId, {
+        ...existing,
+        effectiveness: Math.min(100, existing.effectiveness + 50),  // Restore 50%
+        freshnessBonus: true  // Re-enable freshness bonus
+      })
+      console.log(`🔄 Item ${itemId} rotated - effectiveness reset to ${itemUsageHistory.value.get(itemId)?.effectiveness}%`)
+    }
+  }
+
+  /**
+   * Get usage statistics for debug/display
+   */
+  function getItemUsageStats(itemId: string): ItemUsage | null {
+    return itemUsageHistory.value.get(itemId) || null
+  }
+
+  /**
+   * Get items sorted by effectiveness (for rotation suggestions)
+   */
+  function getItemsByEffectiveness(): Array<{ itemId: string; effectiveness: number }> {
+    const items: Array<{ itemId: string; effectiveness: number }> = []
+
+    habitatItems.value.forEach(itemId => {
+      const effectiveness = getItemEffectiveness(itemId)
+      items.push({ itemId, effectiveness })
+    })
+
+    return items.sort((a, b) => a.effectiveness - b.effectiveness)
+  }
+
   return {
     // State
     cleanliness,
@@ -558,6 +874,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     bowlContents,
     hayRackContents,
     poops,
+    guineaPigPositions,
+    itemUsageHistory,
 
     // Computed
     overallCondition,
@@ -592,7 +910,25 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     // System 16: Phase 2 - Water Consumption
     consumeWater,
     hasWaterAvailable,
-    getWaterBottlePosition
+    getWaterBottlePosition,
+
+    // System 16: Phase 3 - Environmental Decay
+    applyEnvironmentalDecay,
+    recordGuineaPigActivity,
+
+    // System 16: Phase 4 - Guinea Pig Position Tracking
+    initializeGuineaPigPosition,
+    moveGuineaPigTo,
+    getGuineaPigPosition,
+    isPositionOccupiedByGuineaPig,
+
+    // System 16: Phase 5 - Item Usage History
+    recordItemUsage,
+    getItemEffectiveness,
+    applyEffectivenessRecovery,
+    resetItemEffectiveness,
+    getItemUsageStats,
+    getItemsByEffectiveness
   }
 }, {
   persist: {
@@ -606,7 +942,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
           itemPositions: serializeMap(state.itemPositions as Map<string, { x: number; y: number }>),
           bowlContents: serializeMap(state.bowlContents as Map<string, any[]>),
           hayRackContents: serializeMap(state.hayRackContents as Map<string, any[]>),
-          poops: state.poops || []
+          poops: state.poops || [],
+          guineaPigPositions: serializeMap(state.guineaPigPositions as Map<string, GuineaPigPosition>),
+          itemUsageHistory: serializeMap(state.itemUsageHistory as Map<string, ItemUsage>)
         }
         return JSON.stringify(serialized)
       },
@@ -626,6 +964,14 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
           new Map()
         )
         parsed.poops = parsed.poops || []
+        parsed.guineaPigPositions = safeDeserializeMap<string, GuineaPigPosition>(
+          parsed.guineaPigPositions,
+          new Map()
+        )
+        parsed.itemUsageHistory = safeDeserializeMap<string, ItemUsage>(
+          parsed.itemUsageHistory,
+          new Map()
+        )
         return parsed
       }
     }
