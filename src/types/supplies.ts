@@ -1,10 +1,53 @@
 /**
  * Supplies Store Type Definitions
  * System 11: Supplies Store - Phase 3.11
+ * System 16: Autonomy Preparation - Phase 3.16 (Item Type Metadata)
  *
  * Type definitions for all purchasable items in the game:
  * - Bedding, Hay, Food (6 subcategories), Habitat Items (5 subcategories)
+ * - Item type metadata for guinea pig autonomy system
  */
+
+// ============================================================================
+// Autonomy System Types (System 16: Phase 1)
+// ============================================================================
+
+/**
+ * Functional classification of items for autonomy decision-making
+ */
+export type ItemType =
+  | 'water_bottle'      // Satisfies thirst need
+  | 'food_bowl'         // Satisfies hunger need
+  | 'hay_rack'          // Satisfies hunger need (hay specific)
+  | 'shelter'           // Satisfies shelter need
+  | 'bed'               // Satisfies energy need (enhanced sleep)
+  | 'toy'               // Satisfies play need
+  | 'chew'              // Satisfies chew need
+  | 'platform'          // Satisfies play/stimulation need (exploration)
+  | 'tunnel'            // Satisfies play/stimulation need (exploration)
+  | 'hideaway'          // Satisfies shelter need (basic hiding)
+  | 'grooming_tool'     // Satisfies hygiene need (player use)
+  | 'nail_clipper'      // Satisfies nails need (player use)
+
+/**
+ * Need types that items can satisfy (matches GuineaPigNeeds interface)
+ */
+export type NeedType =
+  // Critical Needs
+  | 'hunger'
+  | 'thirst'
+  | 'energy'
+  | 'shelter'
+  // Environmental Needs
+  | 'play'
+  | 'social'
+  | 'stimulation'
+  | 'comfort'
+  // Maintenance Needs
+  | 'hygiene'
+  | 'nails'
+  | 'health'
+  | 'chew'
 
 // ============================================================================
 // Core Item Interface
@@ -34,6 +77,13 @@ export interface SuppliesItem {
 
   // Stats (category-dependent)
   stats?: {
+    // === Autonomy System Stats (System 16: Phase 1) ===
+    itemType?: ItemType // Functional classification for autonomy
+    needSatisfied?: NeedType // Which need this item affects
+    satisfactionAmount?: number // How much need is restored (0-100)
+    usageDuration?: number // How long usage takes (seconds)
+
+    // === Existing Stats ===
     // Bedding stats
     absorbency?: number
     decayRate?: number

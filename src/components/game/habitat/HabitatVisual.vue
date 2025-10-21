@@ -38,9 +38,7 @@
           :key="item.instanceId"
           class="grid-item"
           :class="{
-            'grid-item--dragging': draggedPlacedItemId === item.itemId,
-            'grid-item--bowl-locked': isBowl(item.itemId) && getBowlContents(item.itemId).length > 0,
-            'grid-item--hay-rack-locked': isHayRack(item.itemId) && getHayRackContents(item.itemId).length > 0
+            'grid-item--dragging': draggedPlacedItemId === item.itemId
           }"
           :style="{
             gridColumn: `${item.position.x + 1} / span ${item.size.width}`,
@@ -60,13 +58,16 @@
             :capacity="getBowlCapacity(item.itemId)"
             :foods="getBowlContents(item.itemId)"
             @add-food="(foodId) => handleAddFoodToBowl(item.itemId, foodId)"
+            @remove-food="(foodIndex) => handleRemoveFoodFromBowl(item.itemId, foodIndex)"
           />
           <HayRack
             v-else-if="isHayRack(item.itemId)"
             :hay-rack-item-id="item.itemId"
             :hay-servings="getHayRackContents(item.itemId)"
+            :freshness="getHayRackFreshness(item.itemId)"
             :capacity="4"
             @add-hay="(hayId) => handleAddHayToRack(item.itemId, hayId)"
+            @clear-rack="handleClearHayRack(item.itemId)"
           />
           <WaterBottle
             v-else-if="isWaterBottle(item.itemId)"
@@ -606,24 +607,29 @@ function getBowlContents(itemId: string) {
   return habitatConditions.getBowlContents(itemId)
 }
 
-function canDragItem(item: any): boolean {
-  // Bowls with food cannot be dragged
-  if (isBowl(item.itemId)) {
-    return getBowlContents(item.itemId).length === 0
-  }
-  // Hay racks with hay cannot be dragged
-  if (isHayRack(item.itemId)) {
-    return getHayRackContents(item.itemId).length === 0
-  }
+function canDragItem(_item: any): boolean {
+  // All items can be dragged (bowls and hay racks can be moved even with contents)
   return true
 }
 
 function getBowlLockTooltip(item: any): string {
-  if (isBowl(item.itemId) && getBowlContents(item.itemId).length > 0) {
-    return `${item.name} (Contains food - cannot move)`
+  // Show helpful metadata tooltips
+  if (isBowl(item.itemId)) {
+    const contents = getBowlContents(item.itemId)
+    const capacity = getBowlCapacity(item.itemId)
+    if (contents.length > 0) {
+      const foodNames = contents.map((f: any) => f.name).join(', ')
+      return `${item.name}\nContents: ${foodNames}\nCapacity: ${contents.length}/${capacity}`
+    }
+    return `${item.name}\nEmpty bowl\nCapacity: ${capacity} servings`
   }
-  if (isHayRack(item.itemId) && getHayRackContents(item.itemId).length > 0) {
-    return `${item.name} (Contains hay - cannot move)`
+  if (isHayRack(item.itemId)) {
+    const contents = getHayRackContents(item.itemId)
+    const freshness = getHayRackFreshness(item.itemId)
+    if (contents.length > 0) {
+      return `${item.name}\nHay servings: ${contents.length}/4\nFreshness: ${freshness.toFixed(0)}%`
+    }
+    return `${item.name}\nEmpty hay rack\nCapacity: 4 servings`
   }
   return item.name
 }
@@ -633,6 +639,11 @@ function handleAddFoodToBowl(bowlItemId: string, foodItemId: string) {
   if (success) {
     console.log(`Added food ${foodItemId} to bowl ${bowlItemId}`)
   }
+}
+
+function handleRemoveFoodFromBowl(bowlItemId: string, foodIndex: number) {
+  habitatConditions.removeFoodFromBowl(bowlItemId, foodIndex)
+  console.log(`Removed food at index ${foodIndex} from bowl ${bowlItemId}`)
 }
 
 // Hay rack helper functions
@@ -649,11 +660,20 @@ function getHayRackContents(itemId: string) {
   return habitatConditions.getHayRackContents(itemId)
 }
 
+function getHayRackFreshness(itemId: string): number {
+  return habitatConditions.getHayRackFreshness(itemId)
+}
+
 function handleAddHayToRack(hayRackItemId: string, hayItemId: string) {
   const success = habitatConditions.addHayToRack(hayRackItemId, hayItemId)
   if (success) {
     console.log(`Added hay ${hayItemId} to rack ${hayRackItemId}`)
   }
+}
+
+function handleClearHayRack(hayRackItemId: string) {
+  habitatConditions.clearHayRack(hayRackItemId)
+  console.log(`Cleared hay rack ${hayRackItemId}`)
 }
 
 // Water bottle helper function
@@ -683,7 +703,8 @@ defineExpose({
   clearAllPoop,
   poopCount,
   setDraggedItem,
-  clearDraggedItem
+  clearDraggedItem,
+  placedItems
 })
 </script>
 
@@ -789,20 +810,6 @@ defineExpose({
 .grid-item--dragging {
   opacity: 0.5;
   cursor: grabbing;
-}
-
-.grid-item--bowl-locked,
-.grid-item--hay-rack-locked {
-  cursor: not-allowed;
-  opacity: 0.85;
-  border-color: var(--color-warning);
-  border-style: dashed;
-}
-
-.grid-item--bowl-locked:hover,
-.grid-item--hay-rack-locked:hover {
-  transform: none;
-  border-color: var(--color-error);
 }
 
 .grid-item__emoji {

@@ -69,6 +69,45 @@ export const POOP_CONSTANTS = {
 } as const
 
 // ========================================================================
+// Environmental Decay (System 16: Phase 3)
+// ========================================================================
+
+export const DECAY = {
+  // Base decay rates (points per second at 1x speed)
+  BEDDING_BASE_DECAY_PER_SECOND: 1 / (5 * 60), // -1 point per 5 minutes
+  CLEANLINESS_BASE_DECAY_PER_SECOND: 1 / (10 * 60), // -1 point per 10 minutes
+  HAY_BASE_DECAY_PER_SECOND: 1 / (3 * 60), // -1 point per 3 minutes (faster - hay oxidizes quickly)
+  FOOD_BASE_DECAY_PER_SECOND: 1 / (4 * 60), // -1 point per 4 minutes (food spoils moderately fast)
+
+  // Quality modifiers for bedding decay
+  QUALITY_MULTIPLIERS: {
+    cheap: 1.2,
+    average: 1.0,
+    premium: 0.8,
+    'colorful-premium': 0.8
+  },
+
+  // Activity acceleration (additional decay points per second)
+  ACTIVITY_DECAY: {
+    movement: 0.5 / 60, // -0.5 points per minute of movement
+    eating: 1.0 / 60,   // -1.0 points per minute of eating
+    drinking: 0.2 / 60  // -0.2 points per minute of drinking
+  },
+
+  // Speed multiplier options (multiplies all decay rates)
+  SPEED_PRESETS: {
+    REALISTIC: 1,      // 1x - Realistic guinea pig time (very slow)
+    RELAXED: 6,        // 6x - 1 hour = 10 minutes real time
+    NORMAL: 12,        // 12x - 1 hour = 5 minutes real time (recommended for 10-15 min sessions)
+    FAST: 24,          // 24x - 1 hour = 2.5 minutes real time
+    DEBUG: 60          // 60x - 1 hour = 1 minute real time (for testing)
+  },
+
+  // Default speed for new players
+  DEFAULT_SPEED: 12  // NORMAL - balanced for brief play sessions
+} as const
+
+// ========================================================================
 // History & Tracking
 // ========================================================================
 

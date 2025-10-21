@@ -5,6 +5,8 @@
     @dragover.prevent="handleDragOver"
     @dragleave="handleDragLeave"
     @drop="handleDrop"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
   >
     <span class="hay-rack__ladder">🪜</span>
     <span class="hay-rack__emoji">🌾</span>
@@ -15,17 +17,24 @@
         :key="`${serving.instanceId}`"
         class="hay-rack__hay-item"
         :class="`hay-rack__hay-item--count-${hayServings.length} hay-rack__hay-item--index-${index}`"
-        :title="`Hay serving ${index + 1} of ${hayServings.length}\nCapacity: ${hayServings.length}/${capacity}`"
       >
         🌾
       </span>
     </div>
+
+    <HabitatItemPopover
+      :title="popoverTitle"
+      :metadata="popoverMetadata"
+      :actions="popoverActions"
+      :is-hovered="isHovered"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import HabitatItemPopover from './HabitatItemPopover.vue'
 
 interface HayServing {
   itemId: string
@@ -36,17 +45,52 @@ interface Props {
   hayRackItemId: string
   hayServings: HayServing[]
   capacity: number
+  freshness?: number
 }
 
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'add-hay': [hayItemId: string]
+  'clear-rack': []
 }>()
 
 const suppliesStore = useSuppliesStore()
 
 const isDragOver = ref(false)
+const isHovered = ref(false)
+
+const STALE_THRESHOLD = 40 // Show clear button when freshness < 40%
+
+const popoverTitle = computed(() => 'Hay Rack')
+
+const popoverMetadata = computed(() => {
+  const currentFreshness = props.freshness ?? 100
+  return [
+    { label: 'Servings', value: `${props.hayServings.length}/${props.capacity}` },
+    { label: 'Freshness', value: `${currentFreshness.toFixed(0)}%` }
+  ]
+})
+
+const popoverActions = computed(() => {
+  const currentFreshness = props.freshness ?? 100
+  const actions = []
+
+  // Show empty button if there are any hay servings
+  if (props.hayServings.length > 0) {
+    // Use warning variant if hay is stale, otherwise default
+    const variant = currentFreshness < STALE_THRESHOLD ? 'warning' : 'default'
+    const label = currentFreshness < STALE_THRESHOLD ? '🗑️ Clear Stale Hay' : '🗑️ Empty Hay Rack'
+
+    actions.push({
+      label,
+      variant: variant as const,
+      onClick: () => emit('clear-rack')
+    })
+  }
+
+  return actions
+})
 
 const fullnessClass = computed(() => {
   const count = props.hayServings.length
@@ -195,7 +239,7 @@ function handleDrop(event: DragEvent) {
 .hay-rack__hay-item {
   position: absolute;
   line-height: 1;
-  pointer-events: all;
+  pointer-events: none;
   cursor: help;
   transition: filter 0.2s ease;
 }

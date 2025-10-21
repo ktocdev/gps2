@@ -11,7 +11,7 @@
  */
 
 import { defineStore } from 'pinia'
-import type { SuppliesItem, ItemFilters, ItemSortOptions, PurchaseResult } from '../types/supplies'
+import type { SuppliesItem, ItemFilters, ItemSortOptions, PurchaseResult, ItemType, NeedType } from '../types/supplies'
 import { usePlayerProgression } from './playerProgression'
 import { useInventoryStore } from './inventoryStore'
 import { loadCatalog } from '../utils/catalogLoader'
@@ -346,6 +346,49 @@ export const useSuppliesStore = defineStore('supplies', {
         })),
         remainingBalance: playerProgression.currency
       }
+    },
+
+    // ========================================================================
+    // Autonomy System Helpers (System 16: Phase 1)
+    // ========================================================================
+
+    /**
+     * Get all items of a specific type
+     * @param itemType - The item type to filter by
+     * @returns Array of items matching the type
+     */
+    getItemsByType(itemType: ItemType): SuppliesItem[] {
+      return this.catalog.filter(item => item.stats?.itemType === itemType)
+    },
+
+    /**
+     * Get the item type for a specific item ID
+     * @param itemId - The item ID to look up
+     * @returns The item type, or null if not found/no type
+     */
+    getItemType(itemId: string): ItemType | null {
+      const item = this.getItemById(itemId)
+      return item?.stats?.itemType || null
+    },
+
+    /**
+     * Check if an item satisfies a specific need
+     * @param itemId - The item ID to check
+     * @param need - The need type to check against
+     * @returns True if the item satisfies that need
+     */
+    itemSatisfiesNeed(itemId: string, need: NeedType): boolean {
+      const item = this.getItemById(itemId)
+      return item?.stats?.needSatisfied === need
+    },
+
+    /**
+     * Get all items that satisfy a specific need (for autonomy decision-making)
+     * @param need - The need type to find items for
+     * @returns Array of items that satisfy the need
+     */
+    getItemsForNeed(need: NeedType): SuppliesItem[] {
+      return this.catalog.filter(item => item.stats?.needSatisfied === need)
     }
   }
 })

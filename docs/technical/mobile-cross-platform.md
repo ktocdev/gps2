@@ -72,7 +72,7 @@ Establish a comprehensive breakpoint system that prioritizes mobile experience:
 
   .habitat-container {
     flex: 1;
-    max-width: 800px;
+    max-width: 670px;
   }
 
   .info-panel {

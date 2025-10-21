@@ -1,197 +1,263 @@
 <template>
   <div class="habitat-debug debug-view__constrained">
-    <h2>Habitat Conditions (Phase 1)</h2>
+    <h2>Habitat Conditions</h2>
 
     <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
-    <!-- Visual Habitat with Items Sidebar -->
+    <!-- Visual Habitat with Sidebar -->
     <div class="panel panel--full-width">
       <div class="panel__header">
         <h3>Habitat Visual</h3>
+        <div class="sidebar-toggle">
+          <Button
+            @click="activeSidebar = 'inventory'"
+            variant="tertiary"
+            size="sm"
+            :class="{ 'button--active': activeSidebar === 'inventory' }"
+          >
+            🎒 Inventory
+          </Button>
+          <Button
+            @click="activeSidebar = 'care'"
+            variant="tertiary"
+            size="sm"
+            :class="{ 'button--active': activeSidebar === 'care' }"
+          >
+            🧹 Care Actions
+          </Button>
+        </div>
       </div>
       <div class="panel__content">
         <div class="habitat-layout">
           <div class="habitat-layout__main">
             <HabitatVisual ref="habitatVisualRef" :show-grid="true" habitat-size="medium" />
           </div>
-          <InventorySidebar :habitat-visual-ref="habitatVisualRef" />
+          <InventorySidebar
+            v-if="activeSidebar === 'inventory'"
+            :habitat-visual-ref="habitatVisualRef"
+          />
+          <HabitatCareSidebar
+            v-else-if="activeSidebar === 'care'"
+            :can-refresh-bedding="canRefreshBedding"
+            :selected-bedding-type="selectedBeddingType"
+            :bedding-options="beddingOptions"
+            :poop-count="habitatVisualRef?.poopCount || 0"
+            :has-water-available="hasWaterAvailable"
+            @update:selected-bedding-type="selectedBeddingType = $event"
+            @clean-cage="habitat.cleanCage"
+            @refill-water="habitat.refillWater"
+            @refresh-bedding="handleRefreshBedding"
+            @clear-all-bowls="clearAllBowls"
+            @clear-all-hay-racks="clearAllHayRacks"
+            @add-test-poop="addTestPoop"
+            @clear-all-poop="clearAllPoop"
+            @clear-water="clearWater"
+            @test-water-consumption="testWaterConsumption"
+          />
         </div>
       </div>
     </div>
 
-    <!-- Test Controls Panel -->
-    <div class="panel panel--compact">
-      <div class="panel__header">
-        <h3>Test Controls</h3>
-      </div>
-      <div class="panel__content">
-        <div class="test-controls">
-          <Button
-            @click="addTestPoop"
-            variant="secondary"
-            size="sm"
-          >
-            Add Test Poop
-          </Button>
-          <Button
-            @click="clearAllPoop"
-            variant="primary"
-            size="sm"
-            :disabled="!habitatVisualRef || habitatVisualRef.poopCount === 0"
-          >
-            Clear All Poop{{ habitatVisualRef && habitatVisualRef.poopCount > 0 ? ` (${habitatVisualRef.poopCount})` : '' }}
-          </Button>
-          <Button
-            @click="clearAllBowls"
-            variant="warning"
-            size="sm"
-          >
-            Clear All Bowls
-          </Button>
-          <Button
-            @click="clearAllHayRacks"
-            variant="warning"
-            size="sm"
-          >
-            Clear All Hay Racks
-          </Button>
-          <Button
-            @click="clearWater"
-            variant="warning"
-            size="sm"
-          >
-            Clear Water
-          </Button>
+    <!-- Habitat Conditions & Test Controls Row -->
+    <div class="habitat-debug__conditions-row">
+      <!-- Habitat Conditions Panel -->
+      <div class="panel panel--compact panel--accent">
+        <div class="panel__header">
+          <h3>Habitat Conditions</h3>
+          <div class="condition-summary">
+            <span class="condition-summary__label">Overall Condition:</span>
+            <span class="condition-summary__value" :class="getConditionClass(habitat.overallCondition)">
+              {{ habitat.overallCondition }}%
+            </span>
+          </div>
+        </div>
+        <div class="panel__content">
+          <!-- Core Conditions Section -->
+          <div class="conditions-section">
+            <h4 class="conditions-section-title">Core Conditions</h4>
+            <div class="conditions-grid">
+              <!-- Cleanliness -->
+              <div class="condition-item">
+                <div class="condition-item__header">
+                  <label for="cleanliness">Cleanliness</label>
+                  <span class="condition-item__value" :class="getConditionClass(habitat.cleanliness)">
+                    {{ habitat.cleanliness.toFixed(0) }}%
+                  </span>
+                </div>
+                <SliderField
+                  id="cleanliness"
+                  :modelValue="habitat.cleanliness"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  prefix=""
+                  suffix="%"
+                  @update:modelValue="(v: number) => habitat.updateCondition('cleanliness', v)"
+                />
+              </div>
+
+              <!-- Bedding Freshness -->
+              <div class="condition-item">
+                <div class="condition-item__header">
+                  <label for="bedding">Bedding Freshness</label>
+                  <span class="condition-item__value" :class="getConditionClass(habitat.beddingFreshness)">
+                    {{ habitat.beddingFreshness.toFixed(0) }}%
+                  </span>
+                </div>
+                <SliderField
+                  id="bedding"
+                  :modelValue="habitat.beddingFreshness"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  prefix=""
+                  suffix="%"
+                  @update:modelValue="(v: number) => habitat.updateCondition('beddingFreshness', v)"
+                />
+              </div>
+
+              <!-- Water Level -->
+              <div class="condition-item">
+                <div class="condition-item__header">
+                  <label for="water">Water Level</label>
+                  <span class="condition-item__value" :class="getConditionClass(habitat.waterLevel)">
+                    {{ habitat.waterLevel.toFixed(0) }}%
+                  </span>
+                </div>
+                <SliderField
+                  id="water"
+                  :modelValue="habitat.waterLevel"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  prefix=""
+                  suffix="%"
+                  @update:modelValue="(v: number) => habitat.updateCondition('waterLevel', v)"
+                />
+              </div>
+            </div>
+          </div>
+
+          <hr class="divider" />
+
+          <!-- Hay Racks Section -->
+          <div v-if="hayRacks.length > 0" class="conditions-section">
+            <h4 class="conditions-section-title">Hay Racks</h4>
+            <div class="container-items-grid">
+              <div v-for="rack in hayRacks" :key="rack.itemId" class="container-item">
+                <div class="container-item__header">
+                  <label :for="`hay-rack-${rack.itemId}`">{{ rack.name }}</label>
+                  <span class="container-item__value" :class="getConditionClass(rack.freshness)">
+                    {{ rack.freshness.toFixed(0) }}%
+                  </span>
+                </div>
+                <SliderField
+                  :id="`hay-rack-${rack.itemId}`"
+                  :modelValue="rack.freshness"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  prefix=""
+                  suffix="%"
+                  :disabled="rack.servingCount === 0"
+                  @update:modelValue="(v: number) => updateHayRackFreshness(rack.itemId, v)"
+                />
+                <div class="container-item__info">
+                  Servings: {{ rack.servingCount }} / {{ rack.capacity }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr v-if="hayRacks.length > 0" class="divider" />
+
+          <!-- Food Containers Section -->
+          <div v-if="foodBowls.length > 0" class="conditions-section">
+            <h4 class="conditions-section-title">Food Containers</h4>
+            <div class="food-bowls-list">
+              <div v-for="bowl in foodBowls" :key="bowl.bowlId" class="food-bowl-container">
+                <div class="food-bowl-container__header">
+                  <h5>{{ bowl.bowlName }}</h5>
+                  <span class="food-bowl-container__count">{{ bowl.foods.length }}/{{ bowl.capacity }}</span>
+                </div>
+                <div v-if="bowl.foods.length === 0" class="food-bowl-container__empty">
+                  No food in bowl
+                </div>
+                <div v-else class="food-items-list">
+                  <div v-for="(food, foodIndex) in bowl.foods" :key="`${bowl.bowlId}-${foodIndex}`" class="food-item">
+                    <div class="food-item__header">
+                      <label :for="`food-${bowl.bowlId}-${foodIndex}`">
+                        <span class="food-item__emoji">{{ food.emoji }}</span>
+                        {{ food.name }}
+                      </label>
+                      <span class="food-item__value" :class="getConditionClass(food.freshness)">
+                        {{ food.freshness.toFixed(0) }}%
+                      </span>
+                    </div>
+                    <SliderField
+                      :id="`food-${bowl.bowlId}-${foodIndex}`"
+                      :modelValue="food.freshness"
+                      :min="0"
+                      :max="100"
+                      :step="1"
+                      prefix=""
+                      suffix="%"
+                      @update:modelValue="(v: number) => updateFoodFreshness(bowl.bowlId, foodIndex, v)"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Condition Management Panel -->
-    <div class="panel panel--compact panel--accent">
-      <div class="panel__header">
-        <h3>Habitat Conditions</h3>
-        <div class="condition-summary">
-          <span class="condition-summary__label">Overall Condition:</span>
-          <span class="condition-summary__value" :class="getConditionClass(habitat.overallCondition)">
-            {{ habitat.overallCondition }}%
-          </span>
+      <!-- Decay Speed Panel -->
+      <div class="panel panel--compact">
+        <div class="panel__header">
+          <h3>Decay Speed</h3>
         </div>
-      </div>
-      <div class="panel__content">
-        <!-- Individual Conditions -->
-        <div class="conditions-grid">
-          <!-- Cleanliness -->
-          <div class="condition-item">
-            <div class="condition-item__header">
-              <label for="cleanliness">Cleanliness</label>
-              <span class="condition-item__value" :class="getConditionClass(habitat.cleanliness)">
-                {{ habitat.cleanliness.toFixed(0) }}%
-              </span>
+        <div class="panel__content">
+          <div class="decay-speed-control">
+            <div class="decay-speed-control__header">
+              <label for="decay-speed">Multiplier</label>
+              <span class="decay-speed-control__value">{{ habitat.decaySpeedMultiplier }}x</span>
             </div>
             <SliderField
-              id="cleanliness"
-              :modelValue="habitat.cleanliness"
-              :min="0"
-              :max="100"
+              id="decay-speed"
+              :modelValue="habitat.decaySpeedMultiplier"
+              :min="1"
+              :max="60"
               :step="1"
               prefix=""
-              suffix="%"
-              @update:modelValue="(v: number) => habitat.updateCondition('cleanliness', v)"
+              suffix="x"
+              @update:modelValue="(v: number) => habitat.setDecaySpeed(v)"
             />
-            <Button
-              @click="habitat.cleanCage"
-              variant="tertiary"
-              size="sm"
-              full-width
-              class="condition-item__action w-full"
-            >
-              🧹 Clean Cage
-            </Button>
-          </div>
-
-          <!-- Bedding Freshness -->
-          <div class="condition-item">
-            <div class="condition-item__header">
-              <label for="bedding">Bedding Freshness</label>
-              <span class="condition-item__value" :class="getConditionClass(habitat.beddingFreshness)">
-                {{ habitat.beddingFreshness.toFixed(0) }}%
-              </span>
+            <div class="decay-speed-presets">
+              <Button
+                @click="habitat.setDecaySpeed(6)"
+                variant="tertiary"
+                size="sm"
+                :class="{ 'button--active': habitat.decaySpeedMultiplier === 6 }"
+              >
+                Relaxed (6x)
+              </Button>
+              <Button
+                @click="habitat.setDecaySpeed(12)"
+                variant="tertiary"
+                size="sm"
+                :class="{ 'button--active': habitat.decaySpeedMultiplier === 12 }"
+              >
+                Normal (12x)
+              </Button>
+              <Button
+                @click="habitat.setDecaySpeed(24)"
+                variant="tertiary"
+                size="sm"
+                :class="{ 'button--active': habitat.decaySpeedMultiplier === 24 }"
+              >
+                Fast (24x)
+              </Button>
             </div>
-            <SliderField
-              id="bedding"
-              :modelValue="habitat.beddingFreshness"
-              :min="0"
-              :max="100"
-              :step="1"
-              prefix=""
-              suffix="%"
-              @update:modelValue="(v: number) => habitat.updateCondition('beddingFreshness', v)"
-            />
-            <Select
-              v-model="selectedBeddingType"
-              :options="beddingOptions"
-              placeholder="Select bedding type"
-              label="Bedding Type"
-            />
-            <Button
-              @click="handleRefreshBedding"
-              variant="tertiary"
-              size="sm"
-              full-width
-              class="condition-item__action w-full"
-              :disabled="!canRefreshBedding"
-              :tooltip="!canRefreshBedding ? `No ${selectedBeddingType} bedding in inventory` : `Use ${selectedBeddingType} bedding`"
-            >
-              🛏️ Refresh Bedding
-            </Button>
-          </div>
-
-          <!-- Hay Freshness -->
-          <div class="condition-item">
-            <div class="condition-item__header">
-              <label for="hay">Hay Freshness</label>
-              <span class="condition-item__value" :class="getConditionClass(habitat.hayFreshness)">
-                {{ habitat.hayFreshness.toFixed(0) }}%
-              </span>
-            </div>
-            <SliderField
-              id="hay"
-              :modelValue="habitat.hayFreshness"
-              :min="0"
-              :max="100"
-              :step="1"
-              prefix=""
-              suffix="%"
-              @update:modelValue="(v: number) => habitat.updateCondition('hayFreshness', v)"
-            />
-          </div>
-
-          <!-- Water Level -->
-          <div class="condition-item">
-            <div class="condition-item__header">
-              <label for="water">Water Level</label>
-              <span class="condition-item__value" :class="getConditionClass(habitat.waterLevel)">
-                {{ habitat.waterLevel.toFixed(0) }}%
-              </span>
-            </div>
-            <SliderField
-              id="water"
-              :modelValue="habitat.waterLevel"
-              :min="0"
-              :max="100"
-              :step="1"
-              prefix=""
-              suffix="%"
-              @update:modelValue="(v: number) => habitat.updateCondition('waterLevel', v)"
-            />
-            <Button
-              @click="habitat.refillWater"
-              variant="tertiary"
-              size="sm"
-              full-width
-              class="condition-item__action w-full"
-            >
-              💧 Refill Water
-            </Button>
           </div>
         </div>
       </div>
@@ -214,25 +280,60 @@ import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useHabitatContainers } from '../../../composables/useHabitatContainers'
+import { CONSUMPTION } from '../../../constants/supplies'
 import Button from '../../basic/Button.vue'
 import SliderField from '../../basic/SliderField.vue'
-import Select from '../../basic/Select.vue'
 import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/InventorySidebar.vue'
+import HabitatCareSidebar from '../../game/habitat/HabitatCareSidebar.vue'
 
 const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const { getHayRackContents, getHayRackFreshness, setHayRackFreshness, getBowlContents, setFoodFreshness } = useHabitatContainers()
 
 // Ref to HabitatVisual component
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
+
+// Active sidebar state
+const activeSidebar = ref<'inventory' | 'care'>('inventory')
 
 // Initialize supplies catalog on mount
 onMounted(() => {
   if (!suppliesStore.catalogLoaded) {
     suppliesStore.initializeCatalog()
   }
+
+  // System 16 Phase 1 Test - Log item type metadata
+  console.log('=== System 16: Phase 1 - Item Type Metadata Test ===')
+  console.log('Water bottles:', suppliesStore.getItemsByType('water_bottle').map(i => i.name))
+  console.log('Food bowls:', suppliesStore.getItemsByType('food_bowl').map(i => i.name))
+  console.log('Hay racks:', suppliesStore.getItemsByType('hay_rack').map(i => i.name))
+  console.log('Beds:', suppliesStore.getItemsByType('bed').map(i => i.name))
+  console.log('Shelters:', suppliesStore.getItemsByType('shelter').map(i => i.name))
+  console.log('Hideaways:', suppliesStore.getItemsByType('hideaway').map(i => i.name))
+  console.log('Tunnels:', suppliesStore.getItemsByType('tunnel').map(i => i.name))
+
+  // Test getItemsForNeed (using actual implemented needs)
+  console.log('\n=== Items by Need (Critical) ===')
+  console.log('Thirst:', suppliesStore.getItemsForNeed('thirst').map(i => i.name))
+  console.log('Hunger:', suppliesStore.getItemsForNeed('hunger').map(i => i.name))
+  console.log('Energy:', suppliesStore.getItemsForNeed('energy').map(i => i.name))
+  console.log('Shelter:', suppliesStore.getItemsForNeed('shelter').map(i => i.name))
+
+  console.log('\n=== Items by Need (Environmental) ===')
+  console.log('Play:', suppliesStore.getItemsForNeed('play').map(i => i.name))
+  console.log('Social:', suppliesStore.getItemsForNeed('social').map(i => i.name))
+  console.log('Stimulation:', suppliesStore.getItemsForNeed('stimulation').map(i => i.name))
+  console.log('Comfort:', suppliesStore.getItemsForNeed('comfort').map(i => i.name))
+
+  // Test individual item lookup
+  const basicBottle = 'habitat_basic_water_bottle'
+  console.log(`\n${basicBottle} type:`, suppliesStore.getItemType(basicBottle))
+  console.log(`${basicBottle} satisfies thirst:`, suppliesStore.itemSatisfiesNeed(basicBottle, 'thirst'))
+  console.log('==============================================')
 })
 
 // Test control handlers
@@ -255,6 +356,24 @@ function clearAllHayRacks() {
 function clearWater() {
   habitat.waterLevel = 0
 }
+
+// System 16: Phase 2 - Water Consumption Test
+function testWaterConsumption() {
+  const beforeLevel = habitat.waterLevel
+  const success = habitat.consumeWater()
+  const afterLevel = habitat.waterLevel
+
+  if (success) {
+    console.log(`✅ Water consumption test successful! ${beforeLevel.toFixed(0)}% → ${afterLevel.toFixed(0)}% (consumed ${(beforeLevel - afterLevel).toFixed(0)} units)`)
+    console.log('💧 Visual opacity should update automatically via reactive waterLevel binding')
+  } else {
+    console.log('❌ Water consumption test failed')
+  }
+}
+
+const hasWaterAvailable = computed(() => {
+  return habitat.hasWaterAvailable()
+})
 
 const hasActiveGuineaPigs = computed(() => {
   return guineaPigStore.activeGuineaPigs.length > 0
@@ -294,6 +413,74 @@ function getConditionClass(value: number): string {
   if (value >= 40) return 'condition-value--warning'
   return 'condition-value--critical'
 }
+
+// Hay Racks Management
+const hayRacks = computed(() => {
+  if (!habitatVisualRef.value) return []
+
+  const items = habitatVisualRef.value.placedItems
+  if (!items) return []
+
+  const racks = items
+    .filter((item: any) => {
+      const itemData = suppliesStore.getItemById(item.itemId)
+      // Check if this is a hay rack (has hay rack in the name or is specifically a hay rack type)
+      return itemData?.name?.toLowerCase().includes('hay rack')
+    })
+    .map((item: any) => {
+      const itemData = suppliesStore.getItemById(item.itemId)
+      const servings = getHayRackContents(item.itemId)
+      const freshness = getHayRackFreshness(item.itemId)
+      const capacity = CONSUMPTION.HAY_RACK_MAX_CAPACITY
+
+      return {
+        itemId: item.itemId,
+        name: itemData?.name || 'Hay Rack',
+        freshness,
+        servingCount: servings.length,
+        capacity
+      }
+    })
+
+  return racks
+})
+
+function updateHayRackFreshness(hayRackItemId: string, freshness: number) {
+  setHayRackFreshness(hayRackItemId, freshness)
+}
+
+// Food Bowls Management
+const foodBowls = computed(() => {
+  if (!habitatVisualRef.value) return []
+
+  const items = habitatVisualRef.value.placedItems
+  if (!items) return []
+
+  const bowls = items
+    .filter((item: any) => {
+      const itemData = suppliesStore.getItemById(item.itemId)
+      // Check if this is a food bowl
+      return itemData?.subCategory === 'bowls_bottles' && itemData?.stats?.foodCapacity
+    })
+    .map((item: any) => {
+      const itemData = suppliesStore.getItemById(item.itemId)
+      const contents = getBowlContents(item.itemId)
+      const capacity = itemData?.stats?.foodCapacity || CONSUMPTION.DEFAULT_FOOD_CAPACITY
+
+      return {
+        bowlId: item.itemId,
+        bowlName: itemData?.name || 'Food Bowl',
+        capacity,
+        foods: contents
+      }
+    })
+
+  return bowls
+})
+
+function updateFoodFreshness(bowlId: string, foodIndex: number, freshness: number) {
+  setFoodFreshness(bowlId, foodIndex, freshness)
+}
 </script>
 
 <style>
@@ -313,6 +500,13 @@ function getConditionClass(value: number): string {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.sidebar-toggle {
+  display: flex;
+  gap: var(--space-2);
 }
 
 .condition-summary {
@@ -398,6 +592,14 @@ function getConditionClass(value: number): string {
   margin-block-start: var(--space-2);
 }
 
+.conditions-section-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+  margin-block-end: var(--space-4);
+}
+
 /* Habitat Layout with Sidebar */
 .habitat-layout {
   display: flex;
@@ -410,10 +612,171 @@ function getConditionClass(value: number): string {
   min-inline-size: 0;
 }
 
+/* Habitat Conditions & Test Controls Row */
+.habitat-debug__conditions-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+}
 
-.test-controls {
+/* Desktop: 2 columns - Habitat Conditions (66%) / Test Controls (33%) */
+@media (min-width: 768px) {
+  .habitat-debug__conditions-row {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.decay-speed-control {
   display: flex;
+  flex-direction: column;
   gap: var(--space-3);
-  flex-wrap: wrap;
+}
+
+.decay-speed-control__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.decay-speed-control__header label {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+}
+
+.decay-speed-control__value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.decay-speed-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.button--active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+/* Shared container items grid */
+.container-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+.container-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.container-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.container-item__header label {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+}
+
+.container-item__value {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+}
+
+.container-item__info {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* Food Containers Panel */
+.food-bowls-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.food-bowl-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.food-bowl-container__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-block-end: var(--space-2);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.food-bowl-container__header h5 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+}
+
+.food-bowl-container__count {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-muted);
+}
+
+.food-bowl-container__empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  padding-block: var(--space-3);
+}
+
+.food-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.food-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+}
+
+.food-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.food-item__header label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.food-item__emoji {
+  font-size: var(--font-size-base);
+}
+
+.food-item__value {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
 }
 </style>

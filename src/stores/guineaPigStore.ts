@@ -10,6 +10,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
 import { useNeedsController } from './needsController'
+import { useHabitatConditions } from './habitatConditions'
 import { MessageGenerator } from '../utils/messageGenerator'
 
 // Core guinea pig entity interfaces
@@ -279,6 +280,10 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
     collection.value.activeGuineaPigIds.push(id)
     collection.value.lastUpdated = Date.now()
+
+    // System 16: Phase 4 - Initialize guinea pig position in habitat
+    const habitatConditions = useHabitatConditions()
+    habitatConditions.initializeGuineaPigPosition(id)
 
     const logging = getLoggingStore()
     const guineaPig = collection.value.guineaPigs[id]

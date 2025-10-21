@@ -5,7 +5,11 @@
  * Manages food bowls and hay racks in the habitat:
  * - Food bowl contents and capacity
  * - Hay rack contents and serving tracking
+ * - Hay freshness tracking per rack with decay
  * - Adding/removing items from containers
+ *
+ * Note: Uses singleton pattern for shared state to ensure
+ * consistent data across all component instances.
  */
 
 import { ref } from 'vue'
@@ -19,17 +23,27 @@ interface FoodItem {
   itemId: string
   emoji: string
   name: string
+  freshness: number
+  addedAt: number
 }
 
 interface HayServing {
   itemId: string
   instanceId: string
+  addedAt: number
 }
 
+interface HayRackData {
+  servings: HayServing[]
+  freshness: number
+  lastDecayUpdate: number
+}
+
+// Shared state - singleton pattern to ensure same instance across all uses
+const bowlContents = ref<Map<string, FoodItem[]>>(new Map())
+const hayRackContents = ref<Map<string, HayRackData>>(new Map())
+
 export function useHabitatContainers() {
-  // State - Maps of container ID -> contents
-  const bowlContents = ref<Map<string, FoodItem[]>>(new Map())
-  const hayRackContents = ref<Map<string, HayServing[]>>(new Map())
 
   // ========================================================================
   // Bowl Management
@@ -102,16 +116,21 @@ export function useHabitatContainers() {
       {
         itemId: foodItemId,
         emoji: foodItem.emoji || '🍽️',
-        name: foodItem.name
+        name: foodItem.name,
+        freshness: 100,
+        addedAt: Date.now()
       }
     ]
 
-    bowlContents.value.set(bowlItemId, updatedContents)
+    // Create new Map to trigger reactivity
+    const newMap = new Map(bowlContents.value)
+    newMap.set(bowlItemId, updatedContents)
+    bowlContents.value = newMap
     console.log(`Added ${foodItem.name} to bowl (${updatedContents.length}/${capacity})`)
     return true
   }
 
-  function removeFoodFromBowl(bowlItemId: string, foodItemId: string): boolean {
+  function removeFoodFromBowl(bowlItemId: string, foodIndex: number): boolean {
     const inventoryStore = useInventoryStore()
     const currentContents = bowlContents.value.get(bowlItemId)
     if (!currentContents) {
@@ -119,23 +138,27 @@ export function useHabitatContainers() {
       return false
     }
 
-    const foodIndex = currentContents.findIndex(food => food.itemId === foodItemId)
-    if (foodIndex === -1) {
-      console.warn(`Food ${foodItemId} not found in bowl`)
+    if (foodIndex < 0 || foodIndex >= currentContents.length) {
+      console.warn(`Invalid food index ${foodIndex} for bowl ${bowlItemId}`)
       return false
     }
 
-    // Add food back to inventory
-    inventoryStore.addItem(foodItemId, 1)
+    const foodItem = currentContents[foodIndex]
 
-    // Remove food from bowl
+    // Add food back to inventory
+    inventoryStore.addItem(foodItem.itemId, 1)
+
+    // Remove food from bowl - create new array to trigger reactivity
     const updatedContents = currentContents.filter((_, index) => index !== foodIndex)
 
+    // Create new Map to trigger Vue reactivity
+    const newMap = new Map(bowlContents.value)
     if (updatedContents.length === 0) {
-      bowlContents.value.delete(bowlItemId)
+      newMap.delete(bowlItemId)
     } else {
-      bowlContents.value.set(bowlItemId, updatedContents)
+      newMap.set(bowlItemId, updatedContents)
     }
+    bowlContents.value = newMap
 
     console.log(`Removed food from bowl and returned to inventory`)
     return true
@@ -152,6 +175,45 @@ export function useHabitatContainers() {
   function clearAllBowls(): void {
     bowlContents.value.clear()
     console.log('Cleared all bowls')
+  }
+
+  function setFoodFreshness(bowlItemId: string, foodIndex: number, freshness: number): void {
+    const currentContents = bowlContents.value.get(bowlItemId)
+    if (!currentContents || foodIndex >= currentContents.length) {
+      console.warn(`Invalid bowl or food index`)
+      return
+    }
+
+    const updatedContents = currentContents.map((food, index) => {
+      if (index === foodIndex) {
+        return {
+          ...food,
+          freshness: Math.max(0, Math.min(100, freshness))
+        }
+      }
+      return food
+    })
+
+    // Create new Map to trigger reactivity
+    const newMap = new Map(bowlContents.value)
+    newMap.set(bowlItemId, updatedContents)
+    bowlContents.value = newMap
+  }
+
+  function applyFoodBowlDecay(decayAmount: number): void {
+    const newMap = new Map(bowlContents.value)
+
+    newMap.forEach((foods, bowlId) => {
+      const updatedFoods = foods.map(food => ({
+        ...food,
+        freshness: Math.max(0, Math.min(100, food.freshness - decayAmount))
+      }))
+
+      newMap.set(bowlId, updatedFoods)
+    })
+
+    // Assign new Map to trigger Vue reactivity
+    bowlContents.value = newMap
   }
 
   // ========================================================================
@@ -183,10 +245,14 @@ export function useHabitatContainers() {
       return false
     }
 
-    const currentContents = hayRackContents.value.get(hayRackItemId) || []
+    const currentData = hayRackContents.value.get(hayRackItemId) || {
+      servings: [],
+      freshness: 100,
+      lastDecayUpdate: Date.now()
+    }
 
     // Check if hay rack is full
-    if (currentContents.length >= CONSUMPTION.HAY_RACK_MAX_CAPACITY) {
+    if (currentData.servings.length >= CONSUMPTION.HAY_RACK_MAX_CAPACITY) {
       console.warn(`Hay rack is full (capacity: ${CONSUMPTION.HAY_RACK_MAX_CAPACITY})`)
       return false
     }
@@ -199,39 +265,48 @@ export function useHabitatContainers() {
     }
 
     // Add hay serving to rack
-    const updatedContents = [
-      ...currentContents,
+    const updatedServings = [
+      ...currentData.servings,
       {
         itemId: hayItemId,
-        instanceId: `hay_${crypto.randomUUID()}`
+        instanceId: `hay_${crypto.randomUUID()}`,
+        addedAt: Date.now()
       }
     ]
 
-    hayRackContents.value.set(hayRackItemId, updatedContents)
-    console.log(`Added hay to rack (${updatedContents.length}/${CONSUMPTION.HAY_RACK_MAX_CAPACITY})`)
+    hayRackContents.value.set(hayRackItemId, {
+      servings: updatedServings,
+      freshness: currentData.freshness,
+      lastDecayUpdate: currentData.lastDecayUpdate
+    })
+    console.log(`Added hay to rack (${updatedServings.length}/${CONSUMPTION.HAY_RACK_MAX_CAPACITY})`)
     return true
   }
 
   function removeHayFromRack(hayRackItemId: string, servingIndex: number): boolean {
-    const currentContents = hayRackContents.value.get(hayRackItemId)
-    if (!currentContents || servingIndex >= currentContents.length) {
+    const currentData = hayRackContents.value.get(hayRackItemId)
+    if (!currentData || servingIndex >= currentData.servings.length) {
       console.warn(`Invalid hay rack or serving index`)
       return false
     }
 
-    const serving = currentContents[servingIndex]
+    const serving = currentData.servings[servingIndex]
     const inventoryStore = useInventoryStore()
 
     // Add serving back to inventory
     inventoryStore.addConsumableWithServings(serving.itemId, 1)
 
     // Remove serving from rack
-    const updatedContents = currentContents.filter((_, index) => index !== servingIndex)
+    const updatedServings = currentData.servings.filter((_, index) => index !== servingIndex)
 
-    if (updatedContents.length === 0) {
+    if (updatedServings.length === 0) {
       hayRackContents.value.delete(hayRackItemId)
     } else {
-      hayRackContents.value.set(hayRackItemId, updatedContents)
+      hayRackContents.value.set(hayRackItemId, {
+        servings: updatedServings,
+        freshness: currentData.freshness,
+        lastDecayUpdate: currentData.lastDecayUpdate
+      })
     }
 
     console.log(`Removed hay from rack and returned to inventory`)
@@ -239,7 +314,33 @@ export function useHabitatContainers() {
   }
 
   function getHayRackContents(hayRackItemId: string): HayServing[] {
-    return hayRackContents.value.get(hayRackItemId) || []
+    const data = hayRackContents.value.get(hayRackItemId)
+    return data?.servings || []
+  }
+
+  function getHayRackFreshness(hayRackItemId: string): number {
+    const data = hayRackContents.value.get(hayRackItemId)
+    return data?.freshness ?? 100
+  }
+
+  function setHayRackFreshness(hayRackItemId: string, freshness: number): void {
+    const data = hayRackContents.value.get(hayRackItemId)
+
+    // If hay rack doesn't exist in the map yet, initialize it
+    const rackData = data || {
+      servings: [],
+      freshness: 100,
+      lastDecayUpdate: Date.now()
+    }
+
+    // Create a new Map to trigger Vue reactivity
+    const newMap = new Map(hayRackContents.value)
+    newMap.set(hayRackItemId, {
+      servings: rackData.servings,
+      freshness: Math.max(0, Math.min(100, freshness)),
+      lastDecayUpdate: rackData.lastDecayUpdate
+    })
+    hayRackContents.value = newMap
   }
 
   function clearHayRack(hayRackItemId: string): void {
@@ -249,6 +350,25 @@ export function useHabitatContainers() {
   function clearAllHayRacks(): void {
     hayRackContents.value.clear()
     console.log('Cleared all hay racks')
+  }
+
+  function applyHayRackDecay(decayAmount: number): void {
+    const now = Date.now()
+    const newMap = new Map(hayRackContents.value)
+
+    newMap.forEach((data, rackId) => {
+      // Apply decay
+      const newFreshness = Math.max(0, Math.min(100, data.freshness - decayAmount))
+
+      newMap.set(rackId, {
+        servings: data.servings,
+        freshness: newFreshness,
+        lastDecayUpdate: now
+      })
+    })
+
+    // Assign new Map to trigger Vue reactivity
+    hayRackContents.value = newMap
   }
 
   // ========================================================================
@@ -266,15 +386,20 @@ export function useHabitatContainers() {
     getBowlContents,
     clearBowl,
     clearAllBowls,
+    setFoodFreshness,
+    applyFoodBowlDecay,
 
     // Hay rack methods
     addHayToRack,
     removeHayFromRack,
     getHayRackContents,
+    getHayRackFreshness,
+    setHayRackFreshness,
     clearHayRack,
-    clearAllHayRacks
+    clearAllHayRacks,
+    applyHayRackDecay
   }
 }
 
 // Export types for external use
-export type { FoodItem, HayServing }
+export type { FoodItem, HayServing, HayRackData }

@@ -6,7 +6,44 @@
 
 The Achievement & Progression System provides milestone tracking, rewards, and long-term goals that enhance player engagement and recognize meaningful accomplishments in guinea pig care. This system creates structured progression pathways while celebrating both routine care and special achievements.
 
+### Player Level System
+
+A comprehensive leveling system based on cumulative guinea pig friendship that unlocks new content and capabilities as players progress.
+
+#### Level Calculation
+- **Level Source:** Total friendship points from all guinea pigs in Stardust Sanctuary (permanent) + active guinea pigs
+- **Level Formula:** Cumulative friendship levels determine overall player level
+- **Progression Tiers:** Multiple level tiers unlock different content categories
+
+#### Level-Gated Content
+
+**Supplies Store Unlocks**
+- **Tier 1 (Levels 1-5):** Basic supplies available from start (cheap bedding, basic food, starter items)
+- **Tier 2 (Levels 6-15):** Premium bedding, specialty hay varieties, medium-quality happiness items
+- **Tier 3 (Levels 16-30):** Gourmet treats, advanced habitat items, larger cage upgrade
+- **Tier 4 (Levels 31-50):** Luxury items, exclusive decorations, premium happiness items
+- **Tier 5 (Levels 51+):** Ultra-premium content, rare items, prestige decorations
+
+**Cage Upgrades (Level-Locked)**
+- **Small Cage:** Default starting cage (available level 1)
+- **Medium Cage:** Unlocked at level 10 - moderate cost, 50% more space
+- **Large Cage:** Unlocked at level 20 - high cost, 100% more space, enables multi-pig optimal spacing
+- **Deluxe Cage:** Unlocked at level 35 - premium cost, 150% more space, visual prestige
+
+**Future Unlock Categories**
+- **Teachable Actions:** Special interaction types unlocked at specific levels
+- **Advanced Features:** Multi-pig care enhancements, automation tools
+- **Cosmetic Options:** Special coat colors, patterns, accessories for guinea pig creation
+
+#### Level-Based Rewards
+- **Currency Bonuses:** Reaching new level tiers grants one-time currency rewards
+- **Item Gifts:** Level milestones include free premium items
+- **Feature Access:** New gameplay capabilities unlock at major milestones
+- **Achievement Recognition:** Visual badges and profile enhancements for high levels
+
 ## Achievement Categories
+
+All achievements provide rewards that complement the level system - achievements grant currency and items, while player levels unlock access to purchase premium content. This creates a dual progression system where achievements provide short-term rewards and levels provide long-term content gating.
 
 ### 1. Guinea Pig Care Achievements
 Recognition for consistent, quality pet care:
@@ -212,6 +249,117 @@ Special visual feedback for major achievements:
 
 ## Technical Implementation
 
+### Player Level System Architecture
+```typescript
+interface PlayerLevelSystem {
+  currentLevel: number;
+  totalFriendshipPoints: number;
+  friendshipToNextLevel: number;
+  levelTier: 1 | 2 | 3 | 4 | 5;
+  unlockedContent: UnlockedContent;
+  levelMilestones: LevelMilestone[];
+}
+
+interface UnlockedContent {
+  suppliesStoreItems: string[]; // Item IDs unlocked at current level
+  cageTypes: CageType[];
+  teachableActions: string[]; // Future implementation
+  features: string[];
+}
+
+interface LevelMilestone {
+  level: number;
+  tier: number;
+  rewards: {
+    currency?: number;
+    items?: string[];
+    features?: string[];
+  };
+  isReached: boolean;
+  reachedDate?: Date;
+}
+
+interface CageType {
+  id: string;
+  name: string;
+  size: 'small' | 'medium' | 'large' | 'deluxe';
+  capacity: number; // Max guinea pigs
+  gridDimensions: { width: number; height: number };
+  unlockLevel: number;
+  cost: number;
+  description: string;
+}
+
+// Level calculation based on cumulative friendship
+function calculatePlayerLevel(totalFriendship: number): number {
+  // Progressive level curve - each level requires more friendship
+  // Example: Level 1 = 0-99, Level 2 = 100-249, Level 3 = 250-449, etc.
+  const levelThresholds = [0, 100, 250, 450, 700, 1000, 1350, 1750, 2200, 2700];
+  // Formula continues scaling for levels 10+
+
+  for (let i = levelThresholds.length - 1; i >= 0; i--) {
+    if (totalFriendship >= levelThresholds[i]) {
+      return i + 1;
+    }
+  }
+  return 1;
+}
+
+// Check if specific content is unlocked
+function isContentUnlocked(itemId: string, playerLevel: number): boolean {
+  const item = suppliesStore.getItem(itemId);
+  return item.requiredLevel <= playerLevel;
+}
+```
+
+### Cage System Integration
+```typescript
+// Add to Supplies Store catalog structure
+interface SupplyCatalog {
+  // ... existing departments
+  departments: {
+    // ... existing
+    cages: {
+      name: "Cages & Habitats";
+      items: CageSupplyItem[];
+    };
+  };
+}
+
+interface CageSupplyItem extends SupplyItem {
+  cageType: CageType;
+  currentlyOwned: boolean; // Can only own one cage at a time
+  upgradeFrom?: string; // ID of cage this upgrades from
+  tradeInValue?: number; // Partial refund when upgrading
+}
+
+// Cage upgrade flow
+function upgradeCage(newCageId: string): boolean {
+  const newCage = suppliesStore.getCageItem(newCageId);
+  const currentCage = habitatStore.currentCage;
+
+  if (playerLevel.currentLevel < newCage.unlockLevel) {
+    return false; // Not unlocked yet
+  }
+
+  // Calculate upgrade cost with trade-in
+  const upgradeCost = newCage.cost - (currentCage.tradeInValue || 0);
+
+  if (playerProgression.currency < upgradeCost) {
+    return false; // Can't afford
+  }
+
+  // Process upgrade
+  playerProgression.currency -= upgradeCost;
+  habitatStore.setCage(newCageId);
+
+  // Validate existing item placements fit in new dimensions
+  habitatStore.validateItemPlacements();
+
+  return true;
+}
+```
+
 ### Achievement Tracking Architecture
 ```typescript
 interface Achievement {
@@ -235,7 +383,7 @@ interface AchievementRequirement {
 }
 
 interface AchievementReward {
-  type: 'currency' | 'item' | 'feature';
+  type: 'currency' | 'item' | 'feature' | 'level_bonus';
   value: number | string;
   description: string;
 }
@@ -255,29 +403,82 @@ interface AchievementReward {
 
 ## Store Integration
 
-### Achievement Store Dependencies
+### New Store: Player Progression Store
+Central store managing player level, achievement tracking, and progression unlocks:
+
+```typescript
+interface PlayerProgressionStore {
+  // Level System
+  currentLevel: number;
+  totalFriendshipPoints: number;
+  levelTier: number;
+  unlockedContent: UnlockedContent;
+
+  // Achievements
+  achievements: Achievement[];
+  completedAchievements: Achievement[];
+  achievementProgress: Map<string, number>;
+
+  // Methods
+  calculateLevel(): void;
+  updateFriendshipTotal(): void;
+  checkUnlocks(): void;
+  unlockAchievement(achievementId: string): void;
+  isItemUnlocked(itemId: string): boolean;
+  isCageUnlocked(cageId: string): boolean;
+}
+```
+
+### Store Dependencies
 - **Game Controller Store** - Session tracking and timing data
-- **Guinea Pig Store** - Friendship and interaction tracking
-- **Needs Controller Store** - Wellness and care statistics
-- **Inventory Store** - Collection and purchase tracking
+- **Guinea Pig Store** - Friendship tracking for level calculation
+- **Needs Controller Store** - Wellness and care statistics for achievements
+- **Inventory Store** - Collection tracking for achievements
+- **Supplies Store** - Integration for level-locked items and cage upgrades
 - **Activity Feed Store** - Event logging for achievement triggers
+- **Habitat Store** - Current cage tracking and upgrade processing
 
 ### Data Flow Integration
-- **Real-time achievement evaluation** triggered by game events
+- **Real-time level calculation** - Recalculate when guinea pig friendship changes
+- **Achievement evaluation** triggered by game events across all systems
+- **Unlock validation** - Supplies Store checks PlayerProgressionStore before purchases
 - **Cross-system event coordination** for complex achievements
 - **Achievement state persistence** with game save data
 - **Achievement notification coordination** with UI systems
+- **Cage upgrade validation** - Check level requirements and process trade-ins
 
 ## Debug Integration
 
 ### Debug Menu Features
+- **Level system controls** for testing unlock thresholds
+  - Manual level adjustment slider
+  - Add friendship points to test level progression
+  - View all unlocked content at current level
+  - Preview content at higher levels
+- **Cage upgrade testing** for validating upgrade flow
+  - Force unlock all cage types
+  - Test trade-in calculations
+  - Validate item placement after cage size changes
 - **Achievement unlock controls** for testing reward systems
+  - Unlock specific achievements manually
+  - Grant achievement rewards (currency, items, features)
 - **Progress manipulation** for testing near-completion states
+  - Set achievement progress percentages
+  - Trigger achievement conditions manually
 - **Achievement reset options** for development testing
 - **Notification testing** for UI validation
+  - Trigger level-up notifications
+  - Test unlock notifications for items/cages/features
+  - Achievement celebration animations
 - **Statistics viewer** for tracking verification
+  - View total friendship calculation breakdown
+  - See level tier thresholds
+  - Track achievement progress across all categories
 
 ### Testing Tools
+- **Level calculation validation** ensuring friendship totals are accurate
+- **Unlock system verification** testing level-gated content access
+- **Cage upgrade flow testing** for purchase, trade-in, and item validation
 - **Achievement validation** ensuring requirements are achievable
 - **Progress calculation verification** for accurate tracking
 - **Reward distribution testing** for proper item/currency granting
@@ -285,22 +486,40 @@ interface AchievementReward {
 
 ## Future Enhancement Opportunities
 
+### Level System Expansions
+- **Prestige levels** beyond level cap with cosmetic rewards
+- **Level-based daily bonuses** (currency, free items at login)
+- **Friendship multipliers** at high level tiers for faster progression
+- **Teachable actions unlock system** - Special interactions available at specific levels
+  - Basic tricks (Level 15): Come when called, stand on hind legs
+  - Intermediate tricks (Level 25): Navigate obstacle course, fetch small items
+  - Advanced tricks (Level 40): Complex routines, synchronized pair behaviors
+
+### Cage System Expansions
+- **Themed cage variants** with cosmetic differences (woodland, modern, deluxe)
+- **Modular cage additions** - Extensions, second floors, connection tubes
+- **Outdoor habitat option** (very high level unlock) with unique mechanics
+- **Custom cage decoration themes** unlocked by achievements
+
 ### Advanced Achievement Features (Future Phases)
 - **Seasonal achievements** tied to holiday events
 - **Community challenges** with shared goals
 - **Achievement chains** where completing one unlocks others
 - **Dynamic achievements** that adapt to player behavior
+- **Level-milestone achievements** celebrating progression milestones
 
 ### Social Integration Features
 - **Leaderboards** for competitive achievement tracking
 - **Achievement sharing** with friends and community
 - **Collaborative achievements** requiring multiple players
 - **Achievement showcases** in player profiles
+- **Level badges and titles** displayed in social features
 
 ### Gamification Enhancements
 - **Achievement points system** with overall scoring
 - **Prestige levels** beyond normal progression
 - **Rare achievement hunting** with ultra-difficult challenges
 - **Achievement collections** with set bonuses for completion
+- **Level-based profile customization** unlocking visual prestige elements
 
-This system provides comprehensive recognition for all aspects of guinea pig care while creating meaningful long-term engagement goals that enhance the core gameplay experience.
+This system provides comprehensive recognition for all aspects of guinea pig care while creating meaningful long-term engagement goals that enhance the core gameplay experience. The player level system creates a clear progression pathway tied to the core relationship-building mechanic (friendship), while cage upgrades provide visible, meaningful milestones that improve gameplay capacity and visual prestige.
