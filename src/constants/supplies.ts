@@ -77,6 +77,7 @@ export const DECAY = {
   BEDDING_BASE_DECAY_PER_SECOND: 1 / (5 * 60), // -1 point per 5 minutes
   CLEANLINESS_BASE_DECAY_PER_SECOND: 1 / (10 * 60), // -1 point per 10 minutes
   HAY_BASE_DECAY_PER_SECOND: 1 / (3 * 60), // -1 point per 3 minutes (faster - hay oxidizes quickly)
+  FOOD_BASE_DECAY_PER_SECOND: 1 / (4 * 60), // -1 point per 4 minutes (food spoils moderately fast)
 
   // Quality modifiers for bedding decay
   QUALITY_MULTIPLIERS: {

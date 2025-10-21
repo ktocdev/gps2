@@ -136,6 +136,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     getBowlContents,
     clearBowl,
     clearAllBowls,
+    setFoodFreshness,
     addHayToRack,
     removeHayFromRack,
     getHayRackContents,
@@ -162,8 +163,28 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
   // Computed properties
   const overallCondition = computed(() => {
+    // Calculate average freshness from all hay racks
+    let hayRackAvgFreshness = 100
+    const hayRacks = Array.from(hayRackContents.value.values())
+    if (hayRacks.length > 0) {
+      const totalFreshness = hayRacks.reduce((sum, rack) => sum + rack.freshness, 0)
+      hayRackAvgFreshness = totalFreshness / hayRacks.length
+    }
+
+    // Calculate average freshness from all food bowls
+    let foodBowlAvgFreshness = 100
+    const allFoods: number[] = []
+    bowlContents.value.forEach(foods => {
+      foods.forEach(food => allFoods.push(food.freshness))
+    })
+    if (allFoods.length > 0) {
+      const totalFoodFreshness = allFoods.reduce((sum, f) => sum + f, 0)
+      foodBowlAvgFreshness = totalFoodFreshness / allFoods.length
+    }
+
+    // Factor in all conditions: bedding, cleanliness, water, hay rack freshness, food freshness
     return Math.floor(
-      (cleanliness.value + beddingFreshness.value + hayFreshness.value + waterLevel.value) / 4
+      (cleanliness.value + beddingFreshness.value + waterLevel.value + hayRackAvgFreshness + foodBowlAvgFreshness) / 5
     )
   })
 
@@ -488,8 +509,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // 3. Apply hay freshness decay per hay rack (with speed multiplier) - hay oxidizes and loses nutritional value
     const hayDecay = DECAY.HAY_BASE_DECAY_PER_SECOND * decaySpeedMultiplier.value * deltaSeconds
-    const { applyHayRackDecay } = useHabitatContainers()
+    const { applyHayRackDecay, applyFoodBowlDecay } = useHabitatContainers()
     applyHayRackDecay(hayDecay)
+
+    // 4. Apply food freshness decay per bowl (with speed multiplier) - food spoils over time
+    const foodDecay = DECAY.FOOD_BASE_DECAY_PER_SECOND * decaySpeedMultiplier.value * deltaSeconds
+    applyFoodBowlDecay(foodDecay)
 
     // Note: Activity-based decay will be recorded via recordGuineaPigActivity()
   }
@@ -918,6 +943,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     getBowlContents,
     clearBowl,
     clearAllBowls,
+    setFoodFreshness,
     addHayToRack,
     removeHayFromRack,
     getHayRackContents,

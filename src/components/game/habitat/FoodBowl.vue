@@ -1,5 +1,12 @@
 <template>
-  <div class="food-bowl" @dragover.prevent="handleDragOver" @dragleave="handleDragLeave" @drop="handleDrop">
+  <div
+    class="food-bowl"
+    @dragover.prevent="handleDragOver"
+    @dragleave="handleDragLeave"
+    @drop="handleDrop"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
+  >
     <span class="food-bowl__emoji">{{ bowlEmoji }}</span>
 
     <div v-if="foods.length > 0" class="food-bowl__contents">
@@ -13,16 +20,52 @@
         {{ food.emoji }}
       </span>
     </div>
+
+    <HabitatItemPopover
+      :title="popoverTitle"
+      :metadata="popoverMetadata"
+      :actions="popoverActions"
+      :is-hovered="isHovered"
+    >
+      <!-- Individual food items list -->
+      <template v-if="foods.length > 0">
+        <div class="food-bowl-items-section">
+          <div class="food-bowl-items-section__header">Food Items</div>
+          <div v-for="(food, index) in foods" :key="`food-${index}`" class="food-bowl-item">
+            <div class="food-bowl-item__info">
+              <span class="food-bowl-item__emoji">{{ food.emoji }}</span>
+              <span class="food-bowl-item__name">{{ food.name }}</span>
+              <span
+                class="food-bowl-item__freshness"
+                :class="getFreshnessClass(food.freshness)"
+              >
+                {{ food.freshness.toFixed(0) }}%
+              </span>
+            </div>
+            <button
+              class="food-bowl-item__remove-btn"
+              :class="{ 'food-bowl-item__remove-btn--stale': food.freshness < STALE_THRESHOLD }"
+              @click="handleRemoveFood(index)"
+            >
+              Remove
+            </button>
+          </div>
+        </div>
+      </template>
+    </HabitatItemPopover>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import HabitatItemPopover from './HabitatItemPopover.vue'
 
 interface FoodItem {
   itemId: string
   emoji: string
   name: string
+  freshness: number
+  addedAt: number
 }
 
 interface Props {
@@ -36,9 +79,49 @@ const props = defineProps<Props>()
 
 const emit = defineEmits<{
   'add-food': [foodItemId: string]
+  'remove-food': [foodIndex: number]
 }>()
 
 const isDragOver = ref(false)
+const isHovered = ref(false)
+
+const STALE_THRESHOLD = 40
+
+// Popover title
+const popoverTitle = computed(() => {
+  return 'Food Bowl'
+})
+
+// Metadata for the popover
+const popoverMetadata = computed(() => {
+  if (props.foods.length === 0) {
+    return [
+      { label: 'Capacity', value: `0/${props.capacity}` }
+    ]
+  }
+
+  const avgFreshness = props.foods.reduce((sum, food) => sum + food.freshness, 0) / props.foods.length
+
+  return [
+    { label: 'Food Items', value: `${props.foods.length}/${props.capacity}` },
+    { label: 'Avg. Freshness', value: `${avgFreshness.toFixed(0)}%` }
+  ]
+})
+
+// Popover actions
+const popoverActions = computed(() => {
+  return []
+})
+
+function getFreshnessClass(freshness: number): string {
+  if (freshness >= 80) return 'food-bowl-item__freshness--good'
+  if (freshness >= 40) return 'food-bowl-item__freshness--warning'
+  return 'food-bowl-item__freshness--critical'
+}
+
+function handleRemoveFood(foodIndex: number) {
+  emit('remove-food', foodIndex)
+}
 
 function handleDragOver(event: DragEvent) {
   event.preventDefault()
@@ -171,5 +254,106 @@ function handleDrop(event: DragEvent) {
 .food-bowl__food-item--count-3.food-bowl__food-item--index-2 {
   inset-inline-start: 75%;
   transform: translate(-50%, -50%);
+}
+
+/* Food items section in popover */
+.food-bowl-items-section {
+  margin-block-start: var(--space-3);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.food-bowl-items-section__header {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-block-end: var(--space-2);
+}
+
+.food-bowl-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--color-border-subtle);
+}
+
+.food-bowl-item:last-child {
+  border-block-end: none;
+}
+
+.food-bowl-item__info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.food-bowl-item__emoji {
+  font-size: var(--font-size-base);
+  flex-shrink: 0;
+}
+
+.food-bowl-item__name {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.food-bowl-item__freshness {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  flex-shrink: 0;
+}
+
+.food-bowl-item__freshness--good {
+  color: var(--color-success);
+}
+
+.food-bowl-item__freshness--warning {
+  color: var(--color-warning);
+}
+
+.food-bowl-item__freshness--critical {
+  color: var(--color-error);
+}
+
+.food-bowl-item__remove-btn {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.food-bowl-item__remove-btn:hover {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-error);
+  color: var(--color-error);
+}
+
+.food-bowl-item__remove-btn--stale {
+  background-color: var(--color-error);
+  color: var(--color-text-inverse);
+  border-color: var(--color-error);
+}
+
+.food-bowl-item__remove-btn--stale:hover {
+  background-color: var(--color-error-hover);
+}
+
+.food-bowl-item__remove-btn:active {
+  transform: scale(0.95);
 }
 </style>

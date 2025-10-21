@@ -58,6 +58,7 @@
             :capacity="getBowlCapacity(item.itemId)"
             :foods="getBowlContents(item.itemId)"
             @add-food="(foodId) => handleAddFoodToBowl(item.itemId, foodId)"
+            @remove-food="(foodIndex) => handleRemoveFoodFromBowl(item.itemId, foodIndex)"
           />
           <HayRack
             v-else-if="isHayRack(item.itemId)"
@@ -638,6 +639,11 @@ function handleAddFoodToBowl(bowlItemId: string, foodItemId: string) {
   if (success) {
     console.log(`Added food ${foodItemId} to bowl ${bowlItemId}`)
   }
+}
+
+function handleRemoveFoodFromBowl(bowlItemId: string, foodIndex: number) {
+  habitatConditions.removeFoodFromBowl(bowlItemId, foodIndex)
+  console.log(`Removed food at index ${foodIndex} from bowl ${bowlItemId}`)
 }
 
 // Hay rack helper functions

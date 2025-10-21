@@ -23,6 +23,8 @@ interface FoodItem {
   itemId: string
   emoji: string
   name: string
+  freshness: number
+  addedAt: number
 }
 
 interface HayServing {
@@ -114,16 +116,21 @@ export function useHabitatContainers() {
       {
         itemId: foodItemId,
         emoji: foodItem.emoji || '🍽️',
-        name: foodItem.name
+        name: foodItem.name,
+        freshness: 100,
+        addedAt: Date.now()
       }
     ]
 
-    bowlContents.value.set(bowlItemId, updatedContents)
+    // Create new Map to trigger reactivity
+    const newMap = new Map(bowlContents.value)
+    newMap.set(bowlItemId, updatedContents)
+    bowlContents.value = newMap
     console.log(`Added ${foodItem.name} to bowl (${updatedContents.length}/${capacity})`)
     return true
   }
 
-  function removeFoodFromBowl(bowlItemId: string, foodItemId: string): boolean {
+  function removeFoodFromBowl(bowlItemId: string, foodIndex: number): boolean {
     const inventoryStore = useInventoryStore()
     const currentContents = bowlContents.value.get(bowlItemId)
     if (!currentContents) {
@@ -131,23 +138,27 @@ export function useHabitatContainers() {
       return false
     }
 
-    const foodIndex = currentContents.findIndex(food => food.itemId === foodItemId)
-    if (foodIndex === -1) {
-      console.warn(`Food ${foodItemId} not found in bowl`)
+    if (foodIndex < 0 || foodIndex >= currentContents.length) {
+      console.warn(`Invalid food index ${foodIndex} for bowl ${bowlItemId}`)
       return false
     }
 
-    // Add food back to inventory
-    inventoryStore.addItem(foodItemId, 1)
+    const foodItem = currentContents[foodIndex]
 
-    // Remove food from bowl
+    // Add food back to inventory
+    inventoryStore.addItem(foodItem.itemId, 1)
+
+    // Remove food from bowl - create new array to trigger reactivity
     const updatedContents = currentContents.filter((_, index) => index !== foodIndex)
 
+    // Create new Map to trigger Vue reactivity
+    const newMap = new Map(bowlContents.value)
     if (updatedContents.length === 0) {
-      bowlContents.value.delete(bowlItemId)
+      newMap.delete(bowlItemId)
     } else {
-      bowlContents.value.set(bowlItemId, updatedContents)
+      newMap.set(bowlItemId, updatedContents)
     }
+    bowlContents.value = newMap
 
     console.log(`Removed food from bowl and returned to inventory`)
     return true
@@ -164,6 +175,45 @@ export function useHabitatContainers() {
   function clearAllBowls(): void {
     bowlContents.value.clear()
     console.log('Cleared all bowls')
+  }
+
+  function setFoodFreshness(bowlItemId: string, foodIndex: number, freshness: number): void {
+    const currentContents = bowlContents.value.get(bowlItemId)
+    if (!currentContents || foodIndex >= currentContents.length) {
+      console.warn(`Invalid bowl or food index`)
+      return
+    }
+
+    const updatedContents = currentContents.map((food, index) => {
+      if (index === foodIndex) {
+        return {
+          ...food,
+          freshness: Math.max(0, Math.min(100, freshness))
+        }
+      }
+      return food
+    })
+
+    // Create new Map to trigger reactivity
+    const newMap = new Map(bowlContents.value)
+    newMap.set(bowlItemId, updatedContents)
+    bowlContents.value = newMap
+  }
+
+  function applyFoodBowlDecay(decayAmount: number): void {
+    const newMap = new Map(bowlContents.value)
+
+    newMap.forEach((foods, bowlId) => {
+      const updatedFoods = foods.map(food => ({
+        ...food,
+        freshness: Math.max(0, Math.min(100, food.freshness - decayAmount))
+      }))
+
+      newMap.set(bowlId, updatedFoods)
+    })
+
+    // Assign new Map to trigger Vue reactivity
+    bowlContents.value = newMap
   }
 
   // ========================================================================
@@ -336,6 +386,8 @@ export function useHabitatContainers() {
     getBowlContents,
     clearBowl,
     clearAllBowls,
+    setFoodFreshness,
+    applyFoodBowlDecay,
 
     // Hay rack methods
     addHayToRack,

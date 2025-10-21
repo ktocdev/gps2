@@ -23,7 +23,6 @@
     </div>
 
     <HabitatItemPopover
-      v-if="hayServings.length > 0"
       :title="popoverTitle"
       :metadata="popoverMetadata"
       :actions="popoverActions"
@@ -77,11 +76,15 @@ const popoverActions = computed(() => {
   const currentFreshness = props.freshness ?? 100
   const actions = []
 
-  // Only show clear button if hay is stale
-  if (currentFreshness < STALE_THRESHOLD) {
+  // Show empty button if there are any hay servings
+  if (props.hayServings.length > 0) {
+    // Use warning variant if hay is stale, otherwise default
+    const variant = currentFreshness < STALE_THRESHOLD ? 'warning' : 'default'
+    const label = currentFreshness < STALE_THRESHOLD ? '🗑️ Clear Stale Hay' : '🗑️ Empty Hay Rack'
+
     actions.push({
-      label: '🗑️ Clear Stale Hay',
-      variant: 'warning' as const,
+      label,
+      variant: variant as const,
       onClick: () => emit('clear-rack')
     })
   }
