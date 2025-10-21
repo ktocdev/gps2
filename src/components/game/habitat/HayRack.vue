@@ -15,7 +15,7 @@
         :key="`${serving.instanceId}`"
         class="hay-rack__hay-item"
         :class="`hay-rack__hay-item--count-${hayServings.length} hay-rack__hay-item--index-${index}`"
-        :title="`Hay serving ${index + 1} of ${hayServings.length}\nCapacity: ${hayServings.length}/${capacity}`"
+        :title="`Hay serving ${index + 1} of ${hayServings.length}\nCapacity: ${hayServings.length}/${capacity}\nFreshness: ${freshness?.toFixed(0) ?? 100}%`"
       >
         🌾
       </span>
@@ -36,6 +36,7 @@ interface Props {
   hayRackItemId: string
   hayServings: HayServing[]
   capacity: number
+  freshness?: number
 }
 
 const props = defineProps<Props>()
@@ -195,7 +196,7 @@ function handleDrop(event: DragEvent) {
 .hay-rack__hay-item {
   position: absolute;
   line-height: 1;
-  pointer-events: all;
+  pointer-events: none;
   cursor: help;
   transition: filter 0.2s ease;
 }

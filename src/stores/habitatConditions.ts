@@ -139,6 +139,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     addHayToRack,
     removeHayFromRack,
     getHayRackContents,
+    getHayRackFreshness,
     clearHayRack,
     clearAllHayRacks
   } = containers
@@ -155,6 +156,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
   // Item usage history (System 16: Phase 5)
   const itemUsageHistory = ref<Map<string, ItemUsage>>(new Map())
+
+  // Decay speed multiplier (System 16: Phase 3 Enhancement)
+  const decaySpeedMultiplier = ref<number>(DECAY.DEFAULT_SPEED)
 
   // Computed properties
   const overallCondition = computed(() => {
@@ -469,20 +473,32 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   // ============================================================================
 
   /**
-   * Apply environmental decay to bedding and cleanliness
+   * Apply environmental decay to bedding, cleanliness, and hay racks
    * @param deltaSeconds - Time elapsed since last update in seconds
    */
   function applyEnvironmentalDecay(deltaSeconds: number) {
-    // 1. Apply bedding decay (quality-modified)
+    // 1. Apply bedding decay (quality-modified + speed multiplier)
     const qualityMultiplier = DECAY.QUALITY_MULTIPLIERS[currentBedding.value.quality] || 1.0
-    const beddingDecay = DECAY.BEDDING_BASE_DECAY_PER_SECOND * qualityMultiplier * deltaSeconds
+    const beddingDecay = DECAY.BEDDING_BASE_DECAY_PER_SECOND * qualityMultiplier * decaySpeedMultiplier.value * deltaSeconds
     beddingFreshness.value = clampCondition(beddingFreshness.value - beddingDecay)
 
-    // 2. Apply cleanliness decay
-    const cleanlinessDecay = DECAY.CLEANLINESS_BASE_DECAY_PER_SECOND * deltaSeconds
+    // 2. Apply cleanliness decay (with speed multiplier)
+    const cleanlinessDecay = DECAY.CLEANLINESS_BASE_DECAY_PER_SECOND * decaySpeedMultiplier.value * deltaSeconds
     cleanliness.value = clampCondition(cleanliness.value - cleanlinessDecay)
 
+    // 3. Apply hay freshness decay per hay rack (with speed multiplier) - hay oxidizes and loses nutritional value
+    const hayDecay = DECAY.HAY_BASE_DECAY_PER_SECOND * decaySpeedMultiplier.value * deltaSeconds
+    const { applyHayRackDecay } = useHabitatContainers()
+    applyHayRackDecay(hayDecay)
+
     // Note: Activity-based decay will be recorded via recordGuineaPigActivity()
+  }
+
+  /**
+   * Set decay speed multiplier
+   */
+  function setDecaySpeed(multiplier: number) {
+    decaySpeedMultiplier.value = Math.max(0.1, Math.min(100, multiplier))
   }
 
   /**
@@ -876,6 +892,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     poops,
     guineaPigPositions,
     itemUsageHistory,
+    decaySpeedMultiplier,
 
     // Computed
     overallCondition,
@@ -904,6 +921,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     addHayToRack,
     removeHayFromRack,
     getHayRackContents,
+    getHayRackFreshness,
     clearHayRack,
     clearAllHayRacks,
 
@@ -915,6 +933,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     // System 16: Phase 3 - Environmental Decay
     applyEnvironmentalDecay,
     recordGuineaPigActivity,
+    setDecaySpeed,
 
     // System 16: Phase 4 - Guinea Pig Position Tracking
     initializeGuineaPigPosition,

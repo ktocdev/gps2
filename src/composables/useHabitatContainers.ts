@@ -24,12 +24,19 @@ interface FoodItem {
 interface HayServing {
   itemId: string
   instanceId: string
+  addedAt: number
+}
+
+interface HayRackData {
+  servings: HayServing[]
+  freshness: number
+  lastDecayUpdate: number
 }
 
 export function useHabitatContainers() {
   // State - Maps of container ID -> contents
   const bowlContents = ref<Map<string, FoodItem[]>>(new Map())
-  const hayRackContents = ref<Map<string, HayServing[]>>(new Map())
+  const hayRackContents = ref<Map<string, HayRackData>>(new Map())
 
   // ========================================================================
   // Bowl Management
@@ -183,10 +190,14 @@ export function useHabitatContainers() {
       return false
     }
 
-    const currentContents = hayRackContents.value.get(hayRackItemId) || []
+    const currentData = hayRackContents.value.get(hayRackItemId) || {
+      servings: [],
+      freshness: 100,
+      lastDecayUpdate: Date.now()
+    }
 
     // Check if hay rack is full
-    if (currentContents.length >= CONSUMPTION.HAY_RACK_MAX_CAPACITY) {
+    if (currentData.servings.length >= CONSUMPTION.HAY_RACK_MAX_CAPACITY) {
       console.warn(`Hay rack is full (capacity: ${CONSUMPTION.HAY_RACK_MAX_CAPACITY})`)
       return false
     }
@@ -199,39 +210,48 @@ export function useHabitatContainers() {
     }
 
     // Add hay serving to rack
-    const updatedContents = [
-      ...currentContents,
+    const updatedServings = [
+      ...currentData.servings,
       {
         itemId: hayItemId,
-        instanceId: `hay_${crypto.randomUUID()}`
+        instanceId: `hay_${crypto.randomUUID()}`,
+        addedAt: Date.now()
       }
     ]
 
-    hayRackContents.value.set(hayRackItemId, updatedContents)
-    console.log(`Added hay to rack (${updatedContents.length}/${CONSUMPTION.HAY_RACK_MAX_CAPACITY})`)
+    hayRackContents.value.set(hayRackItemId, {
+      servings: updatedServings,
+      freshness: currentData.freshness,
+      lastDecayUpdate: currentData.lastDecayUpdate
+    })
+    console.log(`Added hay to rack (${updatedServings.length}/${CONSUMPTION.HAY_RACK_MAX_CAPACITY})`)
     return true
   }
 
   function removeHayFromRack(hayRackItemId: string, servingIndex: number): boolean {
-    const currentContents = hayRackContents.value.get(hayRackItemId)
-    if (!currentContents || servingIndex >= currentContents.length) {
+    const currentData = hayRackContents.value.get(hayRackItemId)
+    if (!currentData || servingIndex >= currentData.servings.length) {
       console.warn(`Invalid hay rack or serving index`)
       return false
     }
 
-    const serving = currentContents[servingIndex]
+    const serving = currentData.servings[servingIndex]
     const inventoryStore = useInventoryStore()
 
     // Add serving back to inventory
     inventoryStore.addConsumableWithServings(serving.itemId, 1)
 
     // Remove serving from rack
-    const updatedContents = currentContents.filter((_, index) => index !== servingIndex)
+    const updatedServings = currentData.servings.filter((_, index) => index !== servingIndex)
 
-    if (updatedContents.length === 0) {
+    if (updatedServings.length === 0) {
       hayRackContents.value.delete(hayRackItemId)
     } else {
-      hayRackContents.value.set(hayRackItemId, updatedContents)
+      hayRackContents.value.set(hayRackItemId, {
+        servings: updatedServings,
+        freshness: currentData.freshness,
+        lastDecayUpdate: currentData.lastDecayUpdate
+      })
     }
 
     console.log(`Removed hay from rack and returned to inventory`)
@@ -239,7 +259,13 @@ export function useHabitatContainers() {
   }
 
   function getHayRackContents(hayRackItemId: string): HayServing[] {
-    return hayRackContents.value.get(hayRackItemId) || []
+    const data = hayRackContents.value.get(hayRackItemId)
+    return data?.servings || []
+  }
+
+  function getHayRackFreshness(hayRackItemId: string): number {
+    const data = hayRackContents.value.get(hayRackItemId)
+    return data?.freshness ?? 100
   }
 
   function clearHayRack(hayRackItemId: string): void {
@@ -249,6 +275,20 @@ export function useHabitatContainers() {
   function clearAllHayRacks(): void {
     hayRackContents.value.clear()
     console.log('Cleared all hay racks')
+  }
+
+  function applyHayRackDecay(decayAmount: number): void {
+    const now = Date.now()
+    hayRackContents.value.forEach((data, rackId) => {
+      // Apply decay
+      const newFreshness = Math.max(0, Math.min(100, data.freshness - decayAmount))
+
+      hayRackContents.value.set(rackId, {
+        servings: data.servings,
+        freshness: newFreshness,
+        lastDecayUpdate: now
+      })
+    })
   }
 
   // ========================================================================
@@ -271,10 +311,12 @@ export function useHabitatContainers() {
     addHayToRack,
     removeHayFromRack,
     getHayRackContents,
+    getHayRackFreshness,
     clearHayRack,
-    clearAllHayRacks
+    clearAllHayRacks,
+    applyHayRackDecay
   }
 }
 
 // Export types for external use
-export type { FoodItem, HayServing }
+export type { FoodItem, HayServing, HayRackData }

@@ -159,6 +159,52 @@
         </div>
         <div class="panel__content">
           <div class="test-controls">
+            <!-- Decay Speed Slider -->
+            <div class="test-control-item">
+              <div class="test-control-item__header">
+                <label for="decay-speed">Decay Speed</label>
+                <span class="test-control-item__value">{{ habitat.decaySpeedMultiplier }}x</span>
+              </div>
+              <SliderField
+                id="decay-speed"
+                :modelValue="habitat.decaySpeedMultiplier"
+                :min="1"
+                :max="60"
+                :step="1"
+                prefix=""
+                suffix="x"
+                @update:modelValue="(v: number) => habitat.setDecaySpeed(v)"
+              />
+              <div class="decay-speed-presets">
+                <Button
+                  @click="habitat.setDecaySpeed(6)"
+                  variant="tertiary"
+                  size="sm"
+                  :class="{ 'button--active': habitat.decaySpeedMultiplier === 6 }"
+                >
+                  Relaxed (6x)
+                </Button>
+                <Button
+                  @click="habitat.setDecaySpeed(12)"
+                  variant="tertiary"
+                  size="sm"
+                  :class="{ 'button--active': habitat.decaySpeedMultiplier === 12 }"
+                >
+                  Normal (12x)
+                </Button>
+                <Button
+                  @click="habitat.setDecaySpeed(24)"
+                  variant="tertiary"
+                  size="sm"
+                  :class="{ 'button--active': habitat.decaySpeedMultiplier === 24 }"
+                >
+                  Fast (24x)
+                </Button>
+              </div>
+            </div>
+
+            <hr class="test-controls__divider" />
+
             <Button
               @click="addTestPoop"
               variant="secondary"
@@ -486,5 +532,45 @@ function getConditionClass(value: number): string {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.test-controls__divider {
+  border: none;
+  border-block-start: 1px solid var(--color-border);
+  margin-block: var(--space-2);
+}
+
+.test-control-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.test-control-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.test-control-item__header label {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+}
+
+.test-control-item__value {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.decay-speed-presets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.button--active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 </style>

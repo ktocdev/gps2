@@ -119,7 +119,7 @@ function handleDrop(event: DragEvent) {
 .food-bowl__food-item {
   position: absolute;
   line-height: 1;
-  pointer-events: all;
+  pointer-events: none;
   cursor: help;
   transition: filter 0.2s ease;
 }
