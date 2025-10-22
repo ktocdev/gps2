@@ -108,6 +108,25 @@ export const DECAY = {
 } as const
 
 // ========================================================================
+// Chew Item Degradation
+// ========================================================================
+
+export const CHEW_DEGRADATION = {
+  // Degradation rates by chew type (percentage per use)
+  WILLOW_STICK: 12,      // 12% per use (~8 uses until unsafe)
+  APPLE_WOOD: 8,         // 8% per use (~12 uses until unsafe)
+  MINERAL_CHEW: 4,       // 4% per use (~25 uses until unsafe)
+
+  // Safety thresholds (durability percentages)
+  UNSAFE_THRESHOLD: 20,   // Below this = must discard (safety hazard)
+  DEGRADED_THRESHOLD: 40, // Below this = degraded condition
+  WORN_THRESHOLD: 80,     // Below this = worn condition
+
+  // Habitat condition impact
+  UNSAFE_HABITAT_PENALTY: 5, // Penalty applied per unsafe chew to habitat condition
+} as const
+
+// ========================================================================
 // History & Tracking
 // ========================================================================
 

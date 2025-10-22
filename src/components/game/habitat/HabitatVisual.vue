@@ -74,6 +74,17 @@
             :water-level="habitatConditions.waterLevel"
             :bottle-emoji="item.emoji"
           />
+          <ChewItem
+            v-else-if="isChewItem(item.itemId)"
+            :item-emoji="item.emoji"
+            :item-name="item.name"
+            :durability="getChewDurability(item.itemId)"
+            :usage-count="getChewUsageCount(item.itemId)"
+            :last-used-at="getChewLastUsedAt(item.itemId)"
+            @test-chew="handleTestChew(item.itemId)"
+            @remove-chew="handleRemoveChew(item.itemId)"
+            @discard-chew="handleDiscardChew(item.itemId)"
+          />
           <span
             v-else
             class="grid-item__emoji"
@@ -108,7 +119,15 @@
       </div>
 
       <div class="habitat-visual__guinea-pigs">
-        <!-- Guinea pigs will be rendered here in Phase 3 -->
+        <GuineaPigSprite
+          v-for="guineaPig in activeGuineaPigs"
+          :key="guineaPig.id"
+          :guinea-pig="guineaPig"
+          :grid-position="getGuineaPigPosition(guineaPig.id)"
+          :is-interacting-with-depth-item="isInteractingWithDepthItem(guineaPig.id)"
+          :is-selected="selectedGuineaPigId === guineaPig.id"
+          @select="handleGuineaPigSelect"
+        />
       </div>
     </div>
   </div>
@@ -118,10 +137,13 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import type { SuppliesItem } from '../../../types/supplies'
 import FoodBowl from './FoodBowl.vue'
 import HayRack from './HayRack.vue'
 import WaterBottle from './WaterBottle.vue'
+import ChewItem from './ChewItem.vue'
+import GuineaPigSprite from './GuineaPigSprite.vue'
 
 interface Props {
   habitatSize?: 'small' | 'medium' | 'large'
@@ -156,6 +178,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const habitatConditions = useHabitatConditions()
 const suppliesStore = useSuppliesStore()
+const guineaPigStore = useGuineaPigStore()
 
 const HABITAT_SIZES = {
   small: { width: 10, height: 8, cellSize: 60 },
@@ -204,6 +227,57 @@ const subgridItems = computed(() => {
 
 const poopCount = computed(() => habitatConditions.poops.length)
 
+// System 17: Guinea Pig Rendering
+const activeGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs)
+const guineaPigPositions = computed(() => habitatConditions.guineaPigPositions)
+const selectedGuineaPigId = computed(() => guineaPigStore.selectedGuineaPigId)
+
+function handleGuineaPigSelect(guineaPigId: string) {
+  // Select guinea pig for interaction
+  guineaPigStore.selectGuineaPig(guineaPigId)
+
+  // System 20 will display interaction menu when guinea pig is selected
+  // TODO: Connect to InteractionMenu component when System 20 is implemented
+}
+
+function getGuineaPigPosition(guineaPigId: string) {
+  const position = guineaPigPositions.value.get(guineaPigId)
+  if (!position) {
+    console.warn(`No position found for guinea pig ${guineaPigId}, initializing...`)
+    habitatConditions.initializeGuineaPigPosition(guineaPigId)
+    const newPosition = guineaPigPositions.value.get(guineaPigId)
+    if (!newPosition) {
+      console.error(`Failed to initialize position for ${guineaPigId}`)
+      return { row: 0, col: 0 }
+    }
+    return { row: newPosition.y, col: newPosition.x }
+  }
+  // Convert habitatConditions position format to grid position format
+  return { row: position.y, col: position.x }
+}
+
+function isInteractingWithDepthItem(guineaPigId: string): boolean {
+  const position = getGuineaPigPosition(guineaPigId)
+
+  // Check if there's a depth-triggering item at guinea pig's position
+  // Find if any placed item occupies this exact grid cell
+  const itemAtPosition = placedItems.value.find(item => {
+    const isWithinX = position.col >= item.position.x && position.col < item.position.x + item.size.width
+    const isWithinY = position.row >= item.position.y && position.row < item.position.y + item.size.height
+    return isWithinX && isWithinY
+  })
+
+  if (!itemAtPosition) return false
+
+  // Check if item type requires depth rendering (behind item)
+  // For now, check item name/ID for shelter, tunnel, or hideaway keywords
+  const depthKeywords = ['shelter', 'tunnel', 'hideaway', 'igloo', 'house', 'hut']
+  const itemName = itemAtPosition.name.toLowerCase()
+  const itemId = itemAtPosition.itemId.toLowerCase()
+
+  return depthKeywords.some(keyword => itemName.includes(keyword) || itemId.includes(keyword))
+}
+
 // Drag-and-drop state
 const isDragOver = ref(false)
 const draggedItemId = ref<string | null>(null)
@@ -239,8 +313,12 @@ function getItemSize(item: SuppliesItem | undefined): { width: number; height: n
 }
 
 const placedItems = computed(() => {
+  console.log('[HabitatVisual] Computing placedItems from habitatItems:', habitatConditions.habitatItems)
   return habitatConditions.habitatItems.map((itemId, index) => {
     const item = suppliesStore.getItemById(itemId)
+    if (!item) {
+      console.warn(`[HabitatVisual] Item ${itemId} not found in supplies store`)
+    }
     const size = getItemSize(item)
 
     // Get stored position or default to auto-layout
@@ -679,6 +757,69 @@ function handleClearHayRack(hayRackItemId: string) {
 // Water bottle helper function
 function isWaterBottle(itemId: string): boolean {
   return itemId.includes('water_bottle')
+}
+
+// Chew item helper functions
+function isChewItem(itemId: string): boolean {
+  const item = suppliesStore.getItemById(itemId)
+  return item?.stats?.itemType === 'chew'
+}
+
+function getChewDurability(itemId: string): number {
+  return habitatConditions.getChewDurability(itemId)
+}
+
+function getChewUsageCount(itemId: string): number {
+  const chewData = habitatConditions.getChewData(itemId)
+  return chewData?.usageCount ?? 0
+}
+
+function getChewLastUsedAt(itemId: string): number {
+  const chewData = habitatConditions.getChewData(itemId)
+  return chewData?.lastUsedAt ?? Date.now()
+}
+
+function handleTestChew(itemId: string) {
+  const success = habitatConditions.chewItem(itemId)
+  if (success) {
+    console.log(`Chewed item ${itemId}`)
+  }
+}
+
+function handleRemoveChew(itemId: string) {
+  // Find the item in placedItems to remove it from habitat and return to inventory
+  const itemToRemove = placedItems.value.find(item => item.itemId === itemId)
+  if (itemToRemove) {
+    // Remove from placed items array
+    const index = placedItems.value.indexOf(itemToRemove)
+    if (index > -1) {
+      placedItems.value.splice(index, 1)
+    }
+    // Remove from habitat conditions (returns to inventory)
+    habitatConditions.removeItemFromHabitat(itemId)
+    habitatConditions.removeChewItem(itemId)
+    console.log(`Removed chew ${itemId} from habitat`)
+  }
+}
+
+function handleDiscardChew(itemId: string) {
+  // Find the item and permanently discard it (no return to inventory)
+  const itemToRemove = placedItems.value.find(item => item.itemId === itemId)
+  if (itemToRemove) {
+    // Remove from placed items array
+    const index = placedItems.value.indexOf(itemToRemove)
+    if (index > -1) {
+      placedItems.value.splice(index, 1)
+    }
+    // Remove from habitat conditions but DON'T return to inventory (permanent discard)
+    // We only remove from the habitat list, the inventory item is lost
+    const habitatIndex = habitatConditions.habitatItems.indexOf(itemId)
+    if (habitatIndex > -1) {
+      habitatConditions.habitatItems.splice(habitatIndex, 1)
+    }
+    habitatConditions.removeChewItem(itemId)
+    console.log(`Discarded unsafe chew ${itemId}`)
+  }
 }
 
 onMounted(() => {

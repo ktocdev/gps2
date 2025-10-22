@@ -564,6 +564,129 @@ export class MessageGenerator {
     const message = templates[Math.floor(Math.random() * templates.length)]
     return { message, emoji: '🛏️' }
   }
+
+  // System 19: Autonomous behavior messages
+  static generateAutonomousEatMessage(guineaPigName: string, foodType?: string): { message: string; emoji: string } {
+    const food = foodType || 'food from the bowl'
+    const templates = [
+      `${guineaPigName} walks to the food bowl and munches on ${food}`,
+      `${guineaPigName} eats ${food} contentedly`,
+      `${guineaPigName} enjoys a snack of ${food}`,
+      `${guineaPigName} nibbles ${food} with satisfaction`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🍽️' }
+  }
+
+  static generateAutonomousEatHayMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} pulls fresh hay from the rack`,
+      `${guineaPigName} munches contentedly on timothy hay`,
+      `${guineaPigName} enjoys some nutritious hay`,
+      `${guineaPigName} chews on hay from the rack`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🌾' }
+  }
+
+  static generateAutonomousDrinkMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} drinks deeply from the water bottle`,
+      `${guineaPigName} takes a refreshing drink`,
+      `${guineaPigName} hydrates at the water bottle`,
+      `${guineaPigName} laps up cool water`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '💧' }
+  }
+
+  static generateAutonomousSleepMessage(guineaPigName: string, location?: string): { message: string; emoji: string } {
+    const place = location || 'a cozy spot'
+    const templates = [
+      `${guineaPigName} settles down to sleep in ${place}`,
+      `${guineaPigName} naps peacefully in ${place}`,
+      `${guineaPigName} dozes off in ${place}`,
+      `${guineaPigName} takes a restful nap in ${place}`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '😴' }
+  }
+
+  static generateAutonomousGroomMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} grooms their fur meticulously`,
+      `${guineaPigName} cleans themselves carefully`,
+      `${guineaPigName} tidies up their fur`,
+      `${guineaPigName} preens and grooms`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🧼' }
+  }
+
+  static generateAutonomousChewMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} gnaws on a chew item`,
+      `${guineaPigName} chews contentedly for dental health`,
+      `${guineaPigName} works on keeping their teeth trimmed`,
+      `${guineaPigName} enjoys chewing on a wooden toy`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🪵' }
+  }
+
+  static generateAutonomousShelterMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} seeks shelter in their favorite hideaway`,
+      `${guineaPigName} retreats to a cozy shelter`,
+      `${guineaPigName} finds security in their hideout`,
+      `${guineaPigName} settles into a safe spot`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🏠' }
+  }
+
+  static generateAutonomousPopcornMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} does excited popcorn jumps!`,
+      `${guineaPigName} popcorns with joy! ✨`,
+      `${guineaPigName} leaps and twists happily!`,
+      `${guineaPigName} bounces around excitedly!`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '✨' }
+  }
+
+  static generateAutonomousZoomiesMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} does zoomies around the habitat!`,
+      `${guineaPigName} races around with excitement!`,
+      `${guineaPigName} runs laps at full speed!`,
+      `${guineaPigName} zooms around energetically!`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '💨' }
+  }
+
+  static generateAutonomousWatchMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} watches you with curiosity`,
+      `${guineaPigName} observes you quietly`,
+      `${guineaPigName} looks at you with interest`,
+      `${guineaPigName} pays attention to your activities`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '👀' }
+  }
+
+  static generateAutonomousHideMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} hides nervously in their shelter`,
+      `${guineaPigName} retreats to a safe hiding spot`,
+      `${guineaPigName} seeks shelter cautiously`,
+      `${guineaPigName} tucks into their hideaway`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '😰' }
+  }
+
+  static generateAutonomousPoopMessage(guineaPigName: string, location?: string): { message: string; emoji: string } {
+    const place = location || 'the habitat'
+    const templates = [
+      `${guineaPigName} drops a poop near ${place}`,
+      `${guineaPigName} leaves a little present in ${place}`,
+      `${guineaPigName} contributes to habitat maintenance near ${place}`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '💩' }
+  }
 }
 
 // Convenience functions for direct use

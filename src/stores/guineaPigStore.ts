@@ -19,6 +19,7 @@ export interface GuineaPigPersonality {
   playfulness: number     // 1-10: How much they enjoy activities
   curiosity: number       // 1-10: How much they explore
   boldness: number        // 1-10: How confident/brave they are
+  cleanliness: number     // 1-10: How sensitive to mess/habitat conditions (1=tolerant, 10=picky)
 }
 
 export interface GuineaPigPreferences {
@@ -66,24 +67,29 @@ export interface InteractionResult {
   friendshipPenalty?: number
 }
 
+export type NeedType =
+  | 'hunger' | 'thirst' | 'energy' | 'shelter'
+  | 'play' | 'social' | 'stimulation' | 'comfort'
+  | 'hygiene' | 'nails' | 'health' | 'chew'
+
 export interface GuineaPigNeeds {
   // Critical Needs (high decay, high weight)
-  hunger: number        // 0-100: How hungry they are (100 = starving)
-  thirst: number        // 0-100: How thirsty they are (100 = dehydrated)
-  energy: number        // 0-100: How much rest/energy they need (100 = exhausted)
-  shelter: number       // 0-100: How much they need security/shelter (100 = anxious)
+  hunger: number        // 0-100: Food satisfaction (100 = fully fed, 0 = very hungry)
+  thirst: number        // 0-100: Water satisfaction (100 = hydrated, 0 = very thirsty)
+  energy: number        // 0-100: Rest satisfaction (100 = well-rested, 0 = tired)
+  shelter: number       // 0-100: Security satisfaction (100 = secure, 0 = needs shelter)
 
   // Environmental Needs (medium decay, medium weight)
-  play: number          // 0-100: How much they need play/activity (100 = bored)
-  social: number        // 0-100: How much they need social interaction (100 = lonely)
-  stimulation: number   // 0-100: How much they need mental enrichment (100 = unstimulated)
-  comfort: number       // 0-100: How much they need comfortable bedding (100 = uncomfortable)
+  play: number          // 0-100: Play satisfaction (100 = entertained, 0 = needs play)
+  social: number        // 0-100: Social satisfaction (100 = fulfilled, 0 = needs attention)
+  stimulation: number   // 0-100: Mental enrichment (100 = stimulated, 0 = needs enrichment)
+  comfort: number       // 0-100: Comfort satisfaction (100 = cozy, 0 = needs comfort)
 
   // Maintenance Needs (low decay, medium weight)
-  hygiene: number       // 0-100: How much they need grooming/cleaning (100 = very dirty)
-  nails: number         // 0-100: How much they need nail trimming (100 = overgrown)
-  health: number        // 0-100: How much health care they need (100 = very sick)
-  chew: number          // 0-100: How much they need chew items (100 = dental problems)
+  hygiene: number       // 0-100: Cleanliness (100 = clean, 0 = needs grooming)
+  nails: number         // 0-100: Nail condition (100 = trimmed, 0 = needs trimming)
+  health: number        // 0-100: Health condition (100 = healthy, 0 = needs care)
+  chew: number          // 0-100: Dental care (100 = good dental health, 0 = needs chew items)
 }
 
 export interface GuineaPigStats {
@@ -140,6 +146,9 @@ export interface GuineaPig {
   lastPlayTime: number | null        // Timestamp of last play interaction
   lastSocialTime: number | null      // Timestamp of last social interaction
 
+  // System 19: Autonomous AI Behaviors
+  lastPoopTime: number               // Timestamp of last poop drop (for autonomous pooping)
+
   // Phase 2: Adoption timers (for store guinea pigs)
   adoptionTimer: number | null       // Timestamp when guinea pig entered store
   adoptionDuration: number           // How long available in store (ms)
@@ -193,6 +202,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     maxGuineaPigs: 10, // Allow creating multiple guinea pigs in collection
     enableBreeding: false // Disabled for now
   })
+
+  // System 17: Guinea Pig Selection for Interaction
+  const selectedGuineaPigId = ref<string | null>(null)
 
   // Computed properties
   const allGuineaPigs = computed(() => {
@@ -431,6 +443,20 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
         // Modifier: 1 - (boldness - 5) * 0.05
         // Boldness 10: 0.75x (-25%), Boldness 1: 1.20x (+20%)
         modifier = 1 - (personality.boldness - 5) * 0.05
+        break
+
+      case 'hygiene':
+        // Cleanliness: higher (picky) = slower decay (stays cleaner naturally)
+        // Modifier: 1 - (cleanliness - 5) * 0.06
+        // Cleanliness 10 (picky): 0.70x (-30%), Cleanliness 1 (piggy): 1.24x (+24%)
+        modifier = 1 - (personality.cleanliness - 5) * 0.06
+        break
+
+      case 'health':
+        // Cleanliness: higher (picky) = slower decay (more careful, healthier habits)
+        // Modifier: 1 - (cleanliness - 5) * 0.05
+        // Cleanliness 10 (picky): 0.75x (-25%), Cleanliness 1 (piggy): 1.20x (+20%)
+        modifier = 1 - (personality.cleanliness - 5) * 0.05
         break
 
       default:
@@ -1464,6 +1490,85 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return penalty
   }
 
+  // System 17: Guinea Pig Selection Methods
+  const selectGuineaPig = (guineaPigId: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    selectedGuineaPigId.value = guineaPigId
+    return true
+  }
+
+  const clearSelection = (): void => {
+    selectedGuineaPigId.value = null
+  }
+
+  /**
+   * Get personality-based habitat sensitivity thresholds
+   * Sprint: Personality-Based Habitat Sensitivity
+   *
+   * Cleanliness trait affects how sensitive guinea pig is to habitat conditions:
+   * - Picky (7-10): Won't eat hay <60% fresh, stressed by mess (higher thresholds)
+   * - Moderate (4-6): Baseline 40% thresholds
+   * - Piggy (1-3): Tolerates mess, eats hay down to 20% fresh (lower thresholds)
+   */
+  const getHabitatSensitivityThresholds = (guineaPigId: string) => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) {
+      // Default moderate thresholds
+      return {
+        hayFreshnessMin: 40,
+        cleanlinessMin: 40,
+        beddingMin: 40
+      }
+    }
+
+    const cleanliness = guineaPig.personality.cleanliness
+
+    // Picky guinea pigs (7-10) - High sensitivity
+    if (cleanliness >= 7) {
+      return {
+        hayFreshnessMin: 60,  // Won't eat hay below 60% fresh
+        cleanlinessMin: 60,   // Stressed by mess below 60%
+        beddingMin: 60        // Needs fresh bedding above 60%
+      }
+    }
+
+    // Piggy guinea pigs (1-3) - Low sensitivity, very tolerant
+    if (cleanliness <= 3) {
+      return {
+        hayFreshnessMin: 20,  // Will eat hay down to 20% fresh
+        cleanlinessMin: 20,   // Tolerates mess down to 20%
+        beddingMin: 20        // Fine with bedding down to 20%
+      }
+    }
+
+    // Moderate guinea pigs (4-6) - Baseline thresholds
+    return {
+      hayFreshnessMin: 40,
+      cleanlinessMin: 40,
+      beddingMin: 40
+    }
+  }
+
+  /**
+   * Check if guinea pig will accept current habitat conditions
+   * Returns true if habitat meets their personality-based thresholds
+   */
+  const willAcceptHabitatConditions = (guineaPigId: string, habitatConditions: {
+    hayFreshness: number
+    cleanliness: number
+    beddingFreshness: number
+  }): boolean => {
+    const thresholds = getHabitatSensitivityThresholds(guineaPigId)
+
+    return (
+      habitatConditions.hayFreshness >= thresholds.hayFreshnessMin &&
+      habitatConditions.cleanliness >= thresholds.cleanlinessMin &&
+      habitatConditions.beddingFreshness >= thresholds.beddingMin
+    )
+  }
+
   const isInteractionOnCooldown = (guineaPigId: string): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
@@ -1572,6 +1677,15 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     activeGuineaPigs,       // New: Array of active guinea pigs
     activeGuineaPigPair,    // New: Pair when exactly 2 are active
     canAddActiveGuineaPig,  // New: Can add more to active pair
+
+    // System 17: Selection
+    selectedGuineaPigId,
+    selectGuineaPig,
+    clearSelection,
+
+    // Personality-Based Habitat Sensitivity
+    getHabitatSensitivityThresholds,
+    willAcceptHabitatConditions,
 
     // CRUD Operations
     getGuineaPig,

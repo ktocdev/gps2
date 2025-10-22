@@ -136,7 +136,7 @@ defineEmits<{
   'clean-cage': []
   'refill-water': []
   'refresh-bedding': []
-  'update:selectedBeddingType': [value: string]
+  'update:selectedBeddingType': [value: string | number]
   'clear-all-bowls': []
   'clear-all-hay-racks': []
   'add-test-poop': []

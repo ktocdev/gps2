@@ -24,6 +24,18 @@ Comprehensive architecture documentation covering store communication patterns, 
 - **Inventory Store** → Needs Controller Store (food, treats consumption)
 - **Inventory Store** ← Player Progression Store (persistent item ownership)
 
+### Guinea Pig Integration (Phase 4)
+- **Guinea Pig Movement Controller** ↔ Guinea Pig Store (position updates, state synchronization)
+- **Pathfinding System** → Habitat Item System (obstacle detection, grid navigation)
+- **AI Behavior System** ↔ Guinea Pig Store (need monitoring, personality-based decisions, state updates)
+- **AI Behavior System** → Movement Controller (goal-based movement commands)
+- **AI Behavior System** → Inventory Store (autonomous consumption: food, water, hay)
+- **Direct Interaction System** ↔ Guinea Pig Store (interaction validation, preference discovery, friendship updates)
+- **Direct Interaction System** → Needs Controller Store (need satisfaction from interactions)
+- **Social Bonding System** ↔ Guinea Pig Store (compatibility calculation, bonding progression)
+- **Social Bonding System** → AI Behavior System (social behavior triggers, proximity bonding)
+- **Social Bonding System** → Needs Controller Store (social need bonuses from bonding)
+
 ### Data Flow Principles
 - **Reactive updates** through Pinia store connections
 - **Event-driven communication** for loosely coupled systems
@@ -50,6 +62,13 @@ Comprehensive architecture documentation covering store communication patterns, 
   - **PersonalityDebug** ✅ ← Guinea Pig Store
   - **PetStoreDebug** ✅ ← Pet Store Manager Store
   - **HabitatDebug** ✅ ← Habitat Conditions Store (foundation complete, awaiting Supplies/Inventory integration)
+
+### Guinea Pig Interaction Components (Phase 4)
+- **GuineaPigSprite** ← Guinea Pig Store + Movement Controller (visual representation, position, state)
+- **GuineaPigInteractionPanel** ↔ Direct Interaction System (interaction buttons, feedback display)
+- **PathfindingDebug** ← Pathfinding System (path visualization, obstacle detection)
+- **BehaviorDebug** ← AI Behavior System (decision matrix, priority weights, current goals)
+- **BondingDebug** ← Social Bonding System (compatibility scores, bonding levels, social interactions)
 
 ### UI Framework Integration
 - **Container-query components** adapt based on allocated space
@@ -84,42 +103,55 @@ Interval Management → Needs Controller → Habitat Conditions → Activity Gen
 - Habitat condition updates ✅ **Implemented** (awaiting Inventory integration for consumption)
 - Activity feed message generation and UI synchronization ✅ **Implemented**
 
-### 4. Player Interaction Flow
+### 4. Guinea Pig Visual Presence Flow (Phase 4 - Stage 1)
 ```
-Direct Interaction System → Guinea Pig Store → Reaction System → Activity Feed → Sound System
+Guinea Pig Store → GuineaPigSprite Component → Grid System → Habitat Container
 ```
-- User action processing and validation
-- Guinea pig state updates and reaction generation
-- Natural language message creation and audio feedback
+- Visual representation of guinea pig in habitat
+- Grid-based positioning and movement rendering
+- Sprite selection and state-based visual updates
+- Z-index layering with habitat items
 
-### 5. Autonomous Behavior Flow
+### 5. Guinea Pig Movement Flow (Phase 4 - Stage 2)
 ```
-Autonomy System → Pathfinding → Guinea Pig Store → Activity Feed
+Movement Controller → Pathfinding System → Grid System → GuineaPigSprite → Activity Feed
 ```
-- AI decision making based on needs and preferences
-- Movement and interaction execution
+- A* pathfinding for navigation around habitat items
+- Movement animation and position updates
+- Wander behavior and goal-based movement
+- Path validation and obstacle avoidance
+
+### 6. Autonomous Behavior Flow (Phase 4 - Stage 3)
+```
+AI Decision System → Behavior Priority Matrix → Movement Controller → Guinea Pig Store → Activity Feed
+```
+- AI decision making based on needs, personality, and preferences (10 subsystems)
+- Priority weighting: urgent needs (100), sleep (80), moderate needs (75), shelter (70), friendship (50), environmental (40), exploration (25)
+- Movement and interaction execution (eating, drinking, sleeping, exploring, pooping)
 - State updates and activity message generation
+- Shelter-seeking and friendship behaviors
 
-### 6. Guinea Pig Social Interaction Flow
+### 7. Player Interaction Flow (Phase 4 - Stage 4)
 ```
-Social Interaction System → Guinea Pig Store → Needs Processing → Activity Feed
+Direct Interaction System → Guinea Pig Selection → Interaction Validation → Guinea Pig Store → Activity Feed → Sound System
 ```
-- Guinea pig to guinea pig interaction triggers (proximity, needs, time-based)
-- Mutual need satisfaction for both participants
-- Enhanced social need processing with companionship bonuses
-- Activity feed messages for social interactions
+- User action processing and validation (40+ interactions across 7 categories)
+- Guinea pig state updates and reaction generation
+- Preference discovery through interaction feedback
+- Natural language message creation and audio feedback
+- Nail clipping complex success system
 
-### 7. Guinea Pig Bonding Flow
+### 8. Guinea Pig Social Bonding Flow (Phase 4 - Stage 5)
 ```
-Pet Store Selection → Personality Hints → Guinea Pig Store → Bonding System → Social Need Enhancement
+Bonding System → Compatibility Calculation → Autonomous Social Behaviors → Guinea Pig Store → Activity Feed
 ```
-- Hidden compatibility calculation based on gender, personality, and breed
-- Personality hint display during selection (3 hints per guinea pig)
-- Bonding progression through positive interactions and proximity
-- Enhanced social need processing based on bonding level (neutral/friends/bonded)
-- Natural bonding discovery through activity feed messages
+- Hidden compatibility based on gender, personality, breed (research-based)
+- Bonding progression: neutral (0-30) → friends (30-70) → bonded (70-100)
+- Autonomous social behaviors: grooming, playing together, sharing food, sleeping together
+- Proximity-based bonding opportunities and interaction bonuses
+- Social need enhancement based on bonding tier
 
-### 8. Guinea Pig Favorites Flow
+### 9. Guinea Pig Favorites Flow
 ```
 Pet Store Selection → Favorites Storage → Pet Store Manager → Player Progression → Persistence
 ```
@@ -199,13 +231,62 @@ Pet Store Selection → Favorites Storage → Pet Store Manager → Player Progr
 - **Resource Economy:** Supplies → Inventory → Consumption creating ongoing economic gameplay loop
 - **Development Approach:** Habitat Conditions foundation implemented first with mock data, awaiting Supplies Store and Inventory integration for real data flow
 
-### Phase 4 Dependencies (Interactions)
-- **Requires:** Complete game world and habitat system from Phase 3
-- **Depends on:** All entity management and environmental systems
-- **Provides:** Complete gameplay loop for Phase 5 enhancements
-- **Social Interactions:** Guinea pig to guinea pig interactions enhance social need satisfaction when 2 guinea pigs are active
-- **Bonding System:** Hidden compatibility and relationship mechanics with research-based factors (gender, personality, breed)
-- **Pet Store Enhancement:** Personality hint system provides subtle selection guidance without revealing underlying compatibility mechanics
+### Phase 4 Dependencies (Guinea Pig Integration - Systems 17-21) 🚧 **IN PROGRESS**
+- **Requires:** Complete game world and habitat system from Phase 3 (grid system, habitat items, inventory)
+- **Depends on:** Guinea Pig Store, Needs Controller, Habitat Conditions, Inventory System
+- **Provides:** Complete gameplay loop with visual guinea pigs, autonomous behaviors, player interactions, and social bonding for Phase 5 enhancements
+- **Duration:** 5-7 weeks (38-53 hours total across 5 sequential stages)
+- **Status:** System 19 complete + bug fixes, code audit needed
+
+**Stage 1 - Visual Presence & Positioning (System 17, 2-3 hours):** ⏳ **Partially Complete**
+- ✅ GuineaPigSprite component with breed-specific emoji
+- ✅ Grid positioning system integration
+- ✅ Z-index layering with habitat items
+- ✅ Click interaction and selection state
+- 📋 Enhanced visual states pending
+
+**Stage 2 - Pathfinding & Movement (System 18, 6-8 hours):** ✅ **Core Complete**
+- ✅ A* pathfinding algorithm implementation (usePathfinding.ts)
+- ✅ Movement controller with position updates (useMovement.ts)
+- ✅ Wander behavior and goal-based movement
+- ✅ Obstacle detection and path validation
+- 📋 Smooth CSS animations pending
+
+**Stage 3 - Autonomous AI Behaviors (System 19, 12-16 hours):** ✅ **COMPLETE** (October 21, 2025)
+- ✅ AI decision priority matrix with 10 subsystems (urgent needs, sleep, moderate needs, shelter, friendship, environmental, exploration)
+- ✅ Need-based autonomous actions (eat, drink, sleep, groom, chew)
+- ✅ Shelter-seeking behavior (security < 60%)
+- ✅ Friendship behaviors (popcorn, zoomies, hiding based on friendship level)
+- ✅ Environmental interactions (autonomous poop dropping every 30s)
+- ✅ Item interactions (water bottles, food bowls, hay racks, chew items)
+- ✅ Personality-driven behavior variations
+- ✅ Activity feed message integration (12 behavior message generators)
+- ✅ Game loop integration with cached behavior composables
+
+**Critical Bug Fixes (October 22, 2025):** ✅ **COMPLETE**
+- ✅ Position initialization (auto-initialize on first access)
+- ✅ Movement system (reduced game loop interval from 5s to 1s, cached behavior composables)
+- ✅ Poop coordinate conversion (grid to subgrid: col * 4 + random offset)
+- ✅ Habitat items persistence (removed chewItems from Pinia serializer to fix localStorage)
+
+**Technical Lessons Learned:**
+- **Pinia Persistence:** Never serialize composable properties directly - use `...state` spread to exclude functions
+- **Composable Caching:** Cache stateful composables to prevent state reset on recreation
+- **Coordinate Systems:** Document and convert between grid (14×10) and subgrid (56×40) explicitly
+
+**Stage 4 - Direct Interaction System (System 20, 10-14 hours):**
+- 40+ player interactions across 7 categories (feeding, handling, grooming, play, enrichment, training, care)
+- Guinea pig selection and interaction validation
+- Preference discovery mechanics through feedback
+- Nail clipping complex success system with tension mechanic
+- Friendship-gated advanced interactions
+
+**Stage 5 - Social Bonding System (System 21, 8-12 hours):**
+- Hidden compatibility calculation (gender, personality, breed)
+- Bonding progression tiers: neutral (0-30) → friends (30-70) → bonded (70-100)
+- Autonomous social behaviors (grooming, playing, sharing food, sleeping together)
+- Proximity-based bonding opportunities
+- Social need enhancement based on bonding tier
 
 ### Phase 5 Dependencies (Polish)
 - **Requires:** Complete core gameplay from Phases 1-4

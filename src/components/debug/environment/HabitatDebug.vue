@@ -42,7 +42,7 @@
             :bedding-options="beddingOptions"
             :poop-count="habitatVisualRef?.poopCount || 0"
             :has-water-available="hasWaterAvailable"
-            @update:selected-bedding-type="selectedBeddingType = $event"
+            @update:selected-bedding-type="selectedBeddingType = String($event)"
             @clean-cage="habitat.cleanCage"
             @refill-water="habitat.refillWater"
             @refresh-bedding="handleRefreshBedding"
@@ -208,6 +208,59 @@
               </div>
             </div>
           </div>
+
+          <hr v-if="chewItemsList.length > 0" class="divider" />
+
+          <!-- Chew Items Section -->
+          <div v-if="chewItemsList.length > 0" class="conditions-section">
+            <h4 class="conditions-section-title">Chew Items</h4>
+            <div class="chew-items-list">
+              <div v-for="chew in chewItemsList" :key="chew.itemId" class="chew-item-debug">
+                <div class="chew-item-debug__header">
+                  <label :for="`chew-${chew.itemId}`">
+                    <span class="chew-item-debug__emoji">{{ chew.emoji }}</span>
+                    {{ chew.name }}
+                  </label>
+                  <span class="chew-item-debug__value" :class="getChewDurabilityClass(chew.durability)">
+                    {{ chew.durability.toFixed(0) }}%
+                  </span>
+                </div>
+                <SliderField
+                  :id="`chew-${chew.itemId}`"
+                  :modelValue="chew.durability"
+                  :min="0"
+                  :max="100"
+                  :step="1"
+                  prefix=""
+                  suffix="%"
+                  @update:modelValue="(v: number) => updateChewDurability(chew.itemId, v)"
+                />
+                <div class="chew-item-debug__metadata">
+                  <span class="chew-item-debug__usage">🦷 Used {{ chew.usageCount }} times</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- System 19: Autonomy Debug Panel -->
+      <div class="panel panel--compact panel--accent">
+        <div class="panel__header">
+          <h3>🤖 Autonomy Behaviors (System 19)</h3>
+        </div>
+        <div class="panel__content">
+          <AutonomyDebug />
+        </div>
+      </div>
+
+      <!-- System 19: Poop Debug Panel -->
+      <div class="panel panel--compact panel--accent">
+        <div class="panel__header">
+          <h3>💩 Poop System (System 19)</h3>
+        </div>
+        <div class="panel__content">
+          <PoopDebug />
         </div>
       </div>
 
@@ -281,18 +334,28 @@ import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useHabitatContainers } from '../../../composables/useHabitatContainers'
-import { CONSUMPTION } from '../../../constants/supplies'
+import { CONSUMPTION, CHEW_DEGRADATION } from '../../../constants/supplies'
 import Button from '../../basic/Button.vue'
 import SliderField from '../../basic/SliderField.vue'
 import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/HabitatCareSidebar.vue'
+import AutonomyDebug from './AutonomyDebug.vue'
+import PoopDebug from './PoopDebug.vue'
 
 const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
-const { getHayRackContents, getHayRackFreshness, setHayRackFreshness, getBowlContents, setFoodFreshness } = useHabitatContainers()
+const {
+  getHayRackContents,
+  getHayRackFreshness,
+  setHayRackFreshness,
+  getBowlContents,
+  setFoodFreshness,
+  getChewData,
+  setChewDurability
+} = useHabitatContainers()
 
 // Ref to HabitatVisual component
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
@@ -480,6 +543,47 @@ const foodBowls = computed(() => {
 
 function updateFoodFreshness(bowlId: string, foodIndex: number, freshness: number) {
   setFoodFreshness(bowlId, foodIndex, freshness)
+}
+
+// Chew Items Management
+const chewItemsList = computed(() => {
+  if (!habitatVisualRef.value) return []
+
+  const items = habitatVisualRef.value.placedItems
+  if (!items) return []
+
+  const chews = items
+    .filter((item: any) => {
+      const itemData = suppliesStore.getItemById(item.itemId)
+      // Check if this is a chew item (itemType 'chew')
+      return itemData?.stats?.itemType === 'chew'
+    })
+    .map((item: any) => {
+      const itemData = suppliesStore.getItemById(item.itemId)
+      const chewData = getChewData(item.itemId)
+
+      return {
+        itemId: item.itemId,
+        name: itemData?.name || 'Chew Item',
+        emoji: itemData?.emoji || '🦷',
+        durability: chewData?.durability ?? 100,
+        usageCount: chewData?.usageCount ?? 0,
+        lastUsedAt: chewData?.lastUsedAt ?? Date.now()
+      }
+    })
+
+  return chews
+})
+
+function updateChewDurability(chewItemId: string, durability: number) {
+  setChewDurability(chewItemId, durability)
+}
+
+function getChewDurabilityClass(durability: number): string {
+  if (durability < CHEW_DEGRADATION.UNSAFE_THRESHOLD) return 'text-label--danger'
+  if (durability < CHEW_DEGRADATION.DEGRADED_THRESHOLD) return 'text-label--warning'
+  if (durability < CHEW_DEGRADATION.WORN_THRESHOLD) return 'text-label--muted'
+  return 'text-label--success'
 }
 </script>
 
@@ -778,5 +882,55 @@ function updateFoodFreshness(bowlId: string, foodIndex: number, freshness: numbe
 .food-item__value {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-bold);
+}
+
+/* Chew Items Panel */
+.chew-items-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--space-3);
+}
+
+.chew-item-debug {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+}
+
+.chew-item-debug__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chew-item-debug__header label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.chew-item-debug__emoji {
+  font-size: var(--font-size-lg);
+}
+
+.chew-item-debug__value {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+}
+
+.chew-item-debug__metadata {
+  display: flex;
+  justify-content: center;
+  padding-block-start: var(--space-1);
+}
+
+.chew-item-debug__usage {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
 }
 </style>
