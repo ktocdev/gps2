@@ -35,8 +35,14 @@ export function useMovement(guineaPigId: string) {
 
   const isMoving = computed(() => controller.value.movementState === 'walking')
   const currentPosition = computed(() => {
-    const pos = habitatConditions.guineaPigPositions.get(guineaPigId)
-    return pos ? { row: pos.y, col: pos.x } : { row: 0, col: 0 }
+    const positions = habitatConditions.guineaPigPositions
+    const pos = positions.get(guineaPigId)
+    if (!pos) {
+      console.warn(`[useMovement] No position found for guinea pig ${guineaPigId}`)
+      console.log('[useMovement] Available positions:', Array.from(positions.keys()))
+      return { row: 0, col: 0 }
+    }
+    return { row: pos.y, col: pos.x }
   })
 
   // Arrival callbacks

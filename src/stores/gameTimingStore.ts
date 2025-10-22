@@ -12,6 +12,8 @@ import { useLoggingStore } from './loggingStore'
 import { useNeedsController } from './needsController'
 import { useGameController } from './gameController'
 import { useHabitatConditions } from './habitatConditions'
+import { useGuineaPigStore } from './guineaPigStore'
+import { useGuineaPigBehavior } from '../composables/game/useGuineaPigBehavior'
 
 export const useGameTimingStore = defineStore('gameTiming', () => {
   let loggingStore: any = null
@@ -29,11 +31,14 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
   const totalGameTime = ref<number>(0) // Total milliseconds of game time
 
   // Timing configuration
-  const intervalMs = ref<number>(5000) // 5 seconds default
+  const intervalMs = ref<number>(1000) // 1 second for smooth autonomous behavior (was 5000)
   const maxDeltaTime = ref<number>(30000) // 30 seconds max delta to prevent large jumps
 
   // System 16: Phase 5 - Item effectiveness recovery timing
   const lastEffectivenessRecovery = ref<number>(Date.now())
+
+  // System 19: Cache behavior composables to avoid recreating them every tick
+  const behaviorComposables = new Map<string, ReturnType<typeof useGuineaPigBehavior>>()
 
   // Performance tracking
   const updateCount = ref<number>(0)
@@ -130,6 +135,8 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
     const currentTime = updateStartTime
     let deltaTime = currentTime - lastUpdate.value
 
+    console.log(`[Game Loop] Tick at ${currentTime} (delta: ${deltaTime}ms)`)
+
     // Prevent excessive delta times (e.g., after computer sleep)
     if (deltaTime > maxDeltaTime.value) {
       deltaTime = maxDeltaTime.value
@@ -147,6 +154,8 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
       // Get the game controller to check if game is active
       const gameController = useGameController()
 
+      console.log(`[Game Loop] Game active: ${gameController.isGameActive}`)
+
       // Only process game systems if game is in playing state
       if (gameController.isGameActive) {
         // Convert delta time to seconds for game systems
@@ -155,6 +164,32 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
         // Process needs system
         const needsController = useNeedsController()
         needsController.processBatchUpdate()
+
+        // System 19: Process autonomous AI behaviors for each guinea pig
+        const guineaPigStore = useGuineaPigStore()
+        for (const guineaPig of guineaPigStore.activeGuineaPigs) {
+          // Get or create cached behavior composable for this guinea pig
+          let behavior = behaviorComposables.get(guineaPig.id)
+          if (!behavior) {
+            behavior = useGuineaPigBehavior(guineaPig.id)
+            behaviorComposables.set(guineaPig.id, behavior)
+            console.log(`[Game Loop] Created new behavior composable for ${guineaPig.name}`)
+          }
+
+          // Call tick with default thresholds - debug panel can override these later
+          behavior.tick().catch(error => {
+            getLoggingStore().logWarn(`AI tick error for ${guineaPig.name}: ${error}`)
+          })
+        }
+
+        // Clean up behavior composables for guinea pigs that are no longer active
+        const activeIds = new Set(guineaPigStore.activeGuineaPigs.map(gp => gp.id))
+        for (const [id, _behavior] of behaviorComposables.entries()) {
+          if (!activeIds.has(id)) {
+            behaviorComposables.delete(id)
+            console.log(`[Game Loop] Removed behavior composable for guinea pig ${id}`)
+          }
+        }
 
         // System 16: Phase 3 - Apply environmental decay
         const habitatConditions = useHabitatConditions()

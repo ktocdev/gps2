@@ -2,6 +2,53 @@
   <div class="autonomy-debug">
     <h4>Autonomy Controls</h4>
 
+    <!-- Global Autonomy Controls -->
+    <div class="panel panel--compact mb-4">
+      <div class="panel__header">
+        <h5>Global Autonomy Settings</h5>
+      </div>
+      <div class="panel__content">
+        <div class="global-controls">
+          <div class="control-row">
+            <label class="control-label">
+              <input
+                type="checkbox"
+                :checked="globalAutonomyEnabled"
+                @change="toggleGlobalAutonomy"
+              />
+              <span class="control-label__text">Enable Autonomous AI System</span>
+            </label>
+            <span class="control-description">
+              {{ globalAutonomyEnabled ? '🟢 AI Running' : '🔴 AI Paused' }}
+            </span>
+          </div>
+
+          <div class="control-row mt-3">
+            <label :for="'ai-tick-interval'" class="control-label__text">
+              AI Decision Interval
+            </label>
+            <div class="control-info">
+              <span class="control-value">{{ aiTickInterval / 1000 }}s</span>
+              <span class="control-description">
+                (How often guinea pigs make decisions)
+              </span>
+            </div>
+            <SliderField
+              id="ai-tick-interval"
+              :modelValue="aiTickInterval"
+              :min="1000"
+              :max="10000"
+              :step="500"
+              prefix=""
+              suffix="ms"
+              :show-min-max="true"
+              @update:modelValue="setAiTickInterval"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div v-if="hasActiveGuineaPigs">
       <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id" class="guinea-pig-autonomy">
         <div class="panel panel--compact mb-4">
@@ -166,6 +213,20 @@ const guineaPigStore = useGuineaPigStore()
 
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 
+// Global autonomy controls
+const globalAutonomyEnabled = ref(false) // Start disabled for testing
+const aiTickInterval = ref(3000) // Default 3 seconds
+
+function toggleGlobalAutonomy() {
+  globalAutonomyEnabled.value = !globalAutonomyEnabled.value
+  console.log(`[AutonomyDebug] Global autonomy ${globalAutonomyEnabled.value ? 'enabled' : 'disabled'}`)
+}
+
+function setAiTickInterval(value: number) {
+  aiTickInterval.value = value
+  console.log(`[AutonomyDebug] AI tick interval set to ${value}ms`)
+}
+
 // Store thresholds per guinea pig (default values)
 const behaviorThresholds = ref<Record<string, {
   hunger: number
@@ -240,8 +301,10 @@ function getCurrentActivity(_guineaPigId: string): string {
   return 'idle'
 }
 
-// Export thresholds for use by autonomy system
+// Export controls for use by autonomy system
 defineExpose({
+  globalAutonomyEnabled,
+  aiTickInterval,
   behaviorThresholds,
   getHungerThreshold,
   getThirstThreshold,
@@ -279,6 +342,48 @@ defineExpose({
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin-block-end: var(--space-3);
+}
+
+.global-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.control-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.control-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+}
+
+.control-label__text {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.control-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--font-size-sm);
+}
+
+.control-value {
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-mono);
+  color: var(--color-text-primary);
+}
+
+.control-description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 }
 
 .threshold-control {

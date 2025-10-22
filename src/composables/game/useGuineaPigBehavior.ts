@@ -525,6 +525,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Satisfy thirst need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'thirst', 35) // Restore 35%
+
+      // Log to activity feed
+      const msg = MessageGenerator.generateAutonomousDrinkMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Consume water from habitat
@@ -601,6 +605,11 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (guineaPig.value) {
       const energyRestored = Math.floor(25 * sleepQuality)
       guineaPigStore.adjustNeed(guineaPigId, 'energy', energyRestored)
+
+      // Log to activity feed with location
+      const location = goal.targetItemId ? goal.targetItemId.replace(/_/g, ' ') : 'a cozy spot'
+      const msg = MessageGenerator.generateAutonomousSleepMessage(guineaPig.value.name, location)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -647,6 +656,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Satisfy hygiene need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'hygiene', 20) // Restore 20%
+
+      // Log to activity feed
+      const msg = MessageGenerator.generateAutonomousGroomMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -699,6 +712,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (guineaPig.value) {
       hungerRestored = Math.floor(hungerRestored * hayQuality)
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', hungerRestored)
+
+      // Log to activity feed
+      const msg = MessageGenerator.generateAutonomousEatHayMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -734,6 +751,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Satisfy chew need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'chew', 30) // Restore 30%
+
+      // Log to activity feed
+      const msg = MessageGenerator.generateAutonomousChewMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -792,6 +813,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
       // Also restore comfort when in shelter
       guineaPigStore.adjustNeed(guineaPigId, 'comfort', 15)
+
+      // Log to activity feed
+      const msg = MessageGenerator.generateAutonomousShelterMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -876,6 +901,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Watching slightly satisfies social need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'social', 5)
+
+      // Log to activity feed
+      const msg = MessageGenerator.generateAutonomousWatchMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown
@@ -907,6 +936,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'shelter', 20)
       guineaPigStore.adjustNeed(guineaPigId, 'social', -10) // Being scared reduces social
+
+      // Log to activity feed
+      const msg = MessageGenerator.generateAutonomousHideMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown
@@ -930,7 +963,15 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (timeSinceLastPoop > poopInterval) {
       // Drop poop at current position
       const currentPos = movement.currentPosition.value
-      habitatConditions.addPoop(currentPos.col, currentPos.row)
+      console.log(`[Poop] ${gp.name} pooping at grid position:`, currentPos)
+
+      // Convert grid coordinates to subgrid coordinates (4x scale)
+      // The subgrid is 4x finer than the main grid for precise poop placement
+      const subgridX = currentPos.col * 4 + Math.floor(Math.random() * 4) // Random offset within cell
+      const subgridY = currentPos.row * 4 + Math.floor(Math.random() * 4)
+
+      console.log(`[Poop] ${gp.name} converted to subgrid position: x=${subgridX}, y=${subgridY}`)
+      habitatConditions.addPoop(subgridX, subgridY)
 
       // Update last poop time
       gp.lastPoopTime = Date.now()
@@ -945,21 +986,40 @@ export function useGuineaPigBehavior(guineaPigId: string) {
    * Main AI decision tick - should be called every 3-5 seconds
    */
   async function tick(thresholds = DEFAULT_THRESHOLDS): Promise<void> {
+    const gp = guineaPig.value
+    if (!gp) {
+      console.warn(`[AI Tick] Guinea pig ${guineaPigId} not found`)
+      return
+    }
+
+    console.log(`[AI Tick] ${gp.name} - Processing tick`)
+
     // Check for autonomous pooping (environmental behavior)
     checkAutonomousPooping()
 
     // Skip if already executing a behavior
-    if (behaviorState.value.currentGoal) return
+    if (behaviorState.value.currentGoal) {
+      console.log(`[AI Tick] ${gp.name} - Already executing ${behaviorState.value.currentGoal.type}`)
+      return
+    }
 
     // Skip if still on cooldown from last decision
     const timeSinceLastDecision = Date.now() - behaviorState.value.lastDecisionTime
-    if (timeSinceLastDecision < 3000) return // Minimum 3 seconds between decisions
+    if (timeSinceLastDecision < 3000) {
+      console.log(`[AI Tick] ${gp.name} - On cooldown (${(3000 - timeSinceLastDecision) / 1000}s remaining)`)
+      return // Minimum 3 seconds between decisions
+    }
 
     behaviorState.value.lastDecisionTime = Date.now()
 
     // Select next behavior
     const goal = selectBehaviorGoal(thresholds)
-    if (!goal) return
+    if (!goal) {
+      console.log(`[AI Tick] ${gp.name} - No behavior selected (needs satisfied)`)
+      return
+    }
+
+    console.log(`[AI Tick] ${gp.name} - Selected behavior: ${goal.type} (priority: ${goal.priority})`)
 
     // Execute behavior (non-blocking)
     executeBehavior(goal).catch(err => {

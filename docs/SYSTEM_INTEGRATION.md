@@ -231,30 +231,48 @@ Pet Store Selection → Favorites Storage → Pet Store Manager → Player Progr
 - **Resource Economy:** Supplies → Inventory → Consumption creating ongoing economic gameplay loop
 - **Development Approach:** Habitat Conditions foundation implemented first with mock data, awaiting Supplies Store and Inventory integration for real data flow
 
-### Phase 4 Dependencies (Guinea Pig Integration - Systems 17-21) 📋 **PLANNED**
+### Phase 4 Dependencies (Guinea Pig Integration - Systems 17-21) 🚧 **IN PROGRESS**
 - **Requires:** Complete game world and habitat system from Phase 3 (grid system, habitat items, inventory)
 - **Depends on:** Guinea Pig Store, Needs Controller, Habitat Conditions, Inventory System
 - **Provides:** Complete gameplay loop with visual guinea pigs, autonomous behaviors, player interactions, and social bonding for Phase 5 enhancements
 - **Duration:** 5-7 weeks (38-53 hours total across 5 sequential stages)
+- **Status:** System 19 complete + bug fixes, code audit needed
 
-**Stage 1 - Visual Presence & Positioning (System 17, 2-3 hours):**
-- GuineaPigSprite component with state-based visual representation
-- Grid positioning system integration
-- Z-index layering with habitat items
-- Selection and hover states
+**Stage 1 - Visual Presence & Positioning (System 17, 2-3 hours):** ⏳ **Partially Complete**
+- ✅ GuineaPigSprite component with breed-specific emoji
+- ✅ Grid positioning system integration
+- ✅ Z-index layering with habitat items
+- ✅ Click interaction and selection state
+- 📋 Enhanced visual states pending
 
-**Stage 2 - Pathfinding & Movement (System 18, 6-8 hours):**
-- A* pathfinding algorithm implementation
-- Movement controller with smooth transitions
-- Wander behavior and goal-based movement
-- Collision detection and obstacle avoidance
+**Stage 2 - Pathfinding & Movement (System 18, 6-8 hours):** ✅ **Core Complete**
+- ✅ A* pathfinding algorithm implementation (usePathfinding.ts)
+- ✅ Movement controller with position updates (useMovement.ts)
+- ✅ Wander behavior and goal-based movement
+- ✅ Obstacle detection and path validation
+- 📋 Smooth CSS animations pending
 
-**Stage 3 - Autonomous AI Behaviors (System 19, 12-16 hours):**
-- AI decision priority matrix with 10 subsystems (urgent needs, sleep, moderate needs, shelter, friendship, environmental, exploration)
-- Need-based autonomous actions (eating, drinking, sleeping)
-- Shelter-seeking and friendship behaviors
-- Environmental interactions (poop dropping)
-- Personality-driven behavior variations
+**Stage 3 - Autonomous AI Behaviors (System 19, 12-16 hours):** ✅ **COMPLETE** (October 21, 2025)
+- ✅ AI decision priority matrix with 10 subsystems (urgent needs, sleep, moderate needs, shelter, friendship, environmental, exploration)
+- ✅ Need-based autonomous actions (eat, drink, sleep, groom, chew)
+- ✅ Shelter-seeking behavior (security < 60%)
+- ✅ Friendship behaviors (popcorn, zoomies, hiding based on friendship level)
+- ✅ Environmental interactions (autonomous poop dropping every 30s)
+- ✅ Item interactions (water bottles, food bowls, hay racks, chew items)
+- ✅ Personality-driven behavior variations
+- ✅ Activity feed message integration (12 behavior message generators)
+- ✅ Game loop integration with cached behavior composables
+
+**Critical Bug Fixes (October 22, 2025):** ✅ **COMPLETE**
+- ✅ Position initialization (auto-initialize on first access)
+- ✅ Movement system (reduced game loop interval from 5s to 1s, cached behavior composables)
+- ✅ Poop coordinate conversion (grid to subgrid: col * 4 + random offset)
+- ✅ Habitat items persistence (removed chewItems from Pinia serializer to fix localStorage)
+
+**Technical Lessons Learned:**
+- **Pinia Persistence:** Never serialize composable properties directly - use `...state` spread to exclude functions
+- **Composable Caching:** Cache stateful composables to prevent state reset on recreation
+- **Coordinate Systems:** Document and convert between grid (14×10) and subgrid (56×40) explicitly
 
 **Stage 4 - Direct Interaction System (System 20, 10-14 hours):**
 - 40+ player interactions across 7 categories (feeding, handling, grooming, play, enrichment, training, care)

@@ -15,7 +15,7 @@
 import { ref } from 'vue'
 import { useSuppliesStore } from '../stores/suppliesStore'
 import { useInventoryStore } from '../stores/inventoryStore'
-import { CONSUMPTION } from '../constants/supplies'
+import { CONSUMPTION, CHEW_DEGRADATION } from '../constants/supplies'
 import { hasServingSystem } from '../utils/servingSystem'
 
 // Types
@@ -39,9 +39,17 @@ interface HayRackData {
   lastDecayUpdate: number
 }
 
+interface ChewData {
+  durability: number      // 0-100%, physical condition
+  usageCount: number      // Times chewed
+  lastUsedAt: number      // Timestamp
+  degradationRate: number // Per-use degradation %
+}
+
 // Shared state - singleton pattern to ensure same instance across all uses
 const bowlContents = ref<Map<string, FoodItem[]>>(new Map())
 const hayRackContents = ref<Map<string, HayRackData>>(new Map())
+const chewItems = ref<Map<string, ChewData>>(new Map())
 
 export function useHabitatContainers() {
 
@@ -372,6 +380,131 @@ export function useHabitatContainers() {
   }
 
   // ========================================================================
+  // Chew Item Management
+  // ========================================================================
+
+  /**
+   * Initialize chew item tracking when placed in habitat
+   */
+  function initializeChewItem(chewItemId: string): void {
+    const suppliesStore = useSuppliesStore()
+    const chewItem = suppliesStore.getItemById(chewItemId)
+
+    if (!chewItem) {
+      console.warn(`Chew item ${chewItemId} not found`)
+      return
+    }
+
+    // Determine degradation rate based on chew type
+    let degradationRate: number = CHEW_DEGRADATION.APPLE_WOOD // Default
+    const itemName = chewItem.name.toLowerCase()
+
+    if (itemName.includes('willow')) {
+      degradationRate = CHEW_DEGRADATION.WILLOW_STICK
+    } else if (itemName.includes('apple')) {
+      degradationRate = CHEW_DEGRADATION.APPLE_WOOD
+    } else if (itemName.includes('mineral') || itemName.includes('stone')) {
+      degradationRate = CHEW_DEGRADATION.MINERAL_CHEW
+    }
+
+    // Initialize fresh chew data
+    const newMap = new Map(chewItems.value)
+    newMap.set(chewItemId, {
+      durability: 100,
+      usageCount: 0,
+      lastUsedAt: Date.now(),
+      degradationRate
+    })
+    chewItems.value = newMap
+  }
+
+  /**
+   * Use/chew an item, reducing its durability
+   */
+  function chewItem(chewItemId: string): boolean {
+    const chewData = chewItems.value.get(chewItemId)
+
+    if (!chewData) {
+      console.warn(`Chew item ${chewItemId} not initialized`)
+      return false
+    }
+
+    // Don't allow using unsafe chews
+    if (chewData.durability < CHEW_DEGRADATION.UNSAFE_THRESHOLD) {
+      console.warn(`Chew item ${chewItemId} is unsafe to use (durability: ${chewData.durability}%)`)
+      return false
+    }
+
+    // Reduce durability and update usage
+    const newDurability = Math.max(0, chewData.durability - chewData.degradationRate)
+    const newMap = new Map(chewItems.value)
+    newMap.set(chewItemId, {
+      ...chewData,
+      durability: newDurability,
+      usageCount: chewData.usageCount + 1,
+      lastUsedAt: Date.now()
+    })
+    chewItems.value = newMap
+
+    return true
+  }
+
+  /**
+   * Get chew item data
+   */
+  function getChewData(chewItemId: string): ChewData | undefined {
+    return chewItems.value.get(chewItemId)
+  }
+
+  /**
+   * Get durability of a chew item
+   */
+  function getChewDurability(chewItemId: string): number {
+    const data = chewItems.value.get(chewItemId)
+    return data?.durability ?? 100
+  }
+
+  /**
+   * Set chew durability (for debug controls)
+   */
+  function setChewDurability(chewItemId: string, durability: number): void {
+    const chewData = chewItems.value.get(chewItemId)
+    if (!chewData) {
+      console.warn(`Chew item ${chewItemId} not found`)
+      return
+    }
+
+    const newMap = new Map(chewItems.value)
+    newMap.set(chewItemId, {
+      ...chewData,
+      durability: Math.max(0, Math.min(100, durability))
+    })
+    chewItems.value = newMap
+  }
+
+  /**
+   * Remove chew item tracking when removed from habitat
+   */
+  function removeChewItem(chewItemId: string): void {
+    const newMap = new Map(chewItems.value)
+    newMap.delete(chewItemId)
+    chewItems.value = newMap
+  }
+
+  /**
+   * Get all chew items with unsafe durability
+   */
+  function getUnsafeChews(): string[] {
+    const unsafeChews: string[] = []
+    chewItems.value.forEach((data, itemId) => {
+      if (data.durability < CHEW_DEGRADATION.UNSAFE_THRESHOLD) {
+        unsafeChews.push(itemId)
+      }
+    })
+    return unsafeChews
+  }
+
+  // ========================================================================
   // Return API
   // ========================================================================
 
@@ -379,6 +512,7 @@ export function useHabitatContainers() {
     // State
     bowlContents,
     hayRackContents,
+    chewItems,
 
     // Bowl methods
     addFoodToBowl,
@@ -397,9 +531,18 @@ export function useHabitatContainers() {
     setHayRackFreshness,
     clearHayRack,
     clearAllHayRacks,
-    applyHayRackDecay
+    applyHayRackDecay,
+
+    // Chew item methods
+    initializeChewItem,
+    chewItem,
+    getChewData,
+    getChewDurability,
+    setChewDurability,
+    removeChewItem,
+    getUnsafeChews
   }
 }
 
 // Export types for external use
-export type { FoodItem, HayServing, HayRackData }
+export type { FoodItem, HayServing, HayRackData, ChewData }
