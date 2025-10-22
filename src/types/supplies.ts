@@ -121,6 +121,9 @@ export interface SuppliesItem {
     // Hideaways specific
     size?: 'small' | 'medium' | 'large'
     washable?: boolean
+
+    // System 18: Pathfinding & Movement
+    blocksMovement?: boolean // Whether this item blocks guinea pig movement (default: true)
   }
 
   // Premium treat effects

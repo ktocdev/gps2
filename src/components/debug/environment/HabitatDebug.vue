@@ -211,6 +211,16 @@
         </div>
       </div>
 
+      <!-- System 19: Autonomy Debug Panel -->
+      <div class="panel panel--compact panel--accent">
+        <div class="panel__header">
+          <h3>🤖 Autonomy Behaviors (System 19)</h3>
+        </div>
+        <div class="panel__content">
+          <AutonomyDebug />
+        </div>
+      </div>
+
       <!-- Decay Speed Panel -->
       <div class="panel panel--compact">
         <div class="panel__header">
@@ -287,6 +297,7 @@ import SliderField from '../../basic/SliderField.vue'
 import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/HabitatCareSidebar.vue'
+import AutonomyDebug from './AutonomyDebug.vue'
 
 const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()

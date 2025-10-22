@@ -1,7 +1,11 @@
 <template>
   <div
     class="guinea-pig-sprite"
-    :class="{ 'guinea-pig-sprite--selected': isSelected }"
+    :class="{
+      'guinea-pig-sprite--selected': isSelected,
+      'guinea-pig-sprite--walking': isWalking,
+      'guinea-pig-sprite--facing-left': facingLeft
+    }"
     :style="spriteStyle"
     @click="handleClick"
   >
@@ -20,6 +24,8 @@ interface Props {
   gridPosition: { row: number; col: number }
   isInteractingWithDepthItem: boolean
   isSelected: boolean
+  isWalking?: boolean // System 18: Movement state
+  facingDirection?: 'left' | 'right' // System 18: Direction facing
 }
 
 interface Emits {
@@ -36,6 +42,10 @@ const guineaPigEmoji = computed(() => {
   // Future: This could be based on breed, appearance, or stored emoji property
   return props.guineaPig.gender === 'male' ? '🐹' : '🐭'
 })
+
+// System 18: Movement state
+const isWalking = computed(() => props.isWalking ?? false)
+const facingLeft = computed(() => props.facingDirection === 'left')
 
 // Calculate CSS transform for grid position and dynamic z-index
 const spriteStyle = computed(() => ({
@@ -86,5 +96,39 @@ function handleClick() {
   filter: brightness(1.15) drop-shadow(0 4px 8px rgba(0, 0, 0, 0.25));
   transform: scale(1.05);
   transition: all var(--transition-fast);
+}
+
+/* System 18: Movement animations */
+.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+  /* Subtle bounce animation while walking */
+  animation: guinea-pig-walk 0.6s ease-in-out infinite;
+}
+
+@keyframes guinea-pig-walk {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.02);
+  }
+}
+
+/* Face left by flipping horizontally */
+.guinea-pig-sprite--facing-left .guinea-pig-sprite__emoji {
+  transform: scaleX(-1);
+}
+
+.guinea-pig-sprite--facing-left.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+  /* Preserve animation while flipped */
+  animation: guinea-pig-walk-flipped 0.6s ease-in-out infinite;
+}
+
+@keyframes guinea-pig-walk-flipped {
+  0%, 100% {
+    transform: translateY(0) scaleX(-1);
+  }
+  50% {
+    transform: translateY(-3px) scaleX(-1.02);
+  }
 }
 </style>
