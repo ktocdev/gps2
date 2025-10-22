@@ -42,7 +42,7 @@
             :bedding-options="beddingOptions"
             :poop-count="habitatVisualRef?.poopCount || 0"
             :has-water-available="hasWaterAvailable"
-            @update:selected-bedding-type="selectedBeddingType = $event"
+            @update:selected-bedding-type="selectedBeddingType = String($event)"
             @clean-cage="habitat.cleanCage"
             @refill-water="habitat.refillWater"
             @refresh-bedding="handleRefreshBedding"
@@ -221,6 +221,16 @@
         </div>
       </div>
 
+      <!-- System 19: Poop Debug Panel -->
+      <div class="panel panel--compact panel--accent">
+        <div class="panel__header">
+          <h3>💩 Poop System (System 19)</h3>
+        </div>
+        <div class="panel__content">
+          <PoopDebug />
+        </div>
+      </div>
+
       <!-- Decay Speed Panel -->
       <div class="panel panel--compact">
         <div class="panel__header">
@@ -298,6 +308,7 @@ import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/HabitatCareSidebar.vue'
 import AutonomyDebug from './AutonomyDebug.vue'
+import PoopDebug from './PoopDebug.vue'
 
 const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()

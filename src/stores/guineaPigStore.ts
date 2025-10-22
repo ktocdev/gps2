@@ -67,6 +67,11 @@ export interface InteractionResult {
   friendshipPenalty?: number
 }
 
+export type NeedType =
+  | 'hunger' | 'thirst' | 'energy' | 'shelter'
+  | 'play' | 'social' | 'stimulation' | 'comfort'
+  | 'hygiene' | 'nails' | 'health' | 'chew'
+
 export interface GuineaPigNeeds {
   // Critical Needs (high decay, high weight)
   hunger: number        // 0-100: Food satisfaction (100 = fully fed, 0 = very hungry)
@@ -140,6 +145,9 @@ export interface GuineaPig {
   // Phase 0: Interaction cooldowns
   lastPlayTime: number | null        // Timestamp of last play interaction
   lastSocialTime: number | null      // Timestamp of last social interaction
+
+  // System 19: Autonomous AI Behaviors
+  lastPoopTime: number               // Timestamp of last poop drop (for autonomous pooping)
 
   // Phase 2: Adoption timers (for store guinea pigs)
   adoptionTimer: number | null       // Timestamp when guinea pig entered store

@@ -406,6 +406,9 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       lastPlayTime: null,
       lastSocialTime: null,
 
+      // System 19: Autonomous AI Behaviors
+      lastPoopTime: Date.now(),
+
       // Phase 2: Adoption timers
       adoptionTimer: Date.now(),
       adoptionDuration: Math.floor(Math.random() * (5 * 24 * 60 * 60 * 1000 - 2 * 24 * 60 * 60 * 1000) + 2 * 24 * 60 * 60 * 1000), // 2-5 days in ms
