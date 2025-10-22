@@ -68,22 +68,22 @@ export interface InteractionResult {
 
 export interface GuineaPigNeeds {
   // Critical Needs (high decay, high weight)
-  hunger: number        // 0-100: How hungry they are (100 = starving)
-  thirst: number        // 0-100: How thirsty they are (100 = dehydrated)
-  energy: number        // 0-100: How much rest/energy they need (100 = exhausted)
-  shelter: number       // 0-100: How much they need security/shelter (100 = anxious)
+  hunger: number        // 0-100: Food satisfaction (100 = fully fed, 0 = very hungry)
+  thirst: number        // 0-100: Water satisfaction (100 = hydrated, 0 = very thirsty)
+  energy: number        // 0-100: Rest satisfaction (100 = well-rested, 0 = tired)
+  shelter: number       // 0-100: Security satisfaction (100 = secure, 0 = needs shelter)
 
   // Environmental Needs (medium decay, medium weight)
-  play: number          // 0-100: How much they need play/activity (100 = bored)
-  social: number        // 0-100: How much they need social interaction (100 = lonely)
-  stimulation: number   // 0-100: How much they need mental enrichment (100 = unstimulated)
-  comfort: number       // 0-100: How much they need comfortable bedding (100 = uncomfortable)
+  play: number          // 0-100: Play satisfaction (100 = entertained, 0 = needs play)
+  social: number        // 0-100: Social satisfaction (100 = fulfilled, 0 = needs attention)
+  stimulation: number   // 0-100: Mental enrichment (100 = stimulated, 0 = needs enrichment)
+  comfort: number       // 0-100: Comfort satisfaction (100 = cozy, 0 = needs comfort)
 
   // Maintenance Needs (low decay, medium weight)
-  hygiene: number       // 0-100: How much they need grooming/cleaning (100 = very dirty)
-  nails: number         // 0-100: How much they need nail trimming (100 = overgrown)
-  health: number        // 0-100: How much health care they need (100 = very sick)
-  chew: number          // 0-100: How much they need chew items (100 = dental problems)
+  hygiene: number       // 0-100: Cleanliness (100 = clean, 0 = needs grooming)
+  nails: number         // 0-100: Nail condition (100 = trimmed, 0 = needs trimming)
+  health: number        // 0-100: Health condition (100 = healthy, 0 = needs care)
+  chew: number          // 0-100: Dental care (100 = good dental health, 0 = needs chew items)
 }
 
 export interface GuineaPigStats {
@@ -193,6 +193,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     maxGuineaPigs: 10, // Allow creating multiple guinea pigs in collection
     enableBreeding: false // Disabled for now
   })
+
+  // System 17: Guinea Pig Selection for Interaction
+  const selectedGuineaPigId = ref<string | null>(null)
 
   // Computed properties
   const allGuineaPigs = computed(() => {
@@ -1464,6 +1467,19 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return penalty
   }
 
+  // System 17: Guinea Pig Selection Methods
+  const selectGuineaPig = (guineaPigId: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    selectedGuineaPigId.value = guineaPigId
+    return true
+  }
+
+  const clearSelection = (): void => {
+    selectedGuineaPigId.value = null
+  }
+
   const isInteractionOnCooldown = (guineaPigId: string): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
@@ -1572,6 +1588,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     activeGuineaPigs,       // New: Array of active guinea pigs
     activeGuineaPigPair,    // New: Pair when exactly 2 are active
     canAddActiveGuineaPig,  // New: Can add more to active pair
+
+    // System 17: Selection
+    selectedGuineaPigId,
+    selectGuineaPig,
+    clearSelection,
 
     // CRUD Operations
     getGuineaPig,

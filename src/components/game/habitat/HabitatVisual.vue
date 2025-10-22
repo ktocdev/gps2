@@ -108,7 +108,15 @@
       </div>
 
       <div class="habitat-visual__guinea-pigs">
-        <!-- Guinea pigs will be rendered here in Phase 3 -->
+        <GuineaPigSprite
+          v-for="guineaPig in activeGuineaPigs"
+          :key="guineaPig.id"
+          :guinea-pig="guineaPig"
+          :grid-position="getGuineaPigPosition(guineaPig.id)"
+          :is-interacting-with-depth-item="isInteractingWithDepthItem(guineaPig.id)"
+          :is-selected="selectedGuineaPigId === guineaPig.id"
+          @select="handleGuineaPigSelect"
+        />
       </div>
     </div>
   </div>
@@ -118,10 +126,12 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import type { SuppliesItem } from '../../../types/supplies'
 import FoodBowl from './FoodBowl.vue'
 import HayRack from './HayRack.vue'
 import WaterBottle from './WaterBottle.vue'
+import GuineaPigSprite from './GuineaPigSprite.vue'
 
 interface Props {
   habitatSize?: 'small' | 'medium' | 'large'
@@ -156,6 +166,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const habitatConditions = useHabitatConditions()
 const suppliesStore = useSuppliesStore()
+const guineaPigStore = useGuineaPigStore()
 
 const HABITAT_SIZES = {
   small: { width: 10, height: 8, cellSize: 60 },
@@ -203,6 +214,48 @@ const subgridItems = computed(() => {
 })
 
 const poopCount = computed(() => habitatConditions.poops.length)
+
+// System 17: Guinea Pig Rendering
+const activeGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs)
+const guineaPigPositions = computed(() => habitatConditions.guineaPigPositions)
+const selectedGuineaPigId = computed(() => guineaPigStore.selectedGuineaPigId)
+
+function handleGuineaPigSelect(guineaPigId: string) {
+  // Select guinea pig for interaction
+  guineaPigStore.selectGuineaPig(guineaPigId)
+
+  // System 20 will display interaction menu when guinea pig is selected
+  // TODO: Connect to InteractionMenu component when System 20 is implemented
+}
+
+function getGuineaPigPosition(guineaPigId: string) {
+  const position = guineaPigPositions.value.get(guineaPigId)
+  if (!position) return { row: 0, col: 0 }
+  // Convert habitatConditions position format to grid position format
+  return { row: position.y, col: position.x }
+}
+
+function isInteractingWithDepthItem(guineaPigId: string): boolean {
+  const position = getGuineaPigPosition(guineaPigId)
+
+  // Check if there's a depth-triggering item at guinea pig's position
+  // Find if any placed item occupies this exact grid cell
+  const itemAtPosition = placedItems.value.find(item => {
+    const isWithinX = position.col >= item.position.x && position.col < item.position.x + item.size.width
+    const isWithinY = position.row >= item.position.y && position.row < item.position.y + item.size.height
+    return isWithinX && isWithinY
+  })
+
+  if (!itemAtPosition) return false
+
+  // Check if item type requires depth rendering (behind item)
+  // For now, check item name/ID for shelter, tunnel, or hideaway keywords
+  const depthKeywords = ['shelter', 'tunnel', 'hideaway', 'igloo', 'house', 'hut']
+  const itemName = itemAtPosition.name.toLowerCase()
+  const itemId = itemAtPosition.itemId.toLowerCase()
+
+  return depthKeywords.some(keyword => itemName.includes(keyword) || itemId.includes(keyword))
+}
 
 // Drag-and-drop state
 const isDragOver = ref(false)
