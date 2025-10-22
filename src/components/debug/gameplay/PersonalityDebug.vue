@@ -92,7 +92,7 @@
                   </div>
 
                   <!-- Boldness -->
-                  <div class="trait-row">
+                  <div class="trait-row mb-3">
                     <div class="trait-row__info">
                       <label :for="`${guineaPig.id}-boldness`" class="trait-row__label">
                         Boldness
@@ -112,6 +112,31 @@
                       suffix=""
                       :show-min-max="true"
                       @update:modelValue="(value: number) => adjustTrait(guineaPig.id, 'boldness', value)"
+                      class="trait-row__slider"
+                    />
+                  </div>
+
+                  <!-- Cleanliness -->
+                  <div class="trait-row">
+                    <div class="trait-row__info">
+                      <label :for="`${guineaPig.id}-cleanliness`" class="trait-row__label">
+                        Cleanliness
+                      </label>
+                      <span class="trait-row__value" :class="getTraitLevelClass(guineaPig.personality.cleanliness)">
+                        {{ guineaPig.personality.cleanliness }} / 10
+                        <span class="trait-row__descriptor">{{ getCleanlinessDescriptor(guineaPig.personality.cleanliness) }}</span>
+                      </span>
+                    </div>
+                    <SliderField
+                      :id="`${guineaPig.id}-cleanliness`"
+                      :modelValue="guineaPig.personality.cleanliness"
+                      :min="1"
+                      :max="10"
+                      :step="1"
+                      prefix=""
+                      suffix=""
+                      :show-min-max="true"
+                      @update:modelValue="(value: number) => adjustTrait(guineaPig.id, 'cleanliness', value)"
                       class="trait-row__slider"
                     />
                   </div>
@@ -153,6 +178,20 @@
                         <span class="decay-preview__effect">{{ getDecayEffectText(getBoldnessDecayModifier(guineaPig.personality.boldness)) }}</span>
                       </span>
                     </div>
+                    <div class="decay-preview__item">
+                      <span class="decay-preview__label">Hygiene Need Decay:</span>
+                      <span class="decay-preview__value" :class="getDecayModifierClass(getHygieneDecayModifier(guineaPig.personality.cleanliness))">
+                        {{ getHygieneDecayModifier(guineaPig.personality.cleanliness) }}x
+                        <span class="decay-preview__effect">{{ getDecayEffectText(getHygieneDecayModifier(guineaPig.personality.cleanliness)) }}</span>
+                      </span>
+                    </div>
+                    <div class="decay-preview__item">
+                      <span class="decay-preview__label">Health Need Decay:</span>
+                      <span class="decay-preview__value" :class="getDecayModifierClass(getHealthDecayModifier(guineaPig.personality.cleanliness))">
+                        {{ getHealthDecayModifier(guineaPig.personality.cleanliness) }}x
+                        <span class="decay-preview__effect">{{ getDecayEffectText(getHealthDecayModifier(guineaPig.personality.cleanliness)) }}</span>
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -181,7 +220,7 @@ const guineaPigStore = useGuineaPigStore()
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 
 // Adjust personality trait
-function adjustTrait(guineaPigId: string, trait: 'friendliness' | 'playfulness' | 'curiosity' | 'boldness', value: number) {
+function adjustTrait(guineaPigId: string, trait: 'friendliness' | 'playfulness' | 'curiosity' | 'boldness' | 'cleanliness', value: number) {
   const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
   if (guineaPig) {
     guineaPig.personality[trait] = value
@@ -193,6 +232,13 @@ function getTraitDescriptor(value: number): string {
   if (value <= 3) return 'Low'
   if (value <= 6) return 'Moderate'
   return 'High'
+}
+
+// Get cleanliness-specific descriptor
+function getCleanlinessDescriptor(value: number): string {
+  if (value <= 3) return 'Piggy'
+  if (value <= 6) return 'Moderate'
+  return 'Picky'
 }
 
 // Get trait level class
@@ -220,6 +266,16 @@ function getStimulationDecayModifier(curiosity: number): string {
 
 function getBoldnessDecayModifier(boldness: number): string {
   const modifier = 1 - (boldness - 5) * 0.05
+  return modifier.toFixed(2)
+}
+
+function getHygieneDecayModifier(cleanliness: number): string {
+  const modifier = 1 - (cleanliness - 5) * 0.06
+  return modifier.toFixed(2)
+}
+
+function getHealthDecayModifier(cleanliness: number): string {
+  const modifier = 1 - (cleanliness - 5) * 0.05
   return modifier.toFixed(2)
 }
 
@@ -339,7 +395,7 @@ function getDecayEffectText(modifier: string): string {
 }
 
 .decay-modifier--faster {
-  color: var(--color-danger);
+  color: var(--color-error);
 }
 
 .decay-modifier--normal {

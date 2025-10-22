@@ -19,6 +19,7 @@ export interface GuineaPigPersonality {
   playfulness: number     // 1-10: How much they enjoy activities
   curiosity: number       // 1-10: How much they explore
   boldness: number        // 1-10: How confident/brave they are
+  cleanliness: number     // 1-10: How sensitive to mess/habitat conditions (1=tolerant, 10=picky)
 }
 
 export interface GuineaPigPreferences {
@@ -434,6 +435,20 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
         // Modifier: 1 - (boldness - 5) * 0.05
         // Boldness 10: 0.75x (-25%), Boldness 1: 1.20x (+20%)
         modifier = 1 - (personality.boldness - 5) * 0.05
+        break
+
+      case 'hygiene':
+        // Cleanliness: higher (picky) = slower decay (stays cleaner naturally)
+        // Modifier: 1 - (cleanliness - 5) * 0.06
+        // Cleanliness 10 (picky): 0.70x (-30%), Cleanliness 1 (piggy): 1.24x (+24%)
+        modifier = 1 - (personality.cleanliness - 5) * 0.06
+        break
+
+      case 'health':
+        // Cleanliness: higher (picky) = slower decay (more careful, healthier habits)
+        // Modifier: 1 - (cleanliness - 5) * 0.05
+        // Cleanliness 10 (picky): 0.75x (-25%), Cleanliness 1 (piggy): 1.20x (+20%)
+        modifier = 1 - (personality.cleanliness - 5) * 0.05
         break
 
       default:
@@ -1480,6 +1495,72 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     selectedGuineaPigId.value = null
   }
 
+  /**
+   * Get personality-based habitat sensitivity thresholds
+   * Sprint: Personality-Based Habitat Sensitivity
+   *
+   * Cleanliness trait affects how sensitive guinea pig is to habitat conditions:
+   * - Picky (7-10): Won't eat hay <60% fresh, stressed by mess (higher thresholds)
+   * - Moderate (4-6): Baseline 40% thresholds
+   * - Piggy (1-3): Tolerates mess, eats hay down to 20% fresh (lower thresholds)
+   */
+  const getHabitatSensitivityThresholds = (guineaPigId: string) => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) {
+      // Default moderate thresholds
+      return {
+        hayFreshnessMin: 40,
+        cleanlinessMin: 40,
+        beddingMin: 40
+      }
+    }
+
+    const cleanliness = guineaPig.personality.cleanliness
+
+    // Picky guinea pigs (7-10) - High sensitivity
+    if (cleanliness >= 7) {
+      return {
+        hayFreshnessMin: 60,  // Won't eat hay below 60% fresh
+        cleanlinessMin: 60,   // Stressed by mess below 60%
+        beddingMin: 60        // Needs fresh bedding above 60%
+      }
+    }
+
+    // Piggy guinea pigs (1-3) - Low sensitivity, very tolerant
+    if (cleanliness <= 3) {
+      return {
+        hayFreshnessMin: 20,  // Will eat hay down to 20% fresh
+        cleanlinessMin: 20,   // Tolerates mess down to 20%
+        beddingMin: 20        // Fine with bedding down to 20%
+      }
+    }
+
+    // Moderate guinea pigs (4-6) - Baseline thresholds
+    return {
+      hayFreshnessMin: 40,
+      cleanlinessMin: 40,
+      beddingMin: 40
+    }
+  }
+
+  /**
+   * Check if guinea pig will accept current habitat conditions
+   * Returns true if habitat meets their personality-based thresholds
+   */
+  const willAcceptHabitatConditions = (guineaPigId: string, habitatConditions: {
+    hayFreshness: number
+    cleanliness: number
+    beddingFreshness: number
+  }): boolean => {
+    const thresholds = getHabitatSensitivityThresholds(guineaPigId)
+
+    return (
+      habitatConditions.hayFreshness >= thresholds.hayFreshnessMin &&
+      habitatConditions.cleanliness >= thresholds.cleanlinessMin &&
+      habitatConditions.beddingFreshness >= thresholds.beddingMin
+    )
+  }
+
   const isInteractionOnCooldown = (guineaPigId: string): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
@@ -1593,6 +1674,10 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     selectedGuineaPigId,
     selectGuineaPig,
     clearSelection,
+
+    // Personality-Based Habitat Sensitivity
+    getHabitatSensitivityThresholds,
+    willAcceptHabitatConditions,
 
     // CRUD Operations
     getGuineaPig,
