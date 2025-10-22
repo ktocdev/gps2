@@ -179,39 +179,114 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 
 ---
 
-## Phase 4: Interactions & Behaviors (Systems 16-19)
-**Duration:** 2-3 weeks
-**Goal:** Implement direct interactions and guinea pig AI for complete gameplay loop
+## Phase 4: Interactions & Behaviors (Systems 17-21) 📋 **PLANNED**
+**Duration:** 5-7 weeks (38-53 hours)
+**Status:** 📋 **Ready for Implementation** - Comprehensive planning complete
+**Goal:** Implement guinea pig visual presence, pathfinding, autonomous AI, player interactions, and multi-guinea pig social dynamics for complete gameplay loop
 
-### Systems
-16. **Direct Interaction System** - User-guinea pig interactions (connect to interaction menu placeholders)
-17. **Guinea Pig Autonomy System** - AI behavior and pathfinding (connect to behavior indicator placeholders)
-18. **Guinea Pig Social Interactions** - Guinea pig to guinea pig interactions for enhanced social need satisfaction (cute, positive interactions initially)
-19. **Guinea Pig Bonding System** - Hidden compatibility and bonding mechanics with personality hints during selection for authentic relationship development
+### Implementation Documentation
+**Master Plan:** [phase-4-guinea-pig-integration-plan-full.md](systems/phase4/phase-4-guinea-pig-integration-plan-full.md)
+
+**Design Specifications (Reference):**
+- [Direct Interaction Design](systems/phase4/design-docs/direct-interaction-system.md) - 40+ interactions, nail clipping, preference discovery
+- [Autonomy Design](systems/phase4/design-docs/guinea-pig-autonomy-system.md) - AI decision matrix, sleep/shelter behaviors, friendship behaviors
+- [Bonding Design](systems/phase4/design-docs/guinea-pig-bonding-system.md) - Compatibility calculation, bonding progression, social behaviors
+
+### Sequential Implementation Stages
+
+**Stage 1: System 17 - Visual Presence & Positioning** (2-3 hours)
+- [Implementation Plan](systems/phase4/system-17-visual-presence-positioning.md)
+- GuineaPigSprite component with breed-specific emoji
+- Grid-based positioning and z-index layering
+- Click interaction and selection state
+- Foundation for all subsequent stages
+
+**Stage 2: System 18 - Pathfinding & Movement** (6-8 hours)
+- [Implementation Plan](systems/phase4/system-18-pathfinding-movement.md)
+- A* pathfinding algorithm with obstacle detection
+- Movement controller with smooth CSS animations
+- Random wandering behavior (personality-influenced)
+- Multi-guinea pig coordination and collision avoidance
+
+**Stage 3: System 19 - Autonomous AI Behaviors** (12-16 hours)
+- [Implementation Plan](systems/phase4/system-19-autonomous-ai-behaviors.md)
+- AI decision priority matrix (10 subsystems)
+- Need-based autonomous behaviors (hunger, thirst, energy, etc.)
+- Enhanced sleep behavior (bed selection, quality mechanics)
+- Proactive shelter behavior (security seeking < 60%)
+- Friendship-influenced behaviors (popcorning, zoomies, hiding)
+- Environmental interactions (poop dropping every 10-20 min)
+- Item interactions (water, food, hay, chew items)
+- AI state management and performance optimization
+
+**Stage 4: System 20 - Direct Interaction System** (10-14 hours)
+- [Implementation Plan](systems/phase4/system-20-direct-interaction-system.md)
+- Interaction menu UI with 40+ interactions across 7 categories
+- Nail clipping complex success system (friendship + wellness based)
+- Preference discovery mechanics (share snack, offer treats)
+- Friendship-gated interactions (70%+ and 90%+ unlocks)
+- Reaction-based feedback system (10+ reaction types)
+- Cooldown system and need satisfaction logic
+- Activity feed integration for all interactions
+
+**Stage 5: System 21 - Social Bonding System** (8-12 hours)
+- [Implementation Plan](systems/phase4/system-21-social-bonding-system.md)
+- Bond creation and hidden compatibility calculation
+- Autonomous social behaviors (grooming, playing, sharing food, sleeping together)
+- Bonding progression system (neutral/friends/bonded tiers)
+- Enhanced social need processing with bonding modifiers
+- Social AI decision integration
+- Activity feed social messages and milestone tracking
 
 ### Debug Panel Development (Phase 4)
-- **Interaction Debug Panel** - Built alongside Direct Interaction System (System 16)
-- **AI Behavior Debug Panel** - Built alongside Guinea Pig Autonomy System (System 17)
-- **Social Interaction Debug Panel** - Built alongside Guinea Pig Social Interactions (System 18)
-- **Bonding Debug Panel** - Built alongside Guinea Pig Bonding System (System 19) - compatibility testing, bonding progression tracking, personality hint testing
+- **AI Behavior Debug Panel** - Decision visualization, pathfinding display, behavior forcing
+- **Interaction Debug Panel** - Unlock all interactions, clear cooldowns, friendship adjustment
+- **Bonding Debug Panel** - Compatibility calculator, bonding level display, social interaction counter
+- **Performance Monitor** - AI timing, pathfinding performance, render FPS
 
 ### Key Deliverables
-- **Complete interaction system** with varied interaction types and effects
-- **Preference discovery integration** through interaction reactions
-- **Guinea pig AI** with autonomous behaviors triggered by need thresholds
-- **Pathfinding system** for realistic guinea pig movement and item usage
-- **Interaction cooldowns** and need satisfaction logic
-- **Autonomous behavior coordination** with needs system and habitat conditions
-- **Guinea pig social interactions** including grooming, playing together, sharing food, sleeping together, and exploring as pairs
-- **Hidden bonding system** with research-based compatibility factors (gender, personality, breed) and natural relationship discovery
-- **Personality hint system** providing subtle selection guidance without revealing compatibility mechanics
-- **Three-tier bonding progression** (neutral/friends/bonded) with increasing social need benefits and interaction bonuses
+**Visual & Movement:**
+- Guinea pig rendering on habitat grid with smooth movement
+- A* pathfinding with obstacle avoidance and path caching
+- Personality-influenced wandering and exploration
+
+**Autonomous Behaviors:**
+- Complete AI decision system with 10 subsystems
+- Need-based autonomous item usage (water, food, hay, chew)
+- Sleep behavior with bed preferences and quality bonuses
+- Proactive shelter seeking for security and comfort
+- Friendship behaviors (high: popcorn/zoomies, low: hiding/avoidance)
+- Environmental poop dropping (realistic timing)
+
+**Player Interactions:**
+- 40+ interactions across 7 categories (basic, communication, play, entertainment, care, training, bonding)
+- Nail clipping with variable success rates
+- Preference discovery through reactions
+- Friendship-gated unlocks at 70% and 90%
+- Cooldown system preventing spam
+- Need saturation logic with diminishing returns
+
+**Social & Bonding:**
+- Multi-guinea pig social interactions (6 core behaviors)
+- Hidden compatibility scoring (gender, personality, breed)
+- Bonding progression through interactions and proximity
+- Enhanced social need processing (50% slower decay when bonded)
+- Natural relationship discovery through activity feed
 
 ### Gameplay Completion
-- **Full gameplay loop** from creation to advanced care and relationship building
-- **Preference discovery** through observation and experimentation
-- **AI behaviors** providing life-like guinea pig simulation
-- **Complete activity feed integration** for all autonomous and player-initiated actions
+- **Full gameplay loop** from selection to advanced care
+- **Living, autonomous guinea pigs** with realistic AI behaviors
+- **Rich player interactions** with varied effects and reactions
+- **Natural preference discovery** through observation
+- **Multi-guinea pig relationships** with bonding progression
+- **Complete activity feed integration** for all actions
+
+### Implementation Order (Critical Dependencies)
+1. **System 17 first** - Visual rendering required by all other systems
+2. **System 18 second** - Movement required by AI and social behaviors
+3. **System 19 third** - AI framework required by social behaviors
+4. **System 20 parallel** - Can implement alongside System 21 if desired
+5. **System 21 last** - Requires AI framework from System 19
 
 ---
 
