@@ -134,7 +134,6 @@ export function useHabitatContainers() {
     const newMap = new Map(bowlContents.value)
     newMap.set(bowlItemId, updatedContents)
     bowlContents.value = newMap
-    console.log(`Added ${foodItem.name} to bowl (${updatedContents.length}/${capacity})`)
     return true
   }
 
@@ -167,8 +166,6 @@ export function useHabitatContainers() {
       newMap.set(bowlItemId, updatedContents)
     }
     bowlContents.value = newMap
-
-    console.log(`Removed food from bowl and returned to inventory`)
     return true
   }
 
@@ -182,7 +179,6 @@ export function useHabitatContainers() {
 
   function clearAllBowls(): void {
     bowlContents.value.clear()
-    console.log('Cleared all bowls')
   }
 
   function setFoodFreshness(bowlItemId: string, foodIndex: number, freshness: number): void {
@@ -287,7 +283,6 @@ export function useHabitatContainers() {
       freshness: currentData.freshness,
       lastDecayUpdate: currentData.lastDecayUpdate
     })
-    console.log(`Added hay to rack (${updatedServings.length}/${CONSUMPTION.HAY_RACK_MAX_CAPACITY})`)
     return true
   }
 
@@ -317,7 +312,6 @@ export function useHabitatContainers() {
       })
     }
 
-    console.log(`Removed hay from rack and returned to inventory`)
     return true
   }
 
@@ -357,7 +351,6 @@ export function useHabitatContainers() {
 
   function clearAllHayRacks(): void {
     hayRackContents.value.clear()
-    console.log('Cleared all hay racks')
   }
 
   function applyHayRackDecay(decayAmount: number): void {

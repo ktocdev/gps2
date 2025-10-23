@@ -232,8 +232,8 @@ export function useMovement(guineaPigId: string) {
         col: start.col + deltaCol
       }
 
-      // Check if valid and not recently visited
-      if (!pathfinding.isValidPosition(destination)) continue
+      // Check if in bounds and not recently visited (pathfinding will handle blocked cells)
+      if (!pathfinding.isInBounds(destination)) continue
 
       const isRecent = avoidRecent.some(pos =>
         pos.row === destination.row && pos.col === destination.col

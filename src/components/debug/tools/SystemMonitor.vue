@@ -1,6 +1,6 @@
 <template>
   <div class="system-monitor">
-    <h2>Error Tracking</h2>
+    <h2>System Monitor</h2>
     <div class="panel-grid">
       <!-- System Messages Panel -->
       <div class="panel panel--compact panel--primary">

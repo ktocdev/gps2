@@ -136,6 +136,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
+import { useHabitatContainers } from '../../../composables/useHabitatContainers'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import type { SuppliesItem } from '../../../types/supplies'
@@ -177,6 +178,7 @@ const props = withDefaults(defineProps<Props>(), {
 })
 
 const habitatConditions = useHabitatConditions()
+const habitatContainers = useHabitatContainers()
 const suppliesStore = useSuppliesStore()
 const guineaPigStore = useGuineaPigStore()
 
@@ -233,8 +235,13 @@ const guineaPigPositions = computed(() => habitatConditions.guineaPigPositions)
 const selectedGuineaPigId = computed(() => guineaPigStore.selectedGuineaPigId)
 
 function handleGuineaPigSelect(guineaPigId: string) {
-  // Select guinea pig for interaction
-  guineaPigStore.selectGuineaPig(guineaPigId)
+  // Toggle selection: if clicking same guinea pig, deselect it
+  if (selectedGuineaPigId.value === guineaPigId) {
+    guineaPigStore.clearSelection()
+  } else {
+    // Select guinea pig for interaction
+    guineaPigStore.selectGuineaPig(guineaPigId)
+  }
 
   // System 20 will display interaction menu when guinea pig is selected
   // TODO: Connect to InteractionMenu component when System 20 is implemented
@@ -243,7 +250,7 @@ function handleGuineaPigSelect(guineaPigId: string) {
 function getGuineaPigPosition(guineaPigId: string) {
   const position = guineaPigPositions.value.get(guineaPigId)
   if (!position) {
-    console.warn(`No position found for guinea pig ${guineaPigId}, initializing...`)
+    // Auto-initialize position if not set
     habitatConditions.initializeGuineaPigPosition(guineaPigId)
     const newPosition = guineaPigPositions.value.get(guineaPigId)
     if (!newPosition) {
@@ -313,7 +320,11 @@ function getItemSize(item: SuppliesItem | undefined): { width: number; height: n
 }
 
 const placedItems = computed(() => {
-  console.log('[HabitatVisual] Computing placedItems from habitatItems:', habitatConditions.habitatItems)
+  // Don't render items until catalog is loaded
+  if (!suppliesStore.catalogLoaded) {
+    return []
+  }
+
   return habitatConditions.habitatItems.map((itemId, index) => {
     const item = suppliesStore.getItemById(itemId)
     if (!item) {
@@ -383,8 +394,8 @@ function getStackCount(position: { x: number; y: number }): number {
   ).length
 }
 
-function selectItem(instanceId: string) {
-  console.log('Selected item:', instanceId)
+function selectItem(_instanceId: string) {
+  // Item selection handler (for future interaction menu)
 }
 
 function addTestPoop() {
@@ -652,7 +663,6 @@ function placeItemAt(itemId: string, x: number, y: number) {
   const success = habitatConditions.addItemToHabitat(itemId, { x, y })
 
   if (success) {
-    console.log(`Placed ${itemId} at (${x}, ${y})`)
     updateGridCells()
   } else {
     console.warn(`Failed to place ${itemId} at (${x}, ${y})`)
@@ -662,7 +672,6 @@ function placeItemAt(itemId: string, x: number, y: number) {
 function repositionItemAt(itemId: string, x: number, y: number) {
   // Update the position of an already-placed item
   habitatConditions.itemPositions.set(itemId, { x, y })
-  console.log(`Repositioned ${itemId} to (${x}, ${y})`)
   updateGridCells()
 }
 
@@ -713,15 +722,11 @@ function getBowlLockTooltip(item: any): string {
 }
 
 function handleAddFoodToBowl(bowlItemId: string, foodItemId: string) {
-  const success = habitatConditions.addFoodToBowl(bowlItemId, foodItemId)
-  if (success) {
-    console.log(`Added food ${foodItemId} to bowl ${bowlItemId}`)
-  }
+  habitatConditions.addFoodToBowl(bowlItemId, foodItemId)
 }
 
 function handleRemoveFoodFromBowl(bowlItemId: string, foodIndex: number) {
   habitatConditions.removeFoodFromBowl(bowlItemId, foodIndex)
-  console.log(`Removed food at index ${foodIndex} from bowl ${bowlItemId}`)
 }
 
 // Hay rack helper functions
@@ -743,15 +748,11 @@ function getHayRackFreshness(itemId: string): number {
 }
 
 function handleAddHayToRack(hayRackItemId: string, hayItemId: string) {
-  const success = habitatConditions.addHayToRack(hayRackItemId, hayItemId)
-  if (success) {
-    console.log(`Added hay ${hayItemId} to rack ${hayRackItemId}`)
-  }
+  habitatConditions.addHayToRack(hayRackItemId, hayItemId)
 }
 
 function handleClearHayRack(hayRackItemId: string) {
   habitatConditions.clearHayRack(hayRackItemId)
-  console.log(`Cleared hay rack ${hayRackItemId}`)
 }
 
 // Water bottle helper function
@@ -766,24 +767,21 @@ function isChewItem(itemId: string): boolean {
 }
 
 function getChewDurability(itemId: string): number {
-  return habitatConditions.getChewDurability(itemId)
+  return habitatContainers.getChewDurability(itemId)
 }
 
 function getChewUsageCount(itemId: string): number {
-  const chewData = habitatConditions.getChewData(itemId)
+  const chewData = habitatContainers.getChewData(itemId)
   return chewData?.usageCount ?? 0
 }
 
 function getChewLastUsedAt(itemId: string): number {
-  const chewData = habitatConditions.getChewData(itemId)
+  const chewData = habitatContainers.getChewData(itemId)
   return chewData?.lastUsedAt ?? Date.now()
 }
 
 function handleTestChew(itemId: string) {
-  const success = habitatConditions.chewItem(itemId)
-  if (success) {
-    console.log(`Chewed item ${itemId}`)
-  }
+  habitatContainers.chewItem(itemId)
 }
 
 function handleRemoveChew(itemId: string) {
@@ -797,8 +795,7 @@ function handleRemoveChew(itemId: string) {
     }
     // Remove from habitat conditions (returns to inventory)
     habitatConditions.removeItemFromHabitat(itemId)
-    habitatConditions.removeChewItem(itemId)
-    console.log(`Removed chew ${itemId} from habitat`)
+    habitatContainers.removeChewItem(itemId)
   }
 }
 
@@ -817,8 +814,7 @@ function handleDiscardChew(itemId: string) {
     if (habitatIndex > -1) {
       habitatConditions.habitatItems.splice(habitatIndex, 1)
     }
-    habitatConditions.removeChewItem(itemId)
-    console.log(`Discarded unsafe chew ${itemId}`)
+    habitatContainers.removeChewItem(itemId)
   }
 }
 
