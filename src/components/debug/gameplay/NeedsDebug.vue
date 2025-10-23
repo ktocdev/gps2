@@ -444,7 +444,7 @@ const socializeWithGuineaPig = (guineaPigId: string) => {
 }
 
 const rearrangeCage = (guineaPigId: string) => {
-  guineaPigStore.playWithGuineaPig(guineaPigId)
+  guineaPigStore.rearrangeCage(guineaPigId)
 }
 
 const provideBedding = (guineaPigId: string) => {

@@ -59,6 +59,16 @@
 
     <!-- Habitat Conditions & Test Controls Row -->
     <div class="habitat-debug__conditions-row">
+      <!-- System 19: Autonomy Debug Panel -->
+      <div class="panel panel--compact panel--accent">
+        <div class="panel__header">
+          <h3>🤖 Autonomy Behaviors (System 19)</h3>
+        </div>
+        <div class="panel__content">
+          <AutonomyDebug />
+        </div>
+      </div>
+
       <!-- Habitat Conditions Panel -->
       <div class="panel panel--compact panel--accent">
         <div class="panel__header">
@@ -73,7 +83,7 @@
         <div class="panel__content">
           <!-- Core Conditions Section -->
           <div class="conditions-section">
-            <h4 class="conditions-section-title">Core Conditions</h4>
+            <h4>Core Conditions</h4>
             <div class="conditions-grid">
               <!-- Cleanliness -->
               <div class="condition-item">
@@ -141,7 +151,7 @@
 
           <!-- Hay Racks Section -->
           <div v-if="hayRacks.length > 0" class="conditions-section">
-            <h4 class="conditions-section-title">Hay Racks</h4>
+            <h4>Hay Racks</h4>
             <div class="container-items-grid">
               <div v-for="rack in hayRacks" :key="rack.itemId" class="container-item">
                 <div class="container-item__header">
@@ -172,7 +182,7 @@
 
           <!-- Food Containers Section -->
           <div v-if="foodBowls.length > 0" class="conditions-section">
-            <h4 class="conditions-section-title">Food Containers</h4>
+            <h4>Food Containers</h4>
             <div class="food-bowls-list">
               <div v-for="bowl in foodBowls" :key="bowl.bowlId" class="food-bowl-container">
                 <div class="food-bowl-container__header">
@@ -213,7 +223,7 @@
 
           <!-- Chew Items Section -->
           <div v-if="chewItemsList.length > 0" class="conditions-section">
-            <h4 class="conditions-section-title">Chew Items</h4>
+            <h4>Chew Items</h4>
             <div class="chew-items-list">
               <div v-for="chew in chewItemsList" :key="chew.itemId" class="chew-item-debug">
                 <div class="chew-item-debug__header">
@@ -241,16 +251,6 @@
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- System 19: Autonomy Debug Panel -->
-      <div class="panel panel--compact panel--accent">
-        <div class="panel__header">
-          <h3>🤖 Autonomy Behaviors (System 19)</h3>
-        </div>
-        <div class="panel__content">
-          <AutonomyDebug />
         </div>
       </div>
 
@@ -696,14 +696,6 @@ function getChewDurabilityClass(durability: number): string {
   margin-block-start: var(--space-2);
 }
 
-.conditions-section-title {
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-  margin: 0;
-  margin-block-end: var(--space-4);
-}
-
 /* Habitat Layout with Sidebar */
 .habitat-layout {
   display: flex;
@@ -723,7 +715,7 @@ function getChewDurabilityClass(durability: number): string {
   grid-template-columns: 1fr;
 }
 
-/* Desktop: 2 columns - Habitat Conditions (66%) / Test Controls (33%) */
+/* Desktop: 2 columns - Autonomy Behaviors (66%) / Habitat Conditions (33%) */
 @media (min-width: 768px) {
   .habitat-debug__conditions-row {
     grid-template-columns: 2fr 1fr;
@@ -828,7 +820,7 @@ function getChewDurabilityClass(durability: number): string {
 }
 
 .food-bowl-container__header h5 {
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-semibold);
   margin: 0;
 }

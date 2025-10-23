@@ -19,6 +19,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { GuineaPig } from '../../../stores/guineaPigStore'
+import { useGuineaPigBehavior } from '../../../composables/game/useGuineaPigBehavior'
 
 interface Props {
   guineaPig: GuineaPig
@@ -38,6 +39,9 @@ const emit = defineEmits<Emits>()
 
 const CELL_SIZE = 60 // Match HabitatVisual cell size
 
+// Get behavior composable for this guinea pig
+const behavior = useGuineaPigBehavior(props.guineaPig.id)
+
 // Get guinea pig emoji - use a simple mapping based on gender for now
 const guineaPigEmoji = computed(() => {
   // Future: This could be based on breed, appearance, or stored emoji property
@@ -52,12 +56,18 @@ const facingLeft = computed(() => props.facingDirection === 'left')
 const tooltipText = computed(() => {
   const gp = props.guineaPig
   const age = Math.floor((Date.now() - gp.birthDate) / (1000 * 60 * 60 * 24)) // Days old
+  const currentActivity = behavior.behaviorState.value.currentActivity
+  const currentGoal = behavior.behaviorState.value.currentGoal
+  const goalText = currentGoal ? currentGoal.type : 'none'
+
   return `${gp.name} (${gp.gender})
 Breed: ${gp.breed}
 Age: ${age} days
 Level: ${gp.stats.level}
 Wellness: ${Math.round(gp.stats.wellness)}%
-Friendship: ${Math.round(gp.friendship)}%`
+Friendship: ${Math.round(gp.friendship)}%
+Activity: ${currentActivity}
+Goal: ${goalText}`
 })
 
 // Calculate CSS transform for grid position and dynamic z-index

@@ -197,22 +197,26 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Hunger < threshold - prioritize food bowls, but also consider hay racks
     if (needs.hunger < thresholds.hunger) {
-      // Try food bowl first
+      // Try food bowl first (only if it has food)
       if (!isOnCooldown('eat')) {
         const target = findNearestItemForNeed('hunger')
         if (target) {
-          goals.push({
-            type: 'eat',
-            target: target.position,
-            targetItemId: target.itemId,
-            priority: calculateNeedPriority(needs.hunger, thresholds.hunger, 100),
-            estimatedDuration: 5000, // 5 seconds to eat
-            needSatisfied: 'hunger'
-          })
+          const bowlContents = habitatConditions.getBowlContents(target.itemId)
+          // Only add eat goal if bowl has food
+          if (bowlContents && bowlContents.length > 0) {
+            goals.push({
+              type: 'eat',
+              target: target.position,
+              targetItemId: target.itemId,
+              priority: calculateNeedPriority(needs.hunger, thresholds.hunger, 100),
+              estimatedDuration: 5000, // 5 seconds to eat
+              needSatisfied: 'hunger'
+            })
+          }
         }
       }
 
-      // Hay racks as secondary option (slightly lower priority)
+      // Hay racks as secondary option (or primary if bowl is empty)
       if (!isOnCooldown('eat_hay')) {
         const hayRacks = habitatConditions.habitatItems.filter(id =>
           id.toLowerCase().includes('hay') && id.toLowerCase().includes('rack')
@@ -220,17 +224,20 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
         if (hayRacks.length > 0) {
           const hayRackId = hayRacks[0]
-          const position = habitatConditions.itemPositions.get(hayRackId)
-
-          if (position) {
-            goals.push({
-              type: 'eat_hay',
-              target: { row: position.y, col: position.x },
-              targetItemId: hayRackId,
-              priority: calculateNeedPriority(needs.hunger, thresholds.hunger, 95), // Slightly lower than food bowl
-              estimatedDuration: 6000, // 6 seconds to eat hay
-              needSatisfied: 'hunger'
-            })
+          const hayRackContents = habitatConditions.getHayRackContents(hayRackId)
+          // Only add eat_hay goal if hay rack has hay
+          if (hayRackContents && hayRackContents.length > 0) {
+            const position = habitatConditions.itemPositions.get(hayRackId)
+            if (position) {
+              goals.push({
+                type: 'eat_hay',
+                target: { row: position.y, col: position.x },
+                targetItemId: hayRackId,
+                priority: calculateNeedPriority(needs.hunger, thresholds.hunger, 98), // High priority (same as bowl when bowl is empty)
+                estimatedDuration: 6000, // 6 seconds to eat hay
+                needSatisfied: 'hunger'
+              })
+            }
           }
         }
       }
@@ -496,7 +503,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     })
 
     // Select food from bowl based on preferences
-    let hungerRestored = 30 // Base restoration
+    let hungerRestored = 40 // Base restoration (enough to get above 30% threshold)
     let foodQuality = 1.0 // Quality multiplier
 
     console.log('[executeEatBehavior] Checking bowl contents for', goal.targetItemId)
@@ -748,30 +755,52 @@ export function useGuineaPigBehavior(guineaPigId: string) {
    * Execute eat hay behavior (from hay rack)
    */
   async function executeEatHayBehavior(goal: BehaviorGoal): Promise<boolean> {
-    if (!goal.target || !guineaPig.value) return false
+    console.log('[executeEatHayBehavior] Starting eat hay behavior', { goal, guineaPigId })
+
+    if (!goal.target || !guineaPig.value) {
+      console.error('[executeEatHayBehavior] Missing target or guinea pig')
+      return false
+    }
+
+    console.log('[executeEatHayBehavior] Initiating movement to hay rack at', goal.target)
 
     // Navigate to hay rack
     const success = movement.moveTo(goal.target, { avoidOccupiedCells: true })
-    if (!success) return false
+    if (!success) {
+      console.warn('[executeEatHayBehavior] Movement to hay rack FAILED')
+      return false
+    }
+
+    console.log('[executeEatHayBehavior] Movement initiated, waiting for arrival...')
 
     // Wait for arrival
     await new Promise<void>(resolve => {
-      movement.onArrival(() => resolve())
+      movement.onArrival(() => {
+        console.log('[executeEatHayBehavior] Arrived at hay rack!')
+        resolve()
+      })
     })
 
+    console.log('[executeEatHayBehavior] Checking hay rack contents')
+
     // Calculate hay quality based on freshness
-    let hungerRestored = 25 // Base hay restoration (slightly less than food bowl)
+    let hungerRestored = 35 // Base hay restoration (enough to get above 30% threshold, slightly less than food bowl)
     let hayQuality = 1.0
 
     if (goal.targetItemId) {
       const hayServings = habitatConditions.getHayRackContents(goal.targetItemId)
+      console.log('[executeEatHayBehavior] Hay servings:', hayServings)
 
       if (hayServings && hayServings.length > 0) {
         const freshness = habitatConditions.getHayRackFreshness(goal.targetItemId) / 100
         hayQuality = 0.6 + freshness * 0.4 // 60-100% based on freshness
 
-        // Remove hay from rack
-        habitatConditions.removeHayFromRack(goal.targetItemId, 1)
+        console.log('[executeEatHayBehavior] Removing hay serving, freshness:', freshness)
+
+        // Remove first hay serving from rack (index 0)
+        habitatConditions.removeHayFromRack(goal.targetItemId, 0)
+      } else {
+        console.warn('[executeEatHayBehavior] Hay rack is empty!')
       }
     }
 
@@ -779,13 +808,19 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'eating'
     behaviorState.value.activityStartTime = Date.now()
 
+    console.log('[executeEatHayBehavior] Starting eating animation, duration:', goal.estimatedDuration)
+
     // Simulate eating duration
     await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
+
+    console.log('[executeEatHayBehavior] Eating complete, restoring hunger')
 
     // Satisfy hunger need with quality multiplier
     if (guineaPig.value) {
       hungerRestored = Math.floor(hungerRestored * hayQuality)
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', hungerRestored)
+
+      console.log('[executeEatHayBehavior] Restored', hungerRestored, 'hunger points')
 
       // Log to activity feed
       const msg = MessageGenerator.generateAutonomousEatHayMessage(guineaPig.value.name)
@@ -796,6 +831,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     setCooldown('eat_hay', 90000) // 90 second cooldown
     behaviorState.value.currentActivity = 'idle'
     behaviorState.value.currentGoal = null
+
+    console.log('[executeEatHayBehavior] Eat hay behavior completed successfully')
 
     return true
   }
@@ -1093,6 +1130,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     selectBehaviorGoal,
     executeBehavior,
     tick,
-    isOnCooldown
+    isOnCooldown,
+    stopMovement: movement.stopMovement
   }
 }
