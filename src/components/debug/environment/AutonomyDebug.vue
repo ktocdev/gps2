@@ -13,36 +13,37 @@
             <label class="control-label">
               <input
                 type="checkbox"
-                :checked="globalAutonomyEnabled"
-                @change="toggleGlobalAutonomy"
+                checked
+                disabled
+                title="AI is always enabled in game loop"
               />
-              <span class="control-label__text">Enable Autonomous AI System</span>
+              <span class="control-label__text">Autonomous AI System</span>
             </label>
             <span class="control-description">
-              {{ globalAutonomyEnabled ? '🟢 AI Running' : '🔴 AI Paused' }}
+              🟢 AI Always Running
             </span>
           </div>
 
           <div class="control-row mt-3">
             <label :for="'ai-tick-interval'" class="control-label__text">
-              AI Decision Interval
+              Game Loop Interval
             </label>
             <div class="control-info">
-              <span class="control-value">{{ aiTickInterval / 1000 }}s</span>
+              <span class="control-value">{{ gameTimingStore.intervalMs / 1000 }}s</span>
               <span class="control-description">
-                (How often guinea pigs make decisions)
+                (Game loop tick rate - affects all systems)
               </span>
             </div>
             <SliderField
               id="ai-tick-interval"
-              :modelValue="aiTickInterval"
+              :modelValue="gameTimingStore.intervalMs"
               :min="1000"
               :max="10000"
               :step="500"
               prefix=""
               suffix="ms"
               :show-min-max="true"
-              @update:modelValue="setAiTickInterval"
+              @update:modelValue="gameTimingStore.setIntervalMs"
             />
           </div>
         </div>
@@ -207,25 +208,18 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import { useGameTimingStore } from '../../../stores/gameTimingStore'
+import { useGuineaPigBehavior } from '../../../composables/game/useGuineaPigBehavior'
+import type { BehaviorType } from '../../../composables/game/useGuineaPigBehavior'
 import SliderField from '../../basic/SliderField.vue'
 
 const guineaPigStore = useGuineaPigStore()
+const gameTimingStore = useGameTimingStore()
 
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 
-// Global autonomy controls
-const globalAutonomyEnabled = ref(false) // Start disabled for testing
-const aiTickInterval = ref(3000) // Default 3 seconds
-
-function toggleGlobalAutonomy() {
-  globalAutonomyEnabled.value = !globalAutonomyEnabled.value
-  console.log(`[AutonomyDebug] Global autonomy ${globalAutonomyEnabled.value ? 'enabled' : 'disabled'}`)
-}
-
-function setAiTickInterval(value: number) {
-  aiTickInterval.value = value
-  console.log(`[AutonomyDebug] AI tick interval set to ${value}ms`)
-}
+// Cache behavior composables (similar to gameTimingStore pattern)
+const behaviorComposables = new Map<string, ReturnType<typeof useGuineaPigBehavior>>()
 
 // Store thresholds per guinea pig (default values)
 const behaviorThresholds = ref<Record<string, {
@@ -289,22 +283,137 @@ function toggleAutonomy(guineaPigId: string) {
   behaviorThresholds.value[guineaPigId].autonomyEnabled = !behaviorThresholds.value[guineaPigId].autonomyEnabled
 }
 
-// Manual behavior triggers
-function triggerBehavior(guineaPigId: string, behaviorType: 'eat' | 'drink' | 'sleep' | 'wander') {
-  console.log(`[AutonomyDebug] Triggering ${behaviorType} behavior for guinea pig ${guineaPigId}`)
-  // TODO: Connect to actual behavior system when implemented
-  alert(`Triggering ${behaviorType} behavior for guinea pig (System 19 not yet connected)`)
+/**
+ * Get or create behavior composable for a guinea pig
+ */
+function getBehaviorComposable(guineaPigId: string) {
+  let behavior = behaviorComposables.get(guineaPigId)
+  if (!behavior) {
+    behavior = useGuineaPigBehavior(guineaPigId)
+    behaviorComposables.set(guineaPigId, behavior)
+  }
+  return behavior
 }
 
-function getCurrentActivity(_guineaPigId: string): string {
-  // TODO: Get actual activity from guinea pig state
-  return 'idle'
+/**
+ * Manual behavior triggers - Force execute specific behaviors for testing
+ * Temporarily lowers the guinea pig's needs to trigger the behavior
+ */
+async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) {
+  const behavior = getBehaviorComposable(guineaPigId)
+  const guineaPig = guineaPigStore.activeGuineaPigs.find(gp => gp.id === guineaPigId)
+
+  if (!guineaPig) {
+    console.warn(`Guinea pig ${guineaPigId} not found`)
+    return
+  }
+
+  // Store original need values
+  const originalNeeds = { ...guineaPig.needs }
+
+  try {
+    // Temporarily lower the relevant need to force behavior selection
+    switch (behaviorType) {
+      case 'eat':
+        guineaPigStore.adjustNeed(guineaPigId, 'hunger', -100) // Drop hunger to near 0
+        break
+      case 'drink':
+        guineaPigStore.adjustNeed(guineaPigId, 'thirst', -100) // Drop thirst to near 0
+        break
+      case 'sleep':
+        guineaPigStore.adjustNeed(guineaPigId, 'energy', -100) // Drop energy to near 0
+        break
+    }
+
+    // Small delay to ensure need update propagates
+    await new Promise(resolve => setTimeout(resolve, 10))
+
+    console.log(`[Manual Trigger] ${guineaPig.name} needs after adjustment:`, {
+      hunger: guineaPig.needs.hunger,
+      thirst: guineaPig.needs.thirst,
+      energy: guineaPig.needs.energy
+    })
+
+    // Get custom thresholds if set, with all required fields
+    const customThresholds = behaviorThresholds.value[guineaPigId]
+    const thresholds = {
+      hunger: customThresholds?.hunger ?? 30,
+      thirst: customThresholds?.thirst ?? 25,
+      energy: customThresholds?.energy ?? 40,
+      hygiene: 30,
+      shelter: 60,
+      chew: 40
+    }
+
+    console.log(`[Manual Trigger] Thresholds:`, thresholds)
+    console.log(`[Manual Trigger] Checking cooldown for ${behaviorType}:`, behavior.isOnCooldown(behaviorType))
+
+    // Let the AI select the appropriate goal (now that need is low)
+    const goal = behavior.selectBehaviorGoal(thresholds)
+
+    console.log(`[Manual Trigger] Selected goal:`, goal)
+
+    if (goal && goal.type === behaviorType) {
+      // Check if already executing a behavior
+      if (behavior.behaviorState.value.currentGoal) {
+        console.warn(`❌ ${guineaPig.name} is already executing behavior: ${behavior.behaviorState.value.currentGoal.type}`)
+
+        // Restore original needs since behavior didn't execute
+        guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
+        guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
+        guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+        return
+      }
+
+      // Execute the behavior
+      const success = await behavior.executeBehavior(goal)
+      if (success) {
+        console.log(`✅ Triggered ${behaviorType} behavior for ${guineaPig.name}`)
+      } else {
+        console.warn(`❌ Failed to trigger ${behaviorType} behavior for ${guineaPig.name} - execution returned false`)
+      }
+    } else if (goal) {
+      console.warn(`❌ Goal created but wrong type. Expected: ${behaviorType}, Got: ${goal.type}`)
+
+      // Restore original needs since behavior didn't execute
+      guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
+      guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
+      guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+    } else {
+      console.warn(`❌ No goal created. Check: cooldown status, habitat items (bowls/water/etc)`)
+
+      // Restore original needs since behavior didn't execute
+      guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
+      guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
+      guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+    }
+  } catch (error) {
+    console.error(`❌ Error triggering ${behaviorType}:`, error)
+
+    // Restore original needs on error
+    guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
+    guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
+    guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+  }
+}
+
+/**
+ * Get current activity from behavior state
+ */
+function getCurrentActivity(guineaPigId: string): string {
+  const behavior = behaviorComposables.get(guineaPigId)
+  if (!behavior) return 'idle'
+
+  const state = behavior.behaviorState.value
+  if (state.currentGoal) {
+    return `${state.currentGoal.type} (${state.currentActivity})`
+  }
+
+  return state.currentActivity
 }
 
 // Export controls for use by autonomy system
 defineExpose({
-  globalAutonomyEnabled,
-  aiTickInterval,
   behaviorThresholds,
   getHungerThreshold,
   getThirstThreshold,

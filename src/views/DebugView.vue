@@ -151,7 +151,7 @@ const tabCategories: TabCategory[] = [
     tabs: [
       {
         id: 'error-tracking',
-        label: 'Error Tracking',
+        label: 'System Monitor',
         icon: '🐛',
         panelClass: 'tab-container__panel--constrained'
       }

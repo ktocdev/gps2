@@ -135,8 +135,6 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
     const currentTime = updateStartTime
     let deltaTime = currentTime - lastUpdate.value
 
-    console.log(`[Game Loop] Tick at ${currentTime} (delta: ${deltaTime}ms)`)
-
     // Prevent excessive delta times (e.g., after computer sleep)
     if (deltaTime > maxDeltaTime.value) {
       deltaTime = maxDeltaTime.value
@@ -153,8 +151,6 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
     try {
       // Get the game controller to check if game is active
       const gameController = useGameController()
-
-      console.log(`[Game Loop] Game active: ${gameController.isGameActive}`)
 
       // Only process game systems if game is in playing state
       if (gameController.isGameActive) {
@@ -173,7 +169,6 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
           if (!behavior) {
             behavior = useGuineaPigBehavior(guineaPig.id)
             behaviorComposables.set(guineaPig.id, behavior)
-            console.log(`[Game Loop] Created new behavior composable for ${guineaPig.name}`)
           }
 
           // Call tick with default thresholds - debug panel can override these later
@@ -187,7 +182,6 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
         for (const [id, _behavior] of behaviorComposables.entries()) {
           if (!activeIds.has(id)) {
             behaviorComposables.delete(id)
-            console.log(`[Game Loop] Removed behavior composable for guinea pig ${id}`)
           }
         }
 

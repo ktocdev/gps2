@@ -136,7 +136,15 @@ export function usePathfinding() {
     const { start, goal, avoidOccupiedCells = false, maxPathLength = 100 } = options
 
     // Early validation
-    if (!isValidPosition(start) || !isValidPosition(goal, { avoidOccupiedCells })) {
+    // Both start and goal can be on items (guinea pig can be standing on item and can walk TO items)
+    // Just verify they are within grid bounds
+    if (!isInBounds(start)) {
+      console.warn('[Pathfinding] Start position out of bounds:', start)
+      return { path: [], distance: 0, success: false }
+    }
+
+    if (!isInBounds(goal)) {
+      console.warn('[Pathfinding] Goal position out of bounds:', goal)
       return { path: [], distance: 0, success: false }
     }
 
@@ -162,7 +170,14 @@ export function usePathfinding() {
 
     openSet.push(startNode)
 
+    let iterations = 0
     while (openSet.length > 0) {
+      iterations++
+      if (iterations > 200) {
+        console.warn('[Pathfinding] Too many iterations, abandoning search from', start, 'to', goal)
+        return { path: [], distance: 0, success: false }
+      }
+
       // Find node with lowest f score
       let currentIndex = 0
       for (let i = 1; i < openSet.length; i++) {
@@ -191,12 +206,23 @@ export function usePathfinding() {
 
       // Check neighbors
       const neighbors = getNeighbors(current.position)
+      let validNeighbors = 0
       for (const neighborPos of neighbors) {
-        // Skip if not valid
-        if (!isValidPosition(neighborPos, { avoidOccupiedCells })) continue
+        // Allow neighbor if it's the goal, even if blocked (guinea pigs can walk TO items)
+        const isGoalPosition = neighborPos.row === goal.row && neighborPos.col === goal.col
+
+        // Skip if not valid (unless it's the goal)
+        if (!isGoalPosition && !isValidPosition(neighborPos, { avoidOccupiedCells })) {
+          if (iterations === 1) {
+            console.log('[Pathfinding] Neighbor invalid:', neighborPos, 'blocked:', isBlocked(neighborPos))
+          }
+          continue
+        }
 
         // Skip if already in closed set
         if (closedSet.has(posKey(neighborPos))) continue
+
+        validNeighbors++
 
         // Calculate costs
         const g = current.g + 1
@@ -227,9 +253,14 @@ export function usePathfinding() {
           openSet[existingIndex].parent = current
         }
       }
+
+      if (iterations === 1 && validNeighbors === 0) {
+        console.warn('[Pathfinding] No valid neighbors found from start position', start)
+      }
     }
 
     // No path found
+    console.warn('[Pathfinding] No path found after', iterations, 'iterations from', start, 'to', goal, 'openSet empty')
     return { path: [], distance: 0, success: false }
   }
 
@@ -275,6 +306,7 @@ export function usePathfinding() {
   return {
     findPath,
     isValidPosition,
+    isInBounds,
     getObstacles,
     GRID_WIDTH,
     GRID_HEIGHT

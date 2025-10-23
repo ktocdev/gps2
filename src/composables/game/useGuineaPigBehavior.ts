@@ -8,6 +8,7 @@ import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useLoggingStore } from '../../stores/loggingStore'
 import { useMovement } from './useMovement'
+import { usePathfinding } from './usePathfinding'
 import { MessageGenerator } from '../../utils/messageGenerator'
 import type { NeedType } from '../../stores/guineaPigStore'
 import type { GridPosition } from './usePathfinding'
@@ -59,6 +60,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
   const habitatConditions = useHabitatConditions()
   const loggingStore = useLoggingStore()
   const movement = useMovement(guineaPigId)
+  const pathfinding = usePathfinding()
 
   const behaviorState = ref<BehaviorState>({
     currentGoal: null,
@@ -146,7 +148,39 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       }
     }
 
-    return nearest ? { position: nearest.position, itemId: nearest.itemId } : null
+    if (!nearest) return null
+
+    // For multi-tile items, check if anchor position is pathfindable
+    // If not, find an accessible adjacent cell
+    const targetPos = nearest.position
+
+    // Try the anchor position first
+    if (pathfinding.isValidPosition(targetPos)) {
+      return { position: targetPos, itemId: nearest.itemId }
+    }
+
+    // If blocked, check adjacent cells (including diagonals for better accessibility)
+    const adjacentOffsets = [
+      { row: -1, col: 0 }, { row: 1, col: 0 }, // up, down
+      { row: 0, col: -1 }, { row: 0, col: 1 }, // left, right
+      { row: -1, col: -1 }, { row: -1, col: 1 }, // diagonals
+      { row: 1, col: -1 }, { row: 1, col: 1 }
+    ]
+
+    for (const offset of adjacentOffsets) {
+      const adjacentPos = {
+        row: targetPos.row + offset.row,
+        col: targetPos.col + offset.col
+      }
+
+      // Check if position is valid (in bounds and not blocked)
+      if (pathfinding.isValidPosition(adjacentPos)) {
+        return { position: adjacentPos, itemId: nearest.itemId }
+      }
+    }
+
+    // Fallback: return anchor position even if blocked (pathfinding will handle it as goal)
+    return { position: targetPos, itemId: nearest.itemId }
   }
 
   /**
@@ -421,23 +455,55 @@ export function useGuineaPigBehavior(guineaPigId: string) {
    * Execute eat behavior with preference-based food selection
    */
   async function executeEatBehavior(goal: BehaviorGoal): Promise<boolean> {
-    if (!goal.target || !guineaPig.value) return false
+    console.log('[executeEatBehavior] Starting eat behavior', { goal, guineaPigId })
+
+    if (!goal.target) {
+      console.error('[executeEatBehavior] No target specified in goal')
+      return false
+    }
+    if (!guineaPig.value) {
+      console.error('[executeEatBehavior] Guinea pig not found')
+      return false
+    }
+
+    const currentPos = movement.currentPosition.value
+    console.log('[executeEatBehavior] Guinea pig current position:', currentPos)
+    console.log('[executeEatBehavior] Initiating movement to food bowl at', goal.target)
 
     // Navigate to food bowl
-    const success = movement.moveTo(goal.target, { avoidOccupiedCells: true })
-    if (!success) return false
+    let success = false
+    try {
+      success = movement.moveTo(goal.target, { avoidOccupiedCells: true })
+      console.log('[executeEatBehavior] moveTo returned:', success)
+    } catch (error) {
+      console.error('[executeEatBehavior] moveTo threw an error:', error)
+      return false
+    }
+
+    if (!success) {
+      console.warn('[executeEatBehavior] Movement to food bowl FAILED - pathfinding could not find route from', currentPos, 'to', goal.target)
+      return false
+    }
+
+    console.log('[executeEatBehavior] Movement initiated successfully, waiting for arrival...')
 
     // Wait for arrival
     await new Promise<void>(resolve => {
-      movement.onArrival(() => resolve())
+      movement.onArrival(() => {
+        console.log('[executeEatBehavior] Arrived at food bowl!')
+        resolve()
+      })
     })
 
     // Select food from bowl based on preferences
     let hungerRestored = 30 // Base restoration
     let foodQuality = 1.0 // Quality multiplier
 
+    console.log('[executeEatBehavior] Checking bowl contents for', goal.targetItemId)
+
     if (goal.targetItemId) {
       const bowlContents = habitatConditions.getBowlContents(goal.targetItemId)
+      console.log('[executeEatBehavior] Bowl contents:', bowlContents)
 
       if (bowlContents && bowlContents.length > 0) {
         // Find preferred food if available
@@ -479,13 +545,19 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'eating'
     behaviorState.value.activityStartTime = Date.now()
 
+    console.log('[executeEatBehavior] Starting eating animation, duration:', goal.estimatedDuration)
+
     // Simulate eating duration
     await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
+
+    console.log('[executeEatBehavior] Eating complete, restoring hunger')
 
     // Satisfy hunger need with quality multiplier
     if (guineaPig.value) {
       hungerRestored = Math.floor(hungerRestored * foodQuality)
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', hungerRestored)
+
+      console.log('[executeEatBehavior] Restored', hungerRestored, 'hunger points')
 
       // Log to activity feed
       const msg = MessageGenerator.generateAutonomousEatMessage(guineaPig.value.name)
@@ -496,6 +568,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     setCooldown('eat', 60000) // 1 minute cooldown
     behaviorState.value.currentActivity = 'idle'
     behaviorState.value.currentGoal = null
+
+    console.log('[executeEatBehavior] Eat behavior completed successfully')
 
     return true
   }
@@ -963,14 +1037,12 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (timeSinceLastPoop > poopInterval) {
       // Drop poop at current position
       const currentPos = movement.currentPosition.value
-      console.log(`[Poop] ${gp.name} pooping at grid position:`, currentPos)
 
       // Convert grid coordinates to subgrid coordinates (4x scale)
       // The subgrid is 4x finer than the main grid for precise poop placement
       const subgridX = currentPos.col * 4 + Math.floor(Math.random() * 4) // Random offset within cell
       const subgridY = currentPos.row * 4 + Math.floor(Math.random() * 4)
 
-      console.log(`[Poop] ${gp.name} converted to subgrid position: x=${subgridX}, y=${subgridY}`)
       habitatConditions.addPoop(subgridX, subgridY)
 
       // Update last poop time
@@ -987,39 +1059,26 @@ export function useGuineaPigBehavior(guineaPigId: string) {
    */
   async function tick(thresholds = DEFAULT_THRESHOLDS): Promise<void> {
     const gp = guineaPig.value
-    if (!gp) {
-      console.warn(`[AI Tick] Guinea pig ${guineaPigId} not found`)
-      return
-    }
-
-    console.log(`[AI Tick] ${gp.name} - Processing tick`)
+    if (!gp) return
 
     // Check for autonomous pooping (environmental behavior)
     checkAutonomousPooping()
 
     // Skip if already executing a behavior
-    if (behaviorState.value.currentGoal) {
-      console.log(`[AI Tick] ${gp.name} - Already executing ${behaviorState.value.currentGoal.type}`)
-      return
-    }
+    if (behaviorState.value.currentGoal) return
 
     // Skip if still on cooldown from last decision
     const timeSinceLastDecision = Date.now() - behaviorState.value.lastDecisionTime
-    if (timeSinceLastDecision < 3000) {
-      console.log(`[AI Tick] ${gp.name} - On cooldown (${(3000 - timeSinceLastDecision) / 1000}s remaining)`)
-      return // Minimum 3 seconds between decisions
-    }
+    if (timeSinceLastDecision < 3000) return // Minimum 3 seconds between decisions
 
     behaviorState.value.lastDecisionTime = Date.now()
 
     // Select next behavior
     const goal = selectBehaviorGoal(thresholds)
     if (!goal) {
-      console.log(`[AI Tick] ${gp.name} - No behavior selected (needs satisfied)`)
+      // No goal selected - guinea pig is satisfied or all behaviors on cooldown
       return
     }
-
-    console.log(`[AI Tick] ${gp.name} - Selected behavior: ${goal.type} (priority: ${goal.priority})`)
 
     // Execute behavior (non-blocking)
     executeBehavior(goal).catch(err => {

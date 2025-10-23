@@ -7,6 +7,7 @@
       'guinea-pig-sprite--facing-left': facingLeft
     }"
     :style="spriteStyle"
+    :title="tooltipText"
     @click="handleClick"
   >
     <div class="guinea-pig-sprite__emoji">
@@ -46,6 +47,18 @@ const guineaPigEmoji = computed(() => {
 // System 18: Movement state
 const isWalking = computed(() => props.isWalking ?? false)
 const facingLeft = computed(() => props.facingDirection === 'left')
+
+// Tooltip showing guinea pig metadata
+const tooltipText = computed(() => {
+  const gp = props.guineaPig
+  const age = Math.floor((Date.now() - gp.birthDate) / (1000 * 60 * 60 * 24)) // Days old
+  return `${gp.name} (${gp.gender})
+Breed: ${gp.breed}
+Age: ${age} days
+Level: ${gp.stats.level}
+Wellness: ${Math.round(gp.stats.wellness)}%
+Friendship: ${Math.round(gp.friendship)}%`
+})
 
 // Calculate CSS transform for grid position and dynamic z-index
 const spriteStyle = computed(() => ({
