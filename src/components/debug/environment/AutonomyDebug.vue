@@ -240,6 +240,7 @@ import { useGameTimingStore } from '../../../stores/gameTimingStore'
 import { useGameController } from '../../../stores/gameController'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useAutonomySettingsStore } from '../../../stores/autonomySettingsStore'
+import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useGuineaPigBehavior } from '../../../composables/game/useGuineaPigBehavior'
 import type { BehaviorType } from '../../../composables/game/useGuineaPigBehavior'
 import SliderField from '../../basic/SliderField.vue'
@@ -249,6 +250,7 @@ const gameTimingStore = useGameTimingStore()
 const gameController = useGameController()
 const habitatConditions = useHabitatConditions()
 const autonomySettings = useAutonomySettingsStore()
+const behaviorStateStore = useBehaviorStateStore()
 
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 const isGameActive = computed(() => gameController.isGameActive)
@@ -453,23 +455,23 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
 }
 
 /**
- * Get current activity from behavior state
+ * Get current activity from behavior state store
  */
 function getCurrentActivity(guineaPigId: string): string {
-  const behavior = behaviorComposables.get(guineaPigId)
-  if (!behavior) return 'idle'
+  const state = behaviorStateStore.getBehaviorState(guineaPigId)
+  if (!state) return 'idle'
 
-  return behavior.behaviorState.value.currentActivity
+  return state.currentActivity
 }
 
 /**
- * Get current goal from behavior state
+ * Get current goal from behavior state store
  */
 function getCurrentGoal(guineaPigId: string): string {
-  const behavior = behaviorComposables.get(guineaPigId)
-  if (!behavior) return 'none'
+  const state = behaviorStateStore.getBehaviorState(guineaPigId)
+  if (!state) return 'none'
 
-  const goal = behavior.behaviorState.value.currentGoal
+  const goal = state.currentGoal
   if (!goal) return 'none'
 
   return goal.type

@@ -96,9 +96,9 @@ export function useHabitatContainers() {
       return false
     }
 
-    // Validate food type compatibility
-    if (foodItem.category !== 'food') {
-      console.warn(`Item ${foodItemId} is not food - bowls only accept food items`)
+    // Validate food type compatibility - bowls accept food and hay
+    if (foodItem.category !== 'food' && foodItem.category !== 'hay') {
+      console.warn(`Item ${foodItemId} is not food or hay - bowls only accept food and hay items`)
       return false
     }
 
