@@ -26,9 +26,9 @@ export interface BehaviorThresholds {
  * Default behavior thresholds (matches useGuineaPigBehavior defaults)
  */
 export const DEFAULT_THRESHOLDS: BehaviorThresholds = {
-  hunger: 30,  // Seek food when hunger < 30%
-  thirst: 25,  // Seek water when thirst < 25%
-  energy: 40,  // Sleep when energy < 40%
+  hunger: 50,  // Seek food when hunger < 50%
+  thirst: 40,  // Seek water when thirst < 40%
+  energy: 50,  // Sleep when energy < 50%
   hygiene: 30, // Groom when hygiene < 30%
   shelter: 50, // Seek shelter when shelter < 50%
   chew: 40     // Use chew items when chew < 40%

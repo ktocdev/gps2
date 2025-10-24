@@ -723,9 +723,9 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Calculate sleep duration based on energy level (lower energy = longer sleep)
     const energyLevel = guineaPig.value.needs.energy
-    const baseDuration = 10000 // 10 seconds base (reduced for better UX)
-    const durationMultiplier = energyLevel < 20 ? 3 : energyLevel < 40 ? 2 : 1.5
-    const sleepDuration = Math.min(baseDuration * durationMultiplier, 30000) // Max 30 seconds
+    const baseDuration = 5000 // 5 seconds base (reduced for better UX)
+    const durationMultiplier = energyLevel < 20 ? 2 : energyLevel < 40 ? 1.5 : 1.2
+    const sleepDuration = Math.min(baseDuration * durationMultiplier, 15000) // Max 15 seconds
 
     // Sleep in interruptible chunks (check for cancellation frequently)
     const startTime = Date.now()
