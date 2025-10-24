@@ -259,16 +259,4 @@ function replenishAllNeeds() {
   padding-block-start: var(--space-4);
   border-block-start: 1px solid var(--color-border-light);
 }
-
-.text-center {
-  text-align: center;
-}
-
-.mb-4 {
-  margin-block-end: var(--space-4);
-}
-
-.mt-4 {
-  margin-block-start: var(--space-4);
-}
 </style>
