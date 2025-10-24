@@ -172,21 +172,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     { value: 'himalayan', weight: 20, rarity: 'rare' }
   ]
 
-  const vegetables = [
-    'bell_pepper', 'carrot', 'cucumber', 'leafy_greens',
-    'broccoli', 'celery', 'cherry_tomatoes', 'zucchini',
-    'parsley', 'cilantro', 'sweet_potato', 'snap_peas', 'dill'
-  ]
-
-  const fruits = [
-    'apple', 'banana', 'strawberry', 'blueberry',
-    'grape', 'orange', 'pear', 'melon', 'kiwi', 'raspberry'
-  ]
-
-  const hayTypes = [
-    'timothy', 'orchard_grass', 'meadow', 'alfalfa',
-    'botanical', 'oat', 'bermuda_grass', 'western_timothy'
-  ]
+  // Legacy arrays removed - now using Supplies Store dynamically
 
   const activities = [
     'tunnels', 'climbing', 'hiding_games', 'chewing',
@@ -295,6 +281,25 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
   function generateRandomPreferences() {
     const shuffleArray = (array: string[]) => [...array].sort(() => Math.random() - 0.5)
+    const suppliesStore = useSuppliesStore()
+
+    // Ensure catalog is loaded before generating preferences
+    if (!suppliesStore.catalogLoaded) {
+      console.warn('[generateRandomPreferences] Supplies catalog not loaded yet, returning empty preferences')
+      return {
+        favoriteFood: [],
+        dislikedFood: [],
+        favoriteActivity: [],
+        habitatPreference: []
+      }
+    }
+
+    // Get real food item IDs from Supplies Store
+    const vegetables = suppliesStore.vegetables.map(item => item.id)
+    const fruits = suppliesStore.fruits.map(item => item.id)
+    const greens = suppliesStore.greens.map(item => item.id)
+    const herbs = suppliesStore.herbs.map(item => item.id)
+    const hayTypes = suppliesStore.allHay.map(item => item.id)
 
     const shuffledVegetables = shuffleArray(vegetables)
     const vegLikes = pickRandomPreferences(shuffledVegetables)
@@ -304,12 +309,20 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     const fruitLikes = pickRandomPreferences(shuffledFruits)
     const fruitDislikes = pickRandomPreferences(shuffledFruits, fruitLikes)
 
+    const shuffledGreens = shuffleArray(greens)
+    const greensLikes = pickRandomPreferences(shuffledGreens)
+    const greensDislikes = pickRandomPreferences(shuffledGreens, greensLikes)
+
+    const shuffledHerbs = shuffleArray(herbs)
+    const herbsLikes = pickRandomPreferences(shuffledHerbs)
+    const herbsDislikes = pickRandomPreferences(shuffledHerbs, herbsLikes)
+
     const shuffledHay = shuffleArray(hayTypes)
     const hayLikes = pickRandomPreferences(shuffledHay)
     const hayDislikes = pickRandomPreferences(shuffledHay, hayLikes)
 
-    const favoriteFood = [...vegLikes, ...fruitLikes, ...hayLikes]
-    const dislikedFood = [...vegDislikes, ...fruitDislikes, ...hayDislikes]
+    const favoriteFood = [...vegLikes, ...fruitLikes, ...greensLikes, ...herbsLikes, ...hayLikes]
+    const dislikedFood = [...vegDislikes, ...fruitDislikes, ...greensDislikes, ...herbsDislikes, ...hayDislikes]
 
     const shuffledActivities = shuffleArray(activities)
     const favoriteActivity = pickRandomPreferences(shuffledActivities)
@@ -352,10 +365,10 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       preferences: generateRandomPreferences(),
 
       needs: {
-        hunger: 100,
-        thirst: 100,
-        energy: 100,
-        shelter: 100,
+        hunger: 60,  // Start at 60% to trigger food-seeking behavior quickly
+        thirst: 80,  // Start at 80% thirst
+        energy: 90,  // Start at 90% energy
+        shelter: 60, // Start at 60% shelter
         play: 100,
         social: 100,
         stimulation: 100,
@@ -954,9 +967,27 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
   function initializeStore(): void {
     const logging = getLoggingStore()
+    const suppliesStore = useSuppliesStore()
+
+    // Ensure catalog is loaded before generating guinea pigs with preferences
+    if (!suppliesStore.catalogLoaded) {
+      suppliesStore.initializeCatalog()
+    }
 
     if (availableGuineaPigs.value.length === 0) {
       generateRandomGuineaPigs(10)
+    } else {
+      // Regenerate preferences for any guinea pigs with empty preferences (from before migration)
+      let regeneratedCount = 0
+      for (const gp of availableGuineaPigs.value) {
+        if (!gp.preferences.favoriteFood || gp.preferences.favoriteFood.length === 0) {
+          gp.preferences = generateRandomPreferences()
+          regeneratedCount++
+        }
+      }
+      if (regeneratedCount > 0) {
+        logging.logInfo(`Regenerated preferences for ${regeneratedCount} guinea pigs with empty preferences`)
+      }
     }
 
     logging.logInfo(`Pet Store Manager initialized with ${availableGuineaPigs.value.length} guinea pigs`)
@@ -984,9 +1015,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     furPatterns,
     breeds,
     eyeColors: ['brown', 'black', 'red', 'blue', 'pink'],
-    vegetables,
-    fruits,
-    hayTypes,
     activities,
     habitatFeatures,
 

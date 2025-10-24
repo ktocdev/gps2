@@ -3,10 +3,11 @@
  * Core AI decision-making and behavior selection for guinea pigs
  */
 
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useLoggingStore } from '../../stores/loggingStore'
+import { useBehaviorStateStore } from '../../stores/behaviorStateStore'
 import { useMovement } from './useMovement'
 import { usePathfinding } from './usePathfinding'
 import { MessageGenerator } from '../../utils/messageGenerator'
@@ -39,7 +40,7 @@ export interface BehaviorGoal {
 
 export interface BehaviorState {
   currentGoal: BehaviorGoal | null
-  currentActivity: 'idle' | 'walking' | 'eating' | 'drinking' | 'sleeping' | 'grooming'
+  currentActivity: 'idle' | 'walking' | 'eating' | 'drinking' | 'sleeping' | 'grooming' | 'hiding'
   activityStartTime: number
   lastDecisionTime: number
   behaviorCooldowns: Map<BehaviorType, number>
@@ -51,7 +52,7 @@ const DEFAULT_THRESHOLDS = {
   thirst: 25,  // Seek water when thirst < 25%
   energy: 40,  // Sleep when energy < 40%
   hygiene: 30, // Groom when hygiene < 30%
-  shelter: 60, // Seek shelter when shelter < 60%
+  shelter: 50, // Seek shelter when shelter < 50%
   chew: 40     // Use chew items when chew < 40%
 }
 
@@ -59,15 +60,17 @@ export function useGuineaPigBehavior(guineaPigId: string) {
   const guineaPigStore = useGuineaPigStore()
   const habitatConditions = useHabitatConditions()
   const loggingStore = useLoggingStore()
+  const behaviorStateStore = useBehaviorStateStore()
   const movement = useMovement(guineaPigId)
   const pathfinding = usePathfinding()
 
-  const behaviorState = ref<BehaviorState>({
-    currentGoal: null,
-    currentActivity: 'idle',
-    activityStartTime: Date.now(),
-    lastDecisionTime: Date.now(),
-    behaviorCooldowns: new Map()
+  // Initialize centralized behavior state for this guinea pig
+  behaviorStateStore.initializeBehaviorState(guineaPigId)
+
+  // Use centralized behavior state instead of local ref
+  const behaviorState = computed({
+    get: () => behaviorStateStore.getBehaviorState(guineaPigId)!,
+    set: (value) => behaviorStateStore.updateBehaviorState(guineaPigId, value)
   })
 
   const guineaPig = computed(() => guineaPigStore.getGuineaPig(guineaPigId))
@@ -101,8 +104,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
   /**
    * Find nearest item by need type
+   * @param needType - The need to satisfy
+   * @param preferAnchor - If true, prefer anchor position over adjacent (e.g., sleep on top of shelter)
    */
-  function findNearestItemForNeed(needType: NeedType): { position: GridPosition; itemId: string } | null {
+  function findNearestItemForNeed(needType: NeedType, preferAnchor: boolean = false): { position: GridPosition; itemId: string } | null {
     const currentPos = movement.currentPosition.value
     const items = habitatConditions.habitatItems
     const itemPositions = habitatConditions.itemPositions
@@ -150,16 +155,54 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     if (!nearest) return null
 
-    // For multi-tile items, check if anchor position is pathfindable
-    // If not, find an accessible adjacent cell
     const targetPos = nearest.position
+    const itemId = nearest.itemId.toLowerCase()
 
-    // Try the anchor position first
+    // Determine if this is a shelter/bed/tunnel item
+    const isShelterLikeItem =
+      itemId.includes('shelter') ||
+      itemId.includes('hideaway') ||
+      itemId.includes('igloo') ||
+      itemId.includes('house') ||
+      itemId.includes('bed') ||
+      itemId.includes('sleeping') ||
+      itemId.includes('tunnel')
+
+    // For shelters/beds: positioning depends on use case
+    // - preferAnchor=true: Sleep ON TOP of shelter (anchor position)
+    // - preferAnchor=false: Hide INSIDE shelter (adjacent position)
+    if (isShelterLikeItem && !preferAnchor) {
+      // Check adjacent cells (including diagonals for better accessibility)
+      const adjacentOffsets = [
+        { row: -1, col: 0 }, { row: 1, col: 0 }, // up, down
+        { row: 0, col: -1 }, { row: 0, col: 1 }, // left, right
+        { row: -1, col: -1 }, { row: -1, col: 1 }, // diagonals
+        { row: 1, col: -1 }, { row: 1, col: 1 }
+      ]
+
+      for (const offset of adjacentOffsets) {
+        const adjacentPos = {
+          row: targetPos.row + offset.row,
+          col: targetPos.col + offset.col
+        }
+
+        // Check if position is valid (in bounds and not blocked)
+        if (pathfinding.isValidPosition(adjacentPos)) {
+          return { position: adjacentPos, itemId: nearest.itemId }
+        }
+      }
+
+      // No valid adjacent cells found - shelter is completely blocked
+      return null
+    }
+
+    // For shelters/beds with preferAnchor=true OR other items (bowls, bottles, etc)
+    // Try anchor first, then adjacent
     if (pathfinding.isValidPosition(targetPos)) {
       return { position: targetPos, itemId: nearest.itemId }
     }
 
-    // If blocked, check adjacent cells (including diagonals for better accessibility)
+    // If anchor blocked, check adjacent cells (fallback for non-accessible anchors)
     const adjacentOffsets = [
       { row: -1, col: 0 }, { row: 1, col: 0 }, // up, down
       { row: 0, col: -1 }, { row: 0, col: 1 }, // left, right
@@ -179,8 +222,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       }
     }
 
-    // Fallback: return anchor position even if blocked (pathfinding will handle it as goal)
-    return { position: targetPos, itemId: nearest.itemId }
+    // No valid position found - item is completely inaccessible
+    return null
   }
 
   /**
@@ -261,8 +304,9 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Energy < threshold (sleep) - Enhanced bed selection
     if (needs.energy < thresholds.energy && !isOnCooldown('sleep')) {
       // Try to find preferred bed/shelter first
-      const bed = findNearestItemForNeed('energy')
-      const shelter = findNearestItemForNeed('shelter')
+      // preferAnchor=true: guinea pig sleeps ON TOP of shelter/bed
+      const bed = findNearestItemForNeed('energy', true)
+      const shelter = findNearestItemForNeed('shelter', true)
 
       // Prefer bed if available, otherwise use shelter, fallback to floor
       let target = bed || shelter
@@ -282,7 +326,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Shelter < threshold
     if (needs.shelter < thresholds.shelter && !isOnCooldown('seek_shelter')) {
-      const target = findNearestItemForNeed('shelter')
+      // preferAnchor=true: guinea pig goes ON TOP of shelter (same as sleep)
+      const target = findNearestItemForNeed('shelter', true)
       if (target) {
         goals.push({
           type: 'seek_shelter',
@@ -376,7 +421,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     else {
       // 10% chance to hide when friendship is low
       if (Math.random() < 0.10 && !isOnCooldown('hide')) {
-        const shelter = findNearestItemForNeed('shelter')
+        // preferAnchor=true: guinea pig goes ON TOP of shelter (same as sleep/seek_shelter)
+        const shelter = findNearestItemForNeed('shelter', true)
         if (shelter) {
           goals.push({
             type: 'hide',
@@ -638,9 +684,11 @@ export function useGuineaPigBehavior(guineaPigId: string) {
         // Fall back to sleeping in place if can't reach bed
         goal.targetItemId = undefined
       } else {
-        // Wait for arrival
+        // Wait for arrival with timeout
         await new Promise<void>(resolve => {
           movement.onArrival(() => resolve())
+          // Timeout after 10 seconds to prevent infinite waiting
+          setTimeout(() => resolve(), 10000)
         })
       }
     }
@@ -675,12 +723,27 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Calculate sleep duration based on energy level (lower energy = longer sleep)
     const energyLevel = guineaPig.value.needs.energy
-    const baseDuration = 30000 // 30 seconds base
-    const durationMultiplier = energyLevel < 20 ? 4 : energyLevel < 40 ? 2.5 : 1.5
-    const sleepDuration = Math.min(baseDuration * durationMultiplier, 200000) // Max 200 seconds
+    const baseDuration = 5000 // 5 seconds base (reduced for better UX)
+    const durationMultiplier = energyLevel < 20 ? 2 : energyLevel < 40 ? 1.5 : 1.2
+    const sleepDuration = Math.min(baseDuration * durationMultiplier, 15000) // Max 15 seconds
 
-    // Simulate sleeping duration
-    await new Promise(resolve => setTimeout(resolve, sleepDuration))
+    // Sleep in interruptible chunks (check for cancellation frequently)
+    const startTime = Date.now()
+    const checkInterval = 250 // Check every 250ms for responsive cancellation
+
+    while (Date.now() - startTime < sleepDuration) {
+      // Check if behavior was cancelled
+      if (behaviorState.value.currentGoal?.type !== 'sleep') {
+        console.log('[Sleep] Interrupted by cancel')
+        behaviorState.value.currentActivity = 'idle'
+        return false
+      }
+
+      // Sleep for check interval or remaining time, whichever is shorter
+      const remainingTime = sleepDuration - (Date.now() - startTime)
+      const waitTime = Math.min(checkInterval, remainingTime)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
 
     // Satisfy energy need with quality multiplier
     if (guineaPig.value) {
@@ -886,10 +949,16 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     const success = movement.moveTo(goal.target, { avoidOccupiedCells: true })
     if (!success) return false
 
-    // Wait for arrival
+    // Wait for arrival with timeout
     await new Promise<void>(resolve => {
       movement.onArrival(() => resolve())
+      // Timeout after 10 seconds to prevent infinite waiting
+      setTimeout(() => resolve(), 10000)
     })
+
+    // Set sheltering/hiding state
+    behaviorState.value.currentActivity = 'hiding'
+    behaviorState.value.activityStartTime = Date.now()
 
     // Calculate shelter quality based on preferences
     let shelterEffectiveness = 1.0
@@ -915,7 +984,24 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Stay in shelter (duration based on need severity)
     const shelterNeed = guineaPig.value?.needs.shelter || 50
     const duration = shelterNeed < 30 ? goal.estimatedDuration * 1.5 : goal.estimatedDuration
-    await new Promise(resolve => setTimeout(resolve, duration))
+
+    // Shelter in interruptible chunks (check for cancellation frequently)
+    const startTime = Date.now()
+    const checkInterval = 250 // Check every 250ms for responsive cancellation
+
+    while (Date.now() - startTime < duration) {
+      // Check if behavior was cancelled
+      if (behaviorState.value.currentGoal?.type !== 'seek_shelter') {
+        console.log('[Shelter] Interrupted by cancel')
+        behaviorState.value.currentActivity = 'idle'
+        return false
+      }
+
+      // Wait for check interval or remaining time, whichever is shorter
+      const remainingTime = duration - (Date.now() - startTime)
+      const waitTime = Math.min(checkInterval, remainingTime)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
 
     // Satisfy shelter need with effectiveness multiplier
     if (guineaPig.value) {
@@ -1035,13 +1121,35 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     const success = movement.moveTo(goal.target, { avoidOccupiedCells: true })
     if (!success) return false
 
-    // Wait for arrival
+    // Wait for arrival with timeout
     await new Promise<void>(resolve => {
       movement.onArrival(() => resolve())
+      // Timeout after 10 seconds to prevent infinite waiting
+      setTimeout(() => resolve(), 10000)
     })
 
-    // Stay hidden
-    await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
+    // Set hiding state
+    behaviorState.value.currentActivity = 'hiding'
+    behaviorState.value.activityStartTime = Date.now()
+
+    // Stay hidden in interruptible chunks
+    const startTime = Date.now()
+    const checkInterval = 250 // Check every 250ms for responsive cancellation
+    const duration = goal.estimatedDuration
+
+    while (Date.now() - startTime < duration) {
+      // Check if behavior was cancelled
+      if (behaviorState.value.currentGoal?.type !== 'hide') {
+        console.log('[Hide] Interrupted by cancel')
+        behaviorState.value.currentActivity = 'idle'
+        return false
+      }
+
+      // Wait for check interval or remaining time, whichever is shorter
+      const remainingTime = duration - (Date.now() - startTime)
+      const waitTime = Math.min(checkInterval, remainingTime)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
 
     // Hiding satisfies shelter need but decreases social
     if (guineaPig.value) {
@@ -1053,8 +1161,9 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
-    // Set cooldown
+    // Set cooldown and return to idle
     setCooldown('hide', 40000) // 40 second cooldown
+    behaviorState.value.currentActivity = 'idle'
     behaviorState.value.currentGoal = null
 
     return true

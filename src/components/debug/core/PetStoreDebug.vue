@@ -396,6 +396,7 @@
 <script setup lang="ts">
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 import { usePetStoreManager } from '../../../stores/petStoreManager'
+import { useSuppliesStore } from '../../../stores/suppliesStore'
 import type { GuineaPig } from '../../../stores/guineaPigStore'
 import SliderField from '../../basic/SliderField.vue'
 import Badge from '../../basic/Badge.vue'
@@ -550,19 +551,27 @@ const selectEyeColorOptions = computed(() => {
   return options
 })
 
-// Preference option arrays
-const vegetableOptions = petStoreManager.vegetables
-const fruitOptions = petStoreManager.fruits
-const hayOptions = petStoreManager.hayTypes
+// Preference option arrays - pull from Supplies Store
+const suppliesStore = useSuppliesStore()
+const vegetableOptions = computed(() => suppliesStore.vegetables.map(item => item.id))
+const fruitOptions = computed(() => suppliesStore.fruits.map(item => item.id))
+const hayOptions = computed(() => suppliesStore.allHay.map(item => item.id))
+// Note: Greens and herbs are also available in the store for future use:
+// - suppliesStore.greens
+// - suppliesStore.herbs
 const activityOptions = petStoreManager.activities
 const habitatOptions = petStoreManager.habitatFeatures
 
 // Helper function to capitalize first letter
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
 
-// Helper function for formatting preference names (snake_case → Title Case)
+// Helper function for formatting preference names (remove category prefix, snake_case → Title Case)
 const formatPreferenceName = (name: string) => {
-  return name.split('_').map(word =>
+  // Remove category prefixes: food_, hay_, habitat_
+  const withoutPrefix = name.replace(/^(food|hay|habitat)_/, '')
+
+  // Convert snake_case to Title Case
+  return withoutPrefix.split('_').map(word =>
     word.charAt(0).toUpperCase() + word.slice(1)
   ).join(' ')
 }
@@ -570,7 +579,7 @@ const formatPreferenceName = (name: string) => {
 // Select component options for preferences
 const selectVegetableOptions = computed(() => [
   { label: 'None', value: '' },
-  ...vegetableOptions.map(veg => ({
+  ...vegetableOptions.value.map((veg: string) => ({
     label: formatPreferenceName(veg),
     value: veg
   }))
@@ -578,7 +587,7 @@ const selectVegetableOptions = computed(() => [
 
 const selectFruitOptions = computed(() => [
   { label: 'None', value: '' },
-  ...fruitOptions.map(fruit => ({
+  ...fruitOptions.value.map((fruit: string) => ({
     label: formatPreferenceName(fruit),
     value: fruit
   }))
@@ -586,7 +595,7 @@ const selectFruitOptions = computed(() => [
 
 const selectHayOptions = computed(() => [
   { label: 'None', value: '' },
-  ...hayOptions.map(hay => ({
+  ...hayOptions.value.map((hay: string) => ({
     label: formatPreferenceName(hay),
     value: hay
   }))
@@ -594,7 +603,7 @@ const selectHayOptions = computed(() => [
 
 const selectActivityOptions = computed(() => [
   { label: 'None', value: '' },
-  ...activityOptions.map(activity => ({
+  ...activityOptions.map((activity: string) => ({
     label: formatPreferenceName(activity),
     value: activity
   }))
@@ -602,7 +611,7 @@ const selectActivityOptions = computed(() => [
 
 const selectHabitatOptions = computed(() => [
   { label: 'None', value: '' },
-  ...habitatOptions.map(habitat => ({
+  ...habitatOptions.map((habitat: string) => ({
     label: formatPreferenceName(habitat),
     value: habitat
   }))
@@ -686,12 +695,12 @@ watch(() => selectedGuineaPig.value, (gp) => {
   }
 
   // Extract category-specific preferences (with fallbacks for missing fields)
-  const vegFavorites = getPreferencesForCategory(gp.preferences.favoriteFood || [], vegetableOptions)
-  const vegDislikes = getPreferencesForCategory(gp.preferences.dislikedFood || [], vegetableOptions)
-  const fruitFavorites = getPreferencesForCategory(gp.preferences.favoriteFood || [], fruitOptions)
-  const fruitDislikes = getPreferencesForCategory(gp.preferences.dislikedFood || [], fruitOptions)
-  const hayFavorites = getPreferencesForCategory(gp.preferences.favoriteFood || [], hayOptions)
-  const hayDislikes = getPreferencesForCategory(gp.preferences.dislikedFood || [], hayOptions)
+  const vegFavorites = getPreferencesForCategory(gp.preferences.favoriteFood || [], vegetableOptions.value)
+  const vegDislikes = getPreferencesForCategory(gp.preferences.dislikedFood || [], vegetableOptions.value)
+  const fruitFavorites = getPreferencesForCategory(gp.preferences.favoriteFood || [], fruitOptions.value)
+  const fruitDislikes = getPreferencesForCategory(gp.preferences.dislikedFood || [], fruitOptions.value)
+  const hayFavorites = getPreferencesForCategory(gp.preferences.favoriteFood || [], hayOptions.value)
+  const hayDislikes = getPreferencesForCategory(gp.preferences.dislikedFood || [], hayOptions.value)
 
   // Populate selects
   vegFavorite1.value = vegFavorites[0] || ''

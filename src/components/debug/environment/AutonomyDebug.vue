@@ -37,6 +37,13 @@
                 <button
                   class="btn btn--sm btn--secondary"
                   :disabled="!isGameActive"
+                  @click="triggerBehavior(guineaPig.id, 'seek_shelter')"
+                >
+                  🏠 Seek Shelter
+                </button>
+                <button
+                  class="btn btn--sm btn--secondary"
+                  :disabled="!isGameActive"
                   @click="triggerBehavior(guineaPig.id, 'wander')"
                 >
                   🚶 Trigger Wander
@@ -140,6 +147,30 @@
                   @update:modelValue="(value: number) => setEnergyThreshold(guineaPig.id, value)"
                 />
               </div>
+
+              <!-- Shelter Threshold -->
+              <div class="threshold-control mb-3">
+                <label :for="`${guineaPig.id}-shelter-threshold`">
+                  Shelter Behavior Threshold
+                </label>
+                <div class="threshold-control__info">
+                  <span class="threshold-control__value">{{ getShelterThreshold(guineaPig.id) }}%</span>
+                  <span class="threshold-control__note">
+                    (Will seek shelter when shelter drops below this)
+                  </span>
+                </div>
+                <SliderField
+                  :id="`${guineaPig.id}-shelter-threshold`"
+                  :modelValue="getShelterThreshold(guineaPig.id)"
+                  :min="10"
+                  :max="80"
+                  :step="5"
+                  prefix=""
+                  suffix="%"
+                  :show-min-max="true"
+                  @update:modelValue="(value: number) => setShelterThreshold(guineaPig.id, value)"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -203,11 +234,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useGameTimingStore } from '../../../stores/gameTimingStore'
 import { useGameController } from '../../../stores/gameController'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
+import { useAutonomySettingsStore } from '../../../stores/autonomySettingsStore'
+import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useGuineaPigBehavior } from '../../../composables/game/useGuineaPigBehavior'
 import type { BehaviorType } from '../../../composables/game/useGuineaPigBehavior'
 import SliderField from '../../basic/SliderField.vue'
@@ -216,6 +249,8 @@ const guineaPigStore = useGuineaPigStore()
 const gameTimingStore = useGameTimingStore()
 const gameController = useGameController()
 const habitatConditions = useHabitatConditions()
+const autonomySettings = useAutonomySettingsStore()
+const behaviorStateStore = useBehaviorStateStore()
 
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 const isGameActive = computed(() => gameController.isGameActive)
@@ -223,54 +258,38 @@ const isGameActive = computed(() => gameController.isGameActive)
 // Cache behavior composables (similar to gameTimingStore pattern)
 const behaviorComposables = new Map<string, ReturnType<typeof useGuineaPigBehavior>>()
 
-// Store thresholds per guinea pig (default values)
-const behaviorThresholds = ref<Record<string, {
-  hunger: number
-  thirst: number
-  energy: number
-}>>({})
-
-// Initialize thresholds for a guinea pig if not present
-function ensureThresholds(guineaPigId: string) {
-  if (!behaviorThresholds.value[guineaPigId]) {
-    behaviorThresholds.value[guineaPigId] = {
-      hunger: 30,  // Default: trigger at 30%
-      thirst: 25,  // Default: trigger at 25%
-      energy: 40   // Default: trigger at 40%
-    }
-  }
-}
-
-// Getters
+// Getters - use autonomy settings store
 function getHungerThreshold(guineaPigId: string): number {
-  ensureThresholds(guineaPigId)
-  return behaviorThresholds.value[guineaPigId].hunger
+  return autonomySettings.getThresholds(guineaPigId).hunger
 }
 
 function getThirstThreshold(guineaPigId: string): number {
-  ensureThresholds(guineaPigId)
-  return behaviorThresholds.value[guineaPigId].thirst
+  return autonomySettings.getThresholds(guineaPigId).thirst
 }
 
 function getEnergyThreshold(guineaPigId: string): number {
-  ensureThresholds(guineaPigId)
-  return behaviorThresholds.value[guineaPigId].energy
+  return autonomySettings.getThresholds(guineaPigId).energy
 }
 
-// Setters
+function getShelterThreshold(guineaPigId: string): number {
+  return autonomySettings.getThresholds(guineaPigId).shelter
+}
+
+// Setters - use autonomy settings store
 function setHungerThreshold(guineaPigId: string, value: number) {
-  ensureThresholds(guineaPigId)
-  behaviorThresholds.value[guineaPigId].hunger = value
+  autonomySettings.setThreshold(guineaPigId, 'hunger', value)
 }
 
 function setThirstThreshold(guineaPigId: string, value: number) {
-  ensureThresholds(guineaPigId)
-  behaviorThresholds.value[guineaPigId].thirst = value
+  autonomySettings.setThreshold(guineaPigId, 'thirst', value)
 }
 
 function setEnergyThreshold(guineaPigId: string, value: number) {
-  ensureThresholds(guineaPigId)
-  behaviorThresholds.value[guineaPigId].energy = value
+  autonomySettings.setThreshold(guineaPigId, 'energy', value)
+}
+
+function setShelterThreshold(guineaPigId: string, value: number) {
+  autonomySettings.setThreshold(guineaPigId, 'shelter', value)
 }
 
 /**
@@ -334,6 +353,9 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       case 'sleep':
         guineaPigStore.adjustNeed(guineaPigId, 'energy', -100) // Drop energy to near 0
         break
+      case 'seek_shelter':
+        guineaPigStore.adjustNeed(guineaPigId, 'shelter', -100) // Drop shelter to near 0
+        break
     }
 
     // Small delay to ensure need update propagates
@@ -345,16 +367,8 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       energy: guineaPig.needs.energy
     })
 
-    // Get custom thresholds if set, with all required fields
-    const customThresholds = behaviorThresholds.value[guineaPigId]
-    const thresholds = {
-      hunger: customThresholds?.hunger ?? 30,
-      thirst: customThresholds?.thirst ?? 25,
-      energy: customThresholds?.energy ?? 40,
-      hygiene: 30,
-      shelter: 60,
-      chew: 40
-    }
+    // Get custom thresholds from autonomy settings store
+    const thresholds = autonomySettings.getThresholds(guineaPigId)
 
     console.log(`[Manual Trigger] Thresholds:`, thresholds)
     console.log(`[Manual Trigger] Checking cooldown for ${behaviorType}:`, behavior.isOnCooldown(behaviorType))
@@ -399,6 +413,9 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
           case 'sleep':
             guineaPigStore.adjustNeed(guineaPigId, 'energy', 100 - guineaPig.needs.energy)
             break
+          case 'seek_shelter':
+            guineaPigStore.adjustNeed(guineaPigId, 'shelter', 100 - guineaPig.needs.shelter)
+            break
         }
 
         console.log(`[Manual Trigger] Needs after manual satisfaction:`, {
@@ -416,6 +433,7 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
       guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
       guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+      guineaPigStore.adjustNeed(guineaPigId, 'shelter', originalNeeds.shelter - guineaPig.needs.shelter)
     } else {
       console.warn(`❌ No goal created. Check: cooldown status, habitat items (bowls/water/etc)`)
 
@@ -423,6 +441,7 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
       guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
       guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+      guineaPigStore.adjustNeed(guineaPigId, 'shelter', originalNeeds.shelter - guineaPig.needs.shelter)
     }
   } catch (error) {
     console.error(`❌ Error triggering ${behaviorType}:`, error)
@@ -431,27 +450,28 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
     guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
     guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
     guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+    guineaPigStore.adjustNeed(guineaPigId, 'shelter', originalNeeds.shelter - guineaPig.needs.shelter)
   }
 }
 
 /**
- * Get current activity from behavior state
+ * Get current activity from behavior state store
  */
 function getCurrentActivity(guineaPigId: string): string {
-  const behavior = behaviorComposables.get(guineaPigId)
-  if (!behavior) return 'idle'
+  const state = behaviorStateStore.getBehaviorState(guineaPigId)
+  if (!state) return 'idle'
 
-  return behavior.behaviorState.value.currentActivity
+  return state.currentActivity
 }
 
 /**
- * Get current goal from behavior state
+ * Get current goal from behavior state store
  */
 function getCurrentGoal(guineaPigId: string): string {
-  const behavior = behaviorComposables.get(guineaPigId)
-  if (!behavior) return 'none'
+  const state = behaviorStateStore.getBehaviorState(guineaPigId)
+  if (!state) return 'none'
 
-  const goal = behavior.behaviorState.value.currentGoal
+  const goal = state.currentGoal
   if (!goal) return 'none'
 
   return goal.type
@@ -467,9 +487,8 @@ function getPosition(guineaPigId: string): string {
   return `(${pos.x}, ${pos.y})`
 }
 
-// Export controls for use by autonomy system
+// Export getters for external access (if needed)
 defineExpose({
-  behaviorThresholds,
   getHungerThreshold,
   getThirstThreshold,
   getEnergyThreshold
