@@ -62,12 +62,15 @@
       <!-- System 19: Autonomy Debug Panel -->
       <div class="panel panel--compact panel--accent">
         <div class="panel__header">
-          <h3>🤖 Autonomy Behaviors (System 19)</h3>
+          <h3>🤖 Autonomy Behaviors</h3>
         </div>
         <div class="panel__content">
           <AutonomyDebug />
         </div>
       </div>
+
+      <!-- Needs Panel -->
+      <NeedsPanel />
 
       <!-- Habitat Conditions Panel -->
       <div class="panel panel--compact panel--accent">
@@ -257,7 +260,7 @@
       <!-- System 19: Poop Debug Panel -->
       <div class="panel panel--compact panel--accent">
         <div class="panel__header">
-          <h3>💩 Poop System (System 19)</h3>
+          <h3>💩 Poop System</h3>
         </div>
         <div class="panel__content">
           <PoopDebug />
@@ -341,6 +344,7 @@ import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/HabitatCareSidebar.vue'
 import AutonomyDebug from './AutonomyDebug.vue'
+import NeedsPanel from './NeedsPanel.vue'
 import PoopDebug from './PoopDebug.vue'
 
 const habitat = useHabitatConditions()
@@ -715,10 +719,17 @@ function getChewDurabilityClass(durability: number): string {
   grid-template-columns: 1fr;
 }
 
-/* Desktop: 2 columns - Autonomy Behaviors (66%) / Habitat Conditions (33%) */
-@media (min-width: 768px) {
+/* Desktop: 3 columns - Autonomy (narrower) / Needs (medium) / Habitat Conditions (medium) */
+@media (min-width: 1200px) {
   .habitat-debug__conditions-row {
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 0.75fr 1fr 1fr;
+  }
+}
+
+/* Tablet: 2 columns - stack panels */
+@media (min-width: 768px) and (max-width: 1199px) {
+  .habitat-debug__conditions-row {
+    grid-template-columns: 1fr 1fr;
   }
 }
 

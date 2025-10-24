@@ -30,7 +30,7 @@ export const DEFAULT_THRESHOLDS: BehaviorThresholds = {
   thirst: 25,  // Seek water when thirst < 25%
   energy: 40,  // Sleep when energy < 40%
   hygiene: 30, // Groom when hygiene < 30%
-  shelter: 60, // Seek shelter when shelter < 60%
+  shelter: 50, // Seek shelter when shelter < 50%
   chew: 40     // Use chew items when chew < 40%
 }
 

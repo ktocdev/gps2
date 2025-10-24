@@ -37,6 +37,13 @@
                 <button
                   class="btn btn--sm btn--secondary"
                   :disabled="!isGameActive"
+                  @click="triggerBehavior(guineaPig.id, 'seek_shelter')"
+                >
+                  🏠 Seek Shelter
+                </button>
+                <button
+                  class="btn btn--sm btn--secondary"
+                  :disabled="!isGameActive"
                   @click="triggerBehavior(guineaPig.id, 'wander')"
                 >
                   🚶 Trigger Wander
@@ -140,6 +147,30 @@
                   @update:modelValue="(value: number) => setEnergyThreshold(guineaPig.id, value)"
                 />
               </div>
+
+              <!-- Shelter Threshold -->
+              <div class="threshold-control mb-3">
+                <label :for="`${guineaPig.id}-shelter-threshold`">
+                  Shelter Behavior Threshold
+                </label>
+                <div class="threshold-control__info">
+                  <span class="threshold-control__value">{{ getShelterThreshold(guineaPig.id) }}%</span>
+                  <span class="threshold-control__note">
+                    (Will seek shelter when shelter drops below this)
+                  </span>
+                </div>
+                <SliderField
+                  :id="`${guineaPig.id}-shelter-threshold`"
+                  :modelValue="getShelterThreshold(guineaPig.id)"
+                  :min="10"
+                  :max="80"
+                  :step="5"
+                  prefix=""
+                  suffix="%"
+                  :show-min-max="true"
+                  @update:modelValue="(value: number) => setShelterThreshold(guineaPig.id, value)"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -238,6 +269,10 @@ function getEnergyThreshold(guineaPigId: string): number {
   return autonomySettings.getThresholds(guineaPigId).energy
 }
 
+function getShelterThreshold(guineaPigId: string): number {
+  return autonomySettings.getThresholds(guineaPigId).shelter
+}
+
 // Setters - use autonomy settings store
 function setHungerThreshold(guineaPigId: string, value: number) {
   autonomySettings.setThreshold(guineaPigId, 'hunger', value)
@@ -249,6 +284,10 @@ function setThirstThreshold(guineaPigId: string, value: number) {
 
 function setEnergyThreshold(guineaPigId: string, value: number) {
   autonomySettings.setThreshold(guineaPigId, 'energy', value)
+}
+
+function setShelterThreshold(guineaPigId: string, value: number) {
+  autonomySettings.setThreshold(guineaPigId, 'shelter', value)
 }
 
 /**
@@ -312,6 +351,9 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       case 'sleep':
         guineaPigStore.adjustNeed(guineaPigId, 'energy', -100) // Drop energy to near 0
         break
+      case 'seek_shelter':
+        guineaPigStore.adjustNeed(guineaPigId, 'shelter', -100) // Drop shelter to near 0
+        break
     }
 
     // Small delay to ensure need update propagates
@@ -369,6 +411,9 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
           case 'sleep':
             guineaPigStore.adjustNeed(guineaPigId, 'energy', 100 - guineaPig.needs.energy)
             break
+          case 'seek_shelter':
+            guineaPigStore.adjustNeed(guineaPigId, 'shelter', 100 - guineaPig.needs.shelter)
+            break
         }
 
         console.log(`[Manual Trigger] Needs after manual satisfaction:`, {
@@ -386,6 +431,7 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
       guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
       guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+      guineaPigStore.adjustNeed(guineaPigId, 'shelter', originalNeeds.shelter - guineaPig.needs.shelter)
     } else {
       console.warn(`❌ No goal created. Check: cooldown status, habitat items (bowls/water/etc)`)
 
@@ -393,6 +439,7 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
       guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
       guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+      guineaPigStore.adjustNeed(guineaPigId, 'shelter', originalNeeds.shelter - guineaPig.needs.shelter)
     }
   } catch (error) {
     console.error(`❌ Error triggering ${behaviorType}:`, error)
@@ -401,6 +448,7 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
     guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
     guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
     guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+    guineaPigStore.adjustNeed(guineaPigId, 'shelter', originalNeeds.shelter - guineaPig.needs.shelter)
   }
 }
 
