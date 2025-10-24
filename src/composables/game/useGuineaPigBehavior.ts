@@ -3,10 +3,11 @@
  * Core AI decision-making and behavior selection for guinea pigs
  */
 
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useLoggingStore } from '../../stores/loggingStore'
+import { useBehaviorStateStore } from '../../stores/behaviorStateStore'
 import { useMovement } from './useMovement'
 import { usePathfinding } from './usePathfinding'
 import { MessageGenerator } from '../../utils/messageGenerator'
@@ -59,15 +60,17 @@ export function useGuineaPigBehavior(guineaPigId: string) {
   const guineaPigStore = useGuineaPigStore()
   const habitatConditions = useHabitatConditions()
   const loggingStore = useLoggingStore()
+  const behaviorStateStore = useBehaviorStateStore()
   const movement = useMovement(guineaPigId)
   const pathfinding = usePathfinding()
 
-  const behaviorState = ref<BehaviorState>({
-    currentGoal: null,
-    currentActivity: 'idle',
-    activityStartTime: Date.now(),
-    lastDecisionTime: Date.now(),
-    behaviorCooldowns: new Map()
+  // Initialize centralized behavior state for this guinea pig
+  behaviorStateStore.initializeBehaviorState(guineaPigId)
+
+  // Use centralized behavior state instead of local ref
+  const behaviorState = computed({
+    get: () => behaviorStateStore.getBehaviorState(guineaPigId)!,
+    set: (value) => behaviorStateStore.updateBehaviorState(guineaPigId, value)
   })
 
   const guineaPig = computed(() => guineaPigStore.getGuineaPig(guineaPigId))
@@ -323,7 +326,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Shelter < threshold
     if (needs.shelter < thresholds.shelter && !isOnCooldown('seek_shelter')) {
-      const target = findNearestItemForNeed('shelter')
+      // preferAnchor=true: guinea pig goes ON TOP of shelter (same as sleep)
+      const target = findNearestItemForNeed('shelter', true)
       if (target) {
         goals.push({
           type: 'seek_shelter',
@@ -417,7 +421,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     else {
       // 10% chance to hide when friendship is low
       if (Math.random() < 0.10 && !isOnCooldown('hide')) {
-        const shelter = findNearestItemForNeed('shelter')
+        // preferAnchor=true: guinea pig goes ON TOP of shelter (same as sleep/seek_shelter)
+        const shelter = findNearestItemForNeed('shelter', true)
         if (shelter) {
           goals.push({
             type: 'hide',
@@ -718,12 +723,27 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Calculate sleep duration based on energy level (lower energy = longer sleep)
     const energyLevel = guineaPig.value.needs.energy
-    const baseDuration = 30000 // 30 seconds base
-    const durationMultiplier = energyLevel < 20 ? 4 : energyLevel < 40 ? 2.5 : 1.5
-    const sleepDuration = Math.min(baseDuration * durationMultiplier, 200000) // Max 200 seconds
+    const baseDuration = 10000 // 10 seconds base (reduced for better UX)
+    const durationMultiplier = energyLevel < 20 ? 3 : energyLevel < 40 ? 2 : 1.5
+    const sleepDuration = Math.min(baseDuration * durationMultiplier, 30000) // Max 30 seconds
 
-    // Simulate sleeping duration
-    await new Promise(resolve => setTimeout(resolve, sleepDuration))
+    // Sleep in interruptible chunks (check for cancellation frequently)
+    const startTime = Date.now()
+    const checkInterval = 250 // Check every 250ms for responsive cancellation
+
+    while (Date.now() - startTime < sleepDuration) {
+      // Check if behavior was cancelled
+      if (behaviorState.value.currentGoal?.type !== 'sleep') {
+        console.log('[Sleep] Interrupted by cancel')
+        behaviorState.value.currentActivity = 'idle'
+        return false
+      }
+
+      // Sleep for check interval or remaining time, whichever is shorter
+      const remainingTime = sleepDuration - (Date.now() - startTime)
+      const waitTime = Math.min(checkInterval, remainingTime)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
 
     // Satisfy energy need with quality multiplier
     if (guineaPig.value) {
@@ -936,8 +956,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       setTimeout(() => resolve(), 10000)
     })
 
-    // Set sheltering state (using 'idle' for now, could add 'sheltering' later)
-    behaviorState.value.currentActivity = 'idle'
+    // Set sheltering/hiding state
+    behaviorState.value.currentActivity = 'hiding'
     behaviorState.value.activityStartTime = Date.now()
 
     // Calculate shelter quality based on preferences
@@ -964,7 +984,24 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Stay in shelter (duration based on need severity)
     const shelterNeed = guineaPig.value?.needs.shelter || 50
     const duration = shelterNeed < 30 ? goal.estimatedDuration * 1.5 : goal.estimatedDuration
-    await new Promise(resolve => setTimeout(resolve, duration))
+
+    // Shelter in interruptible chunks (check for cancellation frequently)
+    const startTime = Date.now()
+    const checkInterval = 250 // Check every 250ms for responsive cancellation
+
+    while (Date.now() - startTime < duration) {
+      // Check if behavior was cancelled
+      if (behaviorState.value.currentGoal?.type !== 'seek_shelter') {
+        console.log('[Shelter] Interrupted by cancel')
+        behaviorState.value.currentActivity = 'idle'
+        return false
+      }
+
+      // Wait for check interval or remaining time, whichever is shorter
+      const remainingTime = duration - (Date.now() - startTime)
+      const waitTime = Math.min(checkInterval, remainingTime)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
 
     // Satisfy shelter need with effectiveness multiplier
     if (guineaPig.value) {
@@ -1084,17 +1121,35 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     const success = movement.moveTo(goal.target, { avoidOccupiedCells: true })
     if (!success) return false
 
-    // Wait for arrival
+    // Wait for arrival with timeout
     await new Promise<void>(resolve => {
       movement.onArrival(() => resolve())
+      // Timeout after 10 seconds to prevent infinite waiting
+      setTimeout(() => resolve(), 10000)
     })
 
     // Set hiding state
     behaviorState.value.currentActivity = 'hiding'
     behaviorState.value.activityStartTime = Date.now()
 
-    // Stay hidden
-    await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
+    // Stay hidden in interruptible chunks
+    const startTime = Date.now()
+    const checkInterval = 250 // Check every 250ms for responsive cancellation
+    const duration = goal.estimatedDuration
+
+    while (Date.now() - startTime < duration) {
+      // Check if behavior was cancelled
+      if (behaviorState.value.currentGoal?.type !== 'hide') {
+        console.log('[Hide] Interrupted by cancel')
+        behaviorState.value.currentActivity = 'idle'
+        return false
+      }
+
+      // Wait for check interval or remaining time, whichever is shorter
+      const remainingTime = duration - (Date.now() - startTime)
+      const waitTime = Math.min(checkInterval, remainingTime)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
+    }
 
     // Hiding satisfies shelter need but decreases social
     if (guineaPig.value) {

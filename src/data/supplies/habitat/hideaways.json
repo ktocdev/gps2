@@ -14,7 +14,8 @@
       "usageDuration": 60,
       "durability": 9,
       "comfortBoost": 8,
-      "size": "medium"
+      "size": "medium",
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🛖",
@@ -36,7 +37,8 @@
       "usageDuration": 60,
       "durability": 6,
       "comfortBoost": 10,
-      "size": "medium"
+      "size": "medium",
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🪵",
@@ -59,7 +61,8 @@
       "durability": 7,
       "comfortBoost": 12,
       "size": "medium",
-      "washable": true
+      "washable": true,
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "⛺",
@@ -82,7 +85,8 @@
       "durability": 8,
       "comfortBoost": 6,
       "playBoost": 8,
-      "size": "large"
+      "size": "large",
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🚇",
@@ -105,7 +109,8 @@
       "durability": 8,
       "comfortBoost": 7,
       "playBoost": 10,
-      "size": "large"
+      "size": "large",
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🚇",
@@ -128,7 +133,8 @@
       "durability": 9,
       "comfortBoost": 8,
       "playBoost": 12,
-      "size": "large"
+      "size": "large",
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🚇",
@@ -151,7 +157,8 @@
       "durability": 8,
       "comfortBoost": 15,
       "playBoost": 8,
-      "size": "large"
+      "size": "large",
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🏰",
@@ -173,7 +180,8 @@
       "usageDuration": 60,
       "durability": 7,
       "comfortBoost": 18,
-      "size": "large"
+      "size": "large",
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🛖",
@@ -196,7 +204,8 @@
       "durability": 6,
       "comfortBoost": 20,
       "size": "medium",
-      "washable": true
+      "washable": true,
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🛏️",
@@ -219,7 +228,8 @@
       "durability": 8,
       "comfortBoost": 16,
       "size": "medium",
-      "washable": true
+      "washable": true,
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🛏️",
@@ -242,7 +252,8 @@
       "durability": 7,
       "comfortBoost": 18,
       "size": "medium",
-      "washable": true
+      "washable": true,
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🛏️",
@@ -265,7 +276,8 @@
       "durability": 6,
       "comfortBoost": 22,
       "size": "medium",
-      "washable": true
+      "washable": true,
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "✨",
@@ -288,7 +300,8 @@
       "durability": 7,
       "comfortBoost": 20,
       "size": "medium",
-      "washable": true
+      "washable": true,
+      "blocksMovement": false
     },
     "availability": "always",
     "emoji": "🍌",

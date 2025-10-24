@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { GuineaPig } from '../../../stores/guineaPigStore'
-import { useGuineaPigBehavior } from '../../../composables/game/useGuineaPigBehavior'
+import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 
 interface Props {
   guineaPig: GuineaPig
@@ -39,8 +39,9 @@ const emit = defineEmits<Emits>()
 
 const CELL_SIZE = 60 // Match HabitatVisual cell size
 
-// Get behavior composable for this guinea pig
-const behavior = useGuineaPigBehavior(props.guineaPig.id)
+// Get centralized behavior state for this guinea pig
+const behaviorStateStore = useBehaviorStateStore()
+behaviorStateStore.initializeBehaviorState(props.guineaPig.id)
 
 // Get guinea pig emoji - use a simple mapping based on gender for now
 const guineaPigEmoji = computed(() => {
@@ -56,8 +57,9 @@ const facingLeft = computed(() => props.facingDirection === 'left')
 const tooltipText = computed(() => {
   const gp = props.guineaPig
   const age = Math.floor((Date.now() - gp.birthDate) / (1000 * 60 * 60 * 24)) // Days old
-  const currentActivity = behavior.behaviorState.value.currentActivity
-  const currentGoal = behavior.behaviorState.value.currentGoal
+  const behaviorState = behaviorStateStore.getBehaviorState(gp.id)
+  const currentActivity = behaviorState?.currentActivity || 'idle'
+  const currentGoal = behaviorState?.currentGoal
   const goalText = currentGoal ? currentGoal.type : 'none'
 
   return `${gp.name} (${gp.gender})
