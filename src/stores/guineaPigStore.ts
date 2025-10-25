@@ -69,7 +69,7 @@ export interface InteractionResult {
 
 export type NeedType =
   | 'hunger' | 'thirst' | 'energy' | 'shelter'
-  | 'play' | 'social' | 'stimulation' | 'comfort'
+  | 'play' | 'social' | 'comfort'
   | 'hygiene' | 'nails' | 'health' | 'chew'
 
 export interface GuineaPigNeeds {
@@ -82,7 +82,6 @@ export interface GuineaPigNeeds {
   // Environmental Needs (medium decay, medium weight)
   play: number          // 0-100: Play satisfaction (100 = entertained, 0 = needs play)
   social: number        // 0-100: Social satisfaction (100 = fulfilled, 0 = needs attention)
-  stimulation: number   // 0-100: Mental enrichment (100 = stimulated, 0 = needs enrichment)
   comfort: number       // 0-100: Comfort satisfaction (100 = cozy, 0 = needs comfort)
 
   // Maintenance Needs (low decay, medium weight)
@@ -396,7 +395,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     // Environmental Needs (medium decay)
     play: 10,         // Regular play needed (10 min)
     social: 8,        // Regular interaction needed (12 min)
-    stimulation: 7,   // Mental enrichment needed (14 min)
     comfort: 5,       // Bedding comfort needed (20 min)
 
     // Maintenance Needs (low decay)
@@ -429,13 +427,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
         // Modifier: 1 + (playfulness - 5) * 0.06
         // Playfulness 10: 1.30x (+30%), Playfulness 1: 0.76x (-24%)
         modifier = 1 + (personality.playfulness - 5) * 0.06
-        break
-
-      case 'stimulation':
-        // Curiosity: higher = faster decay (needs more enrichment)
-        // Modifier: 1 + (curiosity - 5) * 0.08
-        // Curiosity 10: 1.40x (+40%), Curiosity 1: 0.68x (-32%)
-        modifier = 1 + (personality.curiosity - 5) * 0.08
         break
 
       case 'comfort':
@@ -1031,10 +1022,10 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
 
-    // Rearranging cage improves stimulation
-    const stimulationGain = 30
+    // Rearranging cage improves play
+    const playGain = 30
 
-    satisfyNeed(guineaPigId, 'stimulation', stimulationGain)
+    satisfyNeed(guineaPigId, 'play', playGain)
 
     // Update interaction tracking
     guineaPig.lastInteraction = Date.now()
@@ -1047,7 +1038,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       emoji,
       {
         guineaPigId,
-        stimulationGain
+        playGain
       }
     )
 
@@ -1331,7 +1322,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       // Environmental Needs
       play: 100,
       social: 100,
-      stimulation: 100,
       comfort: 100,
       // Maintenance Needs
       hygiene: 100,

@@ -371,7 +371,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         shelter: 60, // Start at 60% shelter
         play: 100,
         social: 100,
-        stimulation: 100,
         comfort: 100,
         hygiene: 100,
         nails: 100,

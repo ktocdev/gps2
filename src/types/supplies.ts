@@ -23,8 +23,8 @@ export type ItemType =
   | 'bed'               // Satisfies energy need (enhanced sleep)
   | 'toy'               // Satisfies play need
   | 'chew'              // Satisfies chew need
-  | 'platform'          // Satisfies play/stimulation need (exploration)
-  | 'tunnel'            // Satisfies play/stimulation need (exploration)
+  | 'platform'          // Satisfies play need (exploration)
+  | 'tunnel'            // Satisfies play need (exploration)
   | 'hideaway'          // Satisfies shelter need (basic hiding)
   | 'grooming_tool'     // Satisfies hygiene need (player use)
   | 'nail_clipper'      // Satisfies nails need (player use)
@@ -41,7 +41,6 @@ export type NeedType =
   // Environmental Needs
   | 'play'
   | 'social'
-  | 'stimulation'
   | 'comfort'
   // Maintenance Needs
   | 'hygiene'
@@ -99,7 +98,6 @@ export interface SuppliesItem {
     // Habitat item stats
     durability?: number
     playBoost?: number // Affects Play need (toys, chews)
-    stimulationBoost?: number // Affects Stimulation need (chews, enrichment, color bedding)
     comfortBoost?: number // Affects Comfort need (hideaways, bottles, bowls, color bedding)
     wellnessBoost?: number // Affects Wellness need (wellness bottle, refreshing bottle)
 

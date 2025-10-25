@@ -8,6 +8,8 @@ import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useLoggingStore } from '../../stores/loggingStore'
 import { useBehaviorStateStore } from '../../stores/behaviorStateStore'
+import { useHabitatContainers } from '../../composables/useHabitatContainers'
+import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useMovement } from './useMovement'
 import { usePathfinding } from './usePathfinding'
 import { MessageGenerator } from '../../utils/messageGenerator'
@@ -23,6 +25,7 @@ export type BehaviorType =
   | 'groom'
   | 'seek_shelter'
   | 'chew'
+  | 'play'
   | 'popcorn'
   | 'zoomies'
   | 'watch_player'
@@ -40,7 +43,7 @@ export interface BehaviorGoal {
 
 export interface BehaviorState {
   currentGoal: BehaviorGoal | null
-  currentActivity: 'idle' | 'walking' | 'eating' | 'drinking' | 'sleeping' | 'grooming' | 'hiding'
+  currentActivity: 'idle' | 'walking' | 'eating' | 'drinking' | 'sleeping' | 'grooming' | 'hiding' | 'playing'
   activityStartTime: number
   lastDecisionTime: number
   behaviorCooldowns: Map<BehaviorType, number>
@@ -51,9 +54,10 @@ const DEFAULT_THRESHOLDS = {
   hunger: 30,  // Seek food when hunger < 30%
   thirst: 25,  // Seek water when thirst < 25%
   energy: 40,  // Sleep when energy < 40%
-  hygiene: 30, // Groom when hygiene < 30%
+  hygiene: 60, // Groom when hygiene < 60%
   shelter: 50, // Seek shelter when shelter < 50%
-  chew: 40     // Use chew items when chew < 40%
+  chew: 40,    // Use chew items when chew < 40%
+  play: 45     // Use toys when play < 45%
 }
 
 export function useGuineaPigBehavior(guineaPigId: string) {
@@ -61,6 +65,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
   const habitatConditions = useHabitatConditions()
   const loggingStore = useLoggingStore()
   const behaviorStateStore = useBehaviorStateStore()
+  const habitatContainers = useHabitatContainers()
+  const suppliesStore = useSuppliesStore()
   const movement = useMovement(guineaPigId)
   const pathfinding = usePathfinding()
 
@@ -121,7 +127,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       hygiene: [], // Self-groom, no item needed
       play: ['toy', 'tunnel'],
       social: [], // Handled separately
-      stimulation: ['toy', 'enrichment'],
       comfort: ['bed', 'hideaway'],
       nails: [], // Player action
       health: ['shelter'], // Rest in shelter
@@ -137,8 +142,19 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       const position = itemPositions.get(itemId)
       if (!position) continue
 
-      // Check if item matches need type
-      const matchesNeed = keywords.some(keyword => itemId.toLowerCase().includes(keyword))
+      // Check if item matches need type by keyword OR subCategory
+      let matchesNeed = keywords.some(keyword => itemId.toLowerCase().includes(keyword))
+
+      // Special handling for play and chew needs - check subCategory
+      if (!matchesNeed && (needType === 'play' || needType === 'chew')) {
+        const item = suppliesStore.getItemById(itemId)
+        if (needType === 'play' && item?.subCategory === 'toys') {
+          matchesNeed = true
+        } else if (needType === 'chew' && item?.subCategory === 'chews') {
+          matchesNeed = true
+        }
+      }
+
       if (!matchesNeed) continue
 
       // Calculate Manhattan distance
@@ -366,6 +382,21 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       }
     }
 
+    // Play < threshold (use toys)
+    if (needs.play < thresholds.play && !isOnCooldown('play')) {
+      const toy = findNearestItemForNeed('play')
+      if (toy) {
+        goals.push({
+          type: 'play',
+          target: toy.position,
+          targetItemId: toy.itemId,
+          priority: calculateNeedPriority(needs.play, thresholds.play, 50),
+          estimatedDuration: 6000, // 6 seconds playing
+          needSatisfied: 'play'
+        })
+      }
+    }
+
     // FRIENDSHIP BEHAVIORS (Priority 15-50)
 
     // Check friendship level for spontaneous behaviors
@@ -483,6 +514,9 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
       case 'chew':
         return await executeChewBehavior(goal)
+
+      case 'play':
+        return await executePlayBehavior(goal)
 
       case 'seek_shelter':
         return await executeShelterBehavior(goal)
@@ -790,21 +824,37 @@ export function useGuineaPigBehavior(guineaPigId: string) {
    * Execute groom behavior
    */
   async function executeGroomBehavior(goal: BehaviorGoal): Promise<boolean> {
+    if (!guineaPig.value) return false
+
     // Set grooming state
     behaviorState.value.currentActivity = 'grooming'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Personality affects grooming thoroughness and duration
+    const cleanliness = guineaPig.value.personality.cleanliness
+
+    // Cleanliness 1-10 affects:
+    // - Higher cleanliness = more thorough grooming = more hygiene restored
+    // - Higher cleanliness = longer grooming sessions
+    const cleanlinessMultiplier = 0.5 + (cleanliness / 20) // Range: 0.55 to 1.0
+    const durationMultiplier = 0.7 + (cleanliness / 20) // Range: 0.75 to 1.2
+
+    // Adjust grooming duration based on personality
+    const adjustedDuration = Math.floor(goal.estimatedDuration * durationMultiplier)
+
     // Simulate grooming duration
-    await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
+    await new Promise(resolve => setTimeout(resolve, adjustedDuration))
 
-    // Satisfy hygiene need
-    if (guineaPig.value) {
-      guineaPigStore.adjustNeed(guineaPigId, 'hygiene', 20) // Restore 20%
+    // Calculate hygiene restoration based on cleanliness personality
+    // Base restoration: 15%, personality range: 10.5% to 20%
+    const hygieneRestored = Math.floor(15 * cleanlinessMultiplier)
 
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousGroomMessage(guineaPig.value.name)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
-    }
+    // Satisfy hygiene need with personality modifier
+    guineaPigStore.adjustNeed(guineaPigId, 'hygiene', hygieneRestored)
+
+    // Log to activity feed
+    const msg = MessageGenerator.generateAutonomousGroomMessage(guineaPig.value.name)
+    loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
 
     // Set cooldown and return to idle
     setCooldown('groom', 90000) // 90 second cooldown
@@ -922,6 +972,12 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Simulate chewing duration
     await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
 
+    // Use chew item durability system if chew item target is specified
+    if (goal.targetItemId) {
+      // Degrade the chew item durability
+      habitatContainers.chewItem(goal.targetItemId)
+    }
+
     // Satisfy chew need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'chew', 30) // Restore 30%
@@ -933,6 +989,59 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Set cooldown and return to idle
     setCooldown('chew', 120000) // 2 minute cooldown
+    behaviorState.value.currentActivity = 'idle'
+    behaviorState.value.currentGoal = null
+
+    return true
+  }
+
+  /**
+   * Execute play behavior (use toys for entertainment)
+   */
+  async function executePlayBehavior(goal: BehaviorGoal): Promise<boolean> {
+    if (!goal.target || !guineaPig.value) return false
+
+    // Navigate to toy
+    const success = movement.moveTo(goal.target, { avoidOccupiedCells: true })
+    if (!success) return false
+
+    // Wait for arrival
+    await new Promise<void>(resolve => {
+      movement.onArrival(() => resolve())
+    })
+
+    // Set playing state
+    behaviorState.value.currentActivity = 'playing'
+    behaviorState.value.activityStartTime = Date.now()
+
+    // Personality affects play intensity and duration
+    const playfulness = guineaPig.value.personality.playfulness
+
+    // Playfulness 1-10 affects:
+    // - Higher playfulness = more enthusiastic play = more play need satisfied
+    // - Higher playfulness = longer play sessions
+    const playfulnessMultiplier = 0.6 + (playfulness / 20) // Range: 0.65 to 1.1
+    const durationMultiplier = 0.8 + (playfulness / 25) // Range: 0.84 to 1.2
+
+    // Adjust play duration based on personality
+    const adjustedDuration = Math.floor(goal.estimatedDuration * durationMultiplier)
+
+    // Simulate playing duration
+    await new Promise(resolve => setTimeout(resolve, adjustedDuration))
+
+    // Calculate play restoration based on playfulness personality
+    // Base restoration: 35%, personality range: 22.75% to 38.5%
+    const playRestored = Math.floor(35 * playfulnessMultiplier)
+
+    // Satisfy play need with personality modifier
+    guineaPigStore.adjustNeed(guineaPigId, 'play', playRestored)
+
+    // Log to activity feed
+    const msg = MessageGenerator.generateAutonomousPlayMessage(guineaPig.value.name)
+    loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+
+    // Set cooldown and return to idle
+    setCooldown('play', 90000) // 90 second cooldown
     behaviorState.value.currentActivity = 'idle'
     behaviorState.value.currentGoal = null
 
@@ -1071,7 +1180,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Zoomies increase happiness and satisfy play need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'play', 10)
-      guineaPigStore.adjustNeed(guineaPigId, 'stimulation', 5)
 
       // Log to activity feed
       const msg = MessageGenerator.generateAutonomousZoomiesMessage(guineaPig.value.name)

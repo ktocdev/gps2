@@ -24,6 +24,14 @@
           >
             🧹 Care Actions
           </Button>
+          <Button
+            @click="activeSidebar = 'activity'"
+            variant="tertiary"
+            size="sm"
+            :class="{ 'button--active': activeSidebar === 'activity' }"
+          >
+            📜 Activity Feed
+          </Button>
         </div>
       </div>
       <div class="panel__content">
@@ -53,6 +61,17 @@
             @clear-water="clearWater"
             @test-water-consumption="testWaterConsumption"
           />
+          <div v-else-if="activeSidebar === 'activity'" class="activity-feed-sidebar">
+            <ActivityFeed
+              :max-messages="100"
+              :show-header="true"
+              :auto-scroll="true"
+              height="600px"
+              :compact="false"
+              :categories="['player_action', 'guinea_pig_reaction', 'autonomous_behavior', 'environmental', 'achievement']"
+              title="Activity Log"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -343,6 +362,7 @@ import SliderField from '../../basic/SliderField.vue'
 import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/HabitatCareSidebar.vue'
+import ActivityFeed from '../../game/ui/ActivityFeed.vue'
 import AutonomyDebug from './AutonomyDebug.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import PoopDebug from './PoopDebug.vue'
@@ -365,7 +385,7 @@ const {
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
 
 // Active sidebar state
-const activeSidebar = ref<'inventory' | 'care'>('inventory')
+const activeSidebar = ref<'inventory' | 'care' | 'activity'>('inventory')
 
 // Initialize supplies catalog on mount
 onMounted(() => {
@@ -393,7 +413,6 @@ onMounted(() => {
   console.log('\n=== Items by Need (Environmental) ===')
   console.log('Play:', suppliesStore.getItemsForNeed('play').map(i => i.name))
   console.log('Social:', suppliesStore.getItemsForNeed('social').map(i => i.name))
-  console.log('Stimulation:', suppliesStore.getItemsForNeed('stimulation').map(i => i.name))
   console.log('Comfort:', suppliesStore.getItemsForNeed('comfort').map(i => i.name))
 
   // Test individual item lookup
@@ -935,5 +954,15 @@ function getChewDurabilityClass(durability: number): string {
 .chew-item-debug__usage {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+}
+
+/* Activity Feed Sidebar */
+.activity-feed-sidebar {
+  inline-size: 360px;
+  block-size: 100%;
+  display: flex;
+  flex-direction: column;
+  border-inline-start: 1px solid var(--color-border);
+  background-color: var(--color-bg-secondary);
 }
 </style>

@@ -369,7 +369,7 @@ const getQuickActionTooltip = (needValue: number, needName?: string) => {
 
 // All needs organized by category
 const criticalNeeds = ['hunger', 'thirst', 'energy', 'shelter'] as const
-const environmentalNeeds = ['play', 'social', 'stimulation', 'comfort'] as const
+const environmentalNeeds = ['play', 'social', 'comfort'] as const
 const maintenanceNeeds = ['hygiene', 'nails', 'health', 'chew'] as const
 const allNeeds = [...criticalNeeds, ...environmentalNeeds, ...maintenanceNeeds] as const
 
@@ -443,10 +443,6 @@ const socializeWithGuineaPig = (guineaPigId: string) => {
   guineaPigStore.socializeWithGuineaPig(guineaPigId)
 }
 
-const rearrangeCage = (guineaPigId: string) => {
-  guineaPigStore.rearrangeCage(guineaPigId)
-}
-
 const provideBedding = (guineaPigId: string) => {
   guineaPigStore.provideBedding(guineaPigId)
 }
@@ -466,7 +462,6 @@ const getNeedAction = (need: string, guineaPigId: string) => {
     shelter: { label: 'Provide Shelter', handler: () => provideShelter(guineaPigId) },
     play: { label: 'Play Together', handler: () => playWithGuineaPig(guineaPigId) },
     social: { label: 'Socialize', handler: () => socializeWithGuineaPig(guineaPigId) },
-    stimulation: { label: 'Rearrange Cage', handler: () => rearrangeCage(guineaPigId) },
     comfort: { label: 'Provide Bedding', handler: () => provideBedding(guineaPigId) },
     hygiene: { label: 'Clean & Groom', handler: () => cleanGuineaPig(guineaPigId) },
     nails: { label: 'Trim Nails', handler: () => trimNails(guineaPigId) },
@@ -662,17 +657,6 @@ const getNeedUrgency = (value: number): string => {
 .needs-list__action--social:hover:not(:disabled) {
   background-color: color-mix(in srgb, var(--color-need-social) 85%, black);
   border-color: color-mix(in srgb, var(--color-need-social) 85%, black);
-}
-
-.needs-list__action--stimulation {
-  background-color: var(--color-need-stimulation);
-  color: white;
-  border-color: var(--color-need-stimulation);
-}
-
-.needs-list__action--stimulation:hover:not(:disabled) {
-  background-color: color-mix(in srgb, var(--color-need-stimulation) 85%, black);
-  border-color: color-mix(in srgb, var(--color-need-stimulation) 85%, black);
 }
 
 .needs-list__action--comfort {

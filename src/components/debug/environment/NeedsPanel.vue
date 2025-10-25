@@ -135,7 +135,7 @@ const selectedGuineaPig = computed(() => {
 // Need categories
 const criticalNeeds: NeedType[] = ['hunger', 'thirst', 'energy']
 const environmentalNeeds: NeedType[] = ['shelter', 'hygiene', 'chew']
-const wellnessNeeds: NeedType[] = ['play', 'social', 'stimulation', 'comfort']
+const wellnessNeeds: NeedType[] = ['play', 'social', 'comfort']
 
 /**
  * Toggle to next guinea pig

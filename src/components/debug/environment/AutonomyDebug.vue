@@ -44,6 +44,27 @@
                 <button
                   class="btn btn--sm btn--secondary"
                   :disabled="!isGameActive"
+                  @click="triggerBehavior(guineaPig.id, 'groom')"
+                >
+                  🧼 Trigger Groom
+                </button>
+                <button
+                  class="btn btn--sm btn--secondary"
+                  :disabled="!isGameActive"
+                  @click="triggerBehavior(guineaPig.id, 'chew')"
+                >
+                  🦷 Trigger Chew
+                </button>
+                <button
+                  class="btn btn--sm btn--secondary"
+                  :disabled="!isGameActive"
+                  @click="triggerBehavior(guineaPig.id, 'play')"
+                >
+                  🎾 Trigger Play
+                </button>
+                <button
+                  class="btn btn--sm btn--secondary"
+                  :disabled="!isGameActive"
                   @click="triggerBehavior(guineaPig.id, 'wander')"
                 >
                   🚶 Trigger Wander
@@ -171,6 +192,78 @@
                   @update:modelValue="(value: number) => setShelterThreshold(guineaPig.id, value)"
                 />
               </div>
+
+              <!-- Hygiene Threshold -->
+              <div class="threshold-control mb-3">
+                <label :for="`${guineaPig.id}-hygiene-threshold`">
+                  Groom Behavior Threshold
+                </label>
+                <div class="threshold-control__info">
+                  <span class="threshold-control__value">{{ getHygieneThreshold(guineaPig.id) }}%</span>
+                  <span class="threshold-control__note">
+                    (Will groom when hygiene drops below this)
+                  </span>
+                </div>
+                <SliderField
+                  :id="`${guineaPig.id}-hygiene-threshold`"
+                  :modelValue="getHygieneThreshold(guineaPig.id)"
+                  :min="10"
+                  :max="80"
+                  :step="5"
+                  prefix=""
+                  suffix="%"
+                  :show-min-max="true"
+                  @update:modelValue="(value: number) => setHygieneThreshold(guineaPig.id, value)"
+                />
+              </div>
+
+              <!-- Chew Threshold -->
+              <div class="threshold-control mb-3">
+                <label :for="`${guineaPig.id}-chew-threshold`">
+                  Chew Behavior Threshold
+                </label>
+                <div class="threshold-control__info">
+                  <span class="threshold-control__value">{{ getChewThreshold(guineaPig.id) }}%</span>
+                  <span class="threshold-control__note">
+                    (Will use chew items when chew drops below this)
+                  </span>
+                </div>
+                <SliderField
+                  :id="`${guineaPig.id}-chew-threshold`"
+                  :modelValue="getChewThreshold(guineaPig.id)"
+                  :min="10"
+                  :max="80"
+                  :step="5"
+                  prefix=""
+                  suffix="%"
+                  :show-min-max="true"
+                  @update:modelValue="(value: number) => setChewThreshold(guineaPig.id, value)"
+                />
+              </div>
+
+              <!-- Play Threshold -->
+              <div class="threshold-control mb-3">
+                <label :for="`${guineaPig.id}-play-threshold`">
+                  Play Behavior Threshold
+                </label>
+                <div class="threshold-control__info">
+                  <span class="threshold-control__value">{{ getPlayThreshold(guineaPig.id) }}%</span>
+                  <span class="threshold-control__note">
+                    (Will use toys when play drops below this)
+                  </span>
+                </div>
+                <SliderField
+                  :id="`${guineaPig.id}-play-threshold`"
+                  :modelValue="getPlayThreshold(guineaPig.id)"
+                  :min="10"
+                  :max="80"
+                  :step="5"
+                  prefix=""
+                  suffix="%"
+                  :show-min-max="true"
+                  @update:modelValue="(value: number) => setPlayThreshold(guineaPig.id, value)"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -275,6 +368,18 @@ function getShelterThreshold(guineaPigId: string): number {
   return autonomySettings.getThresholds(guineaPigId).shelter
 }
 
+function getHygieneThreshold(guineaPigId: string): number {
+  return autonomySettings.getThresholds(guineaPigId).hygiene
+}
+
+function getChewThreshold(guineaPigId: string): number {
+  return autonomySettings.getThresholds(guineaPigId).chew
+}
+
+function getPlayThreshold(guineaPigId: string): number {
+  return autonomySettings.getThresholds(guineaPigId).play
+}
+
 // Setters - use autonomy settings store
 function setHungerThreshold(guineaPigId: string, value: number) {
   autonomySettings.setThreshold(guineaPigId, 'hunger', value)
@@ -290,6 +395,18 @@ function setEnergyThreshold(guineaPigId: string, value: number) {
 
 function setShelterThreshold(guineaPigId: string, value: number) {
   autonomySettings.setThreshold(guineaPigId, 'shelter', value)
+}
+
+function setHygieneThreshold(guineaPigId: string, value: number) {
+  autonomySettings.setThreshold(guineaPigId, 'hygiene', value)
+}
+
+function setChewThreshold(guineaPigId: string, value: number) {
+  autonomySettings.setThreshold(guineaPigId, 'chew', value)
+}
+
+function setPlayThreshold(guineaPigId: string, value: number) {
+  autonomySettings.setThreshold(guineaPigId, 'play', value)
 }
 
 /**
@@ -356,6 +473,15 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       case 'seek_shelter':
         guineaPigStore.adjustNeed(guineaPigId, 'shelter', -100) // Drop shelter to near 0
         break
+      case 'groom':
+        guineaPigStore.adjustNeed(guineaPigId, 'hygiene', -100) // Drop hygiene to near 0
+        break
+      case 'chew':
+        guineaPigStore.adjustNeed(guineaPigId, 'chew', -100) // Drop chew to near 0
+        break
+      case 'play':
+        guineaPigStore.adjustNeed(guineaPigId, 'play', -100) // Drop play to near 0
+        break
     }
 
     // Small delay to ensure need update propagates
@@ -415,6 +541,15 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
             break
           case 'seek_shelter':
             guineaPigStore.adjustNeed(guineaPigId, 'shelter', 100 - guineaPig.needs.shelter)
+            break
+          case 'groom':
+            guineaPigStore.adjustNeed(guineaPigId, 'hygiene', 100 - guineaPig.needs.hygiene)
+            break
+          case 'chew':
+            guineaPigStore.adjustNeed(guineaPigId, 'chew', 100 - guineaPig.needs.chew)
+            break
+          case 'play':
+            guineaPigStore.adjustNeed(guineaPigId, 'play', 100 - guineaPig.needs.play)
             break
         }
 
