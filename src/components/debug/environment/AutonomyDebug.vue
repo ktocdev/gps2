@@ -1,279 +1,285 @@
 <template>
-  <div class="autonomy-debug">
-    <h4>Autonomy Controls</h4>
-
-    <!-- Per-Guinea Pig Autonomy Controls -->
-    <div v-if="hasActiveGuineaPigs" class="guinea-pig-grid">
-      <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id" class="guinea-pig-autonomy">
-        <div class="panel panel--compact mb-4">
-          <div class="panel__header">
-            <h5>{{ guineaPig.name }}</h5>
+  <div class="autonomy-debug flex flex-column gap-4">
+    <div v-if="hasActiveGuineaPigs" class="panel panel--compact panel--accent">
+      <div class="panel__header">
+        <h3>🎮 Autonomy Controls</h3>
+        <!-- Toggle between guinea pigs if there are multiple -->
+        <Button
+          v-if="guineaPigStore.activeGuineaPigs.length > 1"
+          @click="toggleGuineaPig"
+          variant="tertiary"
+          size="sm"
+        >
+          {{ selectedGuineaPig?.name }} ({{ selectedGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
+        </Button>
+      </div>
+      <div v-if="selectedGuineaPig" class="panel__content">
+        <!-- Manual Triggers & Current Status -->
+        <div class="mb-4">
+          <div class="button-row mb-3">
+            <button
+              class="btn btn--md btn--secondary"
+              :disabled="!isGameActive"
+              @click="triggerBehavior(selectedGuineaPig!.id, 'eat')"
+            >
+              🍽️ Trigger Eat
+            </button>
+            <button
+              class="btn btn--md btn--secondary"
+              :disabled="!isGameActive"
+              @click="triggerBehavior(selectedGuineaPig!.id, 'drink')"
+            >
+              💧 Trigger Drink
+            </button>
+            <button
+              class="btn btn--md btn--secondary"
+              :disabled="!isGameActive"
+              @click="triggerBehavior(selectedGuineaPig!.id, 'sleep')"
+            >
+              😴 Trigger Sleep
+            </button>
+            <button
+              class="btn btn--md btn--secondary"
+              :disabled="!isGameActive"
+              @click="triggerBehavior(selectedGuineaPig!.id, 'seek_shelter')"
+            >
+              🏠 Seek Shelter
+            </button>
+            <button
+              class="btn btn--md btn--secondary"
+              :disabled="!isGameActive"
+              @click="triggerBehavior(selectedGuineaPig!.id, 'groom')"
+            >
+              🧼 Trigger Groom
+            </button>
+            <button
+              class="btn btn--md btn--secondary"
+              :disabled="!isGameActive"
+              @click="triggerBehavior(selectedGuineaPig!.id, 'chew')"
+            >
+              🦷 Trigger Chew
+            </button>
+            <button
+              class="btn btn--md btn--secondary"
+              :disabled="!isGameActive"
+              @click="triggerBehavior(selectedGuineaPig!.id, 'play')"
+            >
+              🎾 Trigger Play
+            </button>
+            <button
+              class="btn btn--md btn--secondary"
+              :disabled="!isGameActive"
+              @click="triggerBehavior(selectedGuineaPig!.id, 'wander')"
+            >
+              🚶 Trigger Wander
+            </button>
+            <button
+              class="btn btn--md btn--warning"
+              :disabled="!isGameActive || getCurrentGoal(selectedGuineaPig!.id) === 'none'"
+              @click="cancelBehavior(selectedGuineaPig!.id)"
+            >
+              ❌ Cancel
+            </button>
           </div>
-          <div class="panel__content">
-            <!-- Manual Triggers & Current Status -->
-            <div class="autonomy-section mb-4">
-              <div class="button-row mb-3">
-                <button
-                  class="btn btn--sm btn--secondary"
-                  :disabled="!isGameActive"
-                  @click="triggerBehavior(guineaPig.id, 'eat')"
-                >
-                  🍽️ Trigger Eat
-                </button>
-                <button
-                  class="btn btn--sm btn--secondary"
-                  :disabled="!isGameActive"
-                  @click="triggerBehavior(guineaPig.id, 'drink')"
-                >
-                  💧 Trigger Drink
-                </button>
-                <button
-                  class="btn btn--sm btn--secondary"
-                  :disabled="!isGameActive"
-                  @click="triggerBehavior(guineaPig.id, 'sleep')"
-                >
-                  😴 Trigger Sleep
-                </button>
-                <button
-                  class="btn btn--sm btn--secondary"
-                  :disabled="!isGameActive"
-                  @click="triggerBehavior(guineaPig.id, 'seek_shelter')"
-                >
-                  🏠 Seek Shelter
-                </button>
-                <button
-                  class="btn btn--sm btn--secondary"
-                  :disabled="!isGameActive"
-                  @click="triggerBehavior(guineaPig.id, 'groom')"
-                >
-                  🧼 Trigger Groom
-                </button>
-                <button
-                  class="btn btn--sm btn--secondary"
-                  :disabled="!isGameActive"
-                  @click="triggerBehavior(guineaPig.id, 'chew')"
-                >
-                  🦷 Trigger Chew
-                </button>
-                <button
-                  class="btn btn--sm btn--secondary"
-                  :disabled="!isGameActive"
-                  @click="triggerBehavior(guineaPig.id, 'play')"
-                >
-                  🎾 Trigger Play
-                </button>
-                <button
-                  class="btn btn--sm btn--secondary"
-                  :disabled="!isGameActive"
-                  @click="triggerBehavior(guineaPig.id, 'wander')"
-                >
-                  🚶 Trigger Wander
-                </button>
-                <button
-                  class="btn btn--sm btn--warning"
-                  :disabled="!isGameActive || getCurrentGoal(guineaPig.id) === 'none'"
-                  @click="cancelBehavior(guineaPig.id)"
-                >
-                  ❌ Cancel
-                </button>
-              </div>
 
-              <!-- Current Status -->
-              <div class="status-info">
-                <div class="status-info__item">
-                  <span class="status-info__label">Activity:</span>
-                  <span class="status-info__value">{{ getCurrentActivity(guineaPig.id) }}</span>
-                </div>
-                <div class="status-info__item">
-                  <span class="status-info__label">Goal:</span>
-                  <span class="status-info__value">{{ getCurrentGoal(guineaPig.id) }}</span>
-                </div>
-                <div class="status-info__item">
-                  <span class="status-info__label">Position:</span>
-                  <span class="status-info__value">{{ getPosition(guineaPig.id) }}</span>
-                </div>
-              </div>
+          <!-- Current Status -->
+          <div class="status-info">
+            <div class="status-info__item">
+              <span class="status-info__label">Activity:</span>
+              <span class="status-info__value">{{ getCurrentActivity(selectedGuineaPig!.id) }}</span>
             </div>
-
-            <!-- Behavior Threshold Sliders -->
-            <div class="autonomy-section">
-              <!-- Hunger Threshold -->
-              <div class="threshold-control mb-3">
-                <label :for="`${guineaPig.id}-hunger-threshold`">
-                  Hunger Behavior Threshold
-                </label>
-                <div class="threshold-control__info">
-                  <span class="threshold-control__value">{{ getHungerThreshold(guineaPig.id) }}%</span>
-                  <span class="threshold-control__note">
-                    (Will seek food when hunger drops below this)
-                  </span>
-                </div>
-                <SliderField
-                  :id="`${guineaPig.id}-hunger-threshold`"
-                  :modelValue="getHungerThreshold(guineaPig.id)"
-                  :min="10"
-                  :max="80"
-                  :step="5"
-                  prefix=""
-                  suffix="%"
-                  :show-min-max="true"
-                  @update:modelValue="(value: number) => setHungerThreshold(guineaPig.id, value)"
-                />
-              </div>
-
-              <!-- Thirst Threshold -->
-              <div class="threshold-control mb-3">
-                <label :for="`${guineaPig.id}-thirst-threshold`">
-                  Thirst Behavior Threshold
-                </label>
-                <div class="threshold-control__info">
-                  <span class="threshold-control__value">{{ getThirstThreshold(guineaPig.id) }}%</span>
-                  <span class="threshold-control__note">
-                    (Will seek water when thirst drops below this)
-                  </span>
-                </div>
-                <SliderField
-                  :id="`${guineaPig.id}-thirst-threshold`"
-                  :modelValue="getThirstThreshold(guineaPig.id)"
-                  :min="10"
-                  :max="80"
-                  :step="5"
-                  prefix=""
-                  suffix="%"
-                  :show-min-max="true"
-                  @update:modelValue="(value: number) => setThirstThreshold(guineaPig.id, value)"
-                />
-              </div>
-
-              <!-- Energy Threshold -->
-              <div class="threshold-control mb-3">
-                <label :for="`${guineaPig.id}-energy-threshold`">
-                  Sleep Behavior Threshold
-                </label>
-                <div class="threshold-control__info">
-                  <span class="threshold-control__value">{{ getEnergyThreshold(guineaPig.id) }}%</span>
-                  <span class="threshold-control__note">
-                    (Will sleep when energy drops below this)
-                  </span>
-                </div>
-                <SliderField
-                  :id="`${guineaPig.id}-energy-threshold`"
-                  :modelValue="getEnergyThreshold(guineaPig.id)"
-                  :min="10"
-                  :max="80"
-                  :step="5"
-                  prefix=""
-                  suffix="%"
-                  :show-min-max="true"
-                  @update:modelValue="(value: number) => setEnergyThreshold(guineaPig.id, value)"
-                />
-              </div>
-
-              <!-- Shelter Threshold -->
-              <div class="threshold-control mb-3">
-                <label :for="`${guineaPig.id}-shelter-threshold`">
-                  Shelter Behavior Threshold
-                </label>
-                <div class="threshold-control__info">
-                  <span class="threshold-control__value">{{ getShelterThreshold(guineaPig.id) }}%</span>
-                  <span class="threshold-control__note">
-                    (Will seek shelter when shelter drops below this)
-                  </span>
-                </div>
-                <SliderField
-                  :id="`${guineaPig.id}-shelter-threshold`"
-                  :modelValue="getShelterThreshold(guineaPig.id)"
-                  :min="10"
-                  :max="80"
-                  :step="5"
-                  prefix=""
-                  suffix="%"
-                  :show-min-max="true"
-                  @update:modelValue="(value: number) => setShelterThreshold(guineaPig.id, value)"
-                />
-              </div>
-
-              <!-- Hygiene Threshold -->
-              <div class="threshold-control mb-3">
-                <label :for="`${guineaPig.id}-hygiene-threshold`">
-                  Groom Behavior Threshold
-                </label>
-                <div class="threshold-control__info">
-                  <span class="threshold-control__value">{{ getHygieneThreshold(guineaPig.id) }}%</span>
-                  <span class="threshold-control__note">
-                    (Will groom when hygiene drops below this)
-                  </span>
-                </div>
-                <SliderField
-                  :id="`${guineaPig.id}-hygiene-threshold`"
-                  :modelValue="getHygieneThreshold(guineaPig.id)"
-                  :min="10"
-                  :max="80"
-                  :step="5"
-                  prefix=""
-                  suffix="%"
-                  :show-min-max="true"
-                  @update:modelValue="(value: number) => setHygieneThreshold(guineaPig.id, value)"
-                />
-              </div>
-
-              <!-- Chew Threshold -->
-              <div class="threshold-control mb-3">
-                <label :for="`${guineaPig.id}-chew-threshold`">
-                  Chew Behavior Threshold
-                </label>
-                <div class="threshold-control__info">
-                  <span class="threshold-control__value">{{ getChewThreshold(guineaPig.id) }}%</span>
-                  <span class="threshold-control__note">
-                    (Will use chew items when chew drops below this)
-                  </span>
-                </div>
-                <SliderField
-                  :id="`${guineaPig.id}-chew-threshold`"
-                  :modelValue="getChewThreshold(guineaPig.id)"
-                  :min="10"
-                  :max="80"
-                  :step="5"
-                  prefix=""
-                  suffix="%"
-                  :show-min-max="true"
-                  @update:modelValue="(value: number) => setChewThreshold(guineaPig.id, value)"
-                />
-              </div>
-
-              <!-- Play Threshold -->
-              <div class="threshold-control mb-3">
-                <label :for="`${guineaPig.id}-play-threshold`">
-                  Play Behavior Threshold
-                </label>
-                <div class="threshold-control__info">
-                  <span class="threshold-control__value">{{ getPlayThreshold(guineaPig.id) }}%</span>
-                  <span class="threshold-control__note">
-                    (Will use toys when play drops below this)
-                  </span>
-                </div>
-                <SliderField
-                  :id="`${guineaPig.id}-play-threshold`"
-                  :modelValue="getPlayThreshold(guineaPig.id)"
-                  :min="10"
-                  :max="80"
-                  :step="5"
-                  prefix=""
-                  suffix="%"
-                  :show-min-max="true"
-                  @update:modelValue="(value: number) => setPlayThreshold(guineaPig.id, value)"
-                />
-              </div>
+            <div class="status-info__item">
+              <span class="status-info__label">Goal:</span>
+              <span class="status-info__value">{{ getCurrentGoal(selectedGuineaPig!.id) }}</span>
+            </div>
+            <div class="status-info__item">
+              <span class="status-info__label">Position:</span>
+              <span class="status-info__value">{{ getPosition(selectedGuineaPig!.id) }}</span>
             </div>
           </div>
         </div>
+
+        <!-- Behavior Threshold Sliders -->
+        <Details summary="Behavior Thresholds" variant="compact" :default-open="false">
+          <!-- Hunger Threshold -->
+          <div class="threshold-control mb-3">
+            <label :for="`${selectedGuineaPig!.id}-hunger-threshold`">
+              Hunger Behavior Threshold
+            </label>
+            <div class="threshold-control__info">
+              <span class="threshold-control__value">{{ getHungerThreshold(selectedGuineaPig!.id) }}%</span>
+              <span class="threshold-control__note">
+                (Will seek food when hunger drops below this)
+              </span>
+            </div>
+            <SliderField
+              :id="`${selectedGuineaPig!.id}-hunger-threshold`"
+              :modelValue="getHungerThreshold(selectedGuineaPig!.id)"
+              :min="10"
+              :max="80"
+              :step="5"
+              prefix=""
+              suffix="%"
+              :show-min-max="true"
+              @update:modelValue="(value: number) => setHungerThreshold(selectedGuineaPig!.id, value)"
+            />
+          </div>
+
+          <!-- Thirst Threshold -->
+          <div class="threshold-control mb-3">
+            <label :for="`${selectedGuineaPig!.id}-thirst-threshold`">
+              Thirst Behavior Threshold
+            </label>
+            <div class="threshold-control__info">
+              <span class="threshold-control__value">{{ getThirstThreshold(selectedGuineaPig!.id) }}%</span>
+              <span class="threshold-control__note">
+                (Will seek water when thirst drops below this)
+              </span>
+            </div>
+            <SliderField
+              :id="`${selectedGuineaPig!.id}-thirst-threshold`"
+              :modelValue="getThirstThreshold(selectedGuineaPig!.id)"
+              :min="10"
+              :max="80"
+              :step="5"
+              prefix=""
+              suffix="%"
+              :show-min-max="true"
+              @update:modelValue="(value: number) => setThirstThreshold(selectedGuineaPig!.id, value)"
+            />
+          </div>
+
+          <!-- Energy Threshold -->
+          <div class="threshold-control mb-3">
+            <label :for="`${selectedGuineaPig!.id}-energy-threshold`">
+              Sleep Behavior Threshold
+            </label>
+            <div class="threshold-control__info">
+              <span class="threshold-control__value">{{ getEnergyThreshold(selectedGuineaPig!.id) }}%</span>
+              <span class="threshold-control__note">
+                (Will sleep when energy drops below this)
+              </span>
+            </div>
+            <SliderField
+              :id="`${selectedGuineaPig!.id}-energy-threshold`"
+              :modelValue="getEnergyThreshold(selectedGuineaPig!.id)"
+              :min="10"
+              :max="80"
+              :step="5"
+              prefix=""
+              suffix="%"
+              :show-min-max="true"
+              @update:modelValue="(value: number) => setEnergyThreshold(selectedGuineaPig!.id, value)"
+            />
+          </div>
+
+          <!-- Shelter Threshold -->
+          <div class="threshold-control mb-3">
+            <label :for="`${selectedGuineaPig!.id}-shelter-threshold`">
+              Shelter Behavior Threshold
+            </label>
+            <div class="threshold-control__info">
+              <span class="threshold-control__value">{{ getShelterThreshold(selectedGuineaPig!.id) }}%</span>
+              <span class="threshold-control__note">
+                (Will seek shelter when shelter drops below this)
+              </span>
+            </div>
+            <SliderField
+              :id="`${selectedGuineaPig!.id}-shelter-threshold`"
+              :modelValue="getShelterThreshold(selectedGuineaPig!.id)"
+              :min="10"
+              :max="80"
+              :step="5"
+              prefix=""
+              suffix="%"
+              :show-min-max="true"
+              @update:modelValue="(value: number) => setShelterThreshold(selectedGuineaPig!.id, value)"
+            />
+          </div>
+
+          <!-- Hygiene Threshold -->
+          <div class="threshold-control mb-3">
+            <label :for="`${selectedGuineaPig!.id}-hygiene-threshold`">
+              Groom Behavior Threshold
+            </label>
+            <div class="threshold-control__info">
+              <span class="threshold-control__value">{{ getHygieneThreshold(selectedGuineaPig!.id) }}%</span>
+              <span class="threshold-control__note">
+                (Will groom when hygiene drops below this)
+              </span>
+            </div>
+            <SliderField
+              :id="`${selectedGuineaPig!.id}-hygiene-threshold`"
+              :modelValue="getHygieneThreshold(selectedGuineaPig!.id)"
+              :min="10"
+              :max="80"
+              :step="5"
+              prefix=""
+              suffix="%"
+              :show-min-max="true"
+              @update:modelValue="(value: number) => setHygieneThreshold(selectedGuineaPig!.id, value)"
+            />
+          </div>
+
+          <!-- Chew Threshold -->
+          <div class="threshold-control mb-3">
+            <label :for="`${selectedGuineaPig!.id}-chew-threshold`">
+              Chew Behavior Threshold
+            </label>
+            <div class="threshold-control__info">
+              <span class="threshold-control__value">{{ getChewThreshold(selectedGuineaPig!.id) }}%</span>
+              <span class="threshold-control__note">
+                (Will use chew items when chew drops below this)
+              </span>
+            </div>
+            <SliderField
+              :id="`${selectedGuineaPig!.id}-chew-threshold`"
+              :modelValue="getChewThreshold(selectedGuineaPig!.id)"
+              :min="10"
+              :max="80"
+              :step="5"
+              prefix=""
+              suffix="%"
+              :show-min-max="true"
+              @update:modelValue="(value: number) => setChewThreshold(selectedGuineaPig!.id, value)"
+            />
+          </div>
+
+          <!-- Play Threshold -->
+          <div class="threshold-control mb-3">
+            <label :for="`${selectedGuineaPig!.id}-play-threshold`">
+              Play Behavior Threshold
+            </label>
+            <div class="threshold-control__info">
+              <span class="threshold-control__value">{{ getPlayThreshold(selectedGuineaPig!.id) }}%</span>
+              <span class="threshold-control__note">
+                (Will use toys when play drops below this)
+              </span>
+            </div>
+            <SliderField
+              :id="`${selectedGuineaPig!.id}-play-threshold`"
+              :modelValue="getPlayThreshold(selectedGuineaPig!.id)"
+              :min="10"
+              :max="80"
+              :step="5"
+              prefix=""
+              suffix="%"
+              :show-min-max="true"
+              @update:modelValue="(value: number) => setPlayThreshold(selectedGuineaPig!.id, value)"
+            />
+          </div>
+        </Details>
       </div>
     </div>
 
     <!-- Global Autonomy Settings (Bottom Section) -->
-    <div class="panel panel--compact mb-4">
-      <div class="panel__header">
+    <div class="panel panel--compact panel--overflow-visible mb-4">
+      <div class="panel__header" style="display: flex; justify-content: space-between; align-items: center;">
         <h5>Global Autonomy Settings</h5>
+        <InfoButton
+          message="Game Loop Speed controls how often the game processes AI decisions and updates. Lower values (e.g., 100ms) mean more frequent updates for faster-paced testing. Higher values (e.g., 30s) slow everything down for easier observation of behaviors."
+          position="bottom"
+        />
       </div>
       <div class="panel__content">
         <div class="global-controls">
@@ -294,19 +300,16 @@
 
           <div class="control-row mt-3">
             <label :for="'ai-tick-interval'" class="control-label__text">
-              Game Loop Interval
+              Game Loop Speed
             </label>
             <div class="control-info">
-              <span class="control-value">{{ gameTimingStore.intervalMs / 1000 }}s</span>
-              <span class="control-description">
-                (Game loop tick rate - affects all systems)
-              </span>
+              <span class="control-value">{{ (gameTimingStore.intervalMs / 1000).toFixed(0) }}s</span>
             </div>
             <SliderField
               id="ai-tick-interval"
               :modelValue="gameTimingStore.intervalMs"
-              :min="1000"
-              :max="10000"
+              :min="100"
+              :max="30000"
               :step="500"
               prefix=""
               suffix="ms"
@@ -327,7 +330,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useGameTimingStore } from '../../../stores/gameTimingStore'
 import { useGameController } from '../../../stores/gameController'
@@ -337,6 +340,9 @@ import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useGuineaPigBehavior } from '../../../composables/game/useGuineaPigBehavior'
 import type { BehaviorType } from '../../../composables/game/useGuineaPigBehavior'
 import SliderField from '../../basic/SliderField.vue'
+import Button from '../../basic/Button.vue'
+import InfoButton from '../../basic/InfoButton.vue'
+import Details from '../../basic/Details.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const gameTimingStore = useGameTimingStore()
@@ -347,6 +353,21 @@ const behaviorStateStore = useBehaviorStateStore()
 
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 const isGameActive = computed(() => gameController.isGameActive)
+
+// Selected guinea pig toggle
+const selectedGuineaPigIndex = ref(0)
+const selectedGuineaPig = computed(() => {
+  if (!hasActiveGuineaPigs.value) return null
+  return guineaPigStore.activeGuineaPigs[selectedGuineaPigIndex.value]
+})
+
+/**
+ * Toggle to next guinea pig
+ */
+function toggleGuineaPig() {
+  const total = guineaPigStore.activeGuineaPigs.length
+  selectedGuineaPigIndex.value = (selectedGuineaPigIndex.value + 1) % total
+}
 
 // Cache behavior composables (similar to gameTimingStore pattern)
 const behaviorComposables = new Map<string, ReturnType<typeof useGuineaPigBehavior>>()
@@ -631,46 +652,8 @@ defineExpose({
 </script>
 
 <style scoped>
-.autonomy-debug {
-  padding-block: var(--space-4);
-}
-
-.autonomy-debug h4 {
+.autonomy-debug h3 {
   font-size: var(--font-size-2xl);
-}
-
-.autonomy-debug h5 {
-  font-size: var(--font-size-2xl);
-}
-
-.autonomy-debug h6 {
-  font-size: var(--font-size-2xl);
-}
-
-/* Responsive grid for guinea pig panels */
-.guinea-pig-grid {
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: 1fr;
-}
-
-/* When there are 2 guinea pigs, show side-by-side */
-.guinea-pig-grid:has(> :nth-child(2)) {
-  grid-template-columns: 1fr 1fr;
-}
-
-.guinea-pig-autonomy {
-  margin-block-end: var(--space-4);
-}
-
-.autonomy-section {
-  padding-block: var(--space-3);
-  border-block-start: 1px solid var(--color-border-light);
-}
-
-.autonomy-section:first-child {
-  border-block-start: none;
-  padding-block-start: 0;
 }
 
 .global-controls {
@@ -770,14 +753,14 @@ defineExpose({
 }
 
 .btn--secondary {
-  background: var(--color-secondary-bg);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--color-accent-green-400);
+  color: var(--color-accent-green-400);
 }
 
 .btn--secondary:hover {
-  background: var(--color-secondary);
-  color: white;
+  background: var(--color-accent-green-400);
+  color: var(--color-neutral-900);
 }
 
 .btn--warning {
@@ -802,9 +785,9 @@ defineExpose({
 }
 
 .btn--secondary:disabled:hover {
-  background: var(--color-secondary-bg);
-  border-color: var(--color-secondary);
-  color: var(--color-secondary);
+  background: rgba(34, 197, 94, 0.15);
+  border-color: var(--color-accent-green-400);
+  color: var(--color-accent-green-400);
 }
 
 .btn--warning:disabled:hover {

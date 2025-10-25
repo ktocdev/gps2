@@ -18,25 +18,15 @@
         <div class="needs-category mb-4">
           <h4 class="needs-category__title">Critical Needs</h4>
           <div class="needs-list">
-            <div v-for="need in criticalNeeds" :key="need" class="need-item">
-              <div class="need-item__header">
-                <label class="need-item__label">{{ formatNeedName(need) }}</label>
-                <span class="need-item__value" :class="getNeedValueClass(selectedGuineaPig!.needs[need])">
-                  {{ selectedGuineaPig!.needs[need].toFixed(0) }}%
-                </span>
-              </div>
-              <SliderField
-                :id="`${selectedGuineaPig!.id}-${need}`"
-                :modelValue="selectedGuineaPig!.needs[need]"
-                :min="0"
-                :max="100"
-                :step="1"
-                prefix=""
-                suffix="%"
-                :show-min-max="false"
-                @update:modelValue="(value: number) => adjustNeed(selectedGuineaPig!.id, need, value)"
-              />
-            </div>
+            <NeedRow
+              v-for="need in criticalNeeds"
+              :key="need"
+              :id="`${selectedGuineaPig!.id}-${need}`"
+              :label="formatNeedName(need)"
+              :value="selectedGuineaPig!.needs[need]"
+              :needType="need"
+              @update:modelValue="(value: number) => adjustNeed(selectedGuineaPig!.id, need, value)"
+            />
           </div>
         </div>
 
@@ -44,25 +34,15 @@
         <div class="needs-category mb-4">
           <h4 class="needs-category__title">Environmental Needs</h4>
           <div class="needs-list">
-            <div v-for="need in environmentalNeeds" :key="need" class="need-item">
-              <div class="need-item__header">
-                <label class="need-item__label">{{ formatNeedName(need) }}</label>
-                <span class="need-item__value" :class="getNeedValueClass(selectedGuineaPig!.needs[need])">
-                  {{ selectedGuineaPig!.needs[need].toFixed(0) }}%
-                </span>
-              </div>
-              <SliderField
-                :id="`${selectedGuineaPig!.id}-${need}`"
-                :modelValue="selectedGuineaPig!.needs[need]"
-                :min="0"
-                :max="100"
-                :step="1"
-                prefix=""
-                suffix="%"
-                :show-min-max="false"
-                @update:modelValue="(value: number) => adjustNeed(selectedGuineaPig!.id, need, value)"
-              />
-            </div>
+            <NeedRow
+              v-for="need in environmentalNeeds"
+              :key="need"
+              :id="`${selectedGuineaPig!.id}-${need}`"
+              :label="formatNeedName(need)"
+              :value="selectedGuineaPig!.needs[need]"
+              :needType="need"
+              @update:modelValue="(value: number) => adjustNeed(selectedGuineaPig!.id, need, value)"
+            />
           </div>
         </div>
 
@@ -70,25 +50,15 @@
         <div class="needs-category">
           <h4 class="needs-category__title">Wellness Needs</h4>
           <div class="needs-list">
-            <div v-for="need in wellnessNeeds" :key="need" class="need-item">
-              <div class="need-item__header">
-                <label class="need-item__label">{{ formatNeedName(need) }}</label>
-                <span class="need-item__value" :class="getNeedValueClass(selectedGuineaPig!.needs[need])">
-                  {{ selectedGuineaPig!.needs[need].toFixed(0) }}%
-                </span>
-              </div>
-              <SliderField
-                :id="`${selectedGuineaPig!.id}-${need}`"
-                :modelValue="selectedGuineaPig!.needs[need]"
-                :min="0"
-                :max="100"
-                :step="1"
-                prefix=""
-                suffix="%"
-                :show-min-max="false"
-                @update:modelValue="(value: number) => adjustNeed(selectedGuineaPig!.id, need, value)"
-              />
-            </div>
+            <NeedRow
+              v-for="need in wellnessNeeds"
+              :key="need"
+              :id="`${selectedGuineaPig!.id}-${need}`"
+              :label="formatNeedName(need)"
+              :value="selectedGuineaPig!.needs[need]"
+              :needType="need"
+              @update:modelValue="(value: number) => adjustNeed(selectedGuineaPig!.id, need, value)"
+            />
           </div>
         </div>
 
@@ -116,7 +86,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
-import SliderField from '../../basic/SliderField.vue'
+import NeedRow from '../../basic/NeedRow.vue'
 import Button from '../../basic/Button.vue'
 import type { NeedType } from '../../../stores/guineaPigStore'
 
@@ -150,15 +120,6 @@ function toggleGuineaPig() {
  */
 function formatNeedName(need: NeedType): string {
   return need.charAt(0).toUpperCase() + need.slice(1)
-}
-
-/**
- * Get CSS class based on need value
- */
-function getNeedValueClass(value: number): string {
-  if (value >= 70) return 'need-value--good'
-  if (value >= 40) return 'need-value--medium'
-  return 'need-value--low'
 }
 
 /**
@@ -217,41 +178,7 @@ function replenishAllNeeds() {
   gap: var(--space-3);
 }
 
-.need-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.need-item__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.need-item__label {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-}
-
-.need-item__value {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-bold);
-  font-family: var(--font-mono);
-}
-
-.need-value--good {
-  color: var(--color-success);
-}
-
-.need-value--medium {
-  color: var(--color-warning);
-}
-
-.need-value--low {
-  color: var(--color-danger);
-}
+/* Need item styles now in NeedRow.vue component */
 
 .needs-actions {
   display: flex;

@@ -36,27 +36,13 @@
                         <div class="panel__content">
                           <div class="needs-list">
                     <div v-for="need in criticalNeeds" :key="need" class="needs-list__item">
-                      <div class="need-row" :data-need-urgency="getNeedUrgency((guineaPig.needs as any)[need])">
-                        <div class="need-row__info">
-                          <label :for="`${guineaPig.id}-${need}`" class="need-row__label">
-                            {{ formatNeedName(need) }}
-                          </label>
-                          <span class="need-row__value">
-                            {{ ((guineaPig.needs as any)[need]).toFixed(0) }}%
-                          </span>
-                        </div>
-                        <SliderField
-                          :id="`${guineaPig.id}-${need}`"
-                          :modelValue="(guineaPig.needs as any)[need]"
-                          :min="0"
-                          :max="100"
-                          :step="1"
-                          prefix=""
-                          suffix="%"
-                          @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
-                          class="need-row__slider"
-                        />
-                      </div>
+                      <NeedRow
+                        :id="`${guineaPig.id}-${need}`"
+                        :label="formatNeedName(need)"
+                        :value="(guineaPig.needs as any)[need]"
+                        :needType="need"
+                        @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
+                      />
                       <Button
                         @click="getNeedAction(need, guineaPig.id).handler"
                         variant="tertiary"
@@ -82,27 +68,13 @@
                         <div class="panel__content">
                           <div class="needs-list">
                     <div v-for="need in environmentalNeeds" :key="need" class="needs-list__item">
-                      <div class="need-row" :data-need-urgency="getNeedUrgency((guineaPig.needs as any)[need])">
-                        <div class="need-row__info">
-                          <label :for="`${guineaPig.id}-${need}`" class="need-row__label">
-                            {{ formatNeedName(need) }}
-                          </label>
-                          <span class="need-row__value">
-                            {{ ((guineaPig.needs as any)[need]).toFixed(0) }}%
-                          </span>
-                        </div>
-                        <SliderField
-                          :id="`${guineaPig.id}-${need}`"
-                          :modelValue="(guineaPig.needs as any)[need]"
-                          :min="0"
-                          :max="100"
-                          :step="1"
-                          prefix=""
-                          suffix="%"
-                          @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
-                          class="need-row__slider"
-                        />
-                      </div>
+                      <NeedRow
+                        :id="`${guineaPig.id}-${need}`"
+                        :label="formatNeedName(need)"
+                        :value="(guineaPig.needs as any)[need]"
+                        :needType="need"
+                        @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
+                      />
                       <Button
                         @click="getNeedAction(need, guineaPig.id).handler"
                         variant="tertiary"
@@ -128,27 +100,13 @@
                         <div class="panel__content">
                           <div class="needs-list">
                     <div v-for="need in maintenanceNeeds" :key="need" class="needs-list__item">
-                      <div class="need-row" :data-need-urgency="getNeedUrgency((guineaPig.needs as any)[need])">
-                        <div class="need-row__info">
-                          <label :for="`${guineaPig.id}-${need}`" class="need-row__label">
-                            {{ formatNeedName(need) }}
-                          </label>
-                          <span class="need-row__value">
-                            {{ ((guineaPig.needs as any)[need]).toFixed(0) }}%
-                          </span>
-                        </div>
-                        <SliderField
-                          :id="`${guineaPig.id}-${need}`"
-                          :modelValue="(guineaPig.needs as any)[need]"
-                          :min="0"
-                          :max="100"
-                          :step="1"
-                          prefix=""
-                          suffix="%"
-                          @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
-                          class="need-row__slider"
-                        />
-                      </div>
+                      <NeedRow
+                        :id="`${guineaPig.id}-${need}`"
+                        :label="formatNeedName(need)"
+                        :value="(guineaPig.needs as any)[need]"
+                        :needType="need"
+                        @update:modelValue="(value: number) => adjustNeed(guineaPig.id, need, value)"
+                      />
                       <Button
                         @click="getNeedAction(need, guineaPig.id).handler"
                         variant="tertiary"
@@ -335,6 +293,7 @@ import { useGameController } from '../../../stores/gameController'
 import { usePetStoreManager } from '../../../stores/petStoreManager'
 import Button from '../../basic/Button.vue'
 import SliderField from '../../basic/SliderField.vue'
+import NeedRow from '../../basic/NeedRow.vue'
 import Badge from '../../basic/Badge.vue'
 
 const guineaPigStore = useGuineaPigStore()
@@ -499,14 +458,6 @@ const getWellnessStatusClass = (value: number): string => {
   if (value >= 55) return 'text--warning'
   if (value >= 45) return 'text--error'
   return 'text--critical'  // Low wellness is critical
-}
-
-const getNeedUrgency = (value: number): string => {
-  // Value represents satisfaction level: 100 = full/satisfied, 0 = empty/critical
-  if (value >= 90) return 'satisfied'  // 90-100: Fully satisfied (green)
-  if (value >= 70) return 'good'       // 70-89: Good (slate gray)
-  if (value >= 50) return 'medium'     // 50-69: Getting low (yellow)
-  return 'critical'  // 0-49: Critical/empty (red)
 }
 </script>
 
@@ -716,62 +667,7 @@ const getNeedUrgency = (value: number): string => {
   color: white;
 }
 
-/* Need Row Layout */
-.need-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border-radius: var(--radius-md);
-  transition: background-color var(--transition-fast);
-  border-inline-start: 3px solid var(--color-border-medium);
-}
-
-.need-row__info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.need-row__label {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-}
-
-.need-row__value {
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-sm);
-  min-inline-size: 3rem;
-  text-align: end;
-  color: var(--color-text-secondary);
-}
-
-.need-row__slider {
-  flex: 1;
-  min-inline-size: 0;
-}
-
-/* Urgency-based backgrounds */
-.need-row[data-need-urgency="satisfied"] {
-  background-color: var(--color-success-bg);
-  border-inline-start-color: var(--color-success);
-}
-
-.need-row[data-need-urgency="good"] {
-  background-color: rgba(100, 116, 139, 0.05);
-  border-inline-start-color: var(--color-border-dark);
-}
-
-.need-row[data-need-urgency="medium"] {
-  background-color: var(--color-warning-bg);
-  border-inline-start-color: var(--color-warning);
-}
-
-.need-row[data-need-urgency="critical"] {
-  background-color: var(--color-error-bg);
-  border-inline-start-color: var(--color-error);
-}
+/* Need Row - styles now in NeedRow.vue component */
 
 /* Desktop: side-by-side controls */
 @media (min-width: 1024px) {

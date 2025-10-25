@@ -1653,6 +1653,13 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     }
   }
 
+  /**
+   * Set needs decay rate multiplier (capped at 2x)
+   */
+  const setNeedsDecayRate = (multiplier: number) => {
+    settings.value.needsDecayRate = Math.max(0, Math.min(2, multiplier))
+  }
+
   return {
     // State
     collection,
@@ -1708,6 +1715,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     // Needs system
     needsDecayRates,
     needsLastUpdate,
+    setNeedsDecayRate,
     processNeedsDecay,
     processBatchNeedsDecay,
     adjustNeed,

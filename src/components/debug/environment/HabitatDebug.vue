@@ -32,6 +32,14 @@
           >
             📜 Activity Feed
           </Button>
+          <Button
+            @click="activeSidebar = 'socialize'"
+            variant="tertiary"
+            size="sm"
+            :class="{ 'button--active': activeSidebar === 'socialize' }"
+          >
+            🤝 Socialize
+          </Button>
         </div>
       </div>
       <div class="panel__content">
@@ -72,6 +80,19 @@
               title="Activity Log"
             />
           </div>
+          <SocializeSidebar
+            v-else-if="activeSidebar === 'socialize'"
+            :selected-guinea-pig="selectedGuineaPig"
+            @pet="handleInteraction('pet')"
+            @hold="handleInteraction('hold')"
+            @hand-feed="handleInteraction('hand-feed')"
+            @talk-to="handleInteraction('talk-to')"
+            @sing-to="handleInteraction('sing-to')"
+            @call-name="handleInteraction('call-name')"
+            @peek-a-boo="handleInteraction('peek-a-boo')"
+            @wave-hand="handleInteraction('wave-hand')"
+            @show-toy="handleInteraction('show-toy')"
+          />
         </div>
       </div>
     </div>
@@ -79,14 +100,7 @@
     <!-- Habitat Conditions & Test Controls Row -->
     <div class="habitat-debug__conditions-row">
       <!-- System 19: Autonomy Debug Panel -->
-      <div class="panel panel--compact panel--accent">
-        <div class="panel__header">
-          <h3>🤖 Autonomy Behaviors</h3>
-        </div>
-        <div class="panel__content">
-          <AutonomyDebug />
-        </div>
-      </div>
+      <AutonomyDebug />
 
       <!-- Needs Panel -->
       <NeedsPanel />
@@ -292,13 +306,14 @@
           <h3>Decay Speed</h3>
         </div>
         <div class="panel__content">
-          <div class="decay-speed-control">
+          <!-- Habitat Decay -->
+          <div class="decay-speed-control mb-4">
             <div class="decay-speed-control__header">
-              <label for="decay-speed">Multiplier</label>
+              <label for="habitat-decay-speed">Habitat</label>
               <span class="decay-speed-control__value">{{ habitat.decaySpeedMultiplier }}x</span>
             </div>
             <SliderField
-              id="decay-speed"
+              id="habitat-decay-speed"
               :modelValue="habitat.decaySpeedMultiplier"
               :min="1"
               :max="60"
@@ -334,6 +349,66 @@
               </Button>
             </div>
           </div>
+
+          <!-- Needs Decay -->
+          <div class="decay-speed-control">
+            <div class="decay-speed-control__header">
+              <label for="needs-decay-speed">Needs</label>
+              <span class="decay-speed-control__value">{{ guineaPigStore.settings.needsDecayRate.toFixed(1) }}x</span>
+            </div>
+            <SliderField
+              id="needs-decay-speed"
+              :modelValue="guineaPigStore.settings.needsDecayRate"
+              :min="0"
+              :max="2"
+              :step="0.05"
+              prefix=""
+              suffix="x"
+              @update:modelValue="(v: number) => guineaPigStore.setNeedsDecayRate(v)"
+            />
+            <div class="decay-speed-presets">
+              <Button
+                @click="guineaPigStore.setNeedsDecayRate(0)"
+                variant="tertiary"
+                size="sm"
+                :class="{ 'button--active': guineaPigStore.settings.needsDecayRate === 0 }"
+              >
+                Paused (0x)
+              </Button>
+              <Button
+                @click="guineaPigStore.setNeedsDecayRate(0.1)"
+                variant="tertiary"
+                size="sm"
+                :class="{ 'button--active': guineaPigStore.settings.needsDecayRate === 0.1 }"
+              >
+                Very Slow (0.1x)
+              </Button>
+              <Button
+                @click="guineaPigStore.setNeedsDecayRate(0.5)"
+                variant="tertiary"
+                size="sm"
+                :class="{ 'button--active': guineaPigStore.settings.needsDecayRate === 0.5 }"
+              >
+                Slow (0.5x)
+              </Button>
+              <Button
+                @click="guineaPigStore.setNeedsDecayRate(1)"
+                variant="tertiary"
+                size="sm"
+                :class="{ 'button--active': guineaPigStore.settings.needsDecayRate === 1 }"
+              >
+                Normal (1x)
+              </Button>
+              <Button
+                @click="guineaPigStore.setNeedsDecayRate(2)"
+                variant="tertiary"
+                size="sm"
+                :class="{ 'button--active': guineaPigStore.settings.needsDecayRate === 2 }"
+              >
+                Fast (2x)
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -356,13 +431,16 @@ import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useHabitatContainers } from '../../../composables/useHabitatContainers'
+import { useLoggingStore } from '../../../stores/loggingStore'
 import { CONSUMPTION, CHEW_DEGRADATION } from '../../../constants/supplies'
+import { getInteractionEffect, getInteractionName, getInteractionEmoji } from '../../../utils/interactionEffects'
 import Button from '../../basic/Button.vue'
 import SliderField from '../../basic/SliderField.vue'
 import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/HabitatCareSidebar.vue'
 import ActivityFeed from '../../game/ui/ActivityFeed.vue'
+import SocializeSidebar from '../../game/habitat/SocializeSidebar.vue'
 import AutonomyDebug from './AutonomyDebug.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import PoopDebug from './PoopDebug.vue'
@@ -371,6 +449,7 @@ const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const loggingStore = useLoggingStore()
 const {
   getHayRackContents,
   getHayRackFreshness,
@@ -385,7 +464,7 @@ const {
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
 
 // Active sidebar state
-const activeSidebar = ref<'inventory' | 'care' | 'activity'>('inventory')
+const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize'>('inventory')
 
 // Initialize supplies catalog on mount
 onMounted(() => {
@@ -465,6 +544,12 @@ const hasActiveGuineaPigs = computed(() => {
   return guineaPigStore.activeGuineaPigs.length > 0
 })
 
+// Selected guinea pig for interactions (based on user click in habitat)
+const selectedGuineaPig = computed(() => {
+  if (!guineaPigStore.selectedGuineaPigId) return null
+  return guineaPigStore.getGuineaPig(guineaPigStore.selectedGuineaPigId)
+})
+
 // Bedding selection
 const selectedBeddingType = ref<string>('average')
 const beddingOptions = computed(() => [
@@ -498,6 +583,44 @@ function getConditionClass(value: number): string {
   if (value >= 80) return 'condition-value--good'
   if (value >= 40) return 'condition-value--warning'
   return 'condition-value--critical'
+}
+
+// Handle social interactions
+function handleInteraction(interactionType: string) {
+  if (!selectedGuineaPig.value) {
+    console.warn('No guinea pig selected for interaction')
+    return
+  }
+
+  const guineaPig = selectedGuineaPig.value
+  const effect = getInteractionEffect(interactionType)
+
+  if (!effect) {
+    console.warn(`No effect data found for interaction: ${interactionType}`)
+    return
+  }
+
+  // Apply need impacts
+  Object.entries(effect.needsImpact).forEach(([need, value]) => {
+    if (value && value > 0) {
+      guineaPigStore.satisfyNeed(guineaPig.id, need as any, value)
+    }
+  })
+
+  // Apply friendship gain
+  if (effect.friendshipGain > 0) {
+    guineaPigStore.adjustFriendship(guineaPig.id, effect.friendshipGain)
+  }
+
+  // Log to activity feed
+  const emoji = getInteractionEmoji(interactionType)
+  const interactionName = getInteractionName(interactionType)
+  loggingStore.addPlayerAction(
+    `${emoji} ${interactionName} - ${guineaPig.name} enjoyed the interaction!`,
+    emoji
+  )
+
+  console.log(`🤝 ${interactionName}: ${guineaPig.name} | Friendship +${effect.friendshipGain} | Needs:`, effect.needsImpact)
 }
 
 // Hay Racks Management
@@ -738,10 +861,10 @@ function getChewDurabilityClass(durability: number): string {
   grid-template-columns: 1fr;
 }
 
-/* Desktop: 3 columns - Autonomy (narrower) / Needs (medium) / Habitat Conditions (medium) */
+/* Desktop: 3 columns - equal width for all panels */
 @media (min-width: 1200px) {
   .habitat-debug__conditions-row {
-    grid-template-columns: 0.75fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
 
