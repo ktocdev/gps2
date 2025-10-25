@@ -232,7 +232,7 @@ getItemsForNeed(need: NeedType): SuppliesItem[] {
   - `src/data/supplies/habitat/hideaways.json` - Added metadata to 13 items
   - `src/stores/suppliesStore.ts` - Added 4 helper functions
 - **Key Changes:**
-  - Fixed need types to match actual implementation (play, stimulation, comfort instead of happiness)
+  - Fixed need types to match actual implementation (play, comfort needs - stimulation later removed as redundant)
   - Removed deprecated needs (happiness, cleanliness)
   - Updated to match GuineaPigNeeds interface (hygiene not cleanliness)
 - **Testing:** Console tests added to HabitatDebug component

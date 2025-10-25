@@ -50,7 +50,7 @@ Core game mechanics system managing guinea pig needs, wellness calculation, and 
 ## Detailed Happiness Need System
 
 ### Natural Decay Mechanics
-- **Baseline decay rate:** Happiness naturally decreases without stimulation
+- **Baseline decay rate:** Happiness naturally decreases without play and enrichment
 - **Time-based reduction:** Steady decline requiring regular attention
 - **Individual variation:** Each guinea pig has unique happiness decay patterns
 
@@ -60,10 +60,10 @@ Core game mechanics system managing guinea pig needs, wellness calculation, and 
 - **Staleness penalties:** Same interactions become less effective over time
 - **Novelty rewards:** New activities provide enhanced happiness benefits
 
-### Stimulation & Excitement
+### Play & Excitement
 - **Excitement boost:** New toys/interactions provide temporary happiness surge (+15-25 points)
 - **Duration effects:** Boosts fade over time, requiring sustained engagement
-- **Diminishing returns:** Repeated use of same stimulation reduces effectiveness
+- **Diminishing returns:** Repeated use of same play activities reduces effectiveness
 - **Peak management:** Balance between excitement and sustainable happiness
 
 ### Comfort & Maintenance

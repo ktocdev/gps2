@@ -21,7 +21,7 @@ Wellness = (Critical × 0.40) + (Environmental × 0.35) + (Maintenance × 0.25)
 
 Where:
 - Critical: (hunger + thirst + energy + shelter) / 4
-- Environmental: (play + social + stimulation + comfort) / 4
+- Environmental: (play + social + comfort) / 3
 - Maintenance: (hygiene + nails + health + chew) / 4
 
 Range: 0-100 (100 = perfect, 0 = critical)
@@ -432,10 +432,10 @@ function getPairInteractionSuccess(
 - "Pepper huddles alone, too stressed to rest with Truffle"
 
 #### Exploring Together
-**Benefit**: Stimulation + Social
+**Benefit**: Play + Social
 
 **Excellent Wellness**:
-- Success: **80%**, Effect: +stimulation, +social
+- Success: **80%**, Effect: +play, +social
 - "Cocoa and Mocha explore the habitat together curiously"
 
 **Good Wellness**:
@@ -804,7 +804,7 @@ if (personality.playfulness >= 7) {
 // High curiosity: More affected by wellness in exploration
 if (personality.curiosity >= 7 && wellness < 50) {
   explorationRadius *= 0.5 // Dramatic reduction
-  stimulationSeekingReduction = 40%
+  playSeekingReduction = 40%
 }
 
 // Low curiosity: Already cautious, less dramatic change

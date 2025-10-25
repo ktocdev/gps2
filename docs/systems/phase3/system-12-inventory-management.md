@@ -61,7 +61,7 @@ Comprehensive economic system managing player inventory, store purchases, curren
 Essential consumable resources for continuous hunger satisfaction with individual preferences:
 - **Timothy Hay** - Basic consumable, standard freshness duration, affordable daily nutrition
 - **Orchard Grass** - Premium consumable, extended freshness, sweet flavor preference
-- **Meadow Hay** - Standard consumable, mixed variety providing texture stimulation
+- **Meadow Hay** - Standard consumable, mixed variety providing texture enrichment
 - **Alfalfa Hay** - Specialty consumable, high nutrition for young/pregnant guinea pigs
 - **Botanical Hay** - Premium consumable, enrichment blend with extended freshness
 - **Oat Hay** - Specialty consumable, unique texture with moderate freshness duration
@@ -110,9 +110,9 @@ Special occasion treats with strong preference effects:
 ### Detailed Happiness Item Categories
 
 #### Entertainment Toys
-Mental and physical stimulation items:
+Mental and physical enrichment items:
 - **Activity balls** - Rolling and pushing toys for physical activity
-- **Puzzle feeders** - Mental stimulation requiring problem-solving
+- **Puzzle feeders** - Mental enrichment requiring problem-solving
 - **Interactive toys** - Complex engagement requiring guinea pig interaction
 - **Foraging toys** - Hide-and-seek style enrichment activities
 

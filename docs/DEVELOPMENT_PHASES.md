@@ -73,7 +73,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 - **Panel system** ✅ Accent, bordered, compact variants with reusable patterns
 
 ### Major Accomplishments
-- **11-Need Refactor:** Separated play/social, added stimulation/comfort, removed redundant happiness
+- **11-Need Refactor:** Separated play/social, added comfort, removed redundant happiness (stimulation later removed as redundant to play)
 - **Descriptive Labels:** "Give Food", "Soothe to Sleep", "Clean & Groom", "Play Together"
 - **Accessible Colors:** Need-specific button colors with WCAG AA contrast
 - **Responsive Design:** All debug panels responsive, single column below 1440px
@@ -114,7 +114,7 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 - ✅ **Hidden preference system** - Food and activity preferences (favorites/neutral/dislikes)
   - Food: +50% favorites, -30% dislikes, 50% rejection chance
   - Activities: +50% favorites, -40% dislikes, 70% rejection chance
-- ✅ **NeedsDebug enhancements** - Food/activity selection dropdowns for hunger/play/stimulation needs
+- ✅ **NeedsDebug enhancements** - Food/activity selection dropdowns for hunger/play needs
 - ✅ **Preference-aware messages** - MessageGenerator updated with favorite/disliked/rejection messages
 - ✅ **Game pause fix** - Connected game pause to needs pause/resume
 

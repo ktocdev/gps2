@@ -27,7 +27,7 @@ Social interactions that provide moderate happiness boosts:
 
 ### 3. Play Interactions (Happiness ++)
 Active play activities that provide significant happiness benefits:
-- **Play Peek-a-Boo** - Interactive hiding game, mental stimulation
+- **Play Peek-a-Boo** - Interactive hiding game, mental enrichment
 - **Wave Hand** - Movement-based play, visual engagement
 - **Show Toy** - Introduce items, encourage exploration
 - **Gentle Tickle** - Physical play, builds friendship
@@ -50,7 +50,7 @@ Health and wellness monitoring activities:
 
 ### 6. Training Interactions (Happiness +)
 Skill-building activities that enhance the guinea pig's abilities:
-- **Teach Trick** - Behavior training, mental stimulation
+- **Teach Trick** - Behavior training, mental enrichment
 - **Practice Command** - Reinforce learned behaviors
 - **Reward with Treat** - Positive reinforcement training
 - **Clicker Training** - Advanced training techniques
@@ -59,7 +59,7 @@ Skill-building activities that enhance the guinea pig's abilities:
 Special relationship-building activities:
 - **Share Snack** - Food sharing experience, trust building
 - **Read to Guinea Pig** - Quiet companionship, calming interaction
-- **Show Photo** - Visual stimulation, engagement activity
+- **Show Photo** - Visual engagement, curiosity activity
 - **Gentle Humming** - Soothing sounds, relaxation
 
 ## Advanced Interaction Mechanics

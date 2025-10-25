@@ -18,6 +18,8 @@
         :servings-remaining="item.servingsRemaining"
         :max-servings="item.maxServings"
         :instance-count="item.instanceCount"
+        :is-disabled="item.isDisabled"
+        :tooltip-message="item.tooltipMessage"
         @dragstart="(_itemId, event) => handleServingDragStart(event, item)"
         @dragend="handleDragEnd"
       />
@@ -44,6 +46,7 @@ import { ref, computed } from 'vue'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import InventoryTileServing from '../shop/InventoryTileServing.vue'
 
 interface Props {
@@ -55,8 +58,16 @@ const props = defineProps<Props>()
 const habitat = useHabitatConditions()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const guineaPigStore = useGuineaPigStore()
 
 const isDragOver = ref(false)
+
+// Get the first active guinea pig for consumption limit checks
+const activeGuineaPig = computed(() => {
+  const activeIds = guineaPigStore.collection.activeGuineaPigIds
+  if (activeIds.length === 0) return null
+  return guineaPigStore.getGuineaPig(activeIds[0])
+})
 
 // Serving-based consumables (hay, lettuce, carrots)
 const servingBasedItems = computed(() => {
@@ -76,6 +87,20 @@ const servingBasedItems = computed(() => {
       // Use first instance for display, but show count of all instances
       const firstInstance = availableInstances[0]
 
+      // Check food consumption limits
+      const subCategory = item?.subCategory || ''
+      const foodType = guineaPigStore.getFoodTypeFromSubCategory(subCategory)
+      let isDisabled = false
+      let tooltipMessage = ''
+
+      if (activeGuineaPig.value && foodType && item?.category === 'food') {
+        const canFeed = guineaPigStore.checkConsumptionLimit(activeGuineaPig.value.id, foodType)
+        if (!canFeed) {
+          isDisabled = true
+          tooltipMessage = `Food limit reached (5 servings per hunger cycle)`
+        }
+      }
+
       return {
         instanceId: firstInstance?.instanceId || '',
         itemId: invItem.itemId,
@@ -83,7 +108,9 @@ const servingBasedItems = computed(() => {
         emoji: item?.emoji || '📦',
         servingsRemaining: firstInstance?.servingsRemaining || 0,
         maxServings: firstInstance?.maxServings || 0,
-        instanceCount: availableInstances.length
+        instanceCount: availableInstances.length,
+        isDisabled,
+        tooltipMessage
       }
     })
     .filter(item => item.instanceCount > 0) // Only show if at least one instance exists

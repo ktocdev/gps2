@@ -1,9 +1,9 @@
 <template>
   <div
     class="inventory-tile-serving"
-    :class="depletionClass"
+    :class="[depletionClass, { 'inventory-tile-serving--disabled': isDisabled }]"
     :title="tooltipText"
-    draggable="true"
+    :draggable="!isDisabled"
     @dragstart="handleDragStart"
     @dragend="handleDragEnd"
   >
@@ -26,9 +26,14 @@ interface Props {
   servingsRemaining: number
   maxServings: number
   instanceCount?: number
+  isDisabled?: boolean
+  tooltipMessage?: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), {
+  isDisabled: false,
+  tooltipMessage: ''
+})
 
 const emit = defineEmits<{
   'dragstart': [itemId: string, event: DragEvent]
@@ -50,10 +55,17 @@ const depletionClass = computed(() => {
 })
 
 const tooltipText = computed(() => {
+  if (props.isDisabled && props.tooltipMessage) {
+    return props.tooltipMessage
+  }
   return `${props.name} - ${props.servingsRemaining} of ${props.maxServings} servings remaining (${100 - depletionPercentage.value}% fresh)`
 })
 
 function handleDragStart(event: DragEvent) {
+  if (props.isDisabled) {
+    event.preventDefault()
+    return
+  }
   const dragData = {
     itemId: props.itemId,
     isServingBased: true
@@ -184,6 +196,19 @@ function handleDragEnd(event: DragEvent) {
   padding: 2px 6px;
   border-radius: var(--radius-full);
   line-height: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Disabled state */
+.inventory-tile-serving--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  filter: grayscale(70%);
+}
+
+.inventory-tile-serving--disabled:hover {
+  transform: none;
   box-shadow: var(--shadow-sm);
 }
 </style>

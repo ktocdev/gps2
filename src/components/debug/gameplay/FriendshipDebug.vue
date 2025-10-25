@@ -9,35 +9,7 @@
 
     <div v-else>
       <div class="panel-row">
-        <!-- Friendship Gains/Losses Legend Panel (Left Column) -->
-        <div class="panel panel--compact friendship-debug__legend">
-          <div class="panel__header">
-            <h3>Friendship Gains/Losses Legend</h3>
-          </div>
-          <div class="panel__content">
-            <div class="friendship-debug__info-section">
-              <h5>Active Gains:</h5>
-              <ul>
-                <li>✅ Passive gain: +0.1 per tick (when wellness &gt; 50%)</li>
-                <li>🍎 Feed (normal): +1</li>
-                <li>💖 Feed (favorite): +5</li>
-                <li>🎮 Play: +3</li>
-                <li>🤗 Socialize: +2</li>
-                <li>🛁 Clean: +2</li>
-                <li>📊 Need fulfillment: +0.5 to +2</li>
-              </ul>
-
-              <h5 class="mt-4">Active Losses:</h5>
-              <ul>
-                <li class="text-danger">⚠️ Very poor care: -2 per tick (when wellness &lt; 30%)</li>
-                <li class="text-warning">⚠️ Poor care: -1 per tick (when wellness &lt; 50%)</li>
-                <li class="text-danger">⚠️ Critical needs: -0.5 per tick per need (when need &lt; 30%)</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <!-- Guinea Pig Panels (Right Column) -->
+        <!-- Guinea Pig Panels (Left Column) -->
         <div class="friendship-debug__guinea-pigs">
           <div v-for="guineaPig in activeGuineaPigs" :key="guineaPig.id" class="mb-6">
             <div class="panel-row">
@@ -57,12 +29,22 @@
                   <span class="stat-value">{{ Math.round(getWellness(guineaPig.id)) }}%</span>
                 </div>
                 <div class="stat-item">
-                  <span class="stat-label">Friendliness:</span>
-                  <span class="stat-value">{{ guineaPig.personality.friendliness }}/10</span>
+                  <span class="stat-label">Penalty Active:</span>
+                  <span class="stat-value" :class="needsController.isPenaltyActive ? 'text--error' : 'text--success'">
+                    {{ needsController.isPenaltyActive ? 'Yes' : 'No' }}
+                  </span>
                 </div>
                 <div class="stat-item">
-                  <span class="stat-label">Playfulness:</span>
-                  <span class="stat-value">{{ guineaPig.personality.playfulness }}/10</span>
+                  <span class="stat-label">Penalty Rate:</span>
+                  <span class="stat-value">{{ needsController.currentPenaltyRate.toFixed(2) }}/tick</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Last Interaction:</span>
+                  <span class="stat-value">{{ formatTimestamp(guineaPig.lastInteraction) }}</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Total Interactions:</span>
+                  <span class="stat-value">{{ guineaPig.totalInteractions }}</span>
                 </div>
                 <div class="stat-item">
                   <span class="stat-label">Net Change per Tick (5s):</span>
@@ -140,6 +122,34 @@
           </div>
         </div>
         </div>
+          </div>
+        </div>
+
+        <!-- Friendship Gains/Losses Legend Panel (Right Column) -->
+        <div class="panel panel--compact friendship-debug__legend">
+          <div class="panel__header">
+            <h3>Friendship Gains/Losses Legend</h3>
+          </div>
+          <div class="panel__content">
+            <div class="friendship-debug__info-section">
+              <h5>Active Gains:</h5>
+              <ul>
+                <li>✅ Passive gain: +0.1 per tick (when wellness &gt; 50%)</li>
+                <li>🍎 Feed (normal): +1</li>
+                <li>💖 Feed (favorite): +5</li>
+                <li>🎮 Play: +3</li>
+                <li>🤗 Socialize: +2</li>
+                <li>🛁 Clean: +2</li>
+                <li>📊 Need fulfillment: +0.5 to +2</li>
+              </ul>
+
+              <h5 class="mt-4">Active Losses:</h5>
+              <ul>
+                <li class="text-danger">⚠️ Very poor care: -2 per tick (when wellness &lt; 30%)</li>
+                <li class="text-warning">⚠️ Poor care: -1 per tick (when wellness &lt; 50%)</li>
+                <li class="text-danger">⚠️ Critical needs: -0.5 per tick per need (when need &lt; 30%)</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -232,6 +242,19 @@ const testPlayInteraction = (guineaPigId: string) => {
 
 const testSocialInteraction = (guineaPigId: string) => {
   guineaPigStore.socializeWithGuineaPig(guineaPigId)
+}
+
+const formatTimestamp = (timestamp: number | null): string => {
+  if (!timestamp) return 'Never'
+  const now = Date.now()
+  const diffMs = now - timestamp
+  const diffMins = Math.floor(diffMs / (1000 * 60))
+
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`
+  const date = new Date(timestamp)
+  return date.toLocaleDateString()
 }
 </script>
 

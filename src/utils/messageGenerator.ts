@@ -628,6 +628,16 @@ export class MessageGenerator {
     return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🪵' }
   }
 
+  static generateAutonomousPlayMessage(guineaPigName: string): { message: string; emoji: string } {
+    const templates = [
+      `${guineaPigName} plays with a toy`,
+      `${guineaPigName} pushes a toy around playfully`,
+      `${guineaPigName} investigates a toy with curiosity`,
+      `${guineaPigName} has fun with a ball`
+    ]
+    return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🎾' }
+  }
+
   static generateAutonomousShelterMessage(guineaPigName: string): { message: string; emoji: string } {
     const templates = [
       `${guineaPigName} seeks shelter in their favorite hideaway`,

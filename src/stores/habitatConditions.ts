@@ -30,7 +30,6 @@ interface CurrentBedding {
   absorbency: number
   decayRate: number
   color?: string
-  stimulationBonus?: number
 }
 
 interface CurrentHayBag {
@@ -281,8 +280,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       quality: beddingItem.quality as 'cheap' | 'average' | 'premium' | 'colorful-premium',
       absorbency: stats?.absorbency || CONSUMPTION.DEFAULT_ABSORBENCY,
       decayRate: stats?.decayRate || CONSUMPTION.DEFAULT_DECAY_RATE,
-      color: beddingItem.quality === 'premium' && beddingItem.tags?.includes('color') ? beddingItem.name.toLowerCase() : undefined,
-      stimulationBonus: stats?.stimulationBoost
+      color: beddingItem.quality === 'premium' && beddingItem.tags?.includes('color') ? beddingItem.name.toLowerCase() : undefined
     }
 
     beddingFreshness.value = HABITAT_CONDITIONS.RESET_VALUE

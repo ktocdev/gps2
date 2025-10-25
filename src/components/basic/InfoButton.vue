@@ -129,8 +129,9 @@ onBeforeUnmount(() => {
   z-index: 1000;
   background-color: var(--color-neutral-900);
   color: var(--color-text-inverse);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
+  font-family: var(--font-family-body);
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-normal);
   line-height: 1.4;

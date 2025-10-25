@@ -88,6 +88,9 @@
           <span
             v-else
             class="grid-item__emoji"
+            :class="{
+              'grid-item__emoji--large': isShelterOrHideaway(item.itemId)
+            }"
           >
             {{ item.emoji }}
           </span>
@@ -663,6 +666,10 @@ function placeItemAt(itemId: string, x: number, y: number) {
   const success = habitatConditions.addItemToHabitat(itemId, { x, y })
 
   if (success) {
+    // Initialize chew item if it's a chew type
+    if (isChewItem(itemId)) {
+      habitatContainers.initializeChewItem(itemId)
+    }
     updateGridCells()
   } else {
     console.warn(`Failed to place ${itemId} at (${x}, ${y})`)
@@ -718,6 +725,11 @@ function getBowlLockTooltip(item: any): string {
     }
     return `${item.name}\nEmpty hay rack\nCapacity: 4 servings`
   }
+  if (isChewItem(item.itemId)) {
+    const durability = getChewDurability(item.itemId)
+    const usageCount = getChewUsageCount(item.itemId)
+    return `${item.name}\nDurability: ${durability.toFixed(0)}%\nUsed ${usageCount} times`
+  }
   return item.name
 }
 
@@ -760,10 +772,16 @@ function isWaterBottle(itemId: string): boolean {
   return itemId.includes('water_bottle')
 }
 
+// Shelter/Hideaway helper function
+function isShelterOrHideaway(itemId: string): boolean {
+  const item = suppliesStore.getItemById(itemId)
+  return item?.subCategory === 'hideaways'
+}
+
 // Chew item helper functions
 function isChewItem(itemId: string): boolean {
   const item = suppliesStore.getItemById(itemId)
-  return item?.stats?.itemType === 'chew'
+  return item?.subCategory === 'chews'
 }
 
 function getChewDurability(itemId: string): number {
@@ -826,6 +844,17 @@ onMounted(() => {
 
   initializeGrid()
   updateGridCells()
+
+  // Initialize chew items that are already in the habitat
+  habitatConditions.habitatItems.forEach(itemId => {
+    if (isChewItem(itemId)) {
+      // Only initialize if not already initialized
+      const chewData = habitatContainers.getChewData(itemId)
+      if (!chewData) {
+        habitatContainers.initializeChewItem(itemId)
+      }
+    }
+  })
 })
 
 watch(
@@ -955,6 +984,10 @@ defineExpose({
 }
 
 .grid-item__emoji--bowl {
+  font-size: 3rem;
+}
+
+.grid-item__emoji--large {
   font-size: 3rem;
 }
 

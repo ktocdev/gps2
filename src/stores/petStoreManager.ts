@@ -371,7 +371,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         shelter: 60, // Start at 60% shelter
         play: 100,
         social: 100,
-        stimulation: 100,
         comfort: 100,
         hygiene: 100,
         nails: 100,
@@ -401,11 +400,15 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       bonds: {},
 
       // System 2.5: Fulfillment Limitation System
+      // All non-hay foods share a combined limit of 5 servings per hunger cycle
+      // Hay is unlimited (not tracked)
       consumptionLimits: {
-        fruit: { consumed: 0, limit: 1 },
-        vegetables: { consumed: 0, limit: 3 },
-        pellets: { consumed: 0, limit: 2 },
-        treats: { consumed: 0, limit: 1 }
+        fruit: { consumed: 0, limit: 5 },
+        vegetables: { consumed: 0, limit: 5 },
+        pellets: { consumed: 0, limit: 5 },
+        treats: { consumed: 0, limit: 5 },
+        herbs: { consumed: 0, limit: 5 },
+        greens: { consumed: 0, limit: 5 }
       },
       interactionRejection: {
         lastRejectionTime: null,
@@ -820,12 +823,13 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
 
     // Starter inventory items (based on item IDs from suppliesStore)
     const starterItems = [
-      { itemId: 'hay_timothy', quantity: 1, name: 'Timothy Hay' },
-      { itemId: 'bedding_average', quantity: 1, name: 'Average Bedding' },
+      { itemId: 'hay_timothy', quantity: 3, name: 'Timothy Hay' },
+      { itemId: 'bedding_average', quantity: 2, name: 'Average Bedding' },
       { itemId: 'food_pellets_standard', quantity: 1, name: 'Standard Pellets' },
       { itemId: 'food_green_leaf_lettuce', quantity: 1, name: 'Green Leaf Lettuce' },
       { itemId: 'food_carrot', quantity: 1, name: 'Carrot' },
-      { itemId: 'habitat_apple_wood_sticks', quantity: 1, name: 'Apple Wood Sticks' }
+      { itemId: 'habitat_apple_wood_sticks', quantity: 1, name: 'Apple Wood Sticks' },
+      { itemId: 'habitat_willow_ball', quantity: 1, name: 'Willow Ball' }
     ]
 
     // Starter habitat items (items that start in the habitat)
@@ -913,6 +917,9 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       }
 
       if (guineaPig) {
+        // Clear adoption timer when guinea pig becomes active
+        guineaPig.adoptionTimer = null
+
         // Add to guinea pig store collection
         guineaPigStore.collection.guineaPigs[guineaPigId] = { ...guineaPig }
       }

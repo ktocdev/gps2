@@ -93,7 +93,7 @@ const badgeClasses = computed(() => {
 }
 
 .badge--seasonal {
-  background-color: var(--color-need-stimulation);
+  background-color: var(--color-need-play);
   color: var(--color-text-inverse);
   border: 1px solid transparent;
 }
