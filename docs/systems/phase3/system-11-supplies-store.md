@@ -311,8 +311,8 @@ Features:
 - **Climbing Frame** - Safe low-height climbing structure
 - **Sensory Course** - Complete course with textures, sounds, obstacles
 
-**Affects:** Stimulation need (+10 to +30)
-**Display:** Durability, stimulation boost, complexity rating, space required
+**Affects:** Play need (+10 to +30)
+**Display:** Durability, play boost, complexity rating, space required
 
 ---
 
@@ -457,7 +457,6 @@ interface SuppliesItem {
     // Habitat item stats
     durability?: number
     playBoost?: number         // Affects Play need (toys, chews)
-    stimulationBoost?: number  // Affects Stimulation need (chews, enrichment)
     comfortBoost?: number      // Affects Comfort need (hideaways, bottles, bowls)
     wellnessBoost?: number     // Affects Wellness need (wellness bottle, refreshing bottle)
 

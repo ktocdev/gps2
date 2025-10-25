@@ -36,7 +36,7 @@ Created `src/stores/habitatConditions.ts` (Pinia store) - 326 lines
   - **Cheap Bedding** - Low cost, lower absorbency, faster decay rate
   - **Average Bedding** - Balanced cost/performance, standard absorbency (starting resource: 2-3 units)
   - **Premium Bedding** - Higher cost, superior absorbency, slower decay rate
-  - **Colorful Premium Bedding** - Premium quality + visual habitat color changes + stimulation/wellness boost
+  - **Colorful Premium Bedding** - Premium quality + visual habitat color changes + wellness boost
 - **Hay inventory** - Consumable resource, essential for hunger satisfaction
 - **Consumption tracking** - Monitor usage rates and patterns across different bedding qualities
 - **Inventory integration** - Connect to existing inventory system
@@ -70,7 +70,6 @@ interface HabitatConditionsState {
     absorbency: number    // Multiplier affecting cleanliness decay (cheap: 0.8x, average: 1x, premium: 1.3x, colorful: 1.3x)
     decayRate: number     // Bedding freshness decay modifier (cheap: 1.2x faster, average: 1x, premium: 0.7x, colorful: 0.7x)
     color?: string        // For colorful bedding: habitat visual color theme
-    stimulationBonus?: number  // Colorful bedding provides +5-10% stimulation satisfaction/hour
   }
   beddingInventory: {
     cheap: number
@@ -129,12 +128,12 @@ Created `src/views/HabitatDebugView.vue` - 7 lines
   - Cheap: Faster cleanliness decay (0.8x absorbency), faster bedding decay (1.2x)
   - Average: Standard performance (1x absorbency, 1x decay)
   - Premium: Better cleanliness retention (1.3x absorbency), slower bedding decay (0.7x)
-  - Colorful Premium: Premium performance + visual habitat color + stimulation/wellness bonus
+  - Colorful Premium: Premium performance + visual habitat color + wellness bonus
 - **Refill Hay Rack** - Add handful of hay from selected inventory bag, restore hay freshness based on hay type quality (standard bags: 20 handfuls)
 - **Use Mini-Hay Bale** - Add 3 handfuls (premium treat option from supplies store)
   - More hunger satisfying per handful
   - Depletes faster (guinea pigs love it and eat more)
-  - Provides stimulation bonus
+  - Provides play/enrichment bonus
   - Adds friendship points toward player (special treat appreciation)
 - **Refill Water** - Water level → 100%, free action (infinite resource)
 

@@ -59,7 +59,7 @@ Each guinea pig has 5 personality traits rated 1-10:
 - Calm and relaxed
 - Prefers quiet activities
 - Content with simple environment
-- Less stimulation needed
+- Less play and enrichment needed
 - Peaceful disposition
 
 **Moderate Playfulness (4-6)**:
@@ -159,7 +159,7 @@ socialDecayRate = baseDecayRate * (1 + (friendliness - 5) * 0.04)
 
 **Playfulness → Play Need Decay**:
 ```typescript
-// High playfulness = faster play need decay (needs more stimulation)
+// High playfulness = faster play need decay (needs more enrichment)
 playDecayRate = baseDecayRate * (1 + (playfulness - 5) * 0.06)
 
 // Examples:
@@ -168,13 +168,14 @@ playDecayRate = baseDecayRate * (1 + (playfulness - 5) * 0.06)
 // Playfulness 1: 0.76x decay rate (-24%)
 ```
 
-**Curiosity → Stimulation Need Decay**:
+**Curiosity → Play Need Decay** (secondary modifier):
 ```typescript
-// High curiosity = faster stimulation decay (needs more enrichment)
-stimulationDecayRate = baseDecayRate * (1 + (curiosity - 5) * 0.08)
+// High curiosity also affects play decay (needs more mental enrichment)
+// Note: Stimulation need was removed as redundant - curiosity now modifies play need
+playDecaySecondary = baseDecayRate * (1 + (curiosity - 5) * 0.04)
 
 // Examples:
-// Curiosity 10: 1.40x decay rate (+40%)
+// Curiosity 10: 1.20x decay rate (+20%)
 // Curiosity 5: 1.0x decay rate (baseline)
 // Curiosity 1: 0.68x decay rate (-32%)
 ```
@@ -226,7 +227,7 @@ if (habitatCleanliness < cleanlinessThreshold) {
 **Combined Example**:
 ```
 Guinea Pig: High Curiosity (9) + Low Boldness (2) + High Cleanliness (8)
-  Curiosity modifier: 1 + (9 - 5) * 0.08 = 1.32x (+32% stimulation decay)
+  Curiosity modifier: 1 + (9 - 5) * 0.04 = 1.16x (+16% play decay - needs mental enrichment)
   Boldness modifier: 1 - (2 - 5) * 0.05 = 1.15x (+15% comfort decay)
   Cleanliness: Won't eat hay below 60%, stressed by cage below 50%
 
@@ -632,10 +633,8 @@ function calculatePersonalityNeedDecay(
       modifier = 1 + (guineaPig.personality.playfulness - 5) * 0.06
       break
 
-    case 'stimulation':
-      // Curiosity: higher = faster decay
-      modifier = 1 + (guineaPig.personality.curiosity - 5) * 0.08
-      break
+    // Note: Stimulation need was removed as redundant to play
+    // Curiosity now provides secondary modifier to play need
 
     case 'comfort':
       // Boldness: higher = slower decay (less stressed)

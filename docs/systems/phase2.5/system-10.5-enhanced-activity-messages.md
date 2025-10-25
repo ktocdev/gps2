@@ -45,7 +45,7 @@ Intelligent, contextual activity log messages that enhance player feedback durin
 **Implementation**:
 - Per-need throttling prevents spam (map of needType → lastWarningTime)
 - Integrated into `needsController.processBatchUpdate()`
-- Checks all 11 needs: hunger, thirst, energy, shelter, play, social, stimulation, comfort, hygiene, nails, health, chew
+- Checks all 10 needs: hunger, thirst, energy, shelter, play, social, comfort, hygiene, nails, health, chew
 
 **Need-Specific Messages**:
 Each of the 11 needs has unique warning and critical messages:
