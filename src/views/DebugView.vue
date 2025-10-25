@@ -24,14 +24,11 @@
       <GameControllerView v-if="activeTab === 'controller'" />
       <PetStoreDebugView v-if="activeTab === 'pet-store'" />
       <StardustSanctuaryDebug v-if="activeTab === 'sanctuary'" />
-      <NeedsDebugView v-if="activeTab === 'needs'" />
       <FriendshipDebug v-if="activeTab === 'friendship'" />
-      <PersonalityDebugView v-if="activeTab === 'personality'" />
       <InventoryDebugView v-if="activeTab === 'inventory'" />
       <HabitatDebugView v-if="activeTab === 'habitat'" />
       <SuppliesStoreDebug v-if="activeTab === 'supplies-store'" />
       <LoggingSystemView v-if="activeTab === 'logging'" />
-      <SystemMonitorView v-if="activeTab === 'error-tracking'" />
     </div>
   </div>
 </template>
@@ -44,14 +41,11 @@ import type { Tab } from '../components/layout/TabContainer.vue'
 import GameControllerView from './GameControllerView.vue'
 import PetStoreDebugView from './PetStoreDebugView.vue'
 import InventoryDebugView from './InventoryDebugView.vue'
-import NeedsDebugView from './NeedsDebugView.vue'
-import PersonalityDebugView from './PersonalityDebugView.vue'
 import FriendshipDebug from '../components/debug/gameplay/FriendshipDebug.vue'
 import StardustSanctuaryDebug from '../components/debug/core/StardustSanctuaryDebug.vue'
 import HabitatDebugView from './HabitatDebugView.vue'
 import SuppliesStoreDebug from '../components/debug/environment/SuppliesStoreDebug.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
-import SystemMonitorView from './SystemMonitorView.vue'
 import { useGameController } from '../stores/gameController'
 
 const gameController = useGameController()
@@ -80,14 +74,8 @@ const tabCategories: TabCategory[] = [
       },
       {
         id: 'pet-store',
-        label: 'Pet Adoption',
+        label: 'Guinea Pigs',
         icon: '🏪',
-        panelClass: 'tab-container__panel--constrained'
-      },
-      {
-        id: 'sanctuary',
-        label: 'Stardust Sanctuary',
-        icon: '✨',
         panelClass: 'tab-container__panel--constrained'
       },
       {
@@ -103,20 +91,15 @@ const tabCategories: TabCategory[] = [
     label: 'Gameplay Systems',
     tabs: [
       {
-        id: 'needs',
-        label: 'Needs System',
-        icon: '🍎'
-      },
-      {
         id: 'friendship',
         label: 'Friendship',
         icon: '💖',
         panelClass: 'tab-container__panel--constrained'
       },
       {
-        id: 'personality',
-        label: 'Personality',
-        icon: '🎭',
+        id: 'sanctuary',
+        label: 'Stardust Sanctuary',
+        icon: '✨',
         panelClass: 'tab-container__panel--constrained'
       }
     ]
@@ -141,18 +124,6 @@ const tabCategories: TabCategory[] = [
         id: 'supplies-store',
         label: 'Supplies Store',
         icon: '🛒',
-        panelClass: 'tab-container__panel--constrained'
-      }
-    ]
-  },
-  {
-    id: 'development',
-    label: 'Development Tools',
-    tabs: [
-      {
-        id: 'error-tracking',
-        label: 'System Monitor',
-        icon: '🐛',
         panelClass: 'tab-container__panel--constrained'
       }
     ]

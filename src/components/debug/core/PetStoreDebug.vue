@@ -1,12 +1,12 @@
 <template>
   <div class="pet-store-debug">
-    <h2>Pet Adoption</h2>
+    <h2>Guinea Pigs</h2>
     <div class="panel-row">
     <!-- First Row: 3 columns on desktop -->
     <div class="panel panel--compact">
       <div class="panel__header">
         <h3>
-          Available Guinea Pigs
+          Available
           <InfoButton
             message="View guinea pig observations in the Activity Feed"
             position="bottom"
@@ -14,57 +14,128 @@
         </h3>
       </div>
       <div class="panel__content">
-        <div class="pet-store-debug__habitats">
-          <div
-            v-for="[habitatNumber, guineaPigs] in guineaPigsByHabitat"
-            :key="habitatNumber"
-            class="pet-store-debug__habitat"
-          >
-            <h4 class="pet-store-debug__habitat-label">Habitat {{ habitatNumber }}</h4>
-            <div class="pet-store-debug__guinea-pig-list">
-              <div
-                v-for="guineaPig in guineaPigs"
-                :key="guineaPig.id"
-                class="pet-store-debug__guinea-pig-item"
-                :class="{
-                  'pet-store-debug__guinea-pig-item--selected': selectedGuineaPig?.id === guineaPig.id,
-                  'pet-store-debug__guinea-pig-item--active': isGuineaPigActive(guineaPig.id)
-                }"
-                @click="selectedGuineaPig = guineaPig"
-              >
-            <div class="pet-store-debug__guinea-pig-header">
-              <div class="pet-store-debug__guinea-pig-left">
-                <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
-                <div class="pet-store-debug__guinea-pig-badges">
-                  <Badge v-if="isGuineaPigActive(guineaPig.id)" variant="info" size="sm">ACTIVE</Badge>
-                  <Badge
-                    v-if="shouldShowRarityBadge(guineaPig.breed)"
-                    :variant="getRarityBadgeVariant(guineaPig.breed)"
+        <!-- Active Guinea Pigs Section -->
+        <div v-if="activeGuineaPigsByHabitat.length > 0" class="pet-store-debug__section">
+          <h4 class="pet-store-debug__section-label">Active in Game</h4>
+          <div class="pet-store-debug__habitats">
+            <div
+              v-for="[habitatNumber, guineaPigs] in activeGuineaPigsByHabitat"
+              :key="`active-${habitatNumber}`"
+              class="pet-store-debug__habitat"
+            >
+              <h5 class="pet-store-debug__habitat-label">Active Habitat</h5>
+              <div class="pet-store-debug__guinea-pig-list">
+                <div
+                  v-for="guineaPig in guineaPigs"
+                  :key="guineaPig.id"
+                  class="pet-store-debug__guinea-pig-item"
+                  :class="{
+                    'pet-store-debug__guinea-pig-item--selected': selectedGuineaPig?.id === guineaPig.id,
+                    'pet-store-debug__guinea-pig-item--active': true
+                  }"
+                  @click="selectedGuineaPig = guineaPig"
+                >
+              <div class="pet-store-debug__guinea-pig-header">
+                <div class="pet-store-debug__guinea-pig-left">
+                  <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
+                  <div class="pet-store-debug__guinea-pig-badges">
+                    <Badge variant="info" size="sm">ACTIVE</Badge>
+                    <Badge
+                      v-if="shouldShowRarityBadge(guineaPig.breed)"
+                      :variant="getRarityBadgeVariant(guineaPig.breed)"
+                      size="sm"
+                    >
+                      {{ getRarityBadgeText(guineaPig.breed) }}
+                    </Badge>
+                    <Badge variant="secondary" size="sm">{{ guineaPig.gender }}</Badge>
+                    <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furColor }}</Badge>
+                    <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furPattern }}</Badge>
+                  </div>
+                </div>
+                <div class="pet-store-debug__guinea-pig-right">
+                  <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
+                  <Button
+                    v-if="!guineaPig.observed"
+                    @click.stop="observeGuineaPig(guineaPig)"
+                    variant="tertiary"
                     size="sm"
                   >
-                    {{ getRarityBadgeText(guineaPig.breed) }}
-                  </Badge>
-                  <Badge variant="secondary" size="sm">{{ guineaPig.gender }}</Badge>
-                  <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furColor }}</Badge>
-                  <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furPattern }}</Badge>
-                </div>
-                <div class="pet-store-debug__adoption-timer" v-if="guineaPig.adoptionTimer">
-                  ⏱️ {{ getAdoptionTimerDisplay(guineaPig.id) }}
+                    Observe {{ guineaPig.name }}
+                  </Button>
+                  <span
+                    v-else
+                    class="pet-store-debug__observed-badge"
+                    :title="guineaPig.observationMessage"
+                  >
+                    Observed ✓
+                  </span>
                 </div>
               </div>
-              <div class="pet-store-debug__guinea-pig-right">
-                <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
-                <Button
-                  v-if="!guineaPig.observed"
-                  @click.stop="observeGuineaPig(guineaPig)"
-                  variant="tertiary"
-                  size="sm"
-                >
-                  Observe {{ guineaPig.name }}
-                </Button>
-                <span v-else class="pet-store-debug__observed-badge">Observed ✓</span>
+                </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- Inactive Guinea Pigs Section -->
+        <div v-if="inactiveGuineaPigsByHabitat.length > 0" class="pet-store-debug__section">
+          <h4 v-if="activeGuineaPigsByHabitat.length > 0" class="pet-store-debug__section-label">In Pet Store</h4>
+          <div class="pet-store-debug__habitats">
+            <div
+              v-for="[habitatNumber, guineaPigs] in inactiveGuineaPigsByHabitat"
+              :key="`inactive-${habitatNumber}`"
+              class="pet-store-debug__habitat"
+            >
+              <h5 class="pet-store-debug__habitat-label">Habitat {{ habitatNumber }}</h5>
+              <div class="pet-store-debug__guinea-pig-list">
+                <div
+                  v-for="guineaPig in guineaPigs"
+                  :key="guineaPig.id"
+                  class="pet-store-debug__guinea-pig-item"
+                  :class="{
+                    'pet-store-debug__guinea-pig-item--selected': selectedGuineaPig?.id === guineaPig.id
+                  }"
+                  @click="selectedGuineaPig = guineaPig"
+                >
+              <div class="pet-store-debug__guinea-pig-header">
+                <div class="pet-store-debug__guinea-pig-left">
+                  <span class="pet-store-debug__guinea-pig-name">{{ guineaPig.name }}</span>
+                  <div class="pet-store-debug__guinea-pig-badges">
+                    <Badge
+                      v-if="shouldShowRarityBadge(guineaPig.breed)"
+                      :variant="getRarityBadgeVariant(guineaPig.breed)"
+                      size="sm"
+                    >
+                      {{ getRarityBadgeText(guineaPig.breed) }}
+                    </Badge>
+                    <Badge variant="secondary" size="sm">{{ guineaPig.gender }}</Badge>
+                    <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furColor }}</Badge>
+                    <Badge variant="secondary" size="sm">{{ guineaPig.appearance.furPattern }}</Badge>
+                  </div>
+                  <div class="pet-store-debug__adoption-timer" v-if="guineaPig.adoptionTimer">
+                    ⏱️ {{ getAdoptionTimerDisplay(guineaPig.id) }}
+                  </div>
+                </div>
+                <div class="pet-store-debug__guinea-pig-right">
+                  <span class="pet-store-debug__guinea-pig-breed">{{ guineaPig.breed }}</span>
+                  <Button
+                    v-if="!guineaPig.observed"
+                    @click.stop="observeGuineaPig(guineaPig)"
+                    variant="tertiary"
+                    size="sm"
+                  >
+                    Observe {{ guineaPig.name }}
+                  </Button>
+                  <span
+                    v-else
+                    class="pet-store-debug__observed-badge"
+                    :title="guineaPig.observationMessage"
+                  >
+                    Observed ✓
+                  </span>
+                </div>
+              </div>
+                </div>
               </div>
             </div>
           </div>
@@ -144,9 +215,6 @@
           </Details>
 
           <Details summary="Personality" variant="bordered">
-            <BlockMessage v-if="isSelectedGuineaPigActive" variant="info">
-              ℹ️ The personality traits of active guinea pigs can be modified in the Personality Debug tab.
-            </BlockMessage>
             <div class="flex flex-col gap-3">
               <SliderField
                 v-model="selectedGuineaPig.personality.friendliness"
@@ -180,6 +248,65 @@
                 size="sm"
                 :disabled="isSelectedGuineaPigActive"
               />
+              <SliderField
+                v-model="selectedGuineaPig.personality.cleanliness"
+                :min="1"
+                :max="10"
+                label="Cleanliness"
+                size="sm"
+                :disabled="isSelectedGuineaPigActive"
+              />
+
+              <hr class="divider">
+
+              <!-- Need Decay Rate Modifiers -->
+              <div class="decay-preview-section">
+                <h4 class="decay-preview-section__title">Need Decay Rate Modifiers</h4>
+                <div class="decay-preview">
+                  <div class="decay-preview__item">
+                    <span class="decay-preview__label">Social Need Decay:</span>
+                    <span class="decay-preview__value" :class="getDecayModifierClass(getSocialDecayModifier(selectedGuineaPig.personality.friendliness))">
+                      {{ getSocialDecayModifier(selectedGuineaPig.personality.friendliness) }}x
+                      <span class="decay-preview__effect">{{ getDecayEffectText(getSocialDecayModifier(selectedGuineaPig.personality.friendliness)) }}</span>
+                    </span>
+                  </div>
+                  <div class="decay-preview__item">
+                    <span class="decay-preview__label">Play Need Decay:</span>
+                    <span class="decay-preview__value" :class="getDecayModifierClass(getPlayDecayModifier(selectedGuineaPig.personality.playfulness))">
+                      {{ getPlayDecayModifier(selectedGuineaPig.personality.playfulness) }}x
+                      <span class="decay-preview__effect">{{ getDecayEffectText(getPlayDecayModifier(selectedGuineaPig.personality.playfulness)) }}</span>
+                    </span>
+                  </div>
+                  <div class="decay-preview__item">
+                    <span class="decay-preview__label">Stimulation Need Decay:</span>
+                    <span class="decay-preview__value" :class="getDecayModifierClass(getStimulationDecayModifier(selectedGuineaPig.personality.curiosity))">
+                      {{ getStimulationDecayModifier(selectedGuineaPig.personality.curiosity) }}x
+                      <span class="decay-preview__effect">{{ getDecayEffectText(getStimulationDecayModifier(selectedGuineaPig.personality.curiosity)) }}</span>
+                    </span>
+                  </div>
+                  <div class="decay-preview__item">
+                    <span class="decay-preview__label">Comfort Need Decay:</span>
+                    <span class="decay-preview__value" :class="getDecayModifierClass(getBoldnessDecayModifier(selectedGuineaPig.personality.boldness))">
+                      {{ getBoldnessDecayModifier(selectedGuineaPig.personality.boldness) }}x
+                      <span class="decay-preview__effect">{{ getDecayEffectText(getBoldnessDecayModifier(selectedGuineaPig.personality.boldness)) }}</span>
+                    </span>
+                  </div>
+                  <div class="decay-preview__item">
+                    <span class="decay-preview__label">Hygiene Need Decay:</span>
+                    <span class="decay-preview__value" :class="getDecayModifierClass(getHygieneDecayModifier(selectedGuineaPig.personality.cleanliness))">
+                      {{ getHygieneDecayModifier(selectedGuineaPig.personality.cleanliness) }}x
+                      <span class="decay-preview__effect">{{ getDecayEffectText(getHygieneDecayModifier(selectedGuineaPig.personality.cleanliness)) }}</span>
+                    </span>
+                  </div>
+                  <div class="decay-preview__item">
+                    <span class="decay-preview__label">Health Need Decay:</span>
+                    <span class="decay-preview__value" :class="getDecayModifierClass(getHealthDecayModifier(selectedGuineaPig.personality.cleanliness))">
+                      {{ getHealthDecayModifier(selectedGuineaPig.personality.cleanliness) }}x
+                      <span class="decay-preview__effect">{{ getDecayEffectText(getHealthDecayModifier(selectedGuineaPig.personality.cleanliness)) }}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           </Details>
 
@@ -453,11 +580,30 @@ const sortedAvailableGuineaPigs = computed(() => {
   })
 })
 
-// Phase 7: Group guinea pigs by habitat
-const guineaPigsByHabitat = computed(() => {
+// Phase 7: Group guinea pigs by habitat - split into active and inactive
+const activeGuineaPigsByHabitat = computed(() => {
   const grouped = new Map<number, GuineaPig[]>()
 
   for (const guineaPig of sortedAvailableGuineaPigs.value) {
+    if (!isGuineaPigActive(guineaPig.id)) continue
+
+    const habitat = guineaPig.cageNumber ?? 0
+    if (!grouped.has(habitat)) {
+      grouped.set(habitat, [])
+    }
+    grouped.get(habitat)!.push(guineaPig)
+  }
+
+  // Sort by habitat number
+  return Array.from(grouped.entries()).sort((a, b) => a[0] - b[0])
+})
+
+const inactiveGuineaPigsByHabitat = computed(() => {
+  const grouped = new Map<number, GuineaPig[]>()
+
+  for (const guineaPig of sortedAvailableGuineaPigs.value) {
+    if (isGuineaPigActive(guineaPig.id)) continue
+
     const habitat = guineaPig.cageNumber ?? 0
     if (!grouped.has(habitat)) {
       grouped.set(habitat, [])
@@ -832,12 +978,82 @@ const observeGuineaPig = (guineaPig: GuineaPig) => {
   const messageIndex = Math.floor(Math.random() * messages.length)
   const message = messages[messageIndex]
 
+  // Store observation message on guinea pig
+  guineaPig.observationMessage = message
+
   // Log to activity feed
   loggingStore.addGuineaPigReaction(message, undefined, { action: 'observe', guineaPigId: guineaPig.id })
+}
+
+// Decay modifier helper functions
+function getSocialDecayModifier(friendliness: number): string {
+  const modifier = 1 + (friendliness - 5) * 0.04
+  return modifier.toFixed(2)
+}
+
+function getPlayDecayModifier(playfulness: number): string {
+  const modifier = 1 + (playfulness - 5) * 0.06
+  return modifier.toFixed(2)
+}
+
+function getStimulationDecayModifier(curiosity: number): string {
+  const modifier = 1 + (curiosity - 5) * 0.08
+  return modifier.toFixed(2)
+}
+
+function getBoldnessDecayModifier(boldness: number): string {
+  const modifier = 1 - (boldness - 5) * 0.05
+  return modifier.toFixed(2)
+}
+
+function getHygieneDecayModifier(cleanliness: number): string {
+  const modifier = 1 - (cleanliness - 5) * 0.06
+  return modifier.toFixed(2)
+}
+
+function getHealthDecayModifier(cleanliness: number): string {
+  const modifier = 1 - (cleanliness - 5) * 0.05
+  return modifier.toFixed(2)
+}
+
+function getDecayModifierClass(modifier: string): string {
+  const modifierValue = parseFloat(modifier)
+  if (modifierValue < 0.9) return 'decay-modifier--slower'
+  if (modifierValue > 1.1) return 'decay-modifier--faster'
+  return 'decay-modifier--normal'
+}
+
+function getDecayEffectText(modifier: string): string {
+  const modifierValue = parseFloat(modifier)
+  const percentChange = ((modifierValue - 1) * 100).toFixed(0)
+
+  if (modifierValue < 1) {
+    return `(${percentChange}%)`
+  } else if (modifierValue > 1) {
+    return `(+${percentChange}%)`
+  }
+  return '(±0%)'
 }
 </script>
 
 <style>
+/* === Section Labels === */
+.pet-store-debug__section {
+  margin-block-end: var(--space-6);
+}
+
+.pet-store-debug__section:last-child {
+  margin-block-end: 0;
+}
+
+.pet-store-debug__section-label {
+  margin: 0;
+  margin-block-end: var(--space-4);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
 /* === Habitat Organization Section === */
 .pet-store-debug__habitats {
   display: flex;
@@ -855,7 +1071,7 @@ const observeGuineaPig = (guineaPig: GuineaPig) => {
 .pet-store-debug__habitat-label {
   margin: 0;
   margin-block-end: var(--space-3);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
 }
@@ -943,6 +1159,8 @@ const observeGuineaPig = (guineaPig: GuineaPig) => {
   font-size: 0.85rem;
   color: var(--color-success);
   font-weight: 500;
+  cursor: help;
+  text-decoration: underline dotted;
 }
 
 /* === Editor Section === */
@@ -1078,5 +1296,66 @@ const observeGuineaPig = (guineaPig: GuineaPig) => {
   border-color: var(--color-success);
   color: var(--color-success);
   opacity: 0.7;
+}
+
+/* === Decay Preview Section === */
+.decay-preview-section {
+  margin-block-start: var(--space-3);
+}
+
+.decay-preview-section__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin-block-end: var(--space-3);
+  color: var(--color-text);
+}
+
+.decay-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.decay-preview__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-block: var(--space-2);
+  border-block-end: 1px solid var(--color-border-medium);
+}
+
+.decay-preview__item:last-child {
+  border-block-end: none;
+}
+
+.decay-preview__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.decay-preview__value {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.decay-preview__effect {
+  font-size: var(--font-size-xs);
+  font-weight: 400;
+}
+
+/* Decay Modifier Classes */
+.decay-modifier--slower {
+  color: var(--color-success);
+}
+
+.decay-modifier--faster {
+  color: var(--color-error);
+}
+
+.decay-modifier--normal {
+  color: var(--color-text-secondary);
 }
 </style>

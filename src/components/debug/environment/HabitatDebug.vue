@@ -1,6 +1,12 @@
 <template>
   <div class="habitat-debug debug-view__constrained">
-    <h2>Habitat Conditions</h2>
+    <h2>
+      Habitat Conditions
+      <InfoButton
+        message="Manage habitat conditions, interact with guinea pigs, and view their needs. Use the sidebar buttons to access inventory, care actions, activity feed, and socialization options."
+        position="bottom"
+      />
+    </h2>
 
     <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
     <!-- Visual Habitat with Sidebar -->
@@ -435,6 +441,7 @@ import { useLoggingStore } from '../../../stores/loggingStore'
 import { CONSUMPTION, CHEW_DEGRADATION } from '../../../constants/supplies'
 import { getInteractionEffect, getInteractionName, getInteractionEmoji } from '../../../utils/interactionEffects'
 import Button from '../../basic/Button.vue'
+import InfoButton from '../../basic/InfoButton.vue'
 import SliderField from '../../basic/SliderField.vue'
 import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/InventorySidebar.vue'

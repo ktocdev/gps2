@@ -912,6 +912,9 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       }
 
       if (guineaPig) {
+        // Clear adoption timer when guinea pig becomes active
+        guineaPig.adoptionTimer = null
+
         // Add to guinea pig store collection
         guineaPigStore.collection.guineaPigs[guineaPigId] = { ...guineaPig }
       }

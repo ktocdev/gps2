@@ -135,6 +135,7 @@ export interface GuineaPig {
   friendshipFrozen: boolean   // True when in Stardust Sanctuary (Phase 4)
   relationships: Record<string, number> // guinea pig ID -> friendship level (0-100)
   bonds: Record<string, GuineaPigBond> // Phase 5: Preserved bonds with Sanctuary guinea pigs
+  observationMessage?: string // Message from observing the guinea pig
 
   // System 2.5: Fulfillment Limitation System
   consumptionLimits: ConsumptionLimits
