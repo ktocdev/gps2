@@ -741,12 +741,6 @@ function getChewDurabilityClass(durability: number): string {
 </script>
 
 <style>
-.habitat-debug {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-6);
-}
-
 .habitat-debug__content {
   display: flex;
   flex-direction: column;

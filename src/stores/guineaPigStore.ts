@@ -30,7 +30,7 @@ export interface GuineaPigPreferences {
 }
 
 // System 2.5: Fulfillment Limitation System
-export type FoodType = 'fruit' | 'vegetables' | 'pellets' | 'treats' | 'hay'
+export type FoodType = 'fruit' | 'vegetables' | 'pellets' | 'treats' | 'hay' | 'greens' | 'herbs'
 export type InteractionType = 'play' | 'social'
 
 export interface ConsumptionLimit {
@@ -39,10 +39,14 @@ export interface ConsumptionLimit {
 }
 
 export interface ConsumptionLimits {
+  // All non-hay foods share a combined limit of 5 servings per hunger cycle
   fruit: ConsumptionLimit
   vegetables: ConsumptionLimit
   pellets: ConsumptionLimit
   treats: ConsumptionLimit
+  herbs: ConsumptionLimit
+  greens: ConsumptionLimit
+  // Note: hay is unlimited and not tracked
 }
 
 export interface InteractionRejection {
@@ -680,6 +684,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       guineaPig.consumptionLimits.vegetables.consumed = 0
       guineaPig.consumptionLimits.pellets.consumed = 0
       guineaPig.consumptionLimits.treats.consumed = 0
+      guineaPig.consumptionLimits.herbs.consumed = 0
+      guineaPig.consumptionLimits.greens.consumed = 0
       guineaPig.lastHungerResetLevel = 100
 
       getLoggingStore().logInfo(`Consumption limits reset for ${guineaPig.name} (hunger cycle complete)`)
@@ -725,23 +731,31 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   }
 
   // Needs satisfaction mechanics for user interactions
-  const feedGuineaPig = (guineaPigId: string, foodType: 'pellets' | 'hay' | 'vegetables' | 'treats' | 'fruit' = 'pellets'): boolean => {
+  const feedGuineaPig = (guineaPigId: string, foodType: FoodType = 'pellets'): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
 
     // System 2.5: Check consumption limits (hay is unlimited)
     if (foodType !== 'hay') {
-      const limit = guineaPig.consumptionLimits[foodType as keyof ConsumptionLimits]
-      if (limit && limit.consumed >= limit.limit) {
+      // All non-hay foods share a combined limit of 5 servings per hunger cycle
+      const totalConsumed =
+        guineaPig.consumptionLimits.fruit.consumed +
+        guineaPig.consumptionLimits.vegetables.consumed +
+        guineaPig.consumptionLimits.pellets.consumed +
+        guineaPig.consumptionLimits.treats.consumed +
+        guineaPig.consumptionLimits.herbs.consumed +
+        guineaPig.consumptionLimits.greens.consumed
+
+      if (totalConsumed >= 5) {
         getLoggingStore().addPlayerAction(
-          `${guineaPig.name} has already eaten ${limit.limit} serving(s) of ${foodType} this hunger cycle 🚫`,
+          `${guineaPig.name} has already eaten 5 servings of food this hunger cycle 🚫`,
           '🚫',
           {
             guineaPigId,
             foodType,
-            consumed: limit.consumed,
-            limit: limit.limit,
-            reason: 'consumption_limit_reached'
+            totalConsumed,
+            limit: 5,
+            reason: 'food_limit_reached'
           }
         )
         return false
@@ -749,12 +763,14 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     }
 
     // Base satisfaction amounts
-    const feedingAmounts = {
+    const feedingAmounts: Record<FoodType, number> = {
       pellets: 25,     // Basic nutrition
       hay: 15,         // Continuous munching
       vegetables: 30,  // High nutrition + happiness
       treats: 35,      // High satisfaction but should be limited
-      fruit: 30        // High nutrition + happiness (similar to vegetables)
+      fruit: 30,       // High nutrition + happiness (similar to vegetables)
+      greens: 25,      // Leafy greens - good nutrition
+      herbs: 20        // Fresh herbs - lower satisfaction but tasty
     }
 
     let hungerSatisfaction = feedingAmounts[foodType]
@@ -1370,6 +1386,19 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return true
   }
 
+  // Helper to map food subCategory to FoodType
+  const getFoodTypeFromSubCategory = (subCategory: string): FoodType | null => {
+    const mapping: Record<string, FoodType> = {
+      'fruits': 'fruit',
+      'vegetables': 'vegetables',
+      'pellets': 'pellets',
+      'treats': 'treats',
+      'greens': 'greens',
+      'herbs': 'herbs'
+    }
+    return mapping[subCategory] || null
+  }
+
   // System 2.5: Consumption tracking helpers
   const checkConsumptionLimit = (guineaPigId: string, foodType: FoodType): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
@@ -1377,8 +1406,16 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
     if (foodType === 'hay') return true // Hay is unlimited
 
-    const limit = guineaPig.consumptionLimits[foodType as keyof ConsumptionLimits]
-    return limit ? limit.consumed < limit.limit : true
+    // All non-hay foods share a combined limit of 5 servings
+    const totalConsumed =
+      guineaPig.consumptionLimits.fruit.consumed +
+      guineaPig.consumptionLimits.vegetables.consumed +
+      guineaPig.consumptionLimits.pellets.consumed +
+      guineaPig.consumptionLimits.treats.consumed +
+      guineaPig.consumptionLimits.herbs.consumed +
+      guineaPig.consumptionLimits.greens.consumed
+
+    return totalConsumed < 5
   }
 
   const getRemainingServings = (guineaPigId: string, foodType: FoodType): number => {
@@ -1387,8 +1424,16 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
     if (foodType === 'hay') return -1 // Unlimited indicator
 
-    const limit = guineaPig.consumptionLimits[foodType as keyof ConsumptionLimits]
-    return limit ? limit.limit - limit.consumed : 0
+    // All non-hay foods share a combined limit of 5 servings
+    const totalConsumed =
+      guineaPig.consumptionLimits.fruit.consumed +
+      guineaPig.consumptionLimits.vegetables.consumed +
+      guineaPig.consumptionLimits.pellets.consumed +
+      guineaPig.consumptionLimits.treats.consumed +
+      guineaPig.consumptionLimits.herbs.consumed +
+      guineaPig.consumptionLimits.greens.consumed
+
+    return Math.max(0, 5 - totalConsumed)
   }
 
   const resetConsumptionLimits = (guineaPigId: string): void => {
@@ -1399,6 +1444,8 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     guineaPig.consumptionLimits.vegetables.consumed = 0
     guineaPig.consumptionLimits.pellets.consumed = 0
     guineaPig.consumptionLimits.treats.consumed = 0
+    guineaPig.consumptionLimits.herbs.consumed = 0
+    guineaPig.consumptionLimits.greens.consumed = 0
     guineaPig.lastHungerResetLevel = guineaPig.needs.hunger
 
     collection.value.lastUpdated = Date.now()
@@ -1723,6 +1770,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     satisfyNeed,
 
     // System 2.5: Consumption tracking
+    getFoodTypeFromSubCategory,
     checkConsumptionLimit,
     getRemainingServings,
     resetConsumptionLimits,

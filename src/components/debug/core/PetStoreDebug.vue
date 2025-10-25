@@ -5,13 +5,7 @@
     <!-- First Row: 3 columns on desktop -->
     <div class="panel panel--compact">
       <div class="panel__header">
-        <h3>
-          Available
-          <InfoButton
-            message="View guinea pig observations in the Activity Feed"
-            position="bottom"
-          />
-        </h3>
+        <h3>Available</h3>
       </div>
       <div class="panel__content">
         <!-- Active Guinea Pigs Section -->
@@ -531,7 +525,6 @@ import Select from '../../basic/Select.vue'
 import Details from '../../basic/Details.vue'
 import BlockMessage from '../../basic/BlockMessage.vue'
 import Button from '../../basic/Button.vue'
-import InfoButton from '../../basic/InfoButton.vue'
 import { useLoggingStore } from '../../../stores/loggingStore'
 
 const petStoreManager = usePetStoreManager()

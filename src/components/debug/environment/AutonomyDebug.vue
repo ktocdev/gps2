@@ -1,17 +1,23 @@
 <template>
   <div class="autonomy-debug flex flex-column gap-4">
-    <div v-if="hasActiveGuineaPigs" class="panel panel--compact panel--accent">
-      <div class="panel__header">
+    <div v-if="hasActiveGuineaPigs" class="panel panel--compact panel--accent panel--overflow-visible">
+      <div class="panel__header" style="display: flex; justify-content: space-between; align-items: center;">
         <h3>🎮 Autonomy Controls</h3>
-        <!-- Toggle between guinea pigs if there are multiple -->
-        <Button
-          v-if="guineaPigStore.activeGuineaPigs.length > 1"
-          @click="toggleGuineaPig"
-          variant="tertiary"
-          size="sm"
-        >
-          {{ selectedGuineaPig?.name }} ({{ selectedGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
-        </Button>
+        <div style="display: flex; align-items: center; gap: var(--space-2);">
+          <!-- Toggle between guinea pigs if there are multiple -->
+          <Button
+            v-if="guineaPigStore.activeGuineaPigs.length > 1"
+            @click="toggleGuineaPig"
+            variant="tertiary"
+            size="sm"
+          >
+            {{ selectedGuineaPig?.name }} ({{ selectedGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
+          </Button>
+          <InfoButton
+            message="Manual behavior triggers temporarily set the guinea pig's need to 0 to force the AI to select that behavior. After execution completes, the need is fully restored to 100% for testing convenience."
+            position="bottom"
+          />
+        </div>
       </div>
       <div v-if="selectedGuineaPig" class="panel__content">
         <!-- Manual Triggers & Current Status -->
@@ -275,7 +281,7 @@
     <!-- Global Autonomy Settings (Bottom Section) -->
     <div class="panel panel--compact panel--overflow-visible mb-4">
       <div class="panel__header" style="display: flex; justify-content: space-between; align-items: center;">
-        <h5>Global Autonomy Settings</h5>
+        <h3>Global Autonomy Settings</h3>
         <InfoButton
           message="Game Loop Speed controls how often the game processes AI decisions and updates. Lower values (e.g., 100ms) mean more frequent updates for faster-paced testing. Higher values (e.g., 30s) slow everything down for easier observation of behaviors."
           position="bottom"
@@ -652,10 +658,6 @@ defineExpose({
 </script>
 
 <style scoped>
-.autonomy-debug h3 {
-  font-size: var(--font-size-2xl);
-}
-
 .global-controls {
   display: flex;
   flex-direction: column;
