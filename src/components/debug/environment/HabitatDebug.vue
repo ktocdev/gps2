@@ -855,6 +855,13 @@ function getChewDurabilityClass(durability: number): string {
   min-inline-size: 0;
 }
 
+/* Mobile: Stack layout vertically */
+@media (max-width: 768px) {
+  .habitat-layout {
+    flex-direction: column;
+  }
+}
+
 /* Habitat Conditions & Test Controls Row */
 .habitat-debug__conditions-row {
   display: grid;
@@ -1088,5 +1095,15 @@ function getChewDurabilityClass(durability: number): string {
   flex-direction: column;
   border-inline-start: 1px solid var(--color-border);
   background-color: var(--color-bg-secondary);
+}
+
+/* Mobile: Full width layout for activity feed sidebar */
+@media (max-width: 768px) {
+  .activity-feed-sidebar {
+    inline-size: 100%;
+    max-block-size: 300px;
+    border-inline-start: none;
+    border-block-start: 1px solid var(--color-border);
+  }
 }
 </style>

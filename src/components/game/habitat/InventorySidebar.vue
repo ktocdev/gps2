@@ -4,7 +4,9 @@
     @dragover.prevent="handleDragOver"
     @dragleave="handleDragLeave"
     @drop="handleDrop"
-    :class="{ 'inventory-sidebar--drop-target': isDragOver }"
+    @touchmove.prevent="handleTouchMoveOnSidebar"
+    @touchend="handleTouchEndOnSidebar"
+    :class="{ 'inventory-sidebar--drop-target': isDragOver || isTouchOver }"
   >
     <h4 class="inventory-sidebar__title">Inventory</h4>
     <div class="inventory-sidebar__items">
@@ -22,6 +24,9 @@
         :tooltip-message="item.tooltipMessage"
         @dragstart="(_itemId, event) => handleServingDragStart(event, item)"
         @dragend="handleDragEnd"
+        @touchstart="(_itemId, event) => handleServingTouchStart(event, item)"
+        @touchmove="(_itemId, event) => handleServingTouchMove(event, item)"
+        @touchend="(_itemId, event) => handleServingTouchEnd(event, item)"
       />
 
       <!-- Regular habitat items and food -->
@@ -32,6 +37,9 @@
         draggable="true"
         @dragstart="handleDragStart($event, item)"
         @dragend="handleDragEnd"
+        @touchstart="handleRegularTouchStart($event, item)"
+        @touchmove="handleRegularTouchMove($event, item)"
+        @touchend="handleRegularTouchEnd($event, item)"
       >
         <span class="inventory-sidebar__item-emoji">{{ item.emoji }}</span>
         <span class="inventory-sidebar__item-name">{{ item.name }}</span>
@@ -61,6 +69,15 @@ const suppliesStore = useSuppliesStore()
 const guineaPigStore = useGuineaPigStore()
 
 const isDragOver = ref(false)
+const isTouchOver = ref(false)
+
+// Touch state
+const activeTouchItem = ref<{
+  itemId: string
+  instanceId?: string
+  isServingBased: boolean
+  size: { width: number; height: number }
+} | null>(null)
 
 // Get the first active guinea pig for consumption limit checks
 const activeGuineaPig = computed(() => {
@@ -272,6 +289,120 @@ function handleDrop(event: DragEvent) {
     console.error('Error parsing drag data:', e)
   }
 }
+
+// Touch handlers for serving-based items
+function handleServingTouchStart(event: TouchEvent, item: any) {
+  const suppliesItem = suppliesStore.getItemById(item.itemId)
+  const category = suppliesItem?.category || 'unknown'
+
+  activeTouchItem.value = {
+    itemId: item.itemId,
+    instanceId: item.instanceId,
+    isServingBased: true,
+    size: { width: 1, height: 1 }
+  }
+
+  // Notify HabitatVisual about the touch drag
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.setDraggedItem(item.itemId, { width: 1, height: 1 })
+  }
+}
+
+function handleServingTouchMove(event: TouchEvent, item: any) {
+  if (!activeTouchItem.value) return
+
+  // Notify HabitatVisual to update hover cell based on touch position
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.handleTouchMove(event)
+  }
+}
+
+function handleServingTouchEnd(event: TouchEvent, item: any) {
+  if (!activeTouchItem.value) return
+
+  // Notify HabitatVisual to complete the drop
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.handleTouchEnd(event, activeTouchItem.value)
+  }
+
+  // Clear touch state
+  activeTouchItem.value = null
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.clearDraggedItem()
+  }
+}
+
+// Touch handlers for regular items
+function handleRegularTouchStart(event: TouchEvent, item: any) {
+  const suppliesItem = suppliesStore.getItemById(item.id)
+  const category = suppliesItem?.category || 'unknown'
+
+  activeTouchItem.value = {
+    itemId: item.id,
+    isServingBased: false,
+    size: item.size
+  }
+
+  // Notify HabitatVisual about the touch drag
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.setDraggedItem(item.id, item.size)
+  }
+}
+
+function handleRegularTouchMove(event: TouchEvent, item: any) {
+  if (!activeTouchItem.value) return
+
+  // Notify HabitatVisual to update hover cell based on touch position
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.handleTouchMove(event)
+  }
+}
+
+function handleRegularTouchEnd(event: TouchEvent, item: any) {
+  if (!activeTouchItem.value) return
+
+  // Notify HabitatVisual to complete the drop
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.handleTouchEnd(event, activeTouchItem.value)
+  }
+
+  // Clear touch state
+  activeTouchItem.value = null
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.clearDraggedItem()
+  }
+}
+
+// Touch handlers for sidebar drop zone
+function handleTouchMoveOnSidebar(event: TouchEvent) {
+  if (!activeTouchItem.value) return
+
+  // Check if touch is over sidebar
+  const sidebar = event.currentTarget as HTMLElement
+  const rect = sidebar.getBoundingClientRect()
+  const touch = event.touches[0]
+
+  if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+      touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+    isTouchOver.value = true
+  } else {
+    isTouchOver.value = false
+  }
+}
+
+function handleTouchEndOnSidebar(event: TouchEvent) {
+  if (!isTouchOver.value || !activeTouchItem.value) {
+    isTouchOver.value = false
+    return
+  }
+
+  isTouchOver.value = false
+
+  // Only handle items being dragged FROM the habitat (not from inventory)
+  // This is determined in HabitatVisual - if the touch originated from
+  // a placed item, it will have repositioning metadata
+  // For now, we'll let HabitatVisual handle the drop logic
+}
 </script>
 
 <style>
@@ -382,5 +513,18 @@ function handleDrop(event: DragEvent) {
   border-radius: var(--radius-full);
   line-height: 1;
   box-shadow: var(--shadow-sm);
+}
+
+/* Mobile: Full width layout */
+@media (max-width: 768px) {
+  .inventory-sidebar {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    max-block-size: 200px;
+  }
+
+  .inventory-sidebar__items {
+    max-block-size: 150px;
+  }
 }
 </style>
