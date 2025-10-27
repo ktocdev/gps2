@@ -317,7 +317,6 @@ const isRepositioning = ref(false)
 // Touch state
 const isTouchDragging = ref(false)
 const touchStartedOnPlacedItem = ref(false)
-const gridElement = ref<HTMLElement | null>(null)
 
 function initializeGrid() {
   gridCells.value = []

@@ -291,10 +291,7 @@ function handleDrop(event: DragEvent) {
 }
 
 // Touch handlers for serving-based items
-function handleServingTouchStart(event: TouchEvent, item: any) {
-  const suppliesItem = suppliesStore.getItemById(item.itemId)
-  const category = suppliesItem?.category || 'unknown'
-
+function handleServingTouchStart(_event: TouchEvent, item: any) {
   activeTouchItem.value = {
     itemId: item.itemId,
     instanceId: item.instanceId,
@@ -308,7 +305,7 @@ function handleServingTouchStart(event: TouchEvent, item: any) {
   }
 }
 
-function handleServingTouchMove(event: TouchEvent, item: any) {
+function handleServingTouchMove(event: TouchEvent, _item: any) {
   if (!activeTouchItem.value) return
 
   // Notify HabitatVisual to update hover cell based on touch position
@@ -317,7 +314,7 @@ function handleServingTouchMove(event: TouchEvent, item: any) {
   }
 }
 
-function handleServingTouchEnd(event: TouchEvent, item: any) {
+function handleServingTouchEnd(event: TouchEvent, _item: any) {
   if (!activeTouchItem.value) return
 
   // Notify HabitatVisual to complete the drop
@@ -333,10 +330,7 @@ function handleServingTouchEnd(event: TouchEvent, item: any) {
 }
 
 // Touch handlers for regular items
-function handleRegularTouchStart(event: TouchEvent, item: any) {
-  const suppliesItem = suppliesStore.getItemById(item.id)
-  const category = suppliesItem?.category || 'unknown'
-
+function handleRegularTouchStart(_event: TouchEvent, item: any) {
   activeTouchItem.value = {
     itemId: item.id,
     isServingBased: false,
@@ -349,7 +343,7 @@ function handleRegularTouchStart(event: TouchEvent, item: any) {
   }
 }
 
-function handleRegularTouchMove(event: TouchEvent, item: any) {
+function handleRegularTouchMove(event: TouchEvent, _item: any) {
   if (!activeTouchItem.value) return
 
   // Notify HabitatVisual to update hover cell based on touch position
@@ -358,7 +352,7 @@ function handleRegularTouchMove(event: TouchEvent, item: any) {
   }
 }
 
-function handleRegularTouchEnd(event: TouchEvent, item: any) {
+function handleRegularTouchEnd(event: TouchEvent, _item: any) {
   if (!activeTouchItem.value) return
 
   // Notify HabitatVisual to complete the drop
@@ -390,7 +384,7 @@ function handleTouchMoveOnSidebar(event: TouchEvent) {
   }
 }
 
-function handleTouchEndOnSidebar(event: TouchEvent) {
+function handleTouchEndOnSidebar(_event: TouchEvent) {
   if (!isTouchOver.value || !activeTouchItem.value) {
     isTouchOver.value = false
     return

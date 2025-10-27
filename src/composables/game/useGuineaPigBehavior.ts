@@ -13,6 +13,7 @@ import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useMovement } from './useMovement'
 import { usePathfinding } from './usePathfinding'
 import { MessageGenerator } from '../../utils/messageGenerator'
+import { useSocialBehaviors } from './useSocialBehaviors'
 import type { NeedType } from '../../stores/guineaPigStore'
 import type { GridPosition } from './usePathfinding'
 
@@ -26,6 +27,7 @@ export type BehaviorType =
   | 'seek_shelter'
   | 'chew'
   | 'play'
+  | 'socialize'
   | 'popcorn'
   | 'zoomies'
   | 'watch_player'
@@ -39,6 +41,7 @@ export interface BehaviorGoal {
   estimatedDuration: number // milliseconds
   needSatisfied?: NeedType
   targetItemId?: string
+  metadata?: any // For social behaviors and other contextual data
 }
 
 export interface BehaviorState {
@@ -57,7 +60,8 @@ const DEFAULT_THRESHOLDS = {
   hygiene: 60, // Groom when hygiene < 60%
   shelter: 50, // Seek shelter when shelter < 50%
   chew: 40,    // Use chew items when chew < 40%
-  play: 45     // Use toys when play < 45%
+  play: 45,    // Use toys when play < 45%
+  social: 50   // Socialize with companion when social < 50%
 }
 
 export function useGuineaPigBehavior(guineaPigId: string) {
@@ -397,6 +401,28 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       }
     }
 
+    // System 21: Social < threshold (social behaviors with companion)
+    if (needs.social < thresholds.social && !isOnCooldown('socialize')) {
+      const guineaPigStore = useGuineaPigStore()
+      const bonds = guineaPigStore.getAllBonds()
+
+      if (bonds.length > 0) {
+        // Get a partner to socialize with (prioritize by bonding level)
+        const sortedBonds = bonds.sort((a, b) => b.bondingLevel - a.bondingLevel)
+        const topBond = sortedBonds[0]
+        const partnerId = topBond.guineaPig1Id === gp.id ? topBond.guineaPig2Id : topBond.guineaPig1Id
+
+        goals.push({
+          type: 'socialize',
+          target: null, // Will be determined by social behavior type
+          priority: calculateNeedPriority(needs.social, thresholds.social, 55),
+          estimatedDuration: 8000, // 8 seconds for social interaction
+          needSatisfied: 'social',
+          metadata: { partnerId, bondId: topBond.id }
+        })
+      }
+    }
+
     // FRIENDSHIP BEHAVIORS (Priority 15-50)
 
     // Check friendship level for spontaneous behaviors
@@ -517,6 +543,9 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
       case 'play':
         return await executePlayBehavior(goal)
+
+      case 'socialize':
+        return await executeSocializeBehavior(goal)
 
       case 'seek_shelter':
         return await executeShelterBehavior(goal)
@@ -1046,6 +1075,55 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentGoal = null
 
     return true
+  }
+
+  /**
+   * System 21: Execute social behavior with companion
+   */
+  async function executeSocializeBehavior(goal: BehaviorGoal): Promise<boolean> {
+    if (!guineaPig.value || !goal.metadata) return false
+
+    const { partnerId, bondId } = goal.metadata
+    const partner = guineaPigStore.getGuineaPig(partnerId)
+    const bond = guineaPigStore.getActiveBond(bondId)
+
+    if (!partner || !bond) return false
+
+    // Use social behaviors composable
+    const socialBehaviors = useSocialBehaviors()
+
+    // Randomly select a social behavior based on context
+    const behaviors = ['groomPartner', 'playTogether', 'exploreTogether']
+    const selectedBehavior = behaviors[Math.floor(Math.random() * behaviors.length)]
+
+    // Execute the selected social behavior
+    let success = false
+    try {
+      switch (selectedBehavior) {
+        case 'groomPartner':
+          success = await socialBehaviors.groomPartner(guineaPig.value, partner, bond)
+          break
+        case 'playTogether':
+          success = await socialBehaviors.playTogether(guineaPig.value, partner, bond)
+          break
+        case 'exploreTogether':
+          success = await socialBehaviors.exploreTogether(guineaPig.value, partner, bond)
+          break
+      }
+    } catch (error) {
+      console.error(`[executeSocializeBehavior] Error:`, error)
+      return false
+    }
+
+    if (success) {
+      // Set cooldown
+      setCooldown('socialize', 120000) // 2 minute cooldown
+    }
+
+    behaviorState.value.currentActivity = 'idle'
+    behaviorState.value.currentGoal = null
+
+    return success
   }
 
   /**
