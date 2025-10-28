@@ -25,6 +25,7 @@
       <PetStoreDebugView v-if="activeTab === 'pet-store'" />
       <StardustSanctuaryDebug v-if="activeTab === 'sanctuary'" />
       <FriendshipDebug v-if="activeTab === 'friendship'" />
+      <BondingDebug v-if="activeTab === 'bonding'" />
       <InventoryDebugView v-if="activeTab === 'inventory'" />
       <HabitatDebugView v-if="activeTab === 'habitat'" />
       <SuppliesStoreDebug v-if="activeTab === 'supplies-store'" />
@@ -42,6 +43,7 @@ import GameControllerView from './GameControllerView.vue'
 import PetStoreDebugView from './PetStoreDebugView.vue'
 import InventoryDebugView from './InventoryDebugView.vue'
 import FriendshipDebug from '../components/debug/gameplay/FriendshipDebug.vue'
+import BondingDebug from '../components/debug/gameplay/BondingDebug.vue'
 import StardustSanctuaryDebug from '../components/debug/core/StardustSanctuaryDebug.vue'
 import HabitatDebugView from './HabitatDebugView.vue'
 import SuppliesStoreDebug from '../components/debug/environment/SuppliesStoreDebug.vue'
@@ -94,6 +96,12 @@ const tabCategories: TabCategory[] = [
         id: 'friendship',
         label: 'Friendship',
         icon: '💖',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'bonding',
+        label: 'Social Bonding',
+        icon: '🤝',
         panelClass: 'tab-container__panel--constrained'
       },
       {

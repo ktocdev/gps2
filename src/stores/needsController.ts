@@ -137,6 +137,11 @@ export const useNeedsController = defineStore('needsController', () => {
   function processBatchUpdate(): void {
     if (!processingEnabled.value) return
 
+    // Only process if enough time has passed since last update
+    const now = Date.now()
+    const timeSinceLastUpdate = now - lastBatchUpdate.value
+    if (timeSinceLastUpdate < updateIntervalMs.value) return
+
     try {
       const guineaPigStore = useGuineaPigStore()
       const petStoreManager = usePetStoreManager()

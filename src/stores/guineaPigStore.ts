@@ -239,6 +239,21 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   // System 21: Active Social Bonding System
   const activeBonds = ref<Map<string, ActiveBond>>(new Map())
 
+  /**
+   * Ensure activeBonds is a Map (fixes deserialization from storage)
+   */
+  const ensureActiveBondsIsMap = (): void => {
+    if (!(activeBonds.value instanceof Map)) {
+      const bondsMap = new Map<string, ActiveBond>()
+      if (activeBonds.value && typeof activeBonds.value === 'object') {
+        Object.entries(activeBonds.value).forEach(([key, value]) => {
+          bondsMap.set(key, value as ActiveBond)
+        })
+      }
+      activeBonds.value = bondsMap
+    }
+  }
+
   // Computed properties
   const allGuineaPigs = computed(() => {
     const activeIds = collection.value.activeGuineaPigIds || []
@@ -501,6 +516,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    * Returns the best (lowest) modifier from all active bonds
    */
   const getSocialDecayModifierFromBonding = (guineaPigId: string): number => {
+    ensureActiveBondsIsMap()
     const bonds = Array.from(activeBonds.value.values()).filter(
       bond => bond.guineaPig1Id === guineaPigId || bond.guineaPig2Id === guineaPigId
     )
@@ -695,7 +711,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       const lastUpdate = needsLastUpdate.value[guineaPig.id]
       const deltaTime = currentTime - lastUpdate
 
-      // Process decay on every game tick (every 5 seconds)
+      // Process decay based on actual time elapsed (minimum 1 second to avoid micro-updates)
       if (deltaTime >= 1000) {
         processNeedsDecay(guineaPig.id, deltaTime)
 
@@ -1607,6 +1623,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    * Automatically calculates compatibility score
    */
   const createBond = (gp1Id: string, gp2Id: string): ActiveBond | null => {
+    ensureActiveBondsIsMap()
     const gp1 = collection.value.guineaPigs[gp1Id]
     const gp2 = collection.value.guineaPigs[gp2Id]
 
@@ -1651,6 +1668,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    * Get bond between two specific guinea pigs
    */
   const getBond = (gp1Id: string, gp2Id: string): ActiveBond | null => {
+    ensureActiveBondsIsMap()
     for (const bond of activeBonds.value.values()) {
       if (
         (bond.guineaPig1Id === gp1Id && bond.guineaPig2Id === gp2Id) ||
@@ -1666,12 +1684,21 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    * Get the active bond for a guinea pig (if any)
    */
   const getActiveBond = (guineaPigId: string): ActiveBond | null => {
+    ensureActiveBondsIsMap()
     for (const bond of activeBonds.value.values()) {
       if (bond.guineaPig1Id === guineaPigId || bond.guineaPig2Id === guineaPigId) {
         return bond
       }
     }
     return null
+  }
+
+  /**
+   * Get bond by ID
+   */
+  const getBondById = (bondId: string): ActiveBond | null => {
+    ensureActiveBondsIsMap()
+    return activeBonds.value.get(bondId) || null
   }
 
   /**
@@ -1686,6 +1713,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    * Update bonding level (positive only)
    */
   const updateBondingLevel = (bondId: string, increase: number): boolean => {
+    ensureActiveBondsIsMap()
     const bond = activeBonds.value.get(bondId)
     if (!bond) return false
 
@@ -1725,6 +1753,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    * Add a bonding event to history
    */
   const addBondingEvent = (bondId: string, event: BondingEvent): boolean => {
+    ensureActiveBondsIsMap()
     const bond = activeBonds.value.get(bondId)
     if (!bond) return false
 
@@ -1744,6 +1773,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    * Increase bonding through interaction
    */
   const increaseBonding = (bondId: string, amount: number, eventType: BondingEvent['type'], description: string): boolean => {
+    ensureActiveBondsIsMap()
     const bond = activeBonds.value.get(bondId)
     if (!bond) return false
 
@@ -1764,6 +1794,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    * Get all active bonds
    */
   const getAllBonds = (): ActiveBond[] => {
+    ensureActiveBondsIsMap()
+    // Auto-create bonds if they don't exist yet
+    if (activeBonds.value.size === 0 && activeGuineaPigs.value.length >= 2) {
+      ensureBondsExist()
+    }
     return Array.from(activeBonds.value.values())
   }
 
@@ -1772,6 +1807,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    * Called when guinea pigs are activated
    */
   const ensureBondsExist = (): void => {
+    ensureActiveBondsIsMap()
     const activeIds = collection.value.activeGuineaPigIds || []
 
     // Need at least 2 active guinea pigs for bonding
@@ -1983,6 +2019,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     createBond,
     getBond,
     getActiveBond,
+    getBondById,
     getPartnerGuineaPig,
     updateBondingLevel,
     getBondingTier,

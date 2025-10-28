@@ -4,6 +4,7 @@
     :class="{
       'guinea-pig-sprite--selected': isSelected,
       'guinea-pig-sprite--walking': isWalking,
+      'guinea-pig-sprite--playing': isPlaying,
       'guinea-pig-sprite--facing-left': facingLeft
     }"
     :style="spriteStyle"
@@ -52,6 +53,12 @@ const guineaPigEmoji = computed(() => {
 // System 18: Movement state
 const isWalking = computed(() => props.isWalking ?? false)
 const facingLeft = computed(() => props.facingDirection === 'left')
+
+// System 21: Social state - check if guinea pig is playing/socializing
+const isPlaying = computed(() => {
+  const behaviorState = behaviorStateStore.getBehaviorState(props.guineaPig.id)
+  return behaviorState?.currentActivity === 'playing'
+})
 
 // Tooltip showing guinea pig metadata
 const tooltipText = computed(() => {
@@ -168,6 +175,41 @@ function handleClick() {
   }
   50% {
     transform: translateY(-3px) scaleX(-1.02);
+  }
+}
+
+/* System 21: Playing/socializing animation */
+.guinea-pig-sprite--playing .guinea-pig-sprite__emoji {
+  /* Wiggle animation when playing or socializing */
+  animation: guinea-pig-wiggle 0.4s ease-in-out infinite;
+}
+
+@keyframes guinea-pig-wiggle {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  25% {
+    transform: rotate(-8deg) scale(1.05);
+  }
+  75% {
+    transform: rotate(8deg) scale(1.05);
+  }
+}
+
+/* Playing animation when facing left */
+.guinea-pig-sprite--facing-left.guinea-pig-sprite--playing .guinea-pig-sprite__emoji {
+  animation: guinea-pig-wiggle-flipped 0.4s ease-in-out infinite;
+}
+
+@keyframes guinea-pig-wiggle-flipped {
+  0%, 100% {
+    transform: rotate(0deg) scaleX(-1);
+  }
+  25% {
+    transform: rotate(-8deg) scaleX(-1.05);
+  }
+  75% {
+    transform: rotate(8deg) scaleX(-1.05);
   }
 }
 </style>

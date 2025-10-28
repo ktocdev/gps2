@@ -1109,9 +1109,17 @@ defineExpose({
   overflow-x: auto;
   overflow-y: auto;
   max-inline-size: 100%;
-  max-block-size: 70vh;
+  max-block-size: 100%;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-lg);
+}
+
+/* Desktop: Remove scrollbar if content fits */
+@media (min-width: 1024px) {
+  .habitat-visual__scroll-container {
+    overflow-y: visible;
+    max-block-size: none;
+  }
 }
 
 .habitat-visual__container {
