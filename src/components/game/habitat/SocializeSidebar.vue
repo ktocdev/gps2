@@ -15,6 +15,32 @@
           Interacting with: <strong>{{ selectedGuineaPig.name }}</strong>
         </div>
 
+        <!-- System 21: Bond Status -->
+        <div v-if="companionBonds.length > 0" class="interaction-section">
+          <h4 class="interaction-section__title">🤝 Companion Bonds</h4>
+          <div v-for="bondInfo in companionBonds" :key="bondInfo.bond.id" class="bond-status">
+            <div class="bond-status__header">
+              <span class="bond-partner-name">{{ bondInfo.partnerName }}</span>
+              <span class="bond-tier" :class="`bond-tier--${bondInfo.bond.bondingTier}`">
+                {{ formatTier(bondInfo.bond.bondingTier) }}
+              </span>
+            </div>
+            <div class="bond-progress">
+              <div class="bond-progress__bar">
+                <div
+                  class="bond-progress__fill"
+                  :style="{ width: bondInfo.bond.bondingLevel + '%' }"
+                ></div>
+              </div>
+              <span class="bond-progress__label">{{ Math.round(bondInfo.bond.bondingLevel) }}%</span>
+            </div>
+            <div class="bond-stats">
+              <span class="bond-stat">💕 {{ bondInfo.bond.totalInteractions }} interactions</span>
+              <span class="bond-stat">⏱️ {{ bondInfo.bond.proximityTime.toFixed(1) }}h together</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Basic Interactions -->
         <div class="interaction-section">
           <h4 class="interaction-section__title">Basic Interactions</h4>
@@ -116,14 +142,16 @@
 </template>
 
 <script setup lang="ts">
+import { computed } from 'vue'
 import Button from '../../basic/Button.vue'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import type { GuineaPig } from '../../../stores/guineaPigStore'
 
 interface Props {
   selectedGuineaPig?: GuineaPig | null
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 
 defineEmits<{
   'pet': []
@@ -136,6 +164,34 @@ defineEmits<{
   'wave-hand': []
   'show-toy': []
 }>()
+
+const guineaPigStore = useGuineaPigStore()
+
+// System 21: Get bonds for selected guinea pig
+const companionBonds = computed(() => {
+  if (!props.selectedGuineaPig) return []
+
+  const allBonds = guineaPigStore.getAllBonds()
+  return allBonds
+    .filter(bond =>
+      bond.guineaPig1Id === props.selectedGuineaPig!.id ||
+      bond.guineaPig2Id === props.selectedGuineaPig!.id
+    )
+    .map(bond => {
+      const partnerId = bond.guineaPig1Id === props.selectedGuineaPig!.id
+        ? bond.guineaPig2Id
+        : bond.guineaPig1Id
+      const partner = guineaPigStore.getGuineaPig(partnerId)
+      return {
+        bond,
+        partnerName: partner?.name || 'Unknown'
+      }
+    })
+})
+
+function formatTier(tier: string): string {
+  return tier.charAt(0).toUpperCase() + tier.slice(1)
+}
 </script>
 
 <style>
@@ -197,6 +253,88 @@ defineEmits<{
   color: var(--color-text-secondary);
   margin: 0;
   margin-block-end: var(--space-1);
+}
+
+/* System 21: Bond Status Styles */
+.bond-status {
+  padding: var(--space-3);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.bond-status__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-end: var(--space-2);
+}
+
+.bond-partner-name {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.bond-tier {
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.bond-tier--neutral {
+  background: var(--color-gray-200);
+  color: var(--color-gray-700);
+}
+
+.bond-tier--friends {
+  background: var(--color-blue-100);
+  color: var(--color-blue-700);
+}
+
+.bond-tier--bonded {
+  background: var(--color-pink-100);
+  color: var(--color-pink-700);
+}
+
+.bond-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-2);
+}
+
+.bond-progress__bar {
+  flex: 1;
+  block-size: 6px;
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.bond-progress__fill {
+  block-size: 100%;
+  background: linear-gradient(90deg, var(--color-blue-500), var(--color-pink-500));
+  transition: inline-size 0.3s ease;
+}
+
+.bond-progress__label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  min-inline-size: 40px;
+  text-align: end;
+}
+
+.bond-stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bond-stat {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
 }
 
 /* Mobile: Full width layout */

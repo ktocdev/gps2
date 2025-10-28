@@ -118,19 +118,19 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 - ✅ **Preference-aware messages** - MessageGenerator updated with favorite/disliked/rejection messages
 - ✅ **Game pause fix** - Connected game pause to needs pause/resume
 
-### Remaining Deliverables
-- [ ] **Wellness-based reactions** creating 5 behavioral tiers (Excellent 95% success → Critical 20% success)
-- [ ] **Rescue safety net** preventing complete failure with economic penalty and Fresh Start recovery option
-- [ ] **Comprehensive activity messages** for all interactions with anti-spam throttling (60s warnings, 30s critical)
-- [ ] **Friendship milestone tracking** with 6 tiers (25% Distant → 95% Best Friend)
-- [ ] **Testing** - Personality effects, food/activity preferences, preference discovery
+### Remaining Deliverables - Moved to Phase 5
+These deliverables have been consolidated into System 22 (Interaction Enhancement System) in Phase 5:
+- Wellness-based reactions (5 behavioral tiers)
+- Rescue safety net with economic penalty
+- Comprehensive activity messages with anti-spam throttling
+- Friendship milestone tracking (6 tiers)
 
 ### Enhancement Focus
 - **Personality-driven gameplay** making each guinea pig unique to care for ✅ **Implemented**
 - **Natural discovery mechanics** through observation rather than explicit stat displays ✅ **Implemented**
-- **Wellness feedback loops** creating meaningful consequences for poor care
-- **Safety net with consequences** preventing frustration while maintaining stakes
 - **Rich activity feed** providing continuous feedback on guinea pig state and reactions ✅ **Partially Implemented**
+- **Wellness feedback loops** - Moved to Phase 5 System 22
+- **Safety net with consequences** - Moved to Phase 5 System 22
 
 ---
 
@@ -142,207 +142,121 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 11. **[Supplies Store System](docs/systems/phase3/system-11-supplies-store.md)** - Central catalog of all purchasable items (bedding types, hay varieties, habitat items, food, treats) with pricing, descriptions, and availability ✅ **Completed** (October 15, 2025 | Branch: GPS2-26)
 12. **Inventory Management System** - Track owned items, quantities, consumption tracking, and item usage across all game systems ✅ **Completed** (October 15, 2025 | Branch: GPS2-26)
 13. **[Habitat Conditions Store](docs/systems/phase3/system-13-habitat-conditions.md)** - Environmental condition tracking (cleanliness, bedding freshness, water level, hay freshness) consuming inventory resources ✅ **Foundation Complete** - Awaiting Supplies Store integration
-14. **Habitat Item System** - Item placement system using inventory data (connect to habitat grid placeholders)
-15. **Habitat Maintenance & Hygiene System** - Enhanced poop system, cleanliness, bedding, and water management (connect to maintenance menu and habitat status display placeholders)
+14. **[Habitat Item System](docs/systems/phase3/habitat-item-system.md)** - Grid-based item placement with drag & drop from inventory ✅ **Completed** (October 27, 2025 | Branch: GPS2-38)
+15. **[Habitat Maintenance & Hygiene](docs/systems/phase3/system-15-habitat-maintenance-hygiene.md)** - Cleanliness tracking, bedding freshness, water level consumption, poop accumulation ✅ **Completed** (October 27, 2025 | Branch: GPS2-38)
 
 ### Debug Panel Development (Phase 3)
 - **Supplies Store Debug Panel** - ✅ **Completed** (October 15, 2025 | Branch: GPS2-26) - Item catalog, department organization, purchase flow with SupplyItemCard component
 - **Inventory Debug Panel** - ✅ **Completed** (October 15, 2025 | Branch: GPS2-26) - Currency controls + inventory display with consumables/habitat items separation
-- **Habitat Debug Panel** - ✅ **Foundation Complete** (October 14, 2025 | Branch: GPS2-25) - Built alongside Habitat Conditions, will integrate with Supplies Store and Inventory data
-- **Habitat Item Debug Panel** - Built alongside Habitat Item System (System 14)
-- **Maintenance Debug Panel** - Built alongside Habitat Maintenance System (System 15)
+- **Habitat Debug Panel** - ✅ **Completed** (October 14, 2025 | Branch: GPS2-25) - Environmental conditions tracking, resource management, item placement testing
 
 ### Key Deliverables
 - ✅ **Supplies store catalog** with 104+ purchasable items, pricing structure, and item metadata
 - ✅ **Inventory management** with quantity tracking, item organization, and consumption logic
 - ✅ **Purchase flow integration** connecting Supplies Store → Player Progression (currency) → Inventory Store
-- ⏳ **Habitat conditions tracking** integrated with inventory consumption (bedding, hay, water) - Foundation complete, awaiting integration
-- [ ] **Resource management system** with strategic purchasing decisions and inventory planning
-- [ ] **Grid-based habitat layout** with drag & drop item placement from inventory
-- [ ] **Complete item interaction system** with guinea pig autonomous usage
-- [ ] **Enhanced poop and cleanliness system** with visual feedback
-- [ ] **Happiness-focused item categories** with effectiveness and rotation systems
+- ✅ **Habitat conditions tracking** integrated with inventory consumption (bedding, hay, water)
+- ✅ **Grid-based habitat layout** with drag & drop item placement from inventory
+- ✅ **Guinea pig autonomous item usage** with pathfinding and AI behaviors
+- ✅ **Enhanced poop system** with autonomous dropping and visual feedback
 
 ### Economic Integration
 - **Supplies store** as primary source for all purchasable items
 - **Inventory system** bridging purchases to game mechanics
 - **Resource consumption** creating ongoing economic gameplay (bedding, hay, food)
-- **Item effectiveness system** with newness bonuses and familiarity decay
-- **Strategic purchasing decisions** balancing happiness items vs necessities
+
+### Moved to Phase 5
+- **Enrichment item rotation system** - Moved to Phase 5 System 27
+- **Strategic resource management** - Moved to Phase 5 System 27
 - **Currency earning** through guinea pig care and achievement milestones
 
-### Development Notes
-- **Habitat Conditions foundation** (System 13) implemented first with mock data for testing
-- **Habitat Debug panel** contains UI patterns and resource management logic ready for integration
-- Once Supplies Store (System 11) and Inventory (System 12) complete, Habitat Conditions will consume real inventory data
-- This approach preserves debug UI work while establishing proper data architecture
-
 ---
 
-## Phase 4: Interactions & Behaviors (Systems 17-21) 🚧 **IN PROGRESS**
-**Duration:** 5-7 weeks (38-53 hours)
-**Status:** 🚧 **System 19 MVP Complete** - Ready for System 20
-**Started:** October 21, 2025 | **Branch:** GPS2-34
+## Phase 4: Interactions & Behaviors (Systems 17-21) ✅ **COMPLETE**
+**Duration:** 5-7 weeks
+**Status:** ✅ **Completed** October 27, 2025 | **Branch:** GPS2-38
 **Goal:** Implement guinea pig visual presence, pathfinding, autonomous AI, player interactions, and multi-guinea pig social dynamics for complete gameplay loop
 
-### Completed Work ✅
-**System 19 - Autonomous AI Behaviors** ✅ **Complete** (October 21, 2025)
-- ✅ AI decision priority matrix with 10 subsystems
-- ✅ Need-based autonomous behaviors (eat, drink, sleep, groom, chew)
-- ✅ Enhanced sleep behavior with bed selection and quality mechanics
-- ✅ Proactive shelter behavior for security and comfort
-- ✅ Friendship-influenced behaviors (popcorn, zoomies, hiding)
-- ✅ Environmental interactions (autonomous poop dropping every 30s)
-- ✅ Item interactions (water bottles, food bowls, hay racks, chew items)
-- ✅ Activity feed message integration for all behaviors
-- ✅ Game loop integration with cached behavior composables
-
-**Bug Fixes** ✅ **Complete** (October 22, 2025)
-- ✅ Fixed guinea pig position initialization (auto-initialize on first access)
-- ✅ Fixed movement system (reduced interval to 1s, cached composables)
-- ✅ Fixed poop coordinate conversion (grid to subgrid: col * 4 + offset)
-- ✅ Fixed habitat items persistence (removed chewItems from serializer)
-
-**Files Implemented:**
-- `src/composables/game/useGuineaPigBehavior.ts` - Complete AI system (1000+ lines)
-- `src/composables/game/usePathfinding.ts` - A* pathfinding
-- `src/composables/game/useMovement.ts` - Movement controller
-- `src/components/game/habitat/GuineaPigSprite.vue` - Guinea pig rendering
-- `src/components/debug/environment/AutonomyDebug.vue` - Autonomy controls
-- `src/components/debug/environment/PoopDebug.vue` - Poop system debug
-- `src/utils/messageGenerator.ts` - 12 autonomous behavior message generators
-- `src/stores/gameTimingStore.ts` - AI tick integration + composable caching
-
-### Next Steps 📋
-1. **Code Audit** 🔥 **CRITICAL** - Review all Phase 4 code before continuing
-2. **System 17** - Visual presence & positioning (already partially implemented)
-3. **System 18** - Enhanced pathfinding & movement animations
-4. **System 20** - Direct interaction system (40+ interactions)
-5. **System 21** - Social bonding system
-
-### Implementation Documentation
-**Master Plan:** [phase-4-guinea-pig-integration-plan-full.md](systems/phase4/phase-4-guinea-pig-integration-plan-full.md)
-
-**Design Specifications (Reference):**
-- [Direct Interaction Design](systems/phase4/design-docs/direct-interaction-system.md) - 40+ interactions, nail clipping, preference discovery
-- [Autonomy Design](systems/phase4/design-docs/guinea-pig-autonomy-system.md) - AI decision matrix, sleep/shelter behaviors, friendship behaviors
-- [Bonding Design](systems/phase4/design-docs/guinea-pig-bonding-system.md) - Compatibility calculation, bonding progression, social behaviors
-
-### Sequential Implementation Stages
-
-**Stage 1: System 17 - Visual Presence & Positioning** (2-3 hours)
-- [Implementation Plan](systems/phase4/system-17-visual-presence-positioning.md)
-- GuineaPigSprite component with breed-specific emoji
-- Grid-based positioning and z-index layering
-- Click interaction and selection state
-- Foundation for all subsequent stages
-
-**Stage 2: System 18 - Pathfinding & Movement** (6-8 hours)
-- [Implementation Plan](systems/phase4/system-18-pathfinding-movement.md)
-- A* pathfinding algorithm with obstacle detection
-- Movement controller with smooth CSS animations
-- Random wandering behavior (personality-influenced)
-- Multi-guinea pig coordination and collision avoidance
-
-**Stage 3: System 19 - Autonomous AI Behaviors** (12-16 hours)
-- [Implementation Plan](systems/phase4/system-19-autonomous-ai-behaviors.md)
-- AI decision priority matrix (10 subsystems)
-- Need-based autonomous behaviors (hunger, thirst, energy, etc.)
-- Enhanced sleep behavior (bed selection, quality mechanics)
-- Proactive shelter behavior (security seeking < 60%)
-- Friendship-influenced behaviors (popcorning, zoomies, hiding)
-- Environmental interactions (poop dropping every 10-20 min)
-- Item interactions (water, food, hay, chew items)
-- AI state management and performance optimization
-
-**Stage 4: System 20 - Direct Interaction System** (10-14 hours)
-- [Implementation Plan](systems/phase4/system-20-direct-interaction-system.md)
-- Interaction menu UI with 40+ interactions across 7 categories
-- Nail clipping complex success system (friendship + wellness based)
-- Preference discovery mechanics (share snack, offer treats)
-- Friendship-gated interactions (70%+ and 90%+ unlocks)
-- Reaction-based feedback system (10+ reaction types)
-- Cooldown system and need satisfaction logic
-- Activity feed integration for all interactions
-
-**Stage 5: System 21 - Social Bonding System** (8-12 hours)
-- [Implementation Plan](systems/phase4/system-21-social-bonding-system.md)
-- Bond creation and hidden compatibility calculation
-- Autonomous social behaviors (grooming, playing, sharing food, sleeping together)
-- Bonding progression system (neutral/friends/bonded tiers)
-- Enhanced social need processing with bonding modifiers
-- Social AI decision integration
-- Activity feed social messages and milestone tracking
+### Systems
+17. **[Visual Presence & Positioning](systems/phase4/system-17-visual-presence-positioning.md)** - GuineaPigSprite component with grid positioning and selection ✅ **Completed** (October 27, 2025 | Branch: GPS2-38)
+18. **[Pathfinding & Movement](systems/phase4/system-18-pathfinding-movement.md)** - A* pathfinding with smooth CSS animations ✅ **Completed** (October 27, 2025 | Branch: GPS2-38)
+19. **[Autonomous AI Behaviors](systems/phase4/system-19-autonomous-ai-behaviors.md)** - Decision matrix, need-based behaviors, item interactions ✅ **Completed** (October 21, 2025 | Branch: GPS2-34)
+20. **[Direct Interaction System](systems/phase4/system-20-direct-interaction-system.md)** - Manual socialize trigger, dual movement, social animations ✅ **Completed** (October 27, 2025 | Branch: GPS2-38)
+21. **[Social Bonding System](systems/phase4/system-21-social-bonding-system.md)** - Bond management, bonding progression, social need modifiers ✅ **Completed** (October 27, 2025 | Branch: GPS2-38)
 
 ### Debug Panel Development (Phase 4)
-- **AI Behavior Debug Panel** - Decision visualization, pathfinding display, behavior forcing
-- **Interaction Debug Panel** - Unlock all interactions, clear cooldowns, friendship adjustment
-- **Bonding Debug Panel** - Compatibility calculator, bonding level display, social interaction counter
-- **Performance Monitor** - AI timing, pathfinding performance, render FPS
+- **AutonomyDebug Panel** - ✅ **Enhanced** - Added socialize button, behavior triggers, AI decision visualization
+- **Poop Debug Panel** - ✅ **Completed** - Poop system testing and coordinate validation
 
-### Key Deliverables
-**Visual & Movement:**
-- Guinea pig rendering on habitat grid with smooth movement
-- A* pathfinding with obstacle avoidance and path caching
-- Personality-influenced wandering and exploration
+### Key Deliverables - All Complete ✅
+- **Guinea pig rendering** ✅ Sprite component, grid positioning, selection state
+- **A* pathfinding** ✅ Obstacle detection, path caching, movement controller
+- **AI decision system** ✅ 10 subsystems, need-based behaviors, item interactions
+- **Sleep behavior** ✅ Bed selection, quality mechanics, comfort zones
+- **Shelter behavior** ✅ Proactive security seeking, shelter preferences
+- **Friendship behaviors** ✅ Popcorning, zoomies, hiding based on friendship
+- **Environmental interactions** ✅ Autonomous poop dropping every 30s
+- **Social interactions** ✅ Manual socialize trigger, dual guinea pig movement
+- **Wiggle animations** ✅ Playing state with adjacent cell positioning
+- **Bond management** ✅ Bond creation, bonding progression (0-100 scale)
+- **Social need modifiers** ✅ 50% slower decay when bonded
+- **Activity feed integration** ✅ Messages for all autonomous and social behaviors
 
-**Autonomous Behaviors:**
-- Complete AI decision system with 10 subsystems
-- Need-based autonomous item usage (water, food, hay, chew)
-- Sleep behavior with bed preferences and quality bonuses
-- Proactive shelter seeking for security and comfort
-- Friendship behaviors (high: popcorn/zoomies, low: hiding/avoidance)
-- Environmental poop dropping (realistic timing)
-
-**Player Interactions:**
-- 40+ interactions across 7 categories (basic, communication, play, entertainment, care, training, bonding)
-- Nail clipping with variable success rates
-- Preference discovery through reactions
-- Friendship-gated unlocks at 70% and 90%
-- Cooldown system preventing spam
-- Need saturation logic with diminishing returns
-
-**Social & Bonding:**
-- Multi-guinea pig social interactions (6 core behaviors)
-- Hidden compatibility scoring (gender, personality, breed)
-- Bonding progression through interactions and proximity
-- Enhanced social need processing (50% slower decay when bonded)
-- Natural relationship discovery through activity feed
-
-### Gameplay Completion
-- **Full gameplay loop** from selection to advanced care
-- **Living, autonomous guinea pigs** with realistic AI behaviors
-- **Rich player interactions** with varied effects and reactions
-- **Natural preference discovery** through observation
-- **Multi-guinea pig relationships** with bonding progression
-- **Complete activity feed integration** for all actions
-
-### Implementation Order (Critical Dependencies)
-1. **System 17 first** - Visual rendering required by all other systems
-2. **System 18 second** - Movement required by AI and social behaviors
-3. **System 19 third** - AI framework required by social behaviors
-4. **System 20 parallel** - Can implement alongside System 21 if desired
-5. **System 21 last** - Requires AI framework from System 19
+### Major Accomplishments
+- **Production-ready AI system:** 1200+ lines with comprehensive error handling
+- **Adjacent positioning algorithm:** Fixed diagonal movement bug, position validation
+- **Animation system:** Wiggle animations take priority over walking, no conflicts
+- **Movement race condition fix:** Both guinea pigs use proper animation flags
+- **Code quality improvements:** Named constants, debug flags, null safety checks
+- **Map deserialization fix:** localStorage serialization handling for bonds
+- **Performance optimization:** Cached composables, efficient pathfinding
 
 ---
 
-## Phase 5: Polish & Enhancement (Systems 20-23)
+## Phase 5: Polish & Enhancement (Systems 22-25)
 **Duration:** 2-3 weeks
-**Goal:** Add polish, progression systems, and optional animation enhancements
+**Goal:** Add polish, progression systems, context-aware interactions, and optional animation enhancements
 
 ### Systems
-20. **Achievement & Progression System** - Milestone tracking and rewards
-21. **Sound System** - Audio manager and interaction sound feedback
-22. **Settings & Preferences System** - User preferences and customization
-23. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement)
-
-### Debug Panel Consolidation (Phase 5)
-- **Debug Menu Tab Creation** - Consolidate all debug panels into unified Debug Menu interface
-- **Advanced Debug Features** - Performance monitoring, stress testing, integration validation
-- **Debug Panel Organization** - Tabbed or accordion interface for all debug capabilities
+22. **[Interaction Enhancement System](systems/phase5/system-22-interaction-enhancement.md)** - Context-aware activity messages and enhanced user interactions 📋 **Planned**
+  - Context-aware activity messages reflecting friendship level (distant → best friends)
+  - Wellness-based interaction reactions (Excellent 95% success → Critical 20% success)
+  - Habitat condition influences (cleanliness, enrichment)
+  - Comprehensive activity messages with anti-spam throttling (60s warnings, 30s critical)
+  - Friendship milestone tracking with 6 tiers (25% Distant → 95% Best Friend)
+  - Rescue safety net preventing complete failure (economic penalty, Fresh Start option)
+  - Recent interaction tracking and guinea pig mood
+23. **[Enrichment & Resource Management System](systems/phase5/system-23-enrichment-resource-management.md)** - Item effectiveness, rotation mechanics, and strategic purchasing 📋 **Planned**
+  - Item effectiveness system with newness bonuses (+50% initial effectiveness)
+  - Familiarity decay over time (diminishing returns on repeated use)
+  - Rotation mechanics encouraging variety in toys and enrichment
+  - Strategic purchasing decisions (balancing enrichment vs necessities)
+  - Inventory planning and resource management gameplay
+24. **Progression & Economy System** - Currency earning, achievement tracking, level progression, and supplies store gating 📋 **Planned**
+  - Currency earning through care milestones and achievement rewards
+  - Achievement/milestone tracking system with progression goals
+  - Level progression mechanics
+  - Supplies store item gating (level and achievement-based unlock requirements)
+  - Strategic purchasing decisions and economic gameplay
+25. **Game Tutorial System** - Interactive onboarding and feature discovery 📋 **Planned**
+  - Step-by-step tutorial for new players
+  - Contextual help tooltips and guided workflows
+  - Feature discovery prompts for advanced mechanics
+  - Progressive tutorial unlocking based on player progress
+26. **Performance Mode System** - Reduced performance mode for lower-end devices 📋 **Planned**
+  - Toggle between full and reduced performance modes
+  - Reduced animation frequency and complexity
+  - Optimized rendering and game loop performance
+  - Battery-saving options for mobile devices
+27. **Sound System** - Audio manager and interaction sound feedback 📋 **Planned**
+28. **Settings & Preferences System** - User preferences and customization 📋 **Planned**
+29. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement) 📋 **Planned**
 
 ### Key Deliverables
-- **Achievement tracking** for various milestones and progression goals
+- **Context-aware interactions** with friendship, wellness, and habitat-based activity messages
+- **Enrichment rotation system** with item effectiveness decay and strategic purchasing
+- **Progression & economy** with currency earning, achievements, and store item gating
+- **Game tutorial system** with interactive onboarding and contextual help
+- **Performance mode** with reduced performance options for lower-end devices
 - **Audio feedback system** with guinea pig vocalizations and interaction sounds
 - **Expanded settings** with theme selection, sound controls, and advanced preferences
 - **Optional animation system** enhancing visual presentation while preserving activity feed
@@ -384,7 +298,3 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 - **Phase 5:** Polished experience with unified Debug Menu and optional enhancements
 
 This phased approach ensures steady progress with continuous validation, early risk mitigation, and a complete playable game by Phase 4, with Phase 5 focused purely on enhancement and polish.
-
-## Archived Systems
-
-- **System 5: Guinea Pig Creation** - Character creation system archived to `docs/archive/system-5-guinea-pig-creation.md` (September 28, 2025)

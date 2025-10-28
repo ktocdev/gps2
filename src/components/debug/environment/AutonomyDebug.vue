@@ -74,6 +74,14 @@
             </button>
             <button
               class="btn btn--md btn--secondary"
+              :disabled="!isGameActive || !hasCompanion(selectedGuineaPig!.id)"
+              @click="triggerBehavior(selectedGuineaPig!.id, 'socialize')"
+              :title="hasCompanion(selectedGuineaPig!.id) ? 'Trigger social interaction with companion' : 'Requires 2+ guinea pigs'"
+            >
+              🤝 Socialize
+            </button>
+            <button
+              class="btn btn--md btn--secondary"
               :disabled="!isGameActive"
               @click="triggerBehavior(selectedGuineaPig!.id, 'wander')"
             >
@@ -486,6 +494,69 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
   const originalNeeds = { ...guineaPig.needs }
 
   try {
+    // Special handling for socialize: bypass AI goal selection and execute directly
+    if (behaviorType === 'socialize') {
+      const bonds = guineaPigStore.getAllBonds()
+      if (bonds.length === 0) {
+        console.warn(`❌ No bonds exist for ${guineaPig.name} to socialize with`)
+        return
+      }
+
+      // Find bonds involving this guinea pig and sort by bonding level
+      // Also verify that the partner guinea pig exists and is active
+      const myBonds = bonds
+        .filter(bond => {
+          const isMyBond = bond.guineaPig1Id === guineaPigId || bond.guineaPig2Id === guineaPigId
+          if (!isMyBond) return false
+
+          // Verify partner exists and is active
+          const partnerId = bond.guineaPig1Id === guineaPigId ? bond.guineaPig2Id : bond.guineaPig1Id
+          const partner = guineaPigStore.getGuineaPig(partnerId)
+          return partner && guineaPigStore.activeGuineaPigs.some(gp => gp.id === partnerId)
+        })
+        .sort((a, b) => b.bondingLevel - a.bondingLevel)
+
+      if (myBonds.length === 0) {
+        console.warn(`❌ ${guineaPig.name} has no companion bonds`)
+        return
+      }
+
+      const topBond = myBonds[0]
+      const partnerId = topBond.guineaPig1Id === guineaPigId ? topBond.guineaPig2Id : topBond.guineaPig1Id
+      const partner = guineaPigStore.getGuineaPig(partnerId)
+
+      if (!partner) {
+        console.warn(`❌ Partner guinea pig not found`)
+        return
+      }
+
+      console.log(`[Manual Socialize] ${guineaPig.name} will socialize with ${partner.name} (bond level: ${topBond.bondingLevel.toFixed(1)}%)`)
+
+      // Create socialize goal manually
+      const goal = {
+        type: 'socialize' as const,
+        target: null,
+        priority: 100,
+        estimatedDuration: 8000,
+        needSatisfied: 'social' as const,
+        metadata: { partnerId, bondId: topBond.id }
+      }
+
+      // Execute the behavior directly
+      const success = await behavior.executeBehavior(goal)
+      if (success) {
+        console.log(`✅ Successfully triggered socialize behavior for ${guineaPig.name} with ${partner.name}`)
+        // Fully satisfy social need - verify guinea pig still exists
+        const gpAfterBehavior = guineaPigStore.getGuineaPig(guineaPigId)
+        if (gpAfterBehavior) {
+          guineaPigStore.adjustNeed(guineaPigId, 'social', 100 - gpAfterBehavior.needs.social)
+        }
+      } else {
+        console.warn(`❌ Failed to execute socialize behavior for ${guineaPig.name}`)
+      }
+      return
+    }
+
     // Temporarily lower the relevant need to force behavior selection
     switch (behaviorType) {
       case 'eat':
@@ -547,6 +618,7 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
         guineaPigStore.adjustNeed(guineaPigId, 'hunger', originalNeeds.hunger - guineaPig.needs.hunger)
         guineaPigStore.adjustNeed(guineaPigId, 'thirst', originalNeeds.thirst - guineaPig.needs.thirst)
         guineaPigStore.adjustNeed(guineaPigId, 'energy', originalNeeds.energy - guineaPig.needs.energy)
+        guineaPigStore.adjustNeed(guineaPigId, 'social', originalNeeds.social - guineaPig.needs.social)
         return
       }
 
@@ -647,6 +719,11 @@ function getPosition(guineaPigId: string): string {
   if (!pos) return 'unknown'
 
   return `(${pos.x}, ${pos.y})`
+}
+
+function hasCompanion(_guineaPigId: string): boolean {
+  // Check if there are at least 2 guinea pigs (current one + at least one other)
+  return guineaPigStore.activeGuineaPigs.length >= 2
 }
 
 // Export getters for external access (if needed)
