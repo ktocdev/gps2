@@ -51,6 +51,9 @@ export interface BehaviorState {
   behaviorCooldowns: Map<BehaviorType, number>
 }
 
+// Debug flags - set to false in production
+const DEBUG_SOCIALIZE = false
+
 // Default behavior thresholds
 const DEFAULT_THRESHOLDS = {
   hunger: 30,  // Seek food when hunger < 30%
@@ -1081,6 +1084,13 @@ export function useGuineaPigBehavior(guineaPigId: string) {
    * Both guinea pigs move toward each other and interact with wiggle animation
    */
   async function executeSocializeBehavior(goal: BehaviorGoal): Promise<boolean> {
+    // Constants for socialize behavior timing and rewards
+    const SOCIALIZE_MOVE_ANIMATION_MS = 800
+    const SOCIALIZE_INTERACTION_DURATION_MS = 3000
+    const SOCIALIZE_SOCIAL_NEED_REWARD = 25
+    const SOCIALIZE_BONDING_INCREASE = 3
+    const SOCIALIZE_COOLDOWN_MS = 120000 // 2 minutes
+
     if (!guineaPig.value || !goal.metadata) return false
 
     const { partnerId, bondId } = goal.metadata
@@ -1088,18 +1098,24 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     const bond = guineaPigStore.getBondById(bondId)
 
     if (!partner || !bond) {
-      console.warn('[Socialize] Partner or bond not found', { partnerId, bondId, partner, bond })
+      if (DEBUG_SOCIALIZE) {
+        console.warn('[Socialize] Partner or bond not found', { partnerId, bondId, partner, bond })
+      }
       return false
     }
 
-    console.log(`[Socialize] ${guineaPig.value.name} socializing with ${partner.name}`)
+    if (DEBUG_SOCIALIZE) {
+      console.log(`[Socialize] ${guineaPig.value.name} socializing with ${partner.name}`)
+    }
 
     // Get current positions
     const myPos = habitatConditions.getGuineaPigPosition(guineaPig.value.id)
     const partnerPos = habitatConditions.getGuineaPigPosition(partnerId)
 
     if (!myPos || !partnerPos) {
-      console.warn('[Socialize] Could not get positions')
+      if (DEBUG_SOCIALIZE) {
+        console.warn('[Socialize] Could not get positions')
+      }
       return false
     }
 
@@ -1108,7 +1124,9 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Move guinea pigs to be adjacent (distance = 1) if they're not already
     if (distance > 1) {
-      console.log(`[Socialize] Moving guinea pigs to adjacent cells (current distance: ${distance})`)
+      if (DEBUG_SOCIALIZE) {
+        console.log(`[Socialize] Moving guinea pigs to adjacent cells (current distance: ${distance})`)
+      }
 
       // Calculate the midpoint to determine where they should meet
       const midX = (myPos.x + partnerPos.x) / 2
@@ -1140,37 +1158,84 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
       // Ensure positions are valid and adjacent
       if (Math.abs(myTargetX - partnerTargetX) + Math.abs(myTargetY - partnerTargetY) !== 1) {
-        // Fallback: just move them closer by one step each
-        myTargetX = myPos.x + Math.sign(dx)
-        myTargetY = myPos.y + Math.sign(dy)
-        partnerTargetX = partnerPos.x - Math.sign(dx)
-        partnerTargetY = partnerPos.y - Math.sign(dy)
+        // Fallback: Move them adjacent horizontally OR vertically only (avoid diagonal)
+        if (Math.abs(dx) > Math.abs(dy)) {
+          // Move horizontally to be adjacent
+          myTargetX = myPos.x + Math.sign(dx)
+          myTargetY = myPos.y
+          partnerTargetX = myTargetX + Math.sign(dx)
+          partnerTargetY = myPos.y
+        } else {
+          // Move vertically to be adjacent
+          myTargetX = myPos.x
+          myTargetY = myPos.y + Math.sign(dy)
+          partnerTargetX = myPos.x
+          partnerTargetY = myTargetY + Math.sign(dy)
+        }
       }
 
-      console.log(`[Socialize] Targets: ${guineaPig.value.name} -> (${myTargetX}, ${myTargetY}), ${partner.name} -> (${partnerTargetX}, ${partnerTargetY})`)
+      if (DEBUG_SOCIALIZE) {
+        console.log(`[Socialize] Targets: ${guineaPig.value.name} -> (${myTargetX}, ${myTargetY}), ${partner.name} -> (${partnerTargetX}, ${partnerTargetY})`)
+      }
+
+      // Validate positions before attempting movement
+      const myTargetValid = pathfinding.isValidPosition({ row: myTargetY, col: myTargetX }, { avoidOccupiedCells: false })
+      const partnerTargetValid = pathfinding.isValidPosition({ row: partnerTargetY, col: partnerTargetX }, { avoidOccupiedCells: false })
+
+      if (!myTargetValid || !partnerTargetValid) {
+        if (DEBUG_SOCIALIZE) {
+          console.warn('[Socialize] Calculated positions are invalid or out of bounds')
+        }
+        behaviorState.value.currentGoal = null
+        return false
+      }
 
       // Move this guinea pig to target
-      movement.moveTo({ row: myTargetY, col: myTargetX }, { avoidOccupiedCells: false })
+      const moveSuccess = movement.moveTo({ row: myTargetY, col: myTargetX }, { avoidOccupiedCells: false })
+      if (!moveSuccess) {
+        if (DEBUG_SOCIALIZE) {
+          console.warn('[Socialize] Failed to initiate movement for initiator')
+        }
+        behaviorState.value.currentGoal = null
+        return false
+      }
 
-      // Move partner guinea pig to target
-      habitatConditions.guineaPigPositions.set(partnerId, {
-        x: partnerTargetX,
-        y: partnerTargetY,
-        lastMoved: Date.now(),
-        isMoving: false
-      })
+      // Move partner guinea pig to target with proper animation flags
+      const currentPartnerPos = habitatConditions.getGuineaPigPosition(partnerId)
+      if (currentPartnerPos) {
+        habitatConditions.guineaPigPositions.set(partnerId, {
+          ...currentPartnerPos,
+          targetPosition: { x: partnerTargetX, y: partnerTargetY },
+          isMoving: true,
+          lastMoved: Date.now()
+        })
+
+        // Simulate movement completion for partner after animation time
+        setTimeout(() => {
+          const partnerPosAfterMove = habitatConditions.getGuineaPigPosition(partnerId)
+          if (partnerPosAfterMove && partnerPosAfterMove.isMoving) {
+            habitatConditions.guineaPigPositions.set(partnerId, {
+              x: partnerTargetX,
+              y: partnerTargetY,
+              lastMoved: Date.now(),
+              isMoving: false
+            })
+          }
+        }, SOCIALIZE_MOVE_ANIMATION_MS)
+      }
 
       // Wait for movement animation to complete
-      await new Promise(resolve => setTimeout(resolve, 800))
+      await new Promise(resolve => setTimeout(resolve, SOCIALIZE_MOVE_ANIMATION_MS))
     }
 
     // Set both guinea pigs to playing state
     behaviorState.value.currentActivity = 'playing'
     behaviorState.value.activityStartTime = Date.now()
 
-    // Set partner to playing state as well
+    // Set partner to playing state as well - verify partner still exists
+    const partnerStillExists = guineaPigStore.getGuineaPig(partnerId)
     const partnerBehaviorState = behaviorStateStore.getBehaviorState(partnerId)
-    if (partnerBehaviorState) {
+    if (partnerStillExists && partnerBehaviorState) {
       partnerBehaviorState.currentActivity = 'playing'
       partnerBehaviorState.activityStartTime = Date.now()
     }
@@ -1178,30 +1243,51 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Record activity
     habitatConditions.recordGuineaPigActivity('movement')
 
-    console.log(`[Socialize] Both guinea pigs playing together for 3 seconds`)
+    if (DEBUG_SOCIALIZE) {
+      console.log(`[Socialize] Both guinea pigs playing together for ${SOCIALIZE_INTERACTION_DURATION_MS}ms`)
+    }
 
     // Wait for interaction duration (wiggle animation happens via CSS)
-    await new Promise(resolve => setTimeout(resolve, 3000)) // 3 seconds
+    await new Promise(resolve => setTimeout(resolve, SOCIALIZE_INTERACTION_DURATION_MS))
+
+    // Verify both guinea pigs still exist before finalizing
+    if (!guineaPig.value) {
+      if (DEBUG_SOCIALIZE) {
+        console.warn('[Socialize] Initiator guinea pig was removed during interaction')
+      }
+      return false
+    }
+
+    const partnerAfterInteraction = guineaPigStore.getGuineaPig(partnerId)
+    if (!partnerAfterInteraction) {
+      if (DEBUG_SOCIALIZE) {
+        console.warn('[Socialize] Partner guinea pig was removed during interaction')
+      }
+      behaviorState.value.currentActivity = 'idle'
+      behaviorState.value.currentGoal = null
+      return false
+    }
 
     // Satisfy social needs for both guinea pigs
-    guineaPigStore.satisfyNeed(guineaPig.value.id, 'social', 25)
-    guineaPigStore.satisfyNeed(partnerId, 'social', 25)
+    guineaPigStore.satisfyNeed(guineaPig.value.id, 'social', SOCIALIZE_SOCIAL_NEED_REWARD)
+    guineaPigStore.satisfyNeed(partnerId, 'social', SOCIALIZE_SOCIAL_NEED_REWARD)
 
     // Increase bonding
-    guineaPigStore.increaseBonding(bondId, 3, 'interaction', `${guineaPig.value.name} and ${partner.name} socialized together`)
+    guineaPigStore.increaseBonding(bondId, SOCIALIZE_BONDING_INCREASE, 'interaction', `${guineaPig.value.name} and ${partnerAfterInteraction.name} socialized together`)
 
     // Log to activity feed
-    loggingStore.addAutonomousBehavior(`${guineaPig.value.name} and ${partner.name} are bonding together 🤝`, '🐹')
+    loggingStore.addAutonomousBehavior(`${guineaPig.value.name} and ${partnerAfterInteraction.name} are bonding together 🤝`, '🐹')
 
     // Set cooldown
-    setCooldown('socialize', 120000) // 2 minute cooldown
+    setCooldown('socialize', SOCIALIZE_COOLDOWN_MS)
 
     // Reset both guinea pigs to idle
     behaviorState.value.currentActivity = 'idle'
     behaviorState.value.currentGoal = null
 
-    if (partnerBehaviorState) {
-      partnerBehaviorState.currentActivity = 'idle'
+    const finalPartnerBehaviorState = behaviorStateStore.getBehaviorState(partnerId)
+    if (finalPartnerBehaviorState) {
+      finalPartnerBehaviorState.currentActivity = 'idle'
     }
 
     return true

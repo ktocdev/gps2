@@ -180,8 +180,8 @@ function handleClick() {
 
 /* System 21: Playing/socializing animation */
 .guinea-pig-sprite--playing .guinea-pig-sprite__emoji {
-  /* Wiggle animation when playing or socializing */
-  animation: guinea-pig-wiggle 0.4s ease-in-out infinite;
+  /* Wiggle animation when playing or socializing - takes priority over walking */
+  animation: guinea-pig-wiggle 0.4s ease-in-out infinite !important;
 }
 
 @keyframes guinea-pig-wiggle {
@@ -189,16 +189,25 @@ function handleClick() {
     transform: rotate(0deg) scale(1);
   }
   25% {
-    transform: rotate(-8deg) scale(1.05);
+    transform: rotate(-8deg) scale(1.08);
   }
   75% {
-    transform: rotate(8deg) scale(1.05);
+    transform: rotate(8deg) scale(1.08);
   }
 }
 
-/* Playing animation when facing left */
+/* Playing animation when facing left - takes priority over walking-flipped */
 .guinea-pig-sprite--facing-left.guinea-pig-sprite--playing .guinea-pig-sprite__emoji {
-  animation: guinea-pig-wiggle-flipped 0.4s ease-in-out infinite;
+  animation: guinea-pig-wiggle-flipped 0.4s ease-in-out infinite !important;
+}
+
+/* When both playing and walking, use playing animation only */
+.guinea-pig-sprite--playing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+  animation: guinea-pig-wiggle 0.4s ease-in-out infinite !important;
+}
+
+.guinea-pig-sprite--facing-left.guinea-pig-sprite--playing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+  animation: guinea-pig-wiggle-flipped 0.4s ease-in-out infinite !important;
 }
 
 @keyframes guinea-pig-wiggle-flipped {
@@ -206,10 +215,10 @@ function handleClick() {
     transform: rotate(0deg) scaleX(-1);
   }
   25% {
-    transform: rotate(-8deg) scaleX(-1.05);
+    transform: rotate(-8deg) scaleX(-1.08);
   }
   75% {
-    transform: rotate(8deg) scaleX(-1.05);
+    transform: rotate(8deg) scaleX(-1.08);
   }
 }
 </style>

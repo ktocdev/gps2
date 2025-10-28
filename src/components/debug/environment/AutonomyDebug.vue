@@ -503,8 +503,17 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       }
 
       // Find bonds involving this guinea pig and sort by bonding level
+      // Also verify that the partner guinea pig exists and is active
       const myBonds = bonds
-        .filter(bond => bond.guineaPig1Id === guineaPigId || bond.guineaPig2Id === guineaPigId)
+        .filter(bond => {
+          const isMyBond = bond.guineaPig1Id === guineaPigId || bond.guineaPig2Id === guineaPigId
+          if (!isMyBond) return false
+
+          // Verify partner exists and is active
+          const partnerId = bond.guineaPig1Id === guineaPigId ? bond.guineaPig2Id : bond.guineaPig1Id
+          const partner = guineaPigStore.getGuineaPig(partnerId)
+          return partner && guineaPigStore.activeGuineaPigs.some(gp => gp.id === partnerId)
+        })
         .sort((a, b) => b.bondingLevel - a.bondingLevel)
 
       if (myBonds.length === 0) {
@@ -537,8 +546,11 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
       const success = await behavior.executeBehavior(goal)
       if (success) {
         console.log(`✅ Successfully triggered socialize behavior for ${guineaPig.name} with ${partner.name}`)
-        // Fully satisfy social need
-        guineaPigStore.adjustNeed(guineaPigId, 'social', 100 - guineaPig.needs.social)
+        // Fully satisfy social need - verify guinea pig still exists
+        const gpAfterBehavior = guineaPigStore.getGuineaPig(guineaPigId)
+        if (gpAfterBehavior) {
+          guineaPigStore.adjustNeed(guineaPigId, 'social', 100 - gpAfterBehavior.needs.social)
+        }
       } else {
         console.warn(`❌ Failed to execute socialize behavior for ${guineaPig.name}`)
       }
