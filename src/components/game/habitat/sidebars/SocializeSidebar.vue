@@ -143,9 +143,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import Button from '../../basic/Button.vue'
-import { useGuineaPigStore } from '../../../stores/guineaPigStore'
-import type { GuineaPig } from '../../../stores/guineaPigStore'
+import Button from '../../../basic/Button.vue'
+import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
+import type { GuineaPig } from '../../../../stores/guineaPigStore'
 
 interface Props {
   selectedGuineaPig?: GuineaPig | null
