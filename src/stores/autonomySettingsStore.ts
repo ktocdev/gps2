@@ -21,6 +21,7 @@ export interface BehaviorThresholds {
   shelter: number  // Seek shelter when shelter < threshold
   chew: number     // Use chew items when chew < threshold
   play: number     // Use toys when play < threshold
+  social: number   // Socialize with companion when social < threshold
 }
 
 /**
@@ -33,7 +34,8 @@ export const DEFAULT_THRESHOLDS: BehaviorThresholds = {
   hygiene: 60, // Groom when hygiene < 60%
   shelter: 50, // Seek shelter when shelter < 50%
   chew: 40,    // Use chew items when chew < 40%
-  play: 45     // Use toys when play < 45%
+  play: 45,    // Use toys when play < 45%
+  social: 50   // Socialize with companion when social < 50%
 }
 
 /**

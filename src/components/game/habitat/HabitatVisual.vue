@@ -9,11 +9,12 @@
       </div>
     </div>
 
-    <div class="habitat-visual__container">
-      <div
-        class="habitat-visual__grid"
-        :style="gridStyle"
-      >
+    <div class="habitat-visual__scroll-container">
+      <div class="habitat-visual__container">
+        <div
+          class="habitat-visual__grid"
+          :style="gridStyle"
+        >
         <div
           v-for="cell in gridCells"
           :key="`cell-${cell.x}-${cell.y}`"
@@ -21,8 +22,8 @@
           :class="{
             'grid-cell--occupied': cell.occupied,
             'grid-cell--accessible': cell.accessible,
-            'grid-cell--drop-target': isDragOver && isHoverCell(cell) && (draggedItemId ? canPlaceAt(cell.x, cell.y) : true),
-            'grid-cell--drop-invalid': isDragOver && isHoverCell(cell) && draggedItemId && !canPlaceAt(cell.x, cell.y)
+            'grid-cell--drop-target': (isDragOver || isTouchDragging) && isHoverCell(cell) && (draggedItemId ? canPlaceAt(cell.x, cell.y) : true),
+            'grid-cell--drop-invalid': (isDragOver || isTouchDragging) && isHoverCell(cell) && draggedItemId && !canPlaceAt(cell.x, cell.y)
           }"
           :style="{
             gridColumn: cell.x + 1,
@@ -49,6 +50,9 @@
           :title="getBowlLockTooltip(item)"
           @dragstart="handlePlacedItemDragStart($event, item)"
           @dragend="handlePlacedItemDragEnd"
+          @touchstart="handlePlacedItemTouchStart($event, item)"
+          @touchmove="handlePlacedItemTouchMove"
+          @touchend="handlePlacedItemTouchEnd"
           @click="selectItem(item.instanceId)"
         >
           <FoodBowl
@@ -133,11 +137,12 @@
         />
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useHabitatContainers } from '../../../composables/useHabitatContainers'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
@@ -185,15 +190,28 @@ const habitatContainers = useHabitatContainers()
 const suppliesStore = useSuppliesStore()
 const guineaPigStore = useGuineaPigStore()
 
+// Responsive cell sizing
+const windowWidth = ref(window.innerWidth)
+
+const responsiveCellSize = computed(() => {
+  if (windowWidth.value < 640) return 35  // Mobile
+  if (windowWidth.value < 1024) return 45 // Tablet
+  return 60 // Desktop
+})
+
+function updateWindowWidth() {
+  windowWidth.value = window.innerWidth
+}
+
 const HABITAT_SIZES = {
-  small: { width: 10, height: 8, cellSize: 60 },
-  medium: { width: 14, height: 10, cellSize: 60 },
-  large: { width: 18, height: 12, cellSize: 60 }
+  small: { width: 10, height: 8 },
+  medium: { width: 14, height: 10 },
+  large: { width: 18, height: 12 }
 }
 
 const gridWidth = computed(() => HABITAT_SIZES[props.habitatSize].width)
 const gridHeight = computed(() => HABITAT_SIZES[props.habitatSize].height)
-const cellSize = computed(() => HABITAT_SIZES[props.habitatSize].cellSize)
+const cellSize = computed(() => responsiveCellSize.value)
 const totalCells = computed(() => gridWidth.value * gridHeight.value)
 
 const subgridWidth = computed(() => gridWidth.value * 4)
@@ -295,6 +313,10 @@ const draggedItemSize = ref<{ width: number; height: number }>({ width: 1, heigh
 const hoverCell = ref<{ x: number; y: number } | null>(null)
 const draggedPlacedItemId = ref<string | null>(null)
 const isRepositioning = ref(false)
+
+// Touch state
+const isTouchDragging = ref(false)
+const touchStartedOnPlacedItem = ref(false)
 
 function initializeGrid() {
   gridCells.value = []
@@ -439,7 +461,110 @@ function clearDraggedItem() {
   draggedItemId.value = null
   draggedItemSize.value = { width: 1, height: 1 }
   isDragOver.value = false
+  isTouchDragging.value = false
   hoverCell.value = null
+  touchStartedOnPlacedItem.value = false
+}
+
+// Touch helper: convert touch coordinates to grid cell
+function getTouchGridCell(touch: Touch): { x: number; y: number } | null {
+  const grid = document.querySelector('.habitat-visual__grid') as HTMLElement
+  if (!grid) return null
+
+  const rect = grid.getBoundingClientRect()
+  const relativeX = touch.clientX - rect.left
+  const relativeY = touch.clientY - rect.top
+
+  const cellX = Math.floor(relativeX / cellSize.value)
+  const cellY = Math.floor(relativeY / cellSize.value)
+
+  if (cellX < 0 || cellX >= gridWidth.value || cellY < 0 || cellY >= gridHeight.value) {
+    return null
+  }
+
+  return { x: cellX, y: cellY }
+}
+
+// Touch handler called from InventorySidebar
+function handleTouchMove(event: TouchEvent) {
+  if (!isTouchDragging.value) {
+    isTouchDragging.value = true
+  }
+
+  const touch = event.touches[0]
+  const cell = getTouchGridCell(touch)
+
+  if (cell) {
+    hoverCell.value = cell
+  } else {
+    hoverCell.value = null
+  }
+}
+
+// Touch handler called from InventorySidebar
+function handleTouchEnd(event: TouchEvent, touchData: any) {
+  const touch = event.changedTouches[0]
+  const cell = getTouchGridCell(touch)
+
+  if (!cell) {
+    // Touch ended outside grid
+    clearDraggedItem()
+    return
+  }
+
+  // Process the drop using same logic as handleDrop
+  const itemId = touchData.itemId
+  const isRepos = touchStartedOnPlacedItem.value
+
+  // If dropping food on a bowl, add it to the bowl
+  if (isFood(itemId) && !isRepos) {
+    const bowlAtPosition = placedItems.value.find(item => {
+      if (!isBowl(item.itemId)) return false
+
+      const isWithinBowlX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
+      const isWithinBowlY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
+
+      return isWithinBowlX && isWithinBowlY
+    })
+
+    if (bowlAtPosition) {
+      handleAddFoodToBowl(bowlAtPosition.itemId, itemId)
+      clearDraggedItem()
+      return
+    }
+  }
+
+  // If dropping hay on a hay rack, add it to the rack
+  if (isHay(itemId) && !isRepos) {
+    const hayRackAtPosition = placedItems.value.find(item => {
+      if (!isHayRack(item.itemId)) return false
+
+      const isWithinRackX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
+      const isWithinRackY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
+
+      return isWithinRackX && isWithinRackY
+    })
+
+    if (hayRackAtPosition) {
+      handleAddHayToRack(hayRackAtPosition.itemId, itemId)
+      clearDraggedItem()
+      return
+    }
+  }
+
+  if (!canPlaceAt(cell.x, cell.y)) {
+    console.warn('Cannot place item at this location')
+    clearDraggedItem()
+    return
+  }
+
+  if (isRepos) {
+    repositionItemAt(itemId, cell.x, cell.y)
+  } else {
+    placeItemAt(itemId, cell.x, cell.y)
+  }
+
+  clearDraggedItem()
 }
 
 // Handlers for dragging placed items
@@ -471,6 +596,74 @@ function handlePlacedItemDragEnd(event: DragEvent) {
 
   const target = event.currentTarget as HTMLElement
   target.style.opacity = '1'
+}
+
+// Touch handlers for dragging placed items
+function handlePlacedItemTouchStart(event: TouchEvent, item: any) {
+  if (props.readOnly) return
+
+  event.preventDefault()
+
+  draggedPlacedItemId.value = item.itemId
+  draggedItemId.value = item.itemId
+  draggedItemSize.value = item.size
+  isRepositioning.value = true
+  isTouchDragging.value = true
+  touchStartedOnPlacedItem.value = true
+
+  // Visual feedback
+  const target = event.currentTarget as HTMLElement
+  target.style.opacity = '0.5'
+}
+
+function handlePlacedItemTouchMove(event: TouchEvent) {
+  if (!isTouchDragging.value) return
+
+  event.preventDefault()
+
+  const touch = event.touches[0]
+  const cell = getTouchGridCell(touch)
+
+  if (cell) {
+    hoverCell.value = cell
+  }
+}
+
+function handlePlacedItemTouchEnd(event: TouchEvent) {
+  event.preventDefault()
+
+  const target = event.currentTarget as HTMLElement
+  target.style.opacity = '1'
+
+  const touch = event.changedTouches[0]
+  const cell = getTouchGridCell(touch)
+
+  if (!cell) {
+    // Touch ended outside grid - reset
+    draggedPlacedItemId.value = null
+    clearDraggedItem()
+    return
+  }
+
+  const itemId = draggedItemId.value
+  if (!itemId) {
+    clearDraggedItem()
+    return
+  }
+
+  if (!canPlaceAt(cell.x, cell.y)) {
+    console.warn('Cannot place item at this location')
+    draggedPlacedItemId.value = null
+    clearDraggedItem()
+    return
+  }
+
+  // Reposition item
+  repositionItemAt(itemId, cell.x, cell.y)
+
+  // Reset state
+  draggedPlacedItemId.value = null
+  clearDraggedItem()
 }
 
 // Drag-and-drop handlers
@@ -855,6 +1048,14 @@ onMounted(() => {
       }
     }
   })
+
+  // Add window resize listener for responsive cell sizing
+  window.addEventListener('resize', updateWindowWidth)
+})
+
+onUnmounted(() => {
+  // Clean up resize listener
+  window.removeEventListener('resize', updateWindowWidth)
 })
 
 watch(
@@ -870,6 +1071,8 @@ defineExpose({
   poopCount,
   setDraggedItem,
   clearDraggedItem,
+  handleTouchMove,
+  handleTouchEnd,
   placedItems
 })
 </script>
@@ -900,6 +1103,15 @@ defineExpose({
   gap: var(--space-4);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+}
+
+.habitat-visual__scroll-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-inline-size: 100%;
+  max-block-size: 70vh;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-lg);
 }
 
 .habitat-visual__container {
@@ -979,16 +1191,46 @@ defineExpose({
 }
 
 .grid-item__emoji {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-2xl); /* 24px - Desktop (60px cells) */
   line-height: 1;
 }
 
 .grid-item__emoji--bowl {
-  font-size: 3rem;
+  font-size: 3rem; /* 48px - Desktop */
 }
 
 .grid-item__emoji--large {
-  font-size: 3rem;
+  font-size: 3rem; /* 48px - Desktop */
+}
+
+/* Tablet: Scale emojis down for 45px cells */
+@media (max-width: 1023px) {
+  .grid-item__emoji {
+    font-size: var(--font-size-lg); /* 18px - 75% of desktop */
+  }
+
+  .grid-item__emoji--bowl {
+    font-size: 2rem; /* 32px - ~67% of desktop */
+  }
+
+  .grid-item__emoji--large {
+    font-size: 2rem; /* 32px */
+  }
+}
+
+/* Mobile: Scale emojis down further for 35px cells */
+@media (max-width: 639px) {
+  .grid-item__emoji {
+    font-size: var(--font-size-base); /* 16px - ~67% of desktop */
+  }
+
+  .grid-item__emoji--bowl {
+    font-size: 1.5rem; /* 24px - 50% of desktop */
+  }
+
+  .grid-item__emoji--large {
+    font-size: 1.5rem; /* 24px */
+  }
 }
 
 .grid-item__stack {

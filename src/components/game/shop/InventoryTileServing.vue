@@ -6,6 +6,9 @@
     :draggable="!isDisabled"
     @dragstart="handleDragStart"
     @dragend="handleDragEnd"
+    @touchstart="handleTouchStart"
+    @touchmove="handleTouchMove"
+    @touchend="handleTouchEnd"
   >
     <div class="inventory-tile-serving__emoji">{{ emoji }}</div>
     <div class="inventory-tile-serving__name">{{ name }}</div>
@@ -38,6 +41,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{
   'dragstart': [itemId: string, event: DragEvent]
   'dragend': [event: DragEvent]
+  'touchstart': [itemId: string, event: TouchEvent]
+  'touchmove': [itemId: string, event: TouchEvent]
+  'touchend': [itemId: string, event: TouchEvent]
 }>()
 
 const depletionPercentage = computed(() => {
@@ -86,6 +92,38 @@ function handleDragEnd(event: DragEvent) {
   target.style.opacity = '1'
 
   emit('dragend', event)
+}
+
+function handleTouchStart(event: TouchEvent) {
+  if (props.isDisabled) {
+    event.preventDefault()
+    return
+  }
+
+  // Visual feedback
+  const target = event.currentTarget as HTMLElement
+  target.style.opacity = '0.5'
+
+  emit('touchstart', props.itemId, event)
+}
+
+function handleTouchMove(event: TouchEvent) {
+  if (props.isDisabled) {
+    event.preventDefault()
+    return
+  }
+
+  // Prevent scrolling while dragging
+  event.preventDefault()
+
+  emit('touchmove', props.itemId, event)
+}
+
+function handleTouchEnd(event: TouchEvent) {
+  const target = event.currentTarget as HTMLElement
+  target.style.opacity = '1'
+
+  emit('touchend', props.itemId, event)
 }
 </script>
 

@@ -98,9 +98,23 @@ function handleClick() {
 }
 
 .guinea-pig-sprite__emoji {
-  font-size: var(--font-size-4xl); /* 36px - 2.25rem */
+  font-size: var(--font-size-4xl); /* 36px - Desktop (60px cells) */
   line-height: 1;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Tablet: Scale guinea pig sprite for 45px cells */
+@media (max-width: 1023px) {
+  .guinea-pig-sprite__emoji {
+    font-size: var(--font-size-2xl); /* 24px - ~67% of desktop */
+  }
+}
+
+/* Mobile: Scale guinea pig sprite for 35px cells */
+@media (max-width: 639px) {
+  .guinea-pig-sprite__emoji {
+    font-size: var(--font-size-xl); /* 20px - ~56% of desktop */
+  }
 }
 
 /* Selection visual - indicates which guinea pig is selected for interaction */

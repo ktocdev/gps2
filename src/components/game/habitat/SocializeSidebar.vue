@@ -198,4 +198,14 @@ defineEmits<{
   margin: 0;
   margin-block-end: var(--space-1);
 }
+
+/* Mobile: Full width layout */
+@media (max-width: 768px) {
+  .socialize-sidebar {
+    inline-size: 100%;
+    max-block-size: 300px;
+    border-inline-start: none;
+    border-block-start: 1px solid var(--color-border);
+  }
+}
 </style>

@@ -15,6 +15,7 @@ import { useHabitatConditions } from './habitatConditions'
 import { useGuineaPigStore } from './guineaPigStore'
 import { useAutonomySettingsStore } from './autonomySettingsStore'
 import { useGuineaPigBehavior } from '../composables/game/useGuineaPigBehavior'
+import { processAllBonds } from '../utils/bondingProgression'
 
 export const useGameTimingStore = defineStore('gameTiming', () => {
   let loggingStore: any = null
@@ -200,6 +201,9 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
           habitatConditions.applyEffectivenessRecovery()
           lastEffectivenessRecovery.value = currentTime
         }
+
+        // System 21: Process bonding progression
+        processAllBonds(deltaTime)
 
         // Update timing stats
         totalGameTime.value += deltaTime

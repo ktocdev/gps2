@@ -12,6 +12,8 @@ import { useLoggingStore } from './loggingStore'
 import { useNeedsController } from './needsController'
 import { useHabitatConditions } from './habitatConditions'
 import { MessageGenerator } from '../utils/messageGenerator'
+import { calculateCompatibility } from '../utils/compatibility'
+import { getBondingTierBenefits } from '../utils/bondingProgression'
 
 // Core guinea pig entity interfaces
 export interface GuineaPigPersonality {
@@ -119,6 +121,30 @@ export interface GuineaPigBond {
   timesTogether: number     // Number of sessions together
 }
 
+// System 21: Active Social Bonding System
+export interface ActiveBond {
+  id: string
+  guineaPig1Id: string
+  guineaPig2Id: string
+  bondingLevel: number // 0-100 (hidden from player)
+  bondingTier: 'neutral' | 'friends' | 'bonded'
+  compatibilityScore: number // Base compatibility (hidden)
+  createdAt: number
+  lastInteraction: number
+  totalInteractions: number
+  proximityTime: number // hours spent near each other
+  bondingHistory: BondingEvent[]
+}
+
+export interface BondingEvent {
+  id: string
+  timestamp: number
+  type: 'interaction' | 'proximity' | 'shared_experience' | 'wellness_bonus'
+  bondingChange: number // Always positive
+  description: string
+  details?: any
+}
+
 export interface GuineaPig {
   id: string
   name: string
@@ -209,6 +235,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
   // System 17: Guinea Pig Selection for Interaction
   const selectedGuineaPigId = ref<string | null>(null)
+
+  // System 21: Active Social Bonding System
+  const activeBonds = ref<Map<string, ActiveBond>>(new Map())
 
   // Computed properties
   const allGuineaPigs = computed(() => {
@@ -308,6 +337,9 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       '➕',
       { guineaPigId: id, name: guineaPig.name }
     )
+
+    // System 21: Auto-create bonds when 2nd guinea pig added
+    ensureBondsExist()
 
     return true
   }
@@ -465,6 +497,28 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   }
 
   /**
+   * System 21: Calculate social need decay modifier based on bonding tier
+   * Returns the best (lowest) modifier from all active bonds
+   */
+  const getSocialDecayModifierFromBonding = (guineaPigId: string): number => {
+    const bonds = Array.from(activeBonds.value.values()).filter(
+      bond => bond.guineaPig1Id === guineaPigId || bond.guineaPig2Id === guineaPigId
+    )
+
+    if (bonds.length === 0) {
+      return 1.0 // No bonds, no modifier
+    }
+
+    // Get the best (lowest) social decay modifier from all bonds
+    const modifiers = bonds.map(bond => {
+      const benefits = getBondingTierBenefits(bond.bondingLevel)
+      return benefits.socialDecayModifier
+    })
+
+    return Math.min(...modifiers)
+  }
+
+  /**
    * Calculate interaction cooldown based on personality, friendship, and wellness
    * Phase 0: Interaction Cooldowns
    */
@@ -567,6 +621,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
       // Apply personality trait modifiers (Phase 2.5 - System 1)
       finalDecayRate *= getPersonalityDecayModifier(guineaPig, needKey as keyof GuineaPigNeeds)
+
+      // System 21: Apply bonding tier modifiers to social need decay
+      if (needKey === 'social') {
+        finalDecayRate *= getSocialDecayModifierFromBonding(guineaPig.id)
+      }
 
       // Happiness has special boredom mechanics - handle in separate function
       if (needKey === 'happiness') {
@@ -1541,6 +1600,197 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     selectedGuineaPigId.value = null
   }
 
+  // System 21: Bond Management Functions
+
+  /**
+   * Create a bond between two guinea pigs
+   * Automatically calculates compatibility score
+   */
+  const createBond = (gp1Id: string, gp2Id: string): ActiveBond | null => {
+    const gp1 = collection.value.guineaPigs[gp1Id]
+    const gp2 = collection.value.guineaPigs[gp2Id]
+
+    if (!gp1 || !gp2) {
+      console.error('Cannot create bond: One or both guinea pigs not found')
+      return null
+    }
+
+    // Check if bond already exists
+    const existingBond = getBond(gp1Id, gp2Id)
+    if (existingBond) {
+      return existingBond
+    }
+
+    const compatibilityScore = calculateCompatibility(gp1, gp2)
+
+    const bondId = `bond_${gp1Id}_${gp2Id}_${Date.now()}`
+    const bond: ActiveBond = {
+      id: bondId,
+      guineaPig1Id: gp1Id,
+      guineaPig2Id: gp2Id,
+      bondingLevel: 0,
+      bondingTier: 'neutral',
+      compatibilityScore,
+      createdAt: Date.now(),
+      lastInteraction: Date.now(),
+      totalInteractions: 0,
+      proximityTime: 0,
+      bondingHistory: []
+    }
+
+    // Create new Map to trigger reactivity
+    const newBonds = new Map(activeBonds.value)
+    newBonds.set(bondId, bond)
+    activeBonds.value = newBonds
+
+    getLoggingStore().info(`Bond created between ${gp1.name} and ${gp2.name} (compatibility: ${compatibilityScore})`)
+    return bond
+  }
+
+  /**
+   * Get bond between two specific guinea pigs
+   */
+  const getBond = (gp1Id: string, gp2Id: string): ActiveBond | null => {
+    for (const bond of activeBonds.value.values()) {
+      if (
+        (bond.guineaPig1Id === gp1Id && bond.guineaPig2Id === gp2Id) ||
+        (bond.guineaPig1Id === gp2Id && bond.guineaPig2Id === gp1Id)
+      ) {
+        return bond
+      }
+    }
+    return null
+  }
+
+  /**
+   * Get the active bond for a guinea pig (if any)
+   */
+  const getActiveBond = (guineaPigId: string): ActiveBond | null => {
+    for (const bond of activeBonds.value.values()) {
+      if (bond.guineaPig1Id === guineaPigId || bond.guineaPig2Id === guineaPigId) {
+        return bond
+      }
+    }
+    return null
+  }
+
+  /**
+   * Get the partner guinea pig ID from a bond
+   */
+  const getPartnerGuineaPig = (guineaPigId: string, bond: ActiveBond): GuineaPig | null => {
+    const partnerId = bond.guineaPig1Id === guineaPigId ? bond.guineaPig2Id : bond.guineaPig1Id
+    return collection.value.guineaPigs[partnerId] || null
+  }
+
+  /**
+   * Update bonding level (positive only)
+   */
+  const updateBondingLevel = (bondId: string, increase: number): boolean => {
+    const bond = activeBonds.value.get(bondId)
+    if (!bond) return false
+
+    const previousTier = bond.bondingTier
+
+    // Increase bonding level (clamped to 100)
+    bond.bondingLevel = Math.min(100, bond.bondingLevel + increase)
+
+    // Update tier based on new level
+    bond.bondingTier = getBondingTier(bond.bondingLevel)
+
+    // Create new Map to trigger reactivity
+    const newBonds = new Map(activeBonds.value)
+    newBonds.set(bondId, { ...bond })
+    activeBonds.value = newBonds
+
+    // Log tier changes
+    if (bond.bondingTier !== previousTier) {
+      const gp1 = collection.value.guineaPigs[bond.guineaPig1Id]
+      const gp2 = collection.value.guineaPigs[bond.guineaPig2Id]
+      getLoggingStore().info(`${gp1?.name} and ${gp2?.name} bonding tier changed: ${previousTier} → ${bond.bondingTier}`)
+    }
+
+    return true
+  }
+
+  /**
+   * Calculate bonding tier from bonding level
+   */
+  const getBondingTier = (bondingLevel: number): 'neutral' | 'friends' | 'bonded' => {
+    if (bondingLevel >= 71) return 'bonded'
+    if (bondingLevel >= 31) return 'friends'
+    return 'neutral'
+  }
+
+  /**
+   * Add a bonding event to history
+   */
+  const addBondingEvent = (bondId: string, event: BondingEvent): boolean => {
+    const bond = activeBonds.value.get(bondId)
+    if (!bond) return false
+
+    bond.bondingHistory.push(event)
+    bond.lastInteraction = event.timestamp
+    bond.totalInteractions++
+
+    // Create new Map to trigger reactivity
+    const newBonds = new Map(activeBonds.value)
+    newBonds.set(bondId, { ...bond })
+    activeBonds.value = newBonds
+
+    return true
+  }
+
+  /**
+   * Increase bonding through interaction
+   */
+  const increaseBonding = (bondId: string, amount: number, eventType: BondingEvent['type'], description: string): boolean => {
+    const bond = activeBonds.value.get(bondId)
+    if (!bond) return false
+
+    // Create bonding event
+    const event: BondingEvent = {
+      id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: Date.now(),
+      type: eventType,
+      bondingChange: amount,
+      description
+    }
+
+    addBondingEvent(bondId, event)
+    return updateBondingLevel(bondId, amount)
+  }
+
+  /**
+   * Get all active bonds
+   */
+  const getAllBonds = (): ActiveBond[] => {
+    return Array.from(activeBonds.value.values())
+  }
+
+  /**
+   * Auto-create bonds for active guinea pigs
+   * Called when guinea pigs are activated
+   */
+  const ensureBondsExist = (): void => {
+    const activeIds = collection.value.activeGuineaPigIds || []
+
+    // Need at least 2 active guinea pigs for bonding
+    if (activeIds.length < 2) return
+
+    // Create bonds for all pairs of active guinea pigs
+    for (let i = 0; i < activeIds.length; i++) {
+      for (let j = i + 1; j < activeIds.length; j++) {
+        const gp1Id = activeIds[i]
+        const gp2Id = activeIds[j]
+
+        // Create bond if it doesn't exist
+        if (!getBond(gp1Id, gp2Id)) {
+          createBond(gp1Id, gp2Id)
+        }
+      }
+    }
+  }
+
   /**
    * Get personality-based habitat sensitivity thresholds
    * Sprint: Personality-Based Habitat Sensitivity
@@ -1727,6 +1977,19 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     selectedGuineaPigId,
     selectGuineaPig,
     clearSelection,
+
+    // System 21: Bonding
+    activeBonds,
+    createBond,
+    getBond,
+    getActiveBond,
+    getPartnerGuineaPig,
+    updateBondingLevel,
+    getBondingTier,
+    addBondingEvent,
+    increaseBonding,
+    getAllBonds,
+    ensureBondsExist,
 
     // Personality-Based Habitat Sensitivity
     getHabitatSensitivityThresholds,
