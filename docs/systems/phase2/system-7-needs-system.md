@@ -339,9 +339,13 @@ With the current system supporting 2 active guinea pigs, social need satisfactio
 - **Activity-Based:** Triggered by specific activities (eating, resting, playing)
 
 ## Future Enhancements
+- **Stimulation need addition** - Re-introduce stimulation as distinct from play (mental enrichment vs physical play)
+  - Stimulation: Mental enrichment, variety, exploration, novel experiences
+  - Play: Physical activity, toy usage, exercise, active engagement
+  - Justification: Different satisfaction mechanics (variety/rotation vs frequency)
 - **Advanced interdependencies** with more complex need relationships
 - **Learning system** where guinea pig needs adapt to player care patterns
 - **Health system expansion** with specific medical conditions affecting needs
 - **Personality-based social interactions** with individual guinea pig preferences
-- **Bonding levels** between specific guinea pig pairs
+- **Bonding levels** between specific guinea pig pairs ✅ Implemented in Phase 4 System 21
 - **Group activities** involving all active guinea pigs simultaneously
