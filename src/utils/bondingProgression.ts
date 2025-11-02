@@ -17,6 +17,7 @@
 import { useGuineaPigStore, type ActiveBond } from '../stores/guineaPigStore'
 import { useLoggingStore } from '../stores/loggingStore'
 import { useSocialBehaviors } from '../composables/game/useSocialBehaviors'
+import { useNeedsController } from '../stores/needsController'
 
 /**
  * Process bonding progression for a single bond
@@ -25,6 +26,7 @@ import { useSocialBehaviors } from '../composables/game/useSocialBehaviors'
 export function processBondingProgression(bond: ActiveBond, deltaTimeMs: number): void {
   const guineaPigStore = useGuineaPigStore()
   const loggingStore = useLoggingStore()
+  const needsController = useNeedsController()
   const { areGuineaPigsNear } = useSocialBehaviors()
 
   const gp1 = guineaPigStore.getGuineaPig(bond.guineaPig1Id)
@@ -48,7 +50,9 @@ export function processBondingProgression(bond: ActiveBond, deltaTimeMs: number)
   }
 
   // 3. Wellness bonus (+1 point per day if both > 70% wellness)
-  if (gp1.stats.wellness > 70 && gp2.stats.wellness > 70) {
+  const gp1Wellness = needsController.calculateWellness(gp1.id)
+  const gp2Wellness = needsController.calculateWellness(gp2.id)
+  if (gp1Wellness > 70 && gp2Wellness > 70) {
     const daysPassed = deltaTimeMs / (1000 * 60 * 60 * 24)
     bondingIncrease += daysPassed * 1
   }

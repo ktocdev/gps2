@@ -383,7 +383,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         age: Math.floor((Date.now() - birthDate) / (1000 * 60 * 60 * 24)),
         level: 1,
         experience: 0,
-        wellness: 0,
         overallMood: 0
       },
 

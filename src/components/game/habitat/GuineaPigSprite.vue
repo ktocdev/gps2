@@ -21,6 +21,7 @@
 import { computed } from 'vue'
 import type { GuineaPig } from '../../../stores/guineaPigStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
+import { useNeedsController } from '../../../stores/needsController'
 
 interface Props {
   guineaPig: GuineaPig
@@ -37,6 +38,8 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+const needsController = useNeedsController()
 
 const CELL_SIZE = 60 // Match HabitatVisual cell size
 
@@ -68,12 +71,13 @@ const tooltipText = computed(() => {
   const currentActivity = behaviorState?.currentActivity || 'idle'
   const currentGoal = behaviorState?.currentGoal
   const goalText = currentGoal ? currentGoal.type : 'none'
+  const wellness = needsController.calculateWellness(gp.id)
 
   return `${gp.name} (${gp.gender})
 Breed: ${gp.breed}
 Age: ${age} days
 Level: ${gp.stats.level}
-Wellness: ${Math.round(gp.stats.wellness)}%
+Wellness: ${Math.round(wellness)}%
 Friendship: ${Math.round(gp.friendship)}%
 Activity: ${currentActivity}
 Goal: ${goalText}`

@@ -11,7 +11,8 @@
       "nutrition": 6,
       "hungerSatisfaction": 10,
       "servingSize": "1 small slice",
-      "shelfLife": "7-10 days"
+      "shelfLife": "7-10 days",
+      "servings": 4
     },
     "availability": "always",
     "emoji": "🍎",
@@ -29,7 +30,8 @@
       "nutrition": 7,
       "hungerSatisfaction": 12,
       "servingSize": "1 small berry",
-      "shelfLife": "3-5 days"
+      "shelfLife": "3-5 days",
+      "servings": 1
     },
     "availability": "seasonal",
     "emoji": "🍓",
@@ -47,7 +49,8 @@
       "nutrition": 7,
       "hungerSatisfaction": 8,
       "servingSize": "2-3 berries",
-      "shelfLife": "5-7 days"
+      "shelfLife": "5-7 days",
+      "servings": 1
     },
     "availability": "seasonal",
     "emoji": "🫐",
@@ -65,7 +68,8 @@
       "nutrition": 5,
       "hungerSatisfaction": 14,
       "servingSize": "1 small coin",
-      "shelfLife": "3-5 days"
+      "shelfLife": "3-5 days",
+      "servings": 4
     },
     "availability": "always",
     "emoji": "🍌",
@@ -83,7 +87,8 @@
       "nutrition": 6,
       "hungerSatisfaction": 16,
       "servingSize": "1 small cube",
-      "shelfLife": "3-5 days"
+      "shelfLife": "3-5 days",
+      "servings": 6
     },
     "availability": "seasonal",
     "emoji": "🍉",
@@ -101,7 +106,8 @@
       "nutrition": 8,
       "hungerSatisfaction": 11,
       "servingSize": "1 small segment",
-      "shelfLife": "7-10 days"
+      "shelfLife": "7-10 days",
+      "servings": 4
     },
     "availability": "always",
     "emoji": "🍊",
@@ -119,7 +125,8 @@
       "nutrition": 6,
       "hungerSatisfaction": 12,
       "servingSize": "1 small slice",
-      "shelfLife": "5-7 days"
+      "shelfLife": "5-7 days",
+      "servings": 4
     },
     "availability": "always",
     "emoji": "🍐",

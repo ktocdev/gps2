@@ -10,15 +10,32 @@
     <span class="food-bowl__emoji">{{ bowlEmoji }}</span>
 
     <div v-if="foods.length > 0" class="food-bowl__contents">
-      <span
-        v-for="(food, index) in foods"
-        :key="`${food.itemId}-${index}`"
-        class="food-bowl__food-item"
-        :class="`food-bowl__food-item--count-${foods.length} food-bowl__food-item--index-${index}`"
-        :title="`${food.name}\nServing ${index + 1} of ${foods.length}`"
-      >
-        {{ food.emoji }}
-      </span>
+      <template v-for="(food, index) in foods" :key="`${food.itemId}-${index}`">
+        <!-- Pellets: Display using PelletsVisual component -->
+        <div
+          v-if="isPellets(food)"
+          class="food-bowl__food-item food-bowl__pellets-container"
+          :class="[
+            `food-bowl__food-item--count-${foods.length}`,
+            `food-bowl__food-item--index-${index}`
+          ]"
+          :title="`${food.name}\nServing ${index + 1} of ${foods.length}`"
+        >
+          <PelletsVisual :pellet-emoji="getPelletEmoji(food)" />
+        </div>
+        <!-- Regular food items -->
+        <span
+          v-else
+          class="food-bowl__food-item"
+          :class="[
+            `food-bowl__food-item--count-${foods.length}`,
+            `food-bowl__food-item--index-${index}`
+          ]"
+          :title="`${food.name}\nServing ${index + 1} of ${foods.length}`"
+        >
+          {{ food.emoji }}
+        </span>
+      </template>
     </div>
 
     <HabitatItemPopover
@@ -59,6 +76,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import HabitatItemPopover from './HabitatItemPopover.vue'
+import PelletsVisual from './PelletsVisual.vue'
 
 interface FoodItem {
   itemId: string
@@ -86,6 +104,21 @@ const isDragOver = ref(false)
 const isHovered = ref(false)
 
 const STALE_THRESHOLD = 40
+
+// Check if food is pellets based on item ID
+function isPellets(food: FoodItem): boolean {
+  return food.itemId.includes('pellets')
+}
+
+// Get single pellet emoji for the PelletsVisual component
+function getPelletEmoji(food: FoodItem): string {
+  // For fortified pellets, use sparkle emoji
+  if (food.itemId.includes('fortified')) {
+    return '✨'
+  }
+  // For all other pellets, use chestnut emoji
+  return '🌰'
+}
 
 // Popover title
 const popoverTitle = computed(() => {
@@ -254,6 +287,13 @@ function handleDrop(event: DragEvent) {
 .food-bowl__food-item--count-3.food-bowl__food-item--index-2 {
   inset-inline-start: 75%;
   transform: translate(-50%, -50%);
+}
+
+/* Pellets: Container for PelletsVisual component */
+.food-bowl__pellets-container {
+  position: absolute;
+  inline-size: 100%;
+  block-size: 100%;
 }
 
 /* Food items section in popover */

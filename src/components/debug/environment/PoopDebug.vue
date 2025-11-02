@@ -71,10 +71,15 @@
 import { computed } from 'vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
+import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useLoggingStore } from '../../../stores/loggingStore'
+import { MessageGenerator } from '../../../utils/messageGenerator'
 import Button from '../../basic/Button.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const habitatConditions = useHabitatConditions()
+const suppliesStore = useSuppliesStore()
+const loggingStore = useLoggingStore()
 
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 
@@ -111,12 +116,54 @@ function triggerManualPoop(guineaPigId: string): void {
 
   // Get guinea pig's current position from habitat conditions
   const position = habitatConditions.guineaPigPositions.get(guineaPigId)
-  if (!position) {
-    // Default to center of habitat if no position found
-    habitatConditions.addPoop(7, 5)
-  } else {
-    habitatConditions.addPoop(position.x, position.y)
+
+  let currentPos = { row: 1, col: 1 } // Default position
+  if (position) {
+    // Position uses x/y where x=col, y=row
+    currentPos = { row: position.y, col: position.x }
   }
+
+  console.log('[triggerManualPoop] Guinea pig position from store:', position)
+  console.log('[triggerManualPoop] Current position (row/col):', currentPos)
+
+  // Convert grid coordinates to subgrid coordinates (4x scale)
+  const subgridX = currentPos.col * 4 + Math.floor(Math.random() * 4)
+  const subgridY = currentPos.row * 4 + Math.floor(Math.random() * 4)
+
+  console.log('[triggerManualPoop] Dropping poop at subgrid:', subgridX, subgridY)
+  habitatConditions.addPoop(subgridX, subgridY)
+
+  // Detect nearby items for location context
+  let nearbyLocation: string | undefined = undefined
+
+  console.log('[triggerManualPoop] Checking', habitatConditions.habitatItems.length, 'habitat items')
+
+  // Check items within 1 grid cell of current position
+  for (const itemId of habitatConditions.habitatItems) {
+    const itemPos = habitatConditions.itemPositions.get(itemId)
+    if (itemPos) {
+      // Item positions use x/y format where x=col, y=row
+      const itemRow = itemPos.y
+      const itemCol = itemPos.x
+      const distance = Math.abs(itemRow - currentPos.row) + Math.abs(itemCol - currentPos.col)
+      console.log('[triggerManualPoop] Item', itemId, 'at (x,y):', itemPos, 'converted to (row,col):', {row: itemRow, col: itemCol}, 'distance:', distance)
+      if (distance <= 1) {
+        // Get item name from supplies store
+        const item = suppliesStore.getItemById(itemId)
+        console.log('[triggerManualPoop] Found nearby item:', item?.name)
+        if (item) {
+          nearbyLocation = item.name
+          break // Use first nearby item found
+        }
+      }
+    }
+  }
+
+  console.log('[triggerManualPoop] Final location for message:', nearbyLocation)
+
+  // Log to activity feed with location context
+  const msg = MessageGenerator.generateAutonomousPoopMessage(guineaPig.name, nearbyLocation)
+  loggingStore.addEnvironmentalEvent(msg.message, msg.emoji)
 
   // Reset poop timer
   guineaPig.lastPoopTime = Date.now()

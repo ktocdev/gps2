@@ -102,7 +102,6 @@ export interface GuineaPigStats {
   age: number           // In days since creation
   level: number         // Experience/growth level
   experience: number    // Experience points toward next level
-  wellness: number      // 0-100: Calculated average of all needs (internal use)
   overallMood: number   // 0-100: Calculated mood based on needs and interactions
 }
 
@@ -1422,7 +1421,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       chew: 100
     }
 
-    guineaPig.stats.wellness = 0
     guineaPig.stats.overallMood = 0
 
     collection.value.lastUpdated = Date.now()

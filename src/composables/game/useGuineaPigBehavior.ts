@@ -616,6 +616,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Select food from bowl based on preferences
     let hungerRestored = 40 // Base restoration (enough to get above 30% threshold)
     let foodQuality = 1.0 // Quality multiplier
+    let eatenFoodName: string | undefined = undefined
 
     console.log('[executeEatBehavior] Checking bowl contents for', goal.targetItemId)
 
@@ -639,6 +640,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
         )
 
         const selectedFood = preferredFood || bowlContents[0]
+        eatenFoodName = selectedFood.name
 
         // Apply preference modifiers
         if (preferredFood) {
@@ -677,8 +679,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
       console.log('[executeEatBehavior] Restored', hungerRestored, 'hunger points')
 
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousEatMessage(guineaPig.value.name)
+      // Log to activity feed with actual food name
+      const msg = MessageGenerator.generateAutonomousEatMessage(guineaPig.value.name, eatenFoodName)
       loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
@@ -1547,8 +1549,38 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       // Update last poop time
       gp.lastPoopTime = Date.now()
 
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousPoopMessage(gp.name, 'the floor')
+      // Detect nearby items for location context
+      let nearbyLocation: string | undefined = undefined
+      const suppliesStore = useSuppliesStore()
+
+      console.log('[checkAutonomousPooping] Current position:', currentPos)
+      console.log('[checkAutonomousPooping] Checking', habitatConditions.habitatItems.length, 'habitat items')
+
+      // Check items within 1 grid cell of current position
+      for (const itemId of habitatConditions.habitatItems) {
+        const itemPos = habitatConditions.itemPositions.get(itemId)
+        if (itemPos) {
+          // Item positions use x/y format where x=col, y=row
+          const itemRow = itemPos.y
+          const itemCol = itemPos.x
+          const distance = Math.abs(itemRow - currentPos.row) + Math.abs(itemCol - currentPos.col)
+          console.log('[checkAutonomousPooping] Item', itemId, 'at (x,y):', itemPos, 'converted to (row,col):', {row: itemRow, col: itemCol}, 'distance:', distance)
+          if (distance <= 1) {
+            // Get item name from supplies store
+            const item = suppliesStore.getItemById(itemId)
+            console.log('[checkAutonomousPooping] Found nearby item:', item?.name)
+            if (item) {
+              nearbyLocation = item.name
+              break // Use first nearby item found
+            }
+          }
+        }
+      }
+
+      console.log('[checkAutonomousPooping] Final location for message:', nearbyLocation)
+
+      // Log to activity feed with location context
+      const msg = MessageGenerator.generateAutonomousPoopMessage(gp.name, nearbyLocation)
       loggingStore.addEnvironmentalEvent(msg.message, msg.emoji)
     }
   }
