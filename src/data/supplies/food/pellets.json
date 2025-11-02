@@ -1,8 +1,8 @@
 [
   {
     "id": "food_pellets_cheap",
-    "name": "Cheap Pellets",
-    "description": "Basic guinea pig pellets, budget-friendly",
+    "name": "Cheap Pellets (Bag)",
+    "description": "Basic guinea pig pellets, budget-friendly bag",
     "category": "food",
     "subCategory": "pellets",
     "basePrice": 8.99,
@@ -22,8 +22,8 @@
   },
   {
     "id": "food_pellets_standard",
-    "name": "Standard Pellets",
-    "description": "Quality timothy-based pellets with vitamin C",
+    "name": "Standard Pellets (Bag)",
+    "description": "Quality timothy-based pellets with vitamin C, bag of 10 servings",
     "category": "food",
     "subCategory": "pellets",
     "basePrice": 14.99,
@@ -43,8 +43,8 @@
   },
   {
     "id": "food_pellets_fortified",
-    "name": "Fortified Pellets",
-    "description": "Premium fortified pellets with enhanced nutrition",
+    "name": "Fortified Pellets (Bag)",
+    "description": "Premium fortified pellets with enhanced nutrition, bag of 10 servings",
     "category": "food",
     "subCategory": "pellets",
     "basePrice": 22.99,

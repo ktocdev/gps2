@@ -13,6 +13,7 @@ import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useMovement } from './useMovement'
 import { usePathfinding } from './usePathfinding'
 import { MessageGenerator } from '../../utils/messageGenerator'
+import { detectNearbyLocation, gridToSubgridWithOffset } from '../../utils/locationDetection'
 import type { NeedType } from '../../stores/guineaPigStore'
 import type { GridPosition } from './usePathfinding'
 
@@ -53,6 +54,9 @@ export interface BehaviorState {
 
 // Debug flags - set to false in production
 const DEBUG_SOCIALIZE = false
+
+// Environmental behavior intervals
+const POOP_INTERVAL_MS = 30000 // 30 seconds - guinea pigs poop frequently for realism
 
 // Default behavior thresholds
 const DEFAULT_THRESHOLDS = {
@@ -616,6 +620,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Select food from bowl based on preferences
     let hungerRestored = 40 // Base restoration (enough to get above 30% threshold)
     let foodQuality = 1.0 // Quality multiplier
+    let eatenFoodName: string | undefined = undefined
 
     console.log('[executeEatBehavior] Checking bowl contents for', goal.targetItemId)
 
@@ -639,6 +644,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
         )
 
         const selectedFood = preferredFood || bowlContents[0]
+        eatenFoodName = selectedFood.name
 
         // Apply preference modifiers
         if (preferredFood) {
@@ -677,8 +683,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
       console.log('[executeEatBehavior] Restored', hungerRestored, 'hunger points')
 
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousEatMessage(guineaPig.value.name)
+      // Log to activity feed with actual food name
+      const msg = MessageGenerator.generateAutonomousEatMessage(guineaPig.value.name, eatenFoodName)
       loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
@@ -816,7 +822,13 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       guineaPigStore.adjustNeed(guineaPigId, 'energy', energyRestored)
 
       // Log to activity feed with location
-      const location = goal.targetItemId ? goal.targetItemId.replace(/_/g, ' ') : 'a cozy spot'
+      let location = 'a cozy spot'
+      if (goal.targetItemId) {
+        // Convert ID to readable name (e.g., "habitat_banana_bed" -> "banana bed")
+        location = goal.targetItemId
+          .replace(/_/g, ' ')
+          .replace(/^habitat\s+/, '') // Remove "habitat " prefix
+      }
       const msg = MessageGenerator.generateAutonomousSleepMessage(guineaPig.value.name, location)
       loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
@@ -1531,24 +1543,24 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (!gp) return
 
     const timeSinceLastPoop = Date.now() - gp.lastPoopTime
-    const poopInterval = 30000 // 30 seconds
 
-    if (timeSinceLastPoop > poopInterval) {
+    if (timeSinceLastPoop > POOP_INTERVAL_MS) {
       // Drop poop at current position
       const currentPos = movement.currentPosition.value
 
-      // Convert grid coordinates to subgrid coordinates (4x scale)
-      // The subgrid is 4x finer than the main grid for precise poop placement
-      const subgridX = currentPos.col * 4 + Math.floor(Math.random() * 4) // Random offset within cell
-      const subgridY = currentPos.row * 4 + Math.floor(Math.random() * 4)
-
-      habitatConditions.addPoop(subgridX, subgridY)
+      // Convert grid coordinates to subgrid coordinates with random offset
+      const subgridPos = gridToSubgridWithOffset(currentPos)
+      habitatConditions.addPoop(subgridPos.x, subgridPos.y)
 
       // Update last poop time
       gp.lastPoopTime = Date.now()
 
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousPoopMessage(gp.name, 'the floor')
+      // Detect nearby items for location context
+      const suppliesStore = useSuppliesStore()
+      const nearbyLocation = detectNearbyLocation(currentPos, habitatConditions, suppliesStore)
+
+      // Log to activity feed with location context
+      const msg = MessageGenerator.generateAutonomousPoopMessage(gp.name, nearbyLocation)
       loggingStore.addEnvironmentalEvent(msg.message, msg.emoji)
     }
   }

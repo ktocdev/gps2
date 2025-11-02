@@ -71,10 +71,19 @@
 import { computed } from 'vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
+import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useLoggingStore } from '../../../stores/loggingStore'
+import { MessageGenerator } from '../../../utils/messageGenerator'
+import { detectNearbyLocation, gridToSubgridWithOffset, positionToGridCoords } from '../../../utils/locationDetection'
 import Button from '../../basic/Button.vue'
 
 const guineaPigStore = useGuineaPigStore()
 const habitatConditions = useHabitatConditions()
+const suppliesStore = useSuppliesStore()
+const loggingStore = useLoggingStore()
+
+// Constants
+const POOP_INTERVAL_MS = 30000 // 30 seconds - matches behavior system
 
 const hasActiveGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs.length > 0)
 
@@ -97,8 +106,7 @@ function getTimeUntilNextPoop(guineaPigId: string): string {
   if (!guineaPig) return 'N/A'
 
   const timeSince = Date.now() - guineaPig.lastPoopTime
-  const poopInterval = 30000 // 30 seconds
-  const timeRemaining = Math.max(0, poopInterval - timeSince)
+  const timeRemaining = Math.max(0, POOP_INTERVAL_MS - timeSince)
   const seconds = Math.floor(timeRemaining / 1000)
 
   if (timeRemaining === 0) return 'Any moment now!'
@@ -111,12 +119,20 @@ function triggerManualPoop(guineaPigId: string): void {
 
   // Get guinea pig's current position from habitat conditions
   const position = habitatConditions.guineaPigPositions.get(guineaPigId)
-  if (!position) {
-    // Default to center of habitat if no position found
-    habitatConditions.addPoop(7, 5)
-  } else {
-    habitatConditions.addPoop(position.x, position.y)
-  }
+
+  // Convert position to grid coordinates (position uses x/y where x=col, y=row)
+  const currentPos = position ? positionToGridCoords(position) : { row: 1, col: 1 }
+
+  // Convert grid coordinates to subgrid coordinates with random offset
+  const subgridPos = gridToSubgridWithOffset(currentPos)
+  habitatConditions.addPoop(subgridPos.x, subgridPos.y)
+
+  // Detect nearby items for location context
+  const nearbyLocation = detectNearbyLocation(currentPos, habitatConditions, suppliesStore)
+
+  // Log to activity feed with location context
+  const msg = MessageGenerator.generateAutonomousPoopMessage(guineaPig.name, nearbyLocation)
+  loggingStore.addEnvironmentalEvent(msg.message, msg.emoji)
 
   // Reset poop timer
   guineaPig.lastPoopTime = Date.now()

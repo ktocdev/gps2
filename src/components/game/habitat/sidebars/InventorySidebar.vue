@@ -51,11 +51,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useHabitatConditions } from '../../../stores/habitatConditions'
-import { useInventoryStore } from '../../../stores/inventoryStore'
-import { useSuppliesStore } from '../../../stores/suppliesStore'
-import { useGuineaPigStore } from '../../../stores/guineaPigStore'
-import InventoryTileServing from '../shop/InventoryTileServing.vue'
+import { useHabitatConditions } from '../../../../stores/habitatConditions'
+import { useInventoryStore } from '../../../../stores/inventoryStore'
+import { useSuppliesStore } from '../../../../stores/suppliesStore'
+import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
+import InventoryTileServing from '../../shop/InventoryTileServing.vue'
 
 interface Props {
   habitatVisualRef?: any

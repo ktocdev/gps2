@@ -119,8 +119,8 @@
 </template>
 
 <script setup lang="ts">
-import Button from '../../basic/Button.vue'
-import Select from '../../basic/Select.vue'
+import Button from '../../../basic/Button.vue'
+import Select from '../../../basic/Select.vue'
 
 interface Props {
   canRefreshBedding: boolean

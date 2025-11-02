@@ -344,7 +344,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useGameTimingStore } from '../../../stores/gameTimingStore'
 import { useGameController } from '../../../stores/gameController'
@@ -382,6 +382,23 @@ function toggleGuineaPig() {
   const total = guineaPigStore.activeGuineaPigs.length
   selectedGuineaPigIndex.value = (selectedGuineaPigIndex.value + 1) % total
 }
+
+/**
+ * Watch for guinea pig selection changes from sprite clicks
+ * and update local index to match
+ */
+watch(
+  () => guineaPigStore.selectedGuineaPigId,
+  (selectedId) => {
+    if (!selectedId) return
+
+    // Find the index of the selected guinea pig in active guinea pigs
+    const index = guineaPigStore.activeGuineaPigs.findIndex(gp => gp.id === selectedId)
+    if (index !== -1) {
+      selectedGuineaPigIndex.value = index
+    }
+  }
+)
 
 // Cache behavior composables (similar to gameTimingStore pattern)
 const behaviorComposables = new Map<string, ReturnType<typeof useGuineaPigBehavior>>()

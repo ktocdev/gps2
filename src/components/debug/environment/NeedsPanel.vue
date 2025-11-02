@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import NeedRow from '../../basic/NeedRow.vue'
 import Button from '../../basic/Button.vue'
@@ -114,6 +114,23 @@ function toggleGuineaPig() {
   const total = guineaPigStore.activeGuineaPigs.length
   selectedGuineaPigIndex.value = (selectedGuineaPigIndex.value + 1) % total
 }
+
+/**
+ * Watch for guinea pig selection changes from sprite clicks
+ * and update local index to match
+ */
+watch(
+  () => guineaPigStore.selectedGuineaPigId,
+  (selectedId) => {
+    if (!selectedId) return
+
+    // Find the index of the selected guinea pig in active guinea pigs
+    const index = guineaPigStore.activeGuineaPigs.findIndex(gp => gp.id === selectedId)
+    if (index !== -1) {
+      selectedGuineaPigIndex.value = index
+    }
+  }
+)
 
 /**
  * Format need name for display

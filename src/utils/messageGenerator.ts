@@ -329,6 +329,20 @@ export class MessageGenerator {
     messageTemplates[category].push(template)
   }
 
+  // Helper function to get article (a/an) based on first letter
+  private static getArticle(word: string): string {
+    const vowels = ['a', 'e', 'i', 'o', 'u']
+    const firstLetter = word.toLowerCase().charAt(0)
+    return vowels.includes(firstLetter) ? 'an' : 'a'
+  }
+
+  // Helper function to format food name for piece messages
+  private static formatFoodForPiece(foodType: string): string {
+    // For fruits and vegetables, use "a [food] piece"
+    const article = this.getArticle(foodType)
+    return `${article} ${foodType} piece`
+  }
+
   // Action-specific message generators for guinea pig interactions
   static generateFeedMessage(
     guineaPigName: string,
@@ -345,33 +359,73 @@ export class MessageGenerator {
 
     let templates: string[]
 
+    // Check if this is pellets or hay (should not use "piece" format)
+    const isPelletsOrHay = foodType.toLowerCase().includes('pellet') || foodType.toLowerCase().includes('hay')
+
+    // Check if this is fruits or vegetables (use "piece" format)
+    const usePieceFormat = !isPelletsOrHay
+
+    // Clean up food name and apply formatting
+    const cleanedFood = this.cleanFoodName(foodType)
+    const foodText = usePieceFormat ? this.formatFoodForPiece(cleanedFood) : cleanedFood
+
     if (isFavorite) {
       // Favorite food - enthusiastic messages (Phase 2.5 - System 2)
-      templates = [
-        `✨ ${guineaPigName}'s eyes light up! They absolutely love ${foodType}!`,
-        `${guineaPigName} does excited popcorns - this is their favorite!`,
-        `${guineaPigName} devours the ${foodType} with enthusiasm!`,
-        `${guineaPigName} can't get enough of this ${foodType}!`,
-        `You treat ${guineaPigName} to their beloved ${foodType}! ✨`
-      ]
+      if (usePieceFormat) {
+        templates = [
+          `✨ ${guineaPigName}'s eyes light up! They absolutely love ${cleanedFood}!`,
+          `${guineaPigName} does excited popcorns - this is their favorite!`,
+          `${guineaPigName} devours ${foodText} with enthusiasm!`,
+          `${guineaPigName} can't get enough of ${cleanedFood}!`,
+          `You treat ${guineaPigName} to their beloved ${cleanedFood}! ✨`
+        ]
+      } else {
+        templates = [
+          `✨ ${guineaPigName}'s eyes light up! They absolutely love ${cleanedFood}!`,
+          `${guineaPigName} does excited popcorns - this is their favorite!`,
+          `${guineaPigName} devours ${cleanedFood} with enthusiasm!`,
+          `${guineaPigName} can't get enough of ${cleanedFood}!`,
+          `You treat ${guineaPigName} to their beloved ${cleanedFood}! ✨`
+        ]
+      }
     } else if (isDisliked) {
       // Disliked food - reluctant messages (Phase 2.5 - System 2)
-      templates = [
-        `${guineaPigName} sniffs the ${foodType} and eats it reluctantly 😐`,
-        `${guineaPigName} shows little interest but eventually eats the ${foodType}`,
-        `${guineaPigName} accepts the ${foodType} without much enthusiasm`,
-        `${guineaPigName} clearly doesn't enjoy this ${foodType}...`,
-        `${guineaPigName} eats the ${foodType} half-heartedly`
-      ]
+      if (usePieceFormat) {
+        templates = [
+          `${guineaPigName} sniffs ${foodText} and eats it reluctantly 😐`,
+          `${guineaPigName} shows little interest but eventually eats ${foodText}`,
+          `${guineaPigName} accepts ${foodText} without much enthusiasm`,
+          `${guineaPigName} clearly doesn't enjoy ${cleanedFood}...`,
+          `${guineaPigName} eats ${foodText} half-heartedly`
+        ]
+      } else {
+        templates = [
+          `${guineaPigName} sniffs ${cleanedFood} and eats it reluctantly 😐`,
+          `${guineaPigName} shows little interest but eventually eats ${cleanedFood}`,
+          `${guineaPigName} accepts ${cleanedFood} without much enthusiasm`,
+          `${guineaPigName} clearly doesn't enjoy ${cleanedFood}...`,
+          `${guineaPigName} eats ${cleanedFood} half-heartedly`
+        ]
+      }
     } else {
       // Neutral food - standard messages
-      templates = [
-        `You offer ${guineaPigName} some ${foodType}`,
-        `${guineaPigName} gets a serving of fresh ${foodType}`,
-        `${guineaPigName} eats the ${foodType} contentedly`,
-        `You scatter ${foodType} for ${guineaPigName}`,
-        `${guineaPigName} munches on the ${foodType}`
-      ]
+      if (usePieceFormat) {
+        templates = [
+          `${guineaPigName} ate ${foodText}.`,
+          `${guineaPigName} munches on ${foodText}.`,
+          `${guineaPigName} eats ${foodText} contentedly.`,
+          `${guineaPigName} nibbles ${foodText}.`,
+          `${guineaPigName} enjoys ${foodText}.`
+        ]
+      } else {
+        templates = [
+          `${guineaPigName} ate ${cleanedFood}.`,
+          `${guineaPigName} munches on ${cleanedFood}.`,
+          `${guineaPigName} eats ${cleanedFood} contentedly.`,
+          `${guineaPigName} nibbles ${cleanedFood}.`,
+          `${guineaPigName} enjoys ${cleanedFood}.`
+        ]
+      }
     }
 
     const message = templates[Math.floor(Math.random() * templates.length)]
@@ -565,14 +619,33 @@ export class MessageGenerator {
     return { message, emoji: '🛏️' }
   }
 
+  // Helper to clean up food names (remove "(Bag)" suffix)
+  private static cleanFoodName(foodName: string): string {
+    return foodName.replace(/\s*\(Bag\)\s*$/i, '').trim()
+  }
+
   // System 19: Autonomous behavior messages
   static generateAutonomousEatMessage(guineaPigName: string, foodType?: string): { message: string; emoji: string } {
     const food = foodType || 'food from the bowl'
+
+    // Check if this is pellets or hay (should not use "piece" format)
+    const isPelletsOrHay = foodType && (
+      foodType.toLowerCase().includes('pellet') ||
+      foodType.toLowerCase().includes('hay')
+    )
+
+    // Check if this is fruits or vegetables (use "piece" format)
+    const usePieceFormat = foodType && !isPelletsOrHay && foodType !== 'food from the bowl'
+
+    // Clean up food name and apply formatting
+    const cleanedFood = this.cleanFoodName(food)
+    const foodText = usePieceFormat ? this.formatFoodForPiece(cleanedFood) : cleanedFood
+
     const templates = [
-      `${guineaPigName} walks to the food bowl and munches on ${food}`,
-      `${guineaPigName} eats ${food} contentedly`,
-      `${guineaPigName} enjoys a snack of ${food}`,
-      `${guineaPigName} nibbles ${food} with satisfaction`
+      `${guineaPigName} walks to the food bowl and munches on ${foodText}.`,
+      `${guineaPigName} eats ${foodText} contentedly.`,
+      `${guineaPigName} enjoys ${foodText}.`,
+      `${guineaPigName} nibbles ${foodText} with satisfaction.`
     ]
     return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🍽️' }
   }
@@ -689,12 +762,27 @@ export class MessageGenerator {
   }
 
   static generateAutonomousPoopMessage(guineaPigName: string, location?: string): { message: string; emoji: string } {
-    const place = location || 'the habitat'
-    const templates = [
-      `${guineaPigName} drops a poop near ${place}`,
-      `${guineaPigName} leaves a little present in ${place}`,
-      `${guineaPigName} contributes to habitat maintenance near ${place}`
-    ]
+    // Only show meaningful locations (water bottle, food bowl, shelter, igloo)
+    const meaningfulLocations = ['water bottle', 'food bowl', 'shelter', 'hideaway', 'hideout', 'igloo', 'bottle', 'bowl']
+    const hasLocation = location && meaningfulLocations.some(loc => location.toLowerCase().includes(loc))
+
+    let templates: string[]
+
+    if (hasLocation) {
+      templates = [
+        `${guineaPigName} left a poop near the ${location}.`,
+        `${guineaPigName} pooped near the ${location}.`,
+        `${guineaPigName} made a little mess near the ${location}.`
+      ]
+    } else {
+      templates = [
+        `${guineaPigName} left a poop.`,
+        `${guineaPigName} pooped.`,
+        `${guineaPigName} made a little mess.`,
+        `${guineaPigName} contributed to habitat maintenance.`
+      ]
+    }
+
     return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '💩' }
   }
 }
