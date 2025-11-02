@@ -18,13 +18,16 @@ const SUBGRID_TO_GRID_SCALE = 4 // Subgrid is 4x finer than main grid
  * @param currentPos - Current position in grid coordinates {row, col}
  * @param habitatConditions - Habitat conditions store containing item positions
  * @param suppliesStore - Supplies store to look up item details by ID
- * @returns Name of the first nearby item found, or undefined if none
+ * @returns Name of the first nearby meaningful item found, or undefined if none
  */
 export function detectNearbyLocation(
   currentPos: { row: number; col: number },
   habitatConditions: HabitatConditions,
   suppliesStore: SuppliesStore
 ): string | undefined {
+  // Only detect meaningful locations (water bottle, food bowl, shelter, etc.)
+  const meaningfulKeywords = ['water', 'bottle', 'food', 'bowl', 'shelter', 'hideaway', 'hideout', 'igloo', 'bed']
+
   // Check items within proximity threshold of current position
   for (const itemId of habitatConditions.habitatItems) {
     const itemPos = habitatConditions.itemPositions.get(itemId)
@@ -40,7 +43,11 @@ export function detectNearbyLocation(
         // Get item name from supplies store
         const item = suppliesStore.getItemById(itemId)
         if (item) {
-          return item.name
+          // Only return if it's a meaningful location
+          const itemNameLower = item.name.toLowerCase()
+          if (meaningfulKeywords.some(keyword => itemNameLower.includes(keyword))) {
+            return item.name
+          }
         }
       }
     }

@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="hayRackRef"
     class="hay-rack"
     :class="fullnessClass"
     @dragover.prevent="handleDragOver"
@@ -27,6 +28,7 @@
       :metadata="popoverMetadata"
       :actions="popoverActions"
       :is-hovered="isHovered"
+      :target-element="hayRackRef"
     />
   </div>
 </template>
@@ -57,6 +59,7 @@ const emit = defineEmits<{
 
 const suppliesStore = useSuppliesStore()
 
+const hayRackRef = ref<HTMLElement | null>(null)
 const isDragOver = ref(false)
 const isHovered = ref(false)
 

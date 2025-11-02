@@ -6,6 +6,7 @@
 import { ref, computed } from 'vue'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
+import { useGameController } from '../../stores/gameController'
 import { usePathfinding, type GridPosition } from './usePathfinding'
 
 export type MovementState = 'idle' | 'walking' | 'arrived' | 'blocked'
@@ -22,6 +23,7 @@ interface MovementController {
 export function useMovement(guineaPigId: string) {
   const habitatConditions = useHabitatConditions()
   const guineaPigStore = useGuineaPigStore()
+  const gameController = useGameController()
   const pathfinding = usePathfinding()
 
   const controller = ref<MovementController>({
@@ -127,10 +129,12 @@ export function useMovement(guineaPigId: string) {
 
     // Schedule next step
     setTimeout(() => {
-      if (controller.value.movementState === 'walking') {
+      // Only continue movement if game is active (not paused) and still walking
+      if (gameController.isGameActive && controller.value.movementState === 'walking') {
         controller.value.currentStep++
         moveToNextStep()
       }
+      // If game is paused, movement will resume when game resumes (moveToNextStep will be called again)
     }, timeToMove)
   }
 
@@ -150,6 +154,16 @@ export function useMovement(guineaPigId: string) {
         ...pos,
         isMoving: false
       })
+    }
+  }
+
+  /**
+   * Resume movement after pause (if was walking)
+   */
+  function resumeMovement(): void {
+    if (controller.value.movementState === 'walking' && controller.value.currentPath.length > 0) {
+      // Resume from current step
+      moveToNextStep()
     }
   }
 
@@ -257,6 +271,7 @@ export function useMovement(guineaPigId: string) {
     currentPosition,
     startMovement,
     stopMovement,
+    resumeMovement,
     moveTo,
     wander,
     onArrival

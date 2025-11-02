@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="bowlRef"
     class="food-bowl"
     @dragover.prevent="handleDragOver"
     @dragleave="handleDragLeave"
@@ -43,6 +44,7 @@
       :metadata="popoverMetadata"
       :actions="popoverActions"
       :is-hovered="isHovered"
+      :target-element="bowlRef"
     >
       <!-- Individual food items list -->
       <template v-if="foods.length > 0">
@@ -100,6 +102,7 @@ const emit = defineEmits<{
   'remove-food': [foodIndex: number]
 }>()
 
+const bowlRef = ref<HTMLElement | null>(null)
 const isDragOver = ref(false)
 const isHovered = ref(false)
 

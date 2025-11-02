@@ -1,42 +1,45 @@
 <template>
-  <div
-    class="habitat-item-popover"
-    :class="{ 'habitat-item-popover--visible': isVisible }"
-  >
-    <div class="habitat-item-popover__content">
-      <div class="habitat-item-popover__header">
-        <span class="habitat-item-popover__title">{{ title }}</span>
-      </div>
-
-      <div v-if="metadata.length > 0 || $slots.default" class="habitat-item-popover__metadata">
-        <div
-          v-for="(item, index) in metadata"
-          :key="index"
-          class="habitat-item-popover__metadata-item"
-        >
-          <span class="habitat-item-popover__metadata-label">{{ item.label }}:</span>
-          <span class="habitat-item-popover__metadata-value">{{ item.value }}</span>
+  <Teleport to="body">
+    <div
+      v-if="isVisible && popoverPosition"
+      class="habitat-item-popover habitat-item-popover--visible"
+      :style="popoverStyle"
+    >
+      <div class="habitat-item-popover__content">
+        <div class="habitat-item-popover__header">
+          <span class="habitat-item-popover__title">{{ title }}</span>
         </div>
-        <slot></slot>
-      </div>
 
-      <div v-if="actions.length > 0" class="habitat-item-popover__actions">
-        <button
-          v-for="(action, index) in actions"
-          :key="index"
-          class="habitat-item-popover__action-button"
-          :class="`habitat-item-popover__action-button--${action.variant || 'default'}`"
-          @click="handleAction(action)"
-        >
-          {{ action.label }}
-        </button>
+        <div v-if="metadata.length > 0 || $slots.default" class="habitat-item-popover__metadata">
+          <div
+            v-for="(item, index) in metadata"
+            :key="index"
+            class="habitat-item-popover__metadata-item"
+          >
+            <span class="habitat-item-popover__metadata-label">{{ item.label }}:</span>
+            <span class="habitat-item-popover__metadata-value">{{ item.value }}</span>
+          </div>
+          <slot></slot>
+        </div>
+
+        <div v-if="actions.length > 0" class="habitat-item-popover__actions">
+          <button
+            v-for="(action, index) in actions"
+            :key="index"
+            class="habitat-item-popover__action-button"
+            :class="`habitat-item-popover__action-button--${action.variant || 'default'}`"
+            @click="handleAction(action)"
+          >
+            {{ action.label }}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
 
 interface PopoverMetadata {
   label: string
@@ -54,15 +57,29 @@ interface Props {
   metadata?: PopoverMetadata[]
   actions?: PopoverAction[]
   isHovered: boolean
+  targetElement?: HTMLElement | null
 }
 
 const props = withDefaults(defineProps<Props>(), {
   metadata: () => [],
-  actions: () => []
+  actions: () => [],
+  targetElement: null
 })
 
 const isVisible = ref(false)
+const popoverPosition = ref<{ top: number; left: number } | null>(null)
 let hideTimeout: number | null = null
+
+// Get position of target element (the item being hovered)
+function updatePopoverPosition() {
+  if (!props.targetElement) return
+
+  const rect = props.targetElement.getBoundingClientRect()
+  popoverPosition.value = {
+    top: rect.top - 10, // Position above element with small gap
+    left: rect.left + rect.width / 2 // Center horizontally
+  }
+}
 
 // Show popover after short delay when hovered
 watch(() => props.isHovered, (hovered) => {
@@ -74,6 +91,7 @@ watch(() => props.isHovered, (hovered) => {
   if (hovered) {
     // Show after 300ms delay
     hideTimeout = window.setTimeout(() => {
+      updatePopoverPosition()
       isVisible.value = true
     }, 300)
   } else {
@@ -81,6 +99,27 @@ watch(() => props.isHovered, (hovered) => {
     hideTimeout = window.setTimeout(() => {
       isVisible.value = false
     }, 100)
+  }
+})
+
+// Update position on scroll or resize
+onMounted(() => {
+  window.addEventListener('scroll', updatePopoverPosition, true)
+  window.addEventListener('resize', updatePopoverPosition)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', updatePopoverPosition, true)
+  window.removeEventListener('resize', updatePopoverPosition)
+})
+
+const popoverStyle = computed(() => {
+  if (!popoverPosition.value) return {}
+  return {
+    position: 'fixed' as const,
+    top: `${popoverPosition.value.top}px`,
+    left: `${popoverPosition.value.left}px`,
+    transform: 'translate(-50%, -100%)' // Center horizontally, position above
   }
 })
 
@@ -92,19 +131,14 @@ function handleAction(action: PopoverAction) {
 
 <style>
 .habitat-item-popover {
-  position: absolute;
-  inset-block-end: calc(100% + var(--space-2));
-  inset-inline-start: 50%;
-  transform: translateX(-50%);
-  z-index: 1000;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+  /* Position set via inline style (fixed positioning) */
+  z-index: 10000;
+  pointer-events: auto;
+  opacity: 1;
 }
 
 .habitat-item-popover--visible {
-  pointer-events: auto;
-  opacity: 1;
+  /* Visibility handled by v-if in template */
 }
 
 .habitat-item-popover__content {

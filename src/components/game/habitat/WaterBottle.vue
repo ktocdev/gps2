@@ -1,11 +1,27 @@
 <template>
-  <div class="water-bottle" :class="fullnessClass">
+  <div
+    ref="bottleRef"
+    class="water-bottle"
+    :class="fullnessClass"
+    @mouseenter="isHovered = true"
+    @mouseleave="isHovered = false"
+  >
     <span class="water-bottle__water">💧</span>
+
+    <HabitatItemPopover
+      :title="popoverTitle"
+      :metadata="popoverMetadata"
+      :actions="popoverActions"
+      :is-hovered="isHovered"
+      :target-element="bottleRef"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
+import HabitatItemPopover from './HabitatItemPopover.vue'
+import { useHabitatConditions } from '../../../stores/habitatConditions'
 
 interface Props {
   waterLevel: number // 0-100
@@ -13,6 +29,36 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+const habitatConditions = useHabitatConditions()
+const bottleRef = ref<HTMLElement | null>(null)
+const isHovered = ref(false)
+
+// Popover title
+const popoverTitle = computed(() => {
+  return 'Water Bottle'
+})
+
+// Metadata for the popover
+const popoverMetadata = computed(() => {
+  return [
+    { label: 'Water Level', value: `${props.waterLevel.toFixed(0)}%` }
+  ]
+})
+
+// Popover actions
+const popoverActions = computed(() => {
+  return [
+    {
+      label: 'Refill Water',
+      onClick: handleRefillWater
+    }
+  ]
+})
+
+function handleRefillWater() {
+  habitatConditions.refillWater()
+}
 
 const fullnessClass = computed(() => {
   const level = props.waterLevel

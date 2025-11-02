@@ -33,6 +33,7 @@
       ref="feedContainer"
       class="activity-feed__container"
       :class="{ 'activity-feed__container--paused': isPaused }"
+      :style="{ maxHeight: height }"
     >
       <div
         v-if="filteredMessages.length === 0"

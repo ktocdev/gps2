@@ -691,32 +691,35 @@ export class MessageGenerator {
     return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🧼' }
   }
 
-  static generateAutonomousChewMessage(guineaPigName: string): { message: string; emoji: string } {
+  static generateAutonomousChewMessage(guineaPigName: string, itemName?: string): { message: string; emoji: string } {
+    const item = itemName || 'a chew item'
     const templates = [
-      `${guineaPigName} gnaws on a chew item`,
-      `${guineaPigName} chews contentedly for dental health`,
-      `${guineaPigName} works on keeping their teeth trimmed`,
-      `${guineaPigName} enjoys chewing on a wooden toy`
+      `${guineaPigName} gnaws on ${item}`,
+      `${guineaPigName} chews ${item} contentedly`,
+      `${guineaPigName} works on ${item} to trim their teeth`,
+      `${guineaPigName} enjoys chewing on ${item}`
     ]
     return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🪵' }
   }
 
-  static generateAutonomousPlayMessage(guineaPigName: string): { message: string; emoji: string } {
+  static generateAutonomousPlayMessage(guineaPigName: string, toyName?: string): { message: string; emoji: string } {
+    const toy = toyName || 'a toy'
     const templates = [
-      `${guineaPigName} plays with a toy`,
-      `${guineaPigName} pushes a toy around playfully`,
-      `${guineaPigName} investigates a toy with curiosity`,
-      `${guineaPigName} has fun with a ball`
+      `${guineaPigName} plays with ${toy}`,
+      `${guineaPigName} pushes ${toy} around playfully`,
+      `${guineaPigName} investigates ${toy} with curiosity`,
+      `${guineaPigName} has fun with ${toy}`
     ]
     return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🎾' }
   }
 
-  static generateAutonomousShelterMessage(guineaPigName: string): { message: string; emoji: string } {
+  static generateAutonomousShelterMessage(guineaPigName: string, shelterName?: string): { message: string; emoji: string } {
+    const shelter = shelterName || 'a cozy shelter'
     const templates = [
-      `${guineaPigName} seeks shelter in their favorite hideaway`,
-      `${guineaPigName} retreats to a cozy shelter`,
-      `${guineaPigName} finds security in their hideout`,
-      `${guineaPigName} settles into a safe spot`
+      `${guineaPigName} seeks shelter in ${shelter}`,
+      `${guineaPigName} retreats to ${shelter}`,
+      `${guineaPigName} finds security in ${shelter}`,
+      `${guineaPigName} settles into ${shelter}`
     ]
     return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🏠' }
   }

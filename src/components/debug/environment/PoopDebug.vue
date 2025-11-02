@@ -61,8 +61,11 @@
       </div>
     </div>
 
-    <div v-else class="no-guinea-pigs">
-      <p>No active guinea pigs in habitat</p>
+    <div v-else class="panel panel--compact panel--warning">
+      <div class="panel__content text-center">
+        <p class="text-label text-label--muted mb-2">No guinea pigs in game</p>
+        <p class="text-label--small">Start a game in the Game Controller view to see poop data.</p>
+      </div>
     </div>
   </div>
 </template>

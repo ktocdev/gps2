@@ -77,7 +77,8 @@
 
     <div v-else class="panel panel--compact panel--warning">
       <div class="panel__content text-center">
-        <p>No active guinea pigs. Start a game session to view needs.</p>
+        <p class="text-label text-label--muted mb-2">No guinea pigs in game</p>
+        <p class="text-label--small">Start a game in the Game Controller view to see needs data.</p>
       </div>
     </div>
   </div>
