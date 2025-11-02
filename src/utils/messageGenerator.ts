@@ -644,7 +644,7 @@ export class MessageGenerator {
     const templates = [
       `${guineaPigName} walks to the food bowl and munches on ${foodText}.`,
       `${guineaPigName} eats ${foodText} contentedly.`,
-      `${guineaPigName} enjoys ${usePieceFormat ? foodText : foodText}.`,
+      `${guineaPigName} enjoys ${foodText}.`,
       `${guineaPigName} nibbles ${foodText} with satisfaction.`
     ]
     return { message: templates[Math.floor(Math.random() * templates.length)], emoji: '🍽️' }

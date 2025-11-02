@@ -13,6 +13,7 @@ import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useMovement } from './useMovement'
 import { usePathfinding } from './usePathfinding'
 import { MessageGenerator } from '../../utils/messageGenerator'
+import { detectNearbyLocation, gridToSubgridWithOffset } from '../../utils/locationDetection'
 import type { NeedType } from '../../stores/guineaPigStore'
 import type { GridPosition } from './usePathfinding'
 
@@ -53,6 +54,9 @@ export interface BehaviorState {
 
 // Debug flags - set to false in production
 const DEBUG_SOCIALIZE = false
+
+// Environmental behavior intervals
+const POOP_INTERVAL_MS = 30000 // 30 seconds - guinea pigs poop frequently for realism
 
 // Default behavior thresholds
 const DEFAULT_THRESHOLDS = {
@@ -818,7 +822,13 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       guineaPigStore.adjustNeed(guineaPigId, 'energy', energyRestored)
 
       // Log to activity feed with location
-      const location = goal.targetItemId ? goal.targetItemId.replace(/_/g, ' ') : 'a cozy spot'
+      let location = 'a cozy spot'
+      if (goal.targetItemId) {
+        // Convert ID to readable name (e.g., "habitat_banana_bed" -> "banana bed")
+        location = goal.targetItemId
+          .replace(/_/g, ' ')
+          .replace(/^habitat\s+/, '') // Remove "habitat " prefix
+      }
       const msg = MessageGenerator.generateAutonomousSleepMessage(guineaPig.value.name, location)
       loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
@@ -1533,51 +1543,21 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (!gp) return
 
     const timeSinceLastPoop = Date.now() - gp.lastPoopTime
-    const poopInterval = 30000 // 30 seconds
 
-    if (timeSinceLastPoop > poopInterval) {
+    if (timeSinceLastPoop > POOP_INTERVAL_MS) {
       // Drop poop at current position
       const currentPos = movement.currentPosition.value
 
-      // Convert grid coordinates to subgrid coordinates (4x scale)
-      // The subgrid is 4x finer than the main grid for precise poop placement
-      const subgridX = currentPos.col * 4 + Math.floor(Math.random() * 4) // Random offset within cell
-      const subgridY = currentPos.row * 4 + Math.floor(Math.random() * 4)
-
-      habitatConditions.addPoop(subgridX, subgridY)
+      // Convert grid coordinates to subgrid coordinates with random offset
+      const subgridPos = gridToSubgridWithOffset(currentPos)
+      habitatConditions.addPoop(subgridPos.x, subgridPos.y)
 
       // Update last poop time
       gp.lastPoopTime = Date.now()
 
       // Detect nearby items for location context
-      let nearbyLocation: string | undefined = undefined
       const suppliesStore = useSuppliesStore()
-
-      console.log('[checkAutonomousPooping] Current position:', currentPos)
-      console.log('[checkAutonomousPooping] Checking', habitatConditions.habitatItems.length, 'habitat items')
-
-      // Check items within 1 grid cell of current position
-      for (const itemId of habitatConditions.habitatItems) {
-        const itemPos = habitatConditions.itemPositions.get(itemId)
-        if (itemPos) {
-          // Item positions use x/y format where x=col, y=row
-          const itemRow = itemPos.y
-          const itemCol = itemPos.x
-          const distance = Math.abs(itemRow - currentPos.row) + Math.abs(itemCol - currentPos.col)
-          console.log('[checkAutonomousPooping] Item', itemId, 'at (x,y):', itemPos, 'converted to (row,col):', {row: itemRow, col: itemCol}, 'distance:', distance)
-          if (distance <= 1) {
-            // Get item name from supplies store
-            const item = suppliesStore.getItemById(itemId)
-            console.log('[checkAutonomousPooping] Found nearby item:', item?.name)
-            if (item) {
-              nearbyLocation = item.name
-              break // Use first nearby item found
-            }
-          }
-        }
-      }
-
-      console.log('[checkAutonomousPooping] Final location for message:', nearbyLocation)
+      const nearbyLocation = detectNearbyLocation(currentPos, habitatConditions, suppliesStore)
 
       // Log to activity feed with location context
       const msg = MessageGenerator.generateAutonomousPoopMessage(gp.name, nearbyLocation)

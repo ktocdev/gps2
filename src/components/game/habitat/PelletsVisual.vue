@@ -29,7 +29,7 @@ defineProps<Props>()
 
 .pellets-visual__pellet {
   position: absolute;
-  font-size: 0.75rem;
+  font-size: 0.75rem; /* Large enough to be visible but not overwhelming */
   line-height: 1;
   inset-block-start: 50%;
   inset-inline-start: 50%;
