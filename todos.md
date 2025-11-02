@@ -2,4 +2,4 @@
 - guinea pig bonding should go up if they sleep in the shelter together
 - guinea pig should do wiggle when chewing
 - the hay servings count is wrong, it says 1/1, should be 1/4
-- the number of timothy hays in the inventory says 8 and the count of the icon in the inventory sidebar also looks wrong
+- the number of timothy hays in the inventory says 8 and the count of the icon in the inventory sidebar also looks wrong (seems intermittent, not happening now)

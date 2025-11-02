@@ -2,7 +2,14 @@
   <div class="bonding-debug debug-view__constrained">
     <h2>Social Bonding System</h2>
 
-    <div v-if="activeGuineaPigs.length < 2" class="panel panel--compact panel--warning mb-6">
+    <div v-if="activeGuineaPigs.length === 0" class="panel panel--compact panel--warning mb-6">
+      <div class="panel__content text-center">
+        <p class="text-label text-label--muted mb-2">No guinea pigs in game</p>
+        <p class="text-label--small">Start a game in the Game Controller view to see social bonding data.</p>
+      </div>
+    </div>
+
+    <div v-else-if="activeGuineaPigs.length < 2" class="panel panel--compact panel--warning mb-6">
       <div class="panel__content text-center">
         <p>Bonding requires at least 2 active guinea pigs. Add another guinea pig from the Pet Store tab.</p>
       </div>

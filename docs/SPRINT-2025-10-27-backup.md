@@ -45,469 +45,6 @@ All Phase 4 systems implemented and tested:
 **Priority:** HIGH
 **Goal:** Manual gameplay testing, balance adjustments, metadata fixes, and UI polish before Phase 5
 
-### Bug Fixes 🐛
-
-#### Critical Bugs 🔥
-
-##### Manual Behavior Trigger Freezes Guinea Pig ⏸️ **DEFERRED**
-**Priority:** CRITICAL (when reproducible)
-**Status:** ⏸️ Deferred - Cannot Reproduce
-
-**Issue:** Manually triggering behaviors (especially drink) may cause guinea pig to freeze and stop fulfilling needs autonomously
-
-**Observed Behavior (Initial Report):**
-- After using manual behavior trigger buttons (Autonomy Controls), guinea pig freezes
-- Guinea pig no longer fulfills needs on its own
-- Appears stuck - needs degrade but no autonomous behaviors execute
-- Happened when manually triggering "drink" behavior
-- Guinea pig remains frozen until game restart
-
-**Current Status:**
-- ⏸️ Cannot reproduce the issue consistently
-- Manual triggers appear to be working correctly in testing
-- May be a rare edge case or race condition
-- Deferring investigation until more information is available
-
-**If Issue Reoccurs:**
-- Document exact steps to reproduce
-- Note which behavior was triggered
-- Check guinea pig's current needs state
-- Note if multiple guinea pigs are present
-- Check browser console for errors
-- Note any other behaviors that happened simultaneously (pooping, etc.)
-
-**Root Cause Theories (for when reproducible):**
-- Manual trigger sets need to 0 to force behavior
-- Behavior execution may not be completing properly
-- Current goal/activity state may get stuck
-- Race condition with autonomous behaviors
-
-**Files to Check (when investigating):**
-- `src/components/debug/environment/AutonomyDebug.vue` - Manual trigger implementation
-- `src/composables/game/useGuineaPigBehavior.ts` - Behavior execution and state cleanup
-- `src/stores/behaviorStateStore.ts` - Behavior state reset logic
-
-**Note:** If this bug reappears with reliable reproduction steps, move it back to active status
-
----
-
-##### Simultaneous Pooping Bug 📋 **IN PROGRESS**
-**Priority:** HIGH
-**Status:** 📋 In Progress
-
-**Issue:** Multiple guinea pigs poop too close together in time - they are staggered but not sufficiently randomized
-
-**Root Causes Identified:**
-1. **Identical initialization timestamps** - All guinea pigs adopted together got `Date.now()` for `lastPoopTime` and `lastDecisionTime`
-2. **Synchronized game loop** - All guinea pigs ticked in tight loop every 1 second
-3. **Deterministic behavior selection** - No randomization, so identical needs = identical choices
-
-**Solution Implemented:**
-
-**1. Random Offset to Initial Timestamps**
-- `petStoreManager.ts`: `lastPoopTime` now has 0-30 second random offset
-- `behaviorStateStore.ts`: `lastDecisionTime` now has 0-3 second random offset
-- Spreads out initial timers so guinea pigs don't start synchronized
-
-**2. Random Jitter to Decision Timing**
-- `useGuineaPigBehavior.ts`: Added 0-2 second random jitter to decision cooldown
-- Prevents guinea pigs from making decisions at exact same millisecond
-- Cooldown now `3000 + Math.random() * 2000` (3-5 seconds)
-
-**3. Randomization to Goal Selection**
-- `useGuineaPigBehavior.ts`: When multiple goals within 15 priority points, pick randomly (increased from 5)
-- Wider threshold allows more behavioral variety
-- Adds natural variation even when guinea pigs have similar needs/personalities
-- Prevents identical guinea pigs from always making identical choices
-
-**4. Random Need Decay Timing**
-- `guineaPigStore.ts`: Added random offset (0-5 seconds) to `needsLastUpdate` initialization
-- Prevents all guinea pigs from decaying needs at exact same time
-- Each guinea pig has slightly different need degradation timing
-
-**5. Game Start Desynchronization**
-- `gameTimingStore.ts`: Added random offset to `lastPoopTime` when game loop starts
-- Fixes issue where reloading game caused synchronized pooping
-- Applies random offset (0-30 seconds) when loading from save if last poop was recent
-
-**6. Location Detection Filtering**
-- `locationDetection.ts`: Added keyword filtering to only detect meaningful locations
-- Prevents false "near the water bottle" messages when guinea pig is far away
-- Only returns location if item name contains: water, bottle, food, bowl, shelter, hideaway, hideout, igloo, bed
-
-**Files Modified:**
-- `src/stores/petStoreManager.ts` - Random offset to `lastPoopTime` initialization
-- `src/stores/behaviorStateStore.ts` - Random offset to `lastDecisionTime` initialization
-- `src/stores/guineaPigStore.ts` - Random offset to `needsLastUpdate` initialization
-- `src/stores/gameTimingStore.ts` - Game start poop desynchronization
-- `src/composables/game/useGuineaPigBehavior.ts` - Jitter and wider goal randomization (5→15 priority threshold)
-- `src/utils/locationDetection.ts` - Meaningful location keyword filtering
-
-**Current Attempt - Per-Poop Randomization:**
-- Added random offset (0-10 seconds backwards) when guinea pig poops ([useGuineaPigBehavior.ts:1601-1605](src/composables/game/useGuineaPigBehavior.ts#L1601))
-- Makes next poop happen 20-30 seconds from current poop
-- Combined with existing initialization randomness (0-30 seconds)
-
-**Remaining Issues:**
-- Guinea pigs still poop too close together in time
-- Need more variance to spread poops across wider time window
-- Current: 20-30 second window per poop (10s variance)
-- Desired: More randomness so guinea pigs don't cluster their poops
-
-**Next Steps to Try:**
-- Increase random offset range (e.g., 0-20 seconds instead of 0-10)
-- Consider using truly random intervals (e.g., 15-45 seconds) instead of fixed 30s base
-- Add additional randomization layers
-- Test with 3+ guinea pigs to verify desynchronization holds over time
-
----
-
-#### UI/UX Bugs 🎨
-
-##### Clear Game Data Doesn't Clear Habitat View 📋 **MEDIUM PRIORITY**
-**Priority:** MEDIUM
-**Status:** 📋 Not Started
-
-**Issue:** Sometimes clicking "Clear Game Data" button doesn't clear the habitat visual display
-
-**Expected Behavior:**
-- Click "Clear Game Data" button
-- All game state clears (guinea pigs, items, needs, etc.)
-- Habitat view resets to empty/default state
-- All visual elements removed from habitat grid
-
-**Current Behavior:**
-- Game state clears in stores
-- Habitat view sometimes still shows guinea pigs and items
-- Visual display doesn't sync with cleared game state
-- May require page refresh to see cleared state
-
-**Investigation Required:**
-- Check if habitat view components are reactive to store changes
-- Verify guinea pig sprites are removed when `activeGuineaPigs` is cleared
-- Check if placed items list updates when cleared
-- Review clear game data implementation
-- Check if there's a Vue reactivity issue
-
-**Files to Check:**
-- `src/stores/gameController.ts` or similar - Clear game data logic
-- `src/components/game/habitat/HabitatVisual.vue` - Check reactivity to cleared data
-- `src/stores/guineaPigStore.ts` - Verify clearing logic
-- `src/stores/habitatConditions.ts` - Verify item clearing
-
-**Possible Causes:**
-- Habitat components not watching store state changes
-- Clear function not resetting all necessary state
-- Vue reactivity not detecting cleared arrays/maps
-- Cached references to cleared data
-
----
-
-#### Social Interaction Enhancements 🤝
-
-##### Multi-Type Guinea Pig Interactions 📋 **LOW PRIORITY**
-**Priority:** LOW
-**Status:** 📋 Not Started (Future Enhancement)
-
-**Goal:** Expand guinea pig social interactions beyond just "socialize"
-
-**Current System:**
-- Guinea pigs have single "socialize" interaction
-- Only increases social need
-- No variety in interaction types
-
-**Proposed Interaction Types:**
-
-**1. Play Interaction** (guinea pig to guinea pig)
-- Increases both social AND play needs
-- Example: Two guinea pigs chase each other, popcorn together
-- More energetic, requires both guinea pigs to be active
-- **Note:** User-to-guinea pig play (via socialize button) should also increase play need when playing together
-
-**2. Sniff/Investigate**
-- Increases social need only
-- Example: Guinea pigs sniff each other, investigate
-- Passive interaction, greeting behavior
-
-**3. Groom (Allogrooming)**
-- Increases social AND hygiene needs
-- Example: One guinea pig grooms another
-- Bonding behavior that also provides hygiene benefit
-- More common in bonded pairs
-
-**4. Huddle/Cuddle**
-- Increases social and comfort needs
-- Example: Guinea pigs snuggle together
-- Resting behavior, often during sleep
-
-**Current System Enhancement Needed:**
-- User-to-guinea pig socialize currently only increases social need
-- When interaction type is "play" (user playing with guinea pig), it should also increase play need
-- This would make user interaction more rewarding and realistic
-
-**Implementation Requirements:**
-- Expand social interaction system beyond single "socialize" behavior
-- Add interaction type selection based on context (energy levels, bond level)
-- Update message generation for different interaction types
-- Adjust need satisfaction based on interaction type
-- Consider bond level affecting interaction availability
-
-**Files to Modify:**
-- `src/composables/game/useGuineaPigBehavior.ts` - Expand social interaction logic
-- `src/utils/messageGenerator.ts` - Add new interaction messages
-- `src/stores/guineaPigStore.ts` - May need interaction type tracking
-
-**Note:** This is a Phase 5+ enhancement, not critical for Phase 4.5
-
----
-
-### Feature Enhancements ✨
-
-#### Pushable Toys System 📋 **LOW PRIORITY**
-**Priority:** LOW
-**Status:** 📋 Not Started (Future Enhancement)
-
-**Goal:** Guinea pigs physically move balls and pushable toys across grid cells
-
-**Current Behavior:**
-- Guinea pig plays with ball in place
-- Ball doesn't move
-- Message: "plays with a toy"
-
-**Desired Behavior:**
-- Guinea pig pushes ball across 1-3 grid cells
-- Ball position updates in real-time
-- Message: "pushes the ball across the habitat"
-- Visual animation of ball moving
-
-**Implementation Requirements:**
-1. Add `pushable: boolean` metadata to toy items
-2. Track toy positions in habitatConditions (similar to guinea pig positions)
-3. Update play behavior to move pushable toys
-4. Add visual animation for toy movement
-5. Update toy rendering to use dynamic position
-
-**Files to Modify:**
-- `src/data/supplies/habitat/toys.json` - Add pushable flag
-- `src/stores/habitatConditions.ts` - Track toy positions
-- `src/composables/game/useGuineaPigBehavior.ts` - Play behavior with push logic
-- Toy rendering components - Use dynamic positioning
-
-**Note:** This is a nice-to-have feature, not critical for Phase 4.5 completion
-
----
-
-### Manual Testing & Balance 🎮
-
-#### Gameplay Testing Checklist 📋 **Planned**
-**Priority:** HIGH
-**Status:** 📋 Not Started
-
-**Testing Areas:**
-
-**1. Needs & Wellness System**
-- [ ] All 11 needs decay at correct rates
-- [ ] Wellness calculation reflects actual need state
-- [ ] Personality traits affect decay as documented
-- [ ] Habitat conditions affect needs appropriately
-- [ ] Need thresholds trigger correct autonomous behaviors
-
-**2. Autonomous Behaviors**
-- [ ] All 12 behavior types execute correctly
-- [ ] Pathfinding handles all habitat layouts
-- [ ] Guinea pigs don't get stuck on items
-- [ ] Behavior priorities make sense (urgent needs override low needs)
-- [ ] Personality affects behavior frequency and effectiveness
-
-**3. Food & Consumption**
-- [ ] New serving amounts work correctly
-- [ ] Food consumption limits enforce properly
-- [ ] Food freshness decays at reasonable rate
-- [ ] Guinea pigs prefer liked foods over neutral
-- [ ] Guinea pigs avoid disliked foods
-
-**4. Habitat Conditions**
-- [ ] Cleanliness decays at reasonable rate
-- [ ] Bedding freshness affects comfort appropriately
-- [ ] Water level consumption matches guinea pig drinking
-- [ ] Hay freshness per-rack works correctly
-- [ ] Poop accumulation affects cleanliness
-
-**5. Social Bonding**
-- [ ] Bond levels increase with socialize interactions
-- [ ] Bond levels persist across sessions
-- [ ] Bond levels affect social need satisfaction
-- [ ] Multiple guinea pig pairs track independently
-
-**6. Item Metadata & Realism**
-- [ ] All item types have correct metadata
-- [ ] Chew durability degrades at reasonable rates
-- [ ] Hideaway/shelter items provide security
-- [ ] Toys increase play satisfaction
-- [ ] Food bowls and hay racks function correctly
-
----
-
-### Realism & Balance Rules 📐
-
-#### Create Realism Guidelines 📋 **Planned**
-**Priority:** MEDIUM
-**Status:** 📋 Not Started
-
-**Goal:** Document realistic guinea pig care guidelines for game balance
-
-**Topics to Cover:**
-1. **Feeding Frequency & Amounts**
-   - How often should guinea pigs need food/water?
-   - What's a realistic hunger cycle duration?
-   - Hay should be unlimited - guinea pigs graze constantly
-
-2. **Sleep Patterns**
-   - Guinea pigs sleep in short bursts (5-10 minutes)
-   - 4-6 hours total sleep per day
-   - More active at dawn/dusk (crepuscular)
-
-3. **Social Behavior**
-   - Guinea pigs are highly social - need companionship
-   - Bonding takes weeks/months in real life
-   - Play behaviors: popcorning, zoomies, following, grooming
-
-4. **Hygiene & Maintenance**
-   - Self-grooming is frequent (multiple times per day)
-   - Nails grow slowly (~monthly trimming in real life)
-   - Poop frequently (100+ times per day!)
-   - Clean habitat reduces stress
-
-5. **Habitat Preferences**
-   - Need hiding places for security
-   - Enjoy tunnels and exploration
-   - Sensitive to cleanliness (varies by personality)
-   - Temperature and noise sensitivity
-
-**Output:** Create [game-design/guinea-pig-realism-guide.md](game-design/guinea-pig-realism-guide.md)
-
----
-
-### Adoption System Enhancement 🐹
-
-#### Pre-Bonded Pairs & Solo Guinea Pigs 📋 **Planned**
-**Priority:** HIGH
-**Status:** 📋 Not Started
-
-**Goal:** Implement adoption constraints for bonded pairs and solo-suitable guinea pigs with enhanced observation system
-
-**Core Rules:**
-1. **Bonded Pairs Must Be Adopted Together**
-   - Guinea pigs with existing bonds in the pet store must be adopted as a pair
-   - User cannot adopt just one of a bonded pair
-   - Adoption will be denied until user selects both bonded guinea pigs
-   - Error message: "These guinea pigs are bonded and must be adopted together"
-
-2. **Solo Guinea Pig Rules**
-   - Some guinea pigs are suited to be solo (marked as `suitableForSolo: true`)
-   - Solo-suitable guinea pigs were found as solo rescues (backstory)
-   - Non-solo guinea pigs CANNOT be adopted alone
-   - User must either adopt a pair or adopt a solo-suitable guinea pig
-   - Error message: "This guinea pig needs a companion. Select another guinea pig or choose one suited for solo living"
-
-3. **Adoption Combinations Allowed:**
-   - ✅ Bonded pair (both guinea pigs)
-   - ✅ Two unbonded guinea pigs (any combination)
-   - ✅ One solo-suitable guinea pig
-   - ❌ One guinea pig from bonded pair
-   - ❌ One non-solo-suitable guinea pig alone
-
-**Enhanced Observation System:**
-
-**3 Observation Clues per Guinea Pig:**
-1. **Social/Bonding Clue** (NEW)
-   - Reveals bonding information or solo suitability
-   - Examples for bonded pairs:
-     - "Seems very attached to [other guinea pig name]"
-     - "Always stays close to [other guinea pig name]"
-     - "Grooms [other guinea pig name] frequently"
-   - Examples for solo-suitable:
-     - "Prefers their own space"
-     - "Was found living alone and seems content that way"
-     - "Independent personality, doesn't seek companionship"
-   - Examples for social but unbonded:
-     - "Friendly and would enjoy a companion"
-     - "Curious about other guinea pigs"
-     - "Would do well with a friend"
-
-2. **Personality Clue** (existing)
-   - Reveals one personality trait
-   - Examples: "Very playful", "Cautious and careful", "Bold explorer"
-
-3. **Preference Clue** (existing)
-   - Reveals one food preference
-   - Examples: "Seems to enjoy carrots", "Not interested in apples"
-
-**Habitat Constraints:**
-- Bonded pairs can only be placed in habitat together (both or neither)
-- Cannot mix bonded pairs in same habitat (e.g., can't have 4 guinea pigs if they're 2 separate bonded pairs)
-- Unbonded guinea pigs can be mixed freely (existing behavior)
-
-**Future Enhancement (noted for Phase 5+):**
-- Allow multiple bonded pairs in same habitat (4+ guinea pigs)
-- Complex social dynamics between multiple pairs
-- Larger habitat sizes to accommodate more guinea pigs
-
-**Implementation Tasks:**
-- [ ] Add `bondedWith: string | null` field to GuineaPig type (stores partner's ID)
-- [ ] Add `suitableForSolo: boolean` field to GuineaPig type
-- [ ] Update pet store generation to create some bonded pairs (~20% of guinea pigs)
-- [ ] Update pet store generation to mark some guinea pigs as solo-suitable (~10%)
-- [ ] Add adoption validation logic in petStoreManager
-- [ ] Add error messaging for invalid adoption attempts
-- [ ] Expand observation system from 2 to 3 clues
-- [ ] Add social/bonding clue generation logic
-- [ ] Update habitat placement validation to enforce bonded pair rules
-- [ ] Add UI indicators for bonded pairs in pet store (visual link or badge)
-- [ ] Update guinea pig cards to show "Bonded with [name]" or "Suitable for solo living"
-
-**Files to Modify:**
-- `src/stores/guineaPigStore.ts` - Add bondedWith and suitableForSolo fields
-- `src/stores/petStoreManager.ts` - Generation logic and adoption validation
-- `src/utils/observationGenerator.ts` - Expand to 3 clues, add social clue logic
-- `src/components/game/petstore/GuineaPigCard.vue` - Display bonding status
-- `src/views/PetStoreView.vue` - Adoption validation and error messaging
-- `src/views/GuineaPigsView.vue` - Habitat placement validation
-
-**Testing:**
-- [ ] Generate pet store with bonded pairs visible
-- [ ] Attempt to adopt one of bonded pair (should fail)
-- [ ] Adopt full bonded pair (should succeed)
-- [ ] Attempt to adopt non-solo guinea pig alone (should fail)
-- [ ] Adopt solo-suitable guinea pig alone (should succeed)
-- [ ] Verify observation system shows all 3 clues
-- [ ] Verify bonded pairs cannot be separated in habitat
-
----
-
-## 🎯 **High Priority Improvements**
-
-### Bonding Debug UI Cleanup 🔥
-**Priority:** HIGH
-**Status:** 📋 Not Started
-
-**Goal:** Clean up Social Bonding debug interface and test system thoroughly
-
-**Tasks:**
-- [ ] Review FriendshipDebug.vue layout and styling
-- [ ] Add empty state message when no game session
-- [ ] Test bond level increases with socialize interactions
-- [ ] Verify bond data persists across page reloads
-- [ ] Test with multiple guinea pig pairs (3+ guinea pigs)
-- [ ] Add bond level visualization (progress bar or meter)
-- [ ] Ensure bond levels display correctly in guinea pig tooltips
-
-**Files to Modify:**
-- `src/components/debug/gameplay/FriendshipDebug.vue` - UI cleanup
-- `src/stores/guineaPigStore.ts` - Bond data verification
-
----
-
 ### Critical Bug Fixes 🔥
 
 #### Wellness Calculation Always at 0% ✅ **FIXED**
@@ -532,38 +69,6 @@ All Phase 4 systems implemented and tested:
 - `src/utils/bondingProgression.ts` - Calculate wellness for bonding bonus
 - `src/stores/guineaPigStore.ts` - Removed wellness from GuineaPigStats interface
 - `src/stores/petStoreManager.ts` - Removed wellness initialization
-
----
-
-#### Pause Doesn't Stop Movement ✅ **RESOLVED**
-**Priority:** CRITICAL
-**Status:** ✅ Fixed
-
-**Issue:** When game is paused, guinea pigs continue moving and complete their current task
-
-**Solution Implemented:**
-
-**Movement Pause:**
-- Added `isGameActive` check in movement setTimeout ([useMovement.ts:133](src/composables/game/useMovement.ts#L133))
-- Created `resumeMovement()` function to resume path after unpause ([useMovement.ts:163-168](src/composables/game/useMovement.ts#L163))
-- Wired up resume logic in game timing store ([gameTimingStore.ts:138-141](src/stores/gameTimingStore.ts#L138))
-- Exposed `resumeMovement` from behavior composable ([useGuineaPigBehavior.ts:1626](src/composables/game/useGuineaPigBehavior.ts#L1626))
-
-**Animation Pause:**
-- Added CSS `animation-play-state: paused` when game paused ([GuineaPigSprite.vue:189-191](src/components/game/habitat/GuineaPigSprite.vue#L189))
-- Added paused class binding to sprite ([GuineaPigSprite.vue:9](src/components/game/habitat/GuineaPigSprite.vue#L9))
-
-**Behavior Pause:**
-- Created `pausableDelay()` utility for pause-aware timers ([pausableTimer.ts](src/utils/pausableTimer.ts))
-- Updated play behavior to use pausableDelay ([useGuineaPigBehavior.ts:1089](src/composables/game/useGuineaPigBehavior.ts#L1089))
-- Updated socialize behavior to use pausableDelay ([useGuineaPigBehavior.ts:1279](src/composables/game/useGuineaPigBehavior.ts#L1279))
-
-**Result:**
-- Guinea pigs freeze immediately when game is paused (movement, animations, and behaviors)
-- All CSS animations (walking, playing/wiggling) pause mid-frame
-- Behavior timers (play duration, socialize duration) pause and resume correctly
-- Movement and animations resume from exact state when unpaused
-- No path completion, animation, or behavior completion during pause
 
 ---
 
@@ -806,7 +311,195 @@ const distance = Math.abs(itemRow - currentPos.row) + Math.abs(itemCol - current
 
 ---
 
-### UI/UX Bugs 🎨
+### Bug Fixes 🐛
+
+#### Critical Bugs 🔥
+
+##### Manual Behavior Trigger Freezes Guinea Pig ⏸️ **DEFERRED**
+**Priority:** CRITICAL (when reproducible)
+**Status:** ⏸️ Deferred - Cannot Reproduce
+
+**Issue:** Manually triggering behaviors (especially drink) may cause guinea pig to freeze and stop fulfilling needs autonomously
+
+**Observed Behavior (Initial Report):**
+- After using manual behavior trigger buttons (Autonomy Controls), guinea pig freezes
+- Guinea pig no longer fulfills needs on its own
+- Appears stuck - needs degrade but no autonomous behaviors execute
+- Happened when manually triggering "drink" behavior
+- Guinea pig remains frozen until game restart
+
+**Current Status:**
+- ⏸️ Cannot reproduce the issue consistently
+- Manual triggers appear to be working correctly in testing
+- May be a rare edge case or race condition
+- Deferring investigation until more information is available
+
+**If Issue Reoccurs:**
+- Document exact steps to reproduce
+- Note which behavior was triggered
+- Check guinea pig's current needs state
+- Note if multiple guinea pigs are present
+- Check browser console for errors
+- Note any other behaviors that happened simultaneously (pooping, etc.)
+
+**Root Cause Theories (for when reproducible):**
+- Manual trigger sets need to 0 to force behavior
+- Behavior execution may not be completing properly
+- Current goal/activity state may get stuck
+- Race condition with autonomous behaviors
+
+**Files to Check (when investigating):**
+- `src/components/debug/environment/AutonomyDebug.vue` - Manual trigger implementation
+- `src/composables/game/useGuineaPigBehavior.ts` - Behavior execution and state cleanup
+- `src/stores/behaviorStateStore.ts` - Behavior state reset logic
+
+**Note:** If this bug reappears with reliable reproduction steps, move it back to active status
+
+---
+
+##### Simultaneous Pooping Bug 📋 **IN PROGRESS**
+**Priority:** HIGH
+**Status:** 📋 In Progress
+
+**Issue:** Multiple guinea pigs poop too close together in time - they are staggered but not sufficiently randomized
+
+**Root Causes Identified:**
+1. **Identical initialization timestamps** - All guinea pigs adopted together got `Date.now()` for `lastPoopTime` and `lastDecisionTime`
+2. **Synchronized game loop** - All guinea pigs ticked in tight loop every 1 second
+3. **Deterministic behavior selection** - No randomization, so identical needs = identical choices
+
+**Solution Implemented:**
+
+**1. Random Offset to Initial Timestamps**
+- `petStoreManager.ts`: `lastPoopTime` now has 0-30 second random offset
+- `behaviorStateStore.ts`: `lastDecisionTime` now has 0-3 second random offset
+- Spreads out initial timers so guinea pigs don't start synchronized
+
+**2. Random Jitter to Decision Timing**
+- `useGuineaPigBehavior.ts`: Added 0-2 second random jitter to decision cooldown
+- Prevents guinea pigs from making decisions at exact same millisecond
+- Cooldown now `3000 + Math.random() * 2000` (3-5 seconds)
+
+**3. Randomization to Goal Selection**
+- `useGuineaPigBehavior.ts`: When multiple goals within 15 priority points, pick randomly (increased from 5)
+- Wider threshold allows more behavioral variety
+- Adds natural variation even when guinea pigs have similar needs/personalities
+- Prevents identical guinea pigs from always making identical choices
+
+**4. Random Need Decay Timing**
+- `guineaPigStore.ts`: Added random offset (0-5 seconds) to `needsLastUpdate` initialization
+- Prevents all guinea pigs from decaying needs at exact same time
+- Each guinea pig has slightly different need degradation timing
+
+**5. Game Start Desynchronization**
+- `gameTimingStore.ts`: Added random offset to `lastPoopTime` when game loop starts
+- Fixes issue where reloading game caused synchronized pooping
+- Applies random offset (0-30 seconds) when loading from save if last poop was recent
+
+**6. Location Detection Filtering**
+- `locationDetection.ts`: Added keyword filtering to only detect meaningful locations
+- Prevents false "near the water bottle" messages when guinea pig is far away
+- Only returns location if item name contains: water, bottle, food, bowl, shelter, hideaway, hideout, igloo, bed
+
+**Files Modified:**
+- `src/stores/petStoreManager.ts` - Random offset to `lastPoopTime` initialization
+- `src/stores/behaviorStateStore.ts` - Random offset to `lastDecisionTime` initialization
+- `src/stores/guineaPigStore.ts` - Random offset to `needsLastUpdate` initialization
+- `src/stores/gameTimingStore.ts` - Game start poop desynchronization
+- `src/composables/game/useGuineaPigBehavior.ts` - Jitter and wider goal randomization (5→15 priority threshold)
+- `src/utils/locationDetection.ts` - Meaningful location keyword filtering
+
+**Current Attempt - Per-Poop Randomization:**
+- Added random offset (0-10 seconds backwards) when guinea pig poops ([useGuineaPigBehavior.ts:1601-1605](src/composables/game/useGuineaPigBehavior.ts#L1601))
+- Makes next poop happen 20-30 seconds from current poop
+- Combined with existing initialization randomness (0-30 seconds)
+
+**Remaining Issues:**
+- Guinea pigs still poop too close together in time
+- Need more variance to spread poops across wider time window
+- Current: 20-30 second window per poop (10s variance)
+- Desired: More randomness so guinea pigs don't cluster their poops
+
+**Next Steps to Try:**
+- Increase random offset range (e.g., 0-20 seconds instead of 0-10)
+- Consider using truly random intervals (e.g., 15-45 seconds) instead of fixed 30s base
+- Add additional randomization layers
+- Test with 3+ guinea pigs to verify desynchronization holds over time
+
+---
+
+##### Pause Doesn't Stop Movement ✅ **RESOLVED**
+**Priority:** CRITICAL
+**Status:** ✅ Fixed
+
+**Issue:** When game is paused, guinea pigs continue moving and complete their current task
+
+**Solution Implemented:**
+
+**Movement Pause:**
+- Added `isGameActive` check in movement setTimeout ([useMovement.ts:133](src/composables/game/useMovement.ts#L133))
+- Created `resumeMovement()` function to resume path after unpause ([useMovement.ts:163-168](src/composables/game/useMovement.ts#L163))
+- Wired up resume logic in game timing store ([gameTimingStore.ts:138-141](src/stores/gameTimingStore.ts#L138))
+- Exposed `resumeMovement` from behavior composable ([useGuineaPigBehavior.ts:1626](src/composables/game/useGuineaPigBehavior.ts#L1626))
+
+**Animation Pause:**
+- Added CSS `animation-play-state: paused` when game paused ([GuineaPigSprite.vue:189-191](src/components/game/habitat/GuineaPigSprite.vue#L189))
+- Added paused class binding to sprite ([GuineaPigSprite.vue:9](src/components/game/habitat/GuineaPigSprite.vue#L9))
+
+**Behavior Pause:**
+- Created `pausableDelay()` utility for pause-aware timers ([pausableTimer.ts](src/utils/pausableTimer.ts))
+- Updated play behavior to use pausableDelay ([useGuineaPigBehavior.ts:1089](src/composables/game/useGuineaPigBehavior.ts#L1089))
+- Updated socialize behavior to use pausableDelay ([useGuineaPigBehavior.ts:1279](src/composables/game/useGuineaPigBehavior.ts#L1279))
+
+**Result:**
+- Guinea pigs freeze immediately when game is paused (movement, animations, and behaviors)
+- All CSS animations (walking, playing/wiggling) pause mid-frame
+- Behavior timers (play duration, socialize duration) pause and resume correctly
+- Movement and animations resume from exact state when unpaused
+- No path completion, animation, or behavior completion during pause
+
+---
+
+#### UI/UX Bugs 🎨
+
+##### Clear Game Data Doesn't Clear Habitat View 📋 **MEDIUM PRIORITY**
+**Priority:** MEDIUM
+**Status:** 📋 Not Started
+
+**Issue:** Sometimes clicking "Clear Game Data" button doesn't clear the habitat visual display
+
+**Expected Behavior:**
+- Click "Clear Game Data" button
+- All game state clears (guinea pigs, items, needs, etc.)
+- Habitat view resets to empty/default state
+- All visual elements removed from habitat grid
+
+**Current Behavior:**
+- Game state clears in stores
+- Habitat view sometimes still shows guinea pigs and items
+- Visual display doesn't sync with cleared game state
+- May require page refresh to see cleared state
+
+**Investigation Required:**
+- Check if habitat view components are reactive to store changes
+- Verify guinea pig sprites are removed when `activeGuineaPigs` is cleared
+- Check if placed items list updates when cleared
+- Review clear game data implementation
+- Check if there's a Vue reactivity issue
+
+**Files to Check:**
+- `src/stores/gameController.ts` or similar - Clear game data logic
+- `src/components/game/habitat/HabitatVisual.vue` - Check reactivity to cleared data
+- `src/stores/guineaPigStore.ts` - Verify clearing logic
+- `src/stores/habitatConditions.ts` - Verify item clearing
+
+**Possible Causes:**
+- Habitat components not watching store state changes
+- Clear function not resetting all necessary state
+- Vue reactivity not detecting cleared arrays/maps
+- Cached references to cleared data
+
+---
 
 ##### Activity Messages Timing Lag ✅ **RESOLVED**
 **Priority:** MEDIUM
@@ -887,6 +580,64 @@ Already resolved by the Item Tooltips Cut Off fix above. The teleport implementa
 - No z-index conflicts
 - Tooltips always appear on top of all habitat content
 - Guinea pig sprites and items never overlap tooltips
+
+---
+
+#### Social Interaction Enhancements 🤝
+
+##### Multi-Type Guinea Pig Interactions 📋 **LOW PRIORITY**
+**Priority:** LOW
+**Status:** 📋 Not Started (Future Enhancement)
+
+**Goal:** Expand guinea pig social interactions beyond just "socialize"
+
+**Current System:**
+- Guinea pigs have single "socialize" interaction
+- Only increases social need
+- No variety in interaction types
+
+**Proposed Interaction Types:**
+
+**1. Play Interaction** (guinea pig to guinea pig)
+- Increases both social AND play needs
+- Example: Two guinea pigs chase each other, popcorn together
+- More energetic, requires both guinea pigs to be active
+- **Note:** User-to-guinea pig play (via socialize button) should also increase play need when playing together
+
+**2. Sniff/Investigate**
+- Increases social need only
+- Example: Guinea pigs sniff each other, investigate
+- Passive interaction, greeting behavior
+
+**3. Groom (Allogrooming)**
+- Increases social AND hygiene needs
+- Example: One guinea pig grooms another
+- Bonding behavior that also provides hygiene benefit
+- More common in bonded pairs
+
+**4. Huddle/Cuddle**
+- Increases social and comfort needs
+- Example: Guinea pigs snuggle together
+- Resting behavior, often during sleep
+
+**Current System Enhancement Needed:**
+- User-to-guinea pig socialize currently only increases social need
+- When interaction type is "play" (user playing with guinea pig), it should also increase play need
+- This would make user interaction more rewarding and realistic
+
+**Implementation Requirements:**
+- Expand social interaction system beyond single "socialize" behavior
+- Add interaction type selection based on context (energy levels, bond level)
+- Update message generation for different interaction types
+- Adjust need satisfaction based on interaction type
+- Consider bond level affecting interaction availability
+
+**Files to Modify:**
+- `src/composables/game/useGuineaPigBehavior.ts` - Expand social interaction logic
+- `src/utils/messageGenerator.ts` - Add new interaction messages
+- `src/stores/guineaPigStore.ts` - May need interaction type tracking
+
+**Note:** This is a Phase 5+ enhancement, not critical for Phase 4.5
 
 ---
 
@@ -980,6 +731,40 @@ Already resolved by the Item Tooltips Cut Off fix above. The teleport implementa
   - Added `isHovered` state tracking
   - Added `popoverTitle`, `popoverMetadata`, `popoverActions` computed properties
   - Added `handleRefillWater()` function that calls store method
+
+---
+
+#### Pushable Toys System 📋 **LOW PRIORITY**
+**Priority:** LOW
+**Status:** 📋 Not Started (Future Enhancement)
+
+**Goal:** Guinea pigs physically move balls and pushable toys across grid cells
+
+**Current Behavior:**
+- Guinea pig plays with ball in place
+- Ball doesn't move
+- Message: "plays with a toy"
+
+**Desired Behavior:**
+- Guinea pig pushes ball across 1-3 grid cells
+- Ball position updates in real-time
+- Message: "pushes the ball across the habitat"
+- Visual animation of ball moving
+
+**Implementation Requirements:**
+1. Add `pushable: boolean` metadata to toy items
+2. Track toy positions in habitatConditions (similar to guinea pig positions)
+3. Update play behavior to move pushable toys
+4. Add visual animation for toy movement
+5. Update toy rendering to use dynamic position
+
+**Files to Modify:**
+- `src/data/supplies/habitat/toys.json` - Add pushable flag
+- `src/stores/habitatConditions.ts` - Track toy positions
+- `src/composables/game/useGuineaPigBehavior.ts` - Play behavior with push logic
+- Toy rendering components - Use dynamic positioning
+
+**Note:** This is a nice-to-have feature, not critical for Phase 4.5 completion
 
 ---
 
@@ -1083,6 +868,217 @@ Start a game in the Game Controller view to see [view-specific] data.
 - [NeedsPanel.vue](src/components/debug/environment/NeedsPanel.vue#L78-83) - Standardized empty state message
 - [PoopDebug.vue](src/components/debug/environment/PoopDebug.vue#L64-69) - Standardized empty state message and styling
 - [AutonomyDebug.vue](src/components/debug/environment/AutonomyDebug.vue#L338-343) - Standardized empty state message
+
+---
+
+### Manual Testing & Balance 🎮
+
+#### Gameplay Testing Checklist 📋 **Planned**
+**Priority:** HIGH
+**Status:** 📋 Not Started
+
+**Testing Areas:**
+
+**1. Needs & Wellness System**
+- [ ] All 11 needs decay at correct rates
+- [ ] Wellness calculation reflects actual need state
+- [ ] Personality traits affect decay as documented
+- [ ] Habitat conditions affect needs appropriately
+- [ ] Need thresholds trigger correct autonomous behaviors
+
+**2. Autonomous Behaviors**
+- [ ] All 12 behavior types execute correctly
+- [ ] Pathfinding handles all habitat layouts
+- [ ] Guinea pigs don't get stuck on items
+- [ ] Behavior priorities make sense (urgent needs override low needs)
+- [ ] Personality affects behavior frequency and effectiveness
+
+**3. Food & Consumption**
+- [ ] New serving amounts work correctly
+- [ ] Food consumption limits enforce properly
+- [ ] Food freshness decays at reasonable rate
+- [ ] Guinea pigs prefer liked foods over neutral
+- [ ] Guinea pigs avoid disliked foods
+
+**4. Habitat Conditions**
+- [ ] Cleanliness decays at reasonable rate
+- [ ] Bedding freshness affects comfort appropriately
+- [ ] Water level consumption matches guinea pig drinking
+- [ ] Hay freshness per-rack works correctly
+- [ ] Poop accumulation affects cleanliness
+
+**5. Social Bonding**
+- [ ] Bond levels increase with socialize interactions
+- [ ] Bond levels persist across sessions
+- [ ] Bond levels affect social need satisfaction
+- [ ] Multiple guinea pig pairs track independently
+
+**6. Item Metadata & Realism**
+- [ ] All item types have correct metadata
+- [ ] Chew durability degrades at reasonable rates
+- [ ] Hideaway/shelter items provide security
+- [ ] Toys increase play satisfaction
+- [ ] Food bowls and hay racks function correctly
+
+---
+
+### Realism & Balance Rules 📐
+
+#### Create Realism Guidelines 📋 **Planned**
+**Priority:** MEDIUM
+**Status:** 📋 Not Started
+
+**Goal:** Document realistic guinea pig care guidelines for game balance
+
+**Topics to Cover:**
+1. **Feeding Frequency & Amounts**
+   - How often should guinea pigs need food/water?
+   - What's a realistic hunger cycle duration?
+   - Hay should be unlimited - guinea pigs graze constantly
+
+2. **Sleep Patterns**
+   - Guinea pigs sleep in short bursts (5-10 minutes)
+   - 4-6 hours total sleep per day
+   - More active at dawn/dusk (crepuscular)
+
+3. **Social Behavior**
+   - Guinea pigs are highly social - need companionship
+   - Bonding takes weeks/months in real life
+   - Play behaviors: popcorning, zoomies, following, grooming
+
+4. **Hygiene & Maintenance**
+   - Self-grooming is frequent (multiple times per day)
+   - Nails grow slowly (~monthly trimming in real life)
+   - Poop frequently (100+ times per day!)
+   - Clean habitat reduces stress
+
+5. **Habitat Preferences**
+   - Need hiding places for security
+   - Enjoy tunnels and exploration
+   - Sensitive to cleanliness (varies by personality)
+   - Temperature and noise sensitivity
+
+**Output:** Create [game-design/guinea-pig-realism-guide.md](game-design/guinea-pig-realism-guide.md)
+
+---
+
+### Adoption System Enhancement 🐹
+
+#### Pre-Bonded Pairs & Solo Guinea Pigs 📋 **Planned**
+**Priority:** HIGH
+**Status:** 📋 Not Started
+
+**Goal:** Implement adoption constraints for bonded pairs and solo-suitable guinea pigs with enhanced observation system
+
+**Core Rules:**
+1. **Bonded Pairs Must Be Adopted Together**
+   - Guinea pigs with existing bonds in the pet store must be adopted as a pair
+   - User cannot adopt just one of a bonded pair
+   - Adoption will be denied until user selects both bonded guinea pigs
+   - Error message: "These guinea pigs are bonded and must be adopted together"
+
+2. **Solo Guinea Pig Rules**
+   - Some guinea pigs are suited to be solo (marked as `suitableForSolo: true`)
+   - Solo-suitable guinea pigs were found as solo rescues (backstory)
+   - Non-solo guinea pigs CANNOT be adopted alone
+   - User must either adopt a pair or adopt a solo-suitable guinea pig
+   - Error message: "This guinea pig needs a companion. Select another guinea pig or choose one suited for solo living"
+
+3. **Adoption Combinations Allowed:**
+   - ✅ Bonded pair (both guinea pigs)
+   - ✅ Two unbonded guinea pigs (any combination)
+   - ✅ One solo-suitable guinea pig
+   - ❌ One guinea pig from bonded pair
+   - ❌ One non-solo-suitable guinea pig alone
+
+**Enhanced Observation System:**
+
+**3 Observation Clues per Guinea Pig:**
+1. **Social/Bonding Clue** (NEW)
+   - Reveals bonding information or solo suitability
+   - Examples for bonded pairs:
+     - "Seems very attached to [other guinea pig name]"
+     - "Always stays close to [other guinea pig name]"
+     - "Grooms [other guinea pig name] frequently"
+   - Examples for solo-suitable:
+     - "Prefers their own space"
+     - "Was found living alone and seems content that way"
+     - "Independent personality, doesn't seek companionship"
+   - Examples for social but unbonded:
+     - "Friendly and would enjoy a companion"
+     - "Curious about other guinea pigs"
+     - "Would do well with a friend"
+
+2. **Personality Clue** (existing)
+   - Reveals one personality trait
+   - Examples: "Very playful", "Cautious and careful", "Bold explorer"
+
+3. **Preference Clue** (existing)
+   - Reveals one food preference
+   - Examples: "Seems to enjoy carrots", "Not interested in apples"
+
+**Habitat Constraints:**
+- Bonded pairs can only be placed in habitat together (both or neither)
+- Cannot mix bonded pairs in same habitat (e.g., can't have 4 guinea pigs if they're 2 separate bonded pairs)
+- Unbonded guinea pigs can be mixed freely (existing behavior)
+
+**Future Enhancement (noted for Phase 5+):**
+- Allow multiple bonded pairs in same habitat (4+ guinea pigs)
+- Complex social dynamics between multiple pairs
+- Larger habitat sizes to accommodate more guinea pigs
+
+**Implementation Tasks:**
+- [ ] Add `bondedWith: string | null` field to GuineaPig type (stores partner's ID)
+- [ ] Add `suitableForSolo: boolean` field to GuineaPig type
+- [ ] Update pet store generation to create some bonded pairs (~20% of guinea pigs)
+- [ ] Update pet store generation to mark some guinea pigs as solo-suitable (~10%)
+- [ ] Add adoption validation logic in petStoreManager
+- [ ] Add error messaging for invalid adoption attempts
+- [ ] Expand observation system from 2 to 3 clues
+- [ ] Add social/bonding clue generation logic
+- [ ] Update habitat placement validation to enforce bonded pair rules
+- [ ] Add UI indicators for bonded pairs in pet store (visual link or badge)
+- [ ] Update guinea pig cards to show "Bonded with [name]" or "Suitable for solo living"
+
+**Files to Modify:**
+- `src/stores/guineaPigStore.ts` - Add bondedWith and suitableForSolo fields
+- `src/stores/petStoreManager.ts` - Generation logic and adoption validation
+- `src/utils/observationGenerator.ts` - Expand to 3 clues, add social clue logic
+- `src/components/game/petstore/GuineaPigCard.vue` - Display bonding status
+- `src/views/PetStoreView.vue` - Adoption validation and error messaging
+- `src/views/GuineaPigsView.vue` - Habitat placement validation
+
+**Testing:**
+- [ ] Generate pet store with bonded pairs visible
+- [ ] Attempt to adopt one of bonded pair (should fail)
+- [ ] Adopt full bonded pair (should succeed)
+- [ ] Attempt to adopt non-solo guinea pig alone (should fail)
+- [ ] Adopt solo-suitable guinea pig alone (should succeed)
+- [ ] Verify observation system shows all 3 clues
+- [ ] Verify bonded pairs cannot be separated in habitat
+
+---
+
+## 🎯 **High Priority Improvements**
+
+### Bonding Debug UI Cleanup 🔥
+**Priority:** HIGH
+**Status:** 📋 Not Started
+
+**Goal:** Clean up Social Bonding debug interface and test system thoroughly
+
+**Tasks:**
+- [ ] Review FriendshipDebug.vue layout and styling
+- [ ] Add empty state message when no game session
+- [ ] Test bond level increases with socialize interactions
+- [ ] Verify bond data persists across page reloads
+- [ ] Test with multiple guinea pig pairs (3+ guinea pigs)
+- [ ] Add bond level visualization (progress bar or meter)
+- [ ] Ensure bond levels display correctly in guinea pig tooltips
+
+**Files to Modify:**
+- `src/components/debug/gameplay/FriendshipDebug.vue` - UI cleanup
+- `src/stores/guineaPigStore.ts` - Bond data verification
 
 ---
 

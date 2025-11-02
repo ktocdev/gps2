@@ -16,7 +16,8 @@
       <div class="panel__content">
         <div v-if="activeGuineaPigs.length === 0" class="panel panel--compact panel--warning">
           <div class="panel__content text-center">
-            <p>No active guinea pigs. Start a game session from the Pet Store tab to test Stardust Sanctuary.</p>
+            <p class="text-label text-label--muted mb-2">No guinea pigs in game</p>
+            <p class="text-label--small">Start a game in the Game Controller view to see Stardust Sanctuary data.</p>
           </div>
         </div>
         <div v-else class="sanctuary-debug__guinea-pig-list">

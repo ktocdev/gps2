@@ -1583,7 +1583,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
   /**
    * Check and handle autonomous poop dropping (environmental interaction)
    * Guinea pigs poop naturally every 30 seconds (for testing/demo purposes)
-   * Random variance (±10 seconds) prevents all guinea pigs from pooping simultaneously
    */
   function checkAutonomousPooping(): void {
     const gp = guineaPig.value
@@ -1591,11 +1590,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     const timeSinceLastPoop = Date.now() - gp.lastPoopTime
 
-    // Add random variance to interval (±10 seconds) to prevent synchronized pooping
-    const randomVariance = (Math.random() - 0.5) * 20000 // -10s to +10s
-    const poopInterval = POOP_INTERVAL_MS + randomVariance
-
-    if (timeSinceLastPoop > poopInterval) {
+    if (timeSinceLastPoop > POOP_INTERVAL_MS) {
       // Drop poop at current position
       const currentPos = movement.currentPosition.value
 
@@ -1603,8 +1598,11 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       const subgridPos = gridToSubgridWithOffset(currentPos)
       habitatConditions.addPoop(subgridPos.x, subgridPos.y)
 
-      // Update last poop time
-      gp.lastPoopTime = Date.now()
+      // Update last poop time with random offset backwards (-0 to -10 seconds)
+      // This makes each guinea pig's next poop happen 20-30 seconds from now
+      // Prevents all guinea pigs from pooping at the same time
+      const randomOffset = -Math.random() * 10000 // -0s to -10s
+      gp.lastPoopTime = Date.now() + randomOffset
 
       // Detect nearby items for location context
       const suppliesStore = useSuppliesStore()
