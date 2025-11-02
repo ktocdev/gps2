@@ -21,7 +21,8 @@ export const useBehaviorStateStore = defineStore('behaviorState', () => {
         currentGoal: null,
         currentActivity: 'idle',
         activityStartTime: Date.now(),
-        lastDecisionTime: Date.now(),
+        // Add random offset (0-3 seconds) to prevent synchronized decision-making
+        lastDecisionTime: Date.now() - Math.random() * 3000,
         behaviorCooldowns: new Map()
       })
     }

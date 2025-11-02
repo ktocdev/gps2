@@ -14,6 +14,7 @@ import { useMovement } from './useMovement'
 import { usePathfinding } from './usePathfinding'
 import { MessageGenerator } from '../../utils/messageGenerator'
 import { detectNearbyLocation, gridToSubgridWithOffset } from '../../utils/locationDetection'
+import { pausableDelay } from '../../utils/pausableTimer'
 import type { NeedType } from '../../stores/guineaPigStore'
 import type { GridPosition } from './usePathfinding'
 
@@ -513,7 +514,22 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Sort by priority (highest first)
     goals.sort((a, b) => b.priority - a.priority)
 
-    return goals[0] || null
+    // Add natural variation: if top goals are within 15 priority points, pick randomly
+    // This prevents identical guinea pigs from always making identical choices
+    // Wider threshold (15 instead of 5) allows more behavioral variety
+    if (goals.length > 0) {
+      const topPriority = goals[0].priority
+      const topGoals = goals.filter(g => g.priority >= topPriority - 15)
+
+      if (topGoals.length > 1) {
+        // Multiple similar-priority goals - pick randomly for natural variation
+        return topGoals[Math.floor(Math.random() * topGoals.length)]
+      }
+
+      return goals[0]
+    }
+
+    return null
   }
 
   /**
@@ -1069,8 +1085,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Adjust play duration based on personality
     const adjustedDuration = Math.floor(goal.estimatedDuration * durationMultiplier)
 
-    // Simulate playing duration
-    await new Promise(resolve => setTimeout(resolve, adjustedDuration))
+    // Simulate playing duration (pause-aware)
+    await pausableDelay(adjustedDuration)
 
     // Calculate play restoration based on playfulness personality
     // Base restoration: 35%, personality range: 22.75% to 38.5%
@@ -1259,8 +1275,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       console.log(`[Socialize] Both guinea pigs playing together for ${SOCIALIZE_INTERACTION_DURATION_MS}ms`)
     }
 
-    // Wait for interaction duration (wiggle animation happens via CSS)
-    await new Promise(resolve => setTimeout(resolve, SOCIALIZE_INTERACTION_DURATION_MS))
+    // Wait for interaction duration (wiggle animation happens via CSS, pause-aware)
+    await pausableDelay(SOCIALIZE_INTERACTION_DURATION_MS)
 
     // Verify both guinea pigs still exist before finalizing
     if (!guineaPig.value) {
@@ -1579,8 +1595,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (behaviorState.value.currentGoal) return
 
     // Skip if still on cooldown from last decision
+    // Add random jitter (0-2 seconds) to prevent synchronized decision-making
+    const randomJitter = Math.random() * 2000
     const timeSinceLastDecision = Date.now() - behaviorState.value.lastDecisionTime
-    if (timeSinceLastDecision < 3000) return // Minimum 3 seconds between decisions
+    if (timeSinceLastDecision < (3000 + randomJitter)) return
 
     behaviorState.value.lastDecisionTime = Date.now()
 
@@ -1605,6 +1623,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     executeBehavior,
     tick,
     isOnCooldown,
-    stopMovement: movement.stopMovement
+    stopMovement: movement.stopMovement,
+    resumeMovement: movement.resumeMovement
   }
 }

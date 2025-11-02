@@ -422,7 +422,8 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       lastSocialTime: null,
 
       // System 19: Autonomous AI Behaviors
-      lastPoopTime: Date.now(),
+      // Add random offset (0-30 seconds) to prevent all guinea pigs from pooping simultaneously
+      lastPoopTime: Date.now() - Math.random() * 30000,
 
       // Phase 2: Adoption timers
       adoptionTimer: Date.now(),

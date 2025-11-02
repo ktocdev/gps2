@@ -188,7 +188,7 @@ export const useGameController = defineStore('gameController', () => {
     if (gameState.value.currentState === 'paused') {
       setState('playing', undefined, 'resume')
 
-      // Resume the game timing system
+      // Resume the game timing system (handles movement resume for all guinea pigs)
       const gameTimingStore = useGameTimingStore()
       gameTimingStore.resumeGameLoop()
 

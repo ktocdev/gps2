@@ -64,6 +64,19 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
       return
     }
 
+    // On game start, add small random offset to each guinea pig's lastPoopTime
+    // to prevent synchronized pooping when game loads from save
+    const guineaPigStore = useGuineaPigStore()
+    const currentTime = Date.now()
+    guineaPigStore.activeGuineaPigs.forEach(gp => {
+      // Add random offset (0-30 seconds) to desynchronize
+      // Only if lastPoopTime is very recent (within last minute), meaning it's likely from a save
+      const timeSince = currentTime - gp.lastPoopTime
+      if (timeSince < 60000) {  // If last poop was less than 1 minute ago
+        gp.lastPoopTime = currentTime - Math.random() * 30000
+      }
+    })
+
     isRunning.value = true
     lastUpdate.value = Date.now()
 
@@ -121,6 +134,12 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
 
     // Reset timing to prevent large delta jumps after pause
     lastUpdate.value = Date.now()
+
+    // Resume movement for all guinea pigs that were walking when paused (System 18)
+    behaviorComposables.forEach((behavior) => {
+      behavior.resumeMovement()
+    })
+
     startGameLoop()
 
     getLoggingStore().logActivity({

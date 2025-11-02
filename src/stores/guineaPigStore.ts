@@ -702,9 +702,10 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
         return
       }
 
-      // Initialize needsLastUpdate if not set (set to 5 seconds ago to allow immediate first decay)
+      // Initialize needsLastUpdate if not set with random offset to desynchronize guinea pigs
+      // Random offset 0-5 seconds to prevent all guinea pigs from decaying needs simultaneously
       if (!needsLastUpdate.value[guineaPig.id]) {
-        needsLastUpdate.value[guineaPig.id] = currentTime - 5000
+        needsLastUpdate.value[guineaPig.id] = currentTime - Math.random() * 5000
       }
 
       const lastUpdate = needsLastUpdate.value[guineaPig.id]

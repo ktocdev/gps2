@@ -5,7 +5,8 @@
       'guinea-pig-sprite--selected': isSelected,
       'guinea-pig-sprite--walking': isWalking,
       'guinea-pig-sprite--playing': isPlaying,
-      'guinea-pig-sprite--facing-left': facingLeft
+      'guinea-pig-sprite--facing-left': facingLeft,
+      'guinea-pig-sprite--paused': !gameController.isGameActive
     }"
     :style="spriteStyle"
     :title="tooltipText"
@@ -22,6 +23,7 @@ import { computed } from 'vue'
 import type { GuineaPig } from '../../../stores/guineaPigStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useNeedsController } from '../../../stores/needsController'
+import { useGameController } from '../../../stores/gameController'
 
 interface Props {
   guineaPig: GuineaPig
@@ -40,6 +42,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const needsController = useNeedsController()
+const gameController = useGameController()
 
 const CELL_SIZE = 60 // Match HabitatVisual cell size
 
@@ -186,6 +189,17 @@ function handleClick() {
 .guinea-pig-sprite--playing .guinea-pig-sprite__emoji {
   /* Wiggle animation when playing or socializing - takes priority over walking */
   animation: guinea-pig-wiggle 0.4s ease-in-out infinite !important;
+}
+
+/* Pause all animations when game is paused - high specificity to override all animation states */
+.guinea-pig-sprite--paused .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--playing .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--walking .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--facing-left .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--playing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--facing-left.guinea-pig-sprite--playing .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--facing-left.guinea-pig-sprite--playing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+  animation-play-state: paused !important;
 }
 
 @keyframes guinea-pig-wiggle {
