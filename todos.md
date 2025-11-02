@@ -1,0 +1,2 @@
+- when two guinea pigs are in a shelter, the guinea pig sprites should not be on top of eachother. right now they are on top of eachother and we just see how when they are both in the shelter
+- guinea pig bonding should go up if they sleep in the shelter together

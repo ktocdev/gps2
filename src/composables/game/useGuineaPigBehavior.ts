@@ -685,6 +685,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'eating'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Log to activity feed BEFORE eating starts (so message appears during activity)
+    const msg = MessageGenerator.generateAutonomousEatMessage(guineaPig.value.name, eatenFoodName)
+    loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+
     console.log('[executeEatBehavior] Starting eating animation, duration:', goal.estimatedDuration)
 
     // Simulate eating duration
@@ -698,10 +702,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', hungerRestored)
 
       console.log('[executeEatBehavior] Restored', hungerRestored, 'hunger points')
-
-      // Log to activity feed with actual food name
-      const msg = MessageGenerator.generateAutonomousEatMessage(guineaPig.value.name, eatenFoodName)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -733,16 +733,18 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'drinking'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Log to activity feed BEFORE drinking starts
+    if (guineaPig.value) {
+      const msg = MessageGenerator.generateAutonomousDrinkMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+    }
+
     // Simulate drinking duration
     await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
 
     // Satisfy thirst need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'thirst', 35) // Restore 35%
-
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousDrinkMessage(guineaPig.value.name)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Consume water from habitat
@@ -808,6 +810,17 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'sleeping'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Log to activity feed BEFORE sleeping starts (with location)
+    let location = 'a cozy spot'
+    if (goal.targetItemId) {
+      // Convert ID to readable name (e.g., "habitat_banana_bed" -> "banana bed")
+      location = goal.targetItemId
+        .replace(/_/g, ' ')
+        .replace(/^habitat\s+/, '') // Remove "habitat " prefix
+    }
+    const msg = MessageGenerator.generateAutonomousSleepMessage(guineaPig.value.name, location)
+    loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+
     // Calculate sleep duration based on energy level (lower energy = longer sleep)
     const energyLevel = guineaPig.value.needs.energy
     const baseDuration = 5000 // 5 seconds base (reduced for better UX)
@@ -836,17 +849,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (guineaPig.value) {
       const energyRestored = Math.floor(25 * sleepQuality)
       guineaPigStore.adjustNeed(guineaPigId, 'energy', energyRestored)
-
-      // Log to activity feed with location
-      let location = 'a cozy spot'
-      if (goal.targetItemId) {
-        // Convert ID to readable name (e.g., "habitat_banana_bed" -> "banana bed")
-        location = goal.targetItemId
-          .replace(/_/g, ' ')
-          .replace(/^habitat\s+/, '') // Remove "habitat " prefix
-      }
-      const msg = MessageGenerator.generateAutonomousSleepMessage(guineaPig.value.name, location)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -889,6 +891,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'grooming'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Log to activity feed BEFORE grooming starts
+    const msg = MessageGenerator.generateAutonomousGroomMessage(guineaPig.value.name)
+    loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+
     // Personality affects grooming thoroughness and duration
     const cleanliness = guineaPig.value.personality.cleanliness
 
@@ -910,10 +916,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Satisfy hygiene need with personality modifier
     guineaPigStore.adjustNeed(guineaPigId, 'hygiene', hygieneRestored)
-
-    // Log to activity feed
-    const msg = MessageGenerator.generateAutonomousGroomMessage(guineaPig.value.name)
-    loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
 
     // Set cooldown and return to idle
     setCooldown('groom', 90000) // 90 second cooldown
@@ -980,6 +982,12 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'eating'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Log to activity feed BEFORE eating starts
+    if (guineaPig.value) {
+      const msg = MessageGenerator.generateAutonomousEatHayMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+    }
+
     console.log('[executeEatHayBehavior] Starting eating animation, duration:', goal.estimatedDuration)
 
     // Simulate eating duration
@@ -993,10 +1001,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', hungerRestored)
 
       console.log('[executeEatHayBehavior] Restored', hungerRestored, 'hunger points')
-
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousEatHayMessage(guineaPig.value.name)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -1028,6 +1032,12 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'eating'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Log to activity feed BEFORE chewing starts
+    if (guineaPig.value) {
+      const msg = MessageGenerator.generateAutonomousChewMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+    }
+
     // Simulate chewing duration
     await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
 
@@ -1040,10 +1050,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Satisfy chew need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'chew', 30) // Restore 30%
-
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousChewMessage(guineaPig.value.name)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -1073,6 +1079,10 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'playing'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Log to activity feed BEFORE playing starts
+    const msg = MessageGenerator.generateAutonomousPlayMessage(guineaPig.value.name)
+    loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+
     // Personality affects play intensity and duration
     const playfulness = guineaPig.value.personality.playfulness
 
@@ -1094,10 +1104,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Satisfy play need with personality modifier
     guineaPigStore.adjustNeed(guineaPigId, 'play', playRestored)
-
-    // Log to activity feed
-    const msg = MessageGenerator.generateAutonomousPlayMessage(guineaPig.value.name)
-    loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
 
     // Set cooldown and return to idle
     setCooldown('play', 90000) // 90 second cooldown
@@ -1268,6 +1274,11 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       partnerBehaviorState.activityStartTime = Date.now()
     }
 
+    // Log to activity feed BEFORE interaction starts (so message appears during activity)
+    if (partnerStillExists) {
+      loggingStore.addAutonomousBehavior(`${guineaPig.value.name} and ${partnerStillExists.name} are bonding together 🤝`, '🐹')
+    }
+
     // Record activity
     habitatConditions.recordGuineaPigActivity('movement')
 
@@ -1302,9 +1313,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     // Increase bonding
     guineaPigStore.increaseBonding(bondId, SOCIALIZE_BONDING_INCREASE, 'interaction', `${guineaPig.value.name} and ${partnerAfterInteraction.name} socialized together`)
-
-    // Log to activity feed
-    loggingStore.addAutonomousBehavior(`${guineaPig.value.name} and ${partnerAfterInteraction.name} are bonding together 🤝`, '🐹')
 
     // Set cooldown
     setCooldown('socialize', SOCIALIZE_COOLDOWN_MS)
@@ -1341,6 +1349,12 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Set sheltering/hiding state
     behaviorState.value.currentActivity = 'hiding'
     behaviorState.value.activityStartTime = Date.now()
+
+    // Log to activity feed BEFORE sheltering starts
+    if (guineaPig.value) {
+      const msg = MessageGenerator.generateAutonomousShelterMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+    }
 
     // Calculate shelter quality based on preferences
     let shelterEffectiveness = 1.0
@@ -1392,10 +1406,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
       // Also restore comfort when in shelter
       guineaPigStore.adjustNeed(guineaPigId, 'comfort', 15)
-
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousShelterMessage(guineaPig.value.name)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
@@ -1413,16 +1423,18 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Set activity (for future animation support)
     behaviorState.value.currentActivity = 'idle' // Will be 'popcorning' when animations added
 
+    // Log to activity feed BEFORE popcorning starts
+    if (guineaPig.value) {
+      const msg = MessageGenerator.generateAutonomousPopcornMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+    }
+
     // Simulate popcorning duration
     await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
 
     // Popcorning slightly increases happiness
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'play', 5)
-
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousPopcornMessage(guineaPig.value.name)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown
@@ -1436,6 +1448,12 @@ export function useGuineaPigBehavior(guineaPigId: string) {
    * Execute zoomies behavior (excited running - high friendship)
    */
   async function executeZoomiesBehavior(_goal: BehaviorGoal): Promise<boolean> {
+    // Log to activity feed BEFORE zoomies starts
+    if (guineaPig.value) {
+      const msg = MessageGenerator.generateAutonomousZoomiesMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+    }
+
     // Do 2-3 quick random movements
     const zoomCount = Math.floor(Math.random() * 2) + 2 // 2-3 zooms
 
@@ -1453,10 +1471,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Zoomies increase happiness and satisfy play need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'play', 10)
-
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousZoomiesMessage(guineaPig.value.name)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown
@@ -1473,16 +1487,18 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Guinea pig stops and watches (no movement)
     behaviorState.value.currentActivity = 'idle'
 
+    // Log to activity feed BEFORE watching starts
+    if (guineaPig.value) {
+      const msg = MessageGenerator.generateAutonomousWatchMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+    }
+
     // Simulate watching duration
     await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
 
     // Watching slightly satisfies social need
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'social', 5)
-
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousWatchMessage(guineaPig.value.name)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown
@@ -1513,6 +1529,12 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'hiding'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Log to activity feed BEFORE hiding starts
+    if (guineaPig.value) {
+      const msg = MessageGenerator.generateAutonomousHideMessage(guineaPig.value.name)
+      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
+    }
+
     // Stay hidden in interruptible chunks
     const startTime = Date.now()
     const checkInterval = 250 // Check every 250ms for responsive cancellation
@@ -1536,10 +1558,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     if (guineaPig.value) {
       guineaPigStore.adjustNeed(guineaPigId, 'shelter', 20)
       guineaPigStore.adjustNeed(guineaPigId, 'social', -10) // Being scared reduces social
-
-      // Log to activity feed
-      const msg = MessageGenerator.generateAutonomousHideMessage(guineaPig.value.name)
-      loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
     // Set cooldown and return to idle
