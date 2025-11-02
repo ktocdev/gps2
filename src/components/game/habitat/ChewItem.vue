@@ -1,5 +1,6 @@
 <template>
   <div
+    ref="itemRef"
     class="chew-item"
     :class="durabilityClass"
     @mouseenter="isHovered = true"
@@ -12,6 +13,7 @@
       :metadata="popoverMetadata"
       :actions="popoverActions"
       :is-hovered="isHovered"
+      :target-element="itemRef"
     />
   </div>
 </template>
@@ -37,6 +39,7 @@ const emit = defineEmits<{
   'discard-chew': []
 }>()
 
+const itemRef = ref<HTMLElement | null>(null)
 const isHovered = ref(false)
 
 const popoverMetadata = computed(() => {

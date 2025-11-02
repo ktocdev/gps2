@@ -1032,9 +1032,13 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'eating'
     behaviorState.value.activityStartTime = Date.now()
 
-    // Log to activity feed BEFORE chewing starts
+    // Log to activity feed BEFORE chewing starts (with chew item name)
     if (guineaPig.value) {
-      const msg = MessageGenerator.generateAutonomousChewMessage(guineaPig.value.name)
+      let chewItemName: string | undefined
+      if (goal.targetItemId) {
+        chewItemName = goal.targetItemId.replace(/_/g, ' ').replace(/^habitat\s+/, '')
+      }
+      const msg = MessageGenerator.generateAutonomousChewMessage(guineaPig.value.name, chewItemName)
       loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
@@ -1079,8 +1083,12 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'playing'
     behaviorState.value.activityStartTime = Date.now()
 
-    // Log to activity feed BEFORE playing starts
-    const msg = MessageGenerator.generateAutonomousPlayMessage(guineaPig.value.name)
+    // Log to activity feed BEFORE playing starts (with toy name)
+    let toyName: string | undefined
+    if (goal.targetItemId) {
+      toyName = goal.targetItemId.replace(/_/g, ' ').replace(/^habitat\s+/, '')
+    }
+    const msg = MessageGenerator.generateAutonomousPlayMessage(guineaPig.value.name, toyName)
     loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
 
     // Personality affects play intensity and duration
@@ -1350,9 +1358,13 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'hiding'
     behaviorState.value.activityStartTime = Date.now()
 
-    // Log to activity feed BEFORE sheltering starts
+    // Log to activity feed BEFORE sheltering starts (with shelter name)
     if (guineaPig.value) {
-      const msg = MessageGenerator.generateAutonomousShelterMessage(guineaPig.value.name)
+      let shelterName: string | undefined
+      if (goal.targetItemId) {
+        shelterName = goal.targetItemId.replace(/_/g, ' ').replace(/^habitat\s+/, '')
+      }
+      const msg = MessageGenerator.generateAutonomousShelterMessage(guineaPig.value.name, shelterName)
       loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
@@ -1571,6 +1583,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
   /**
    * Check and handle autonomous poop dropping (environmental interaction)
    * Guinea pigs poop naturally every 30 seconds (for testing/demo purposes)
+   * Random variance (±10 seconds) prevents all guinea pigs from pooping simultaneously
    */
   function checkAutonomousPooping(): void {
     const gp = guineaPig.value
@@ -1578,7 +1591,11 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     const timeSinceLastPoop = Date.now() - gp.lastPoopTime
 
-    if (timeSinceLastPoop > POOP_INTERVAL_MS) {
+    // Add random variance to interval (±10 seconds) to prevent synchronized pooping
+    const randomVariance = (Math.random() - 0.5) * 20000 // -10s to +10s
+    const poopInterval = POOP_INTERVAL_MS + randomVariance
+
+    if (timeSinceLastPoop > poopInterval) {
       // Drop poop at current position
       const currentPos = movement.currentPosition.value
 
