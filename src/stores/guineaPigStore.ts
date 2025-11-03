@@ -131,7 +131,7 @@ export interface ActiveBond {
   createdAt: number
   lastInteraction: number
   totalInteractions: number
-  proximityTime: number // hours spent near each other
+  proximityTime: number // minutes spent near each other
   bondingHistory: BondingEvent[]
 }
 
@@ -1790,6 +1790,25 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   }
 
   /**
+   * Update proximity time for a bond
+   */
+  const updateProximityTime = (bondId: string, hoursToAdd: number): boolean => {
+    ensureActiveBondsIsMap()
+    const bond = activeBonds.value.get(bondId)
+    if (!bond) return false
+
+    // Update proximity time
+    bond.proximityTime += hoursToAdd
+
+    // Create new Map to trigger reactivity
+    const newBonds = new Map(activeBonds.value)
+    newBonds.set(bondId, { ...bond })
+    activeBonds.value = newBonds
+
+    return true
+  }
+
+  /**
    * Get all active bonds
    */
   const getAllBonds = (): ActiveBond[] => {
@@ -2021,6 +2040,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     getBondById,
     getPartnerGuineaPig,
     updateBondingLevel,
+    updateProximityTime,
     getBondingTier,
     addBondingEvent,
     increaseBonding,

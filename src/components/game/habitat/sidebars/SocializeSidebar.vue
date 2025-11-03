@@ -36,7 +36,7 @@
             </div>
             <div class="bond-stats">
               <span class="bond-stat">💕 {{ bondInfo.bond.totalInteractions }} interactions</span>
-              <span class="bond-stat">⏱️ {{ bondInfo.bond.proximityTime.toFixed(1) }}h together</span>
+              <span class="bond-stat">{{ getBondStrengthMessage(bondInfo.bond.bondingLevel) }}</span>
             </div>
           </div>
         </div>
@@ -278,6 +278,18 @@ const companionBonds = computed(() => {
 
 function formatTier(tier: string): string {
   return tier.charAt(0).toUpperCase() + tier.slice(1)
+}
+
+function getBondStrengthMessage(bondingLevel: number): string {
+  if (bondingLevel >= 95) return '💖 Inseparable companions'
+  if (bondingLevel >= 85) return '💕 Very close bond'
+  if (bondingLevel >= 71) return '💗 Strong bond'
+  if (bondingLevel >= 60) return '💚 Good friends'
+  if (bondingLevel >= 45) return '😊 Growing friendship'
+  if (bondingLevel >= 31) return '🌱 Becoming friends'
+  if (bondingLevel >= 20) return '👋 Getting to know each other'
+  if (bondingLevel >= 10) return '👀 Cautiously curious'
+  return '🆕 New companions'
 }
 </script>
 

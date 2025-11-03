@@ -42,11 +42,12 @@ export function processBondingProgression(bond: ActiveBond, deltaTimeMs: number)
 
   // 2. Proximity time (+1 point per hour spent near each other)
   if (areGuineaPigsNear(bond.guineaPig1Id, bond.guineaPig2Id, 2)) {
-    const proximityHours = deltaTimeMs / (1000 * 60 * 60)
+    const proximityMinutes = deltaTimeMs / (1000 * 60)
+    const proximityHours = proximityMinutes / 60
     bondingIncrease += proximityHours * 1
 
-    // Track total proximity time
-    bond.proximityTime += proximityHours
+    // Track total proximity time in minutes (using store method to ensure reactivity)
+    guineaPigStore.updateProximityTime(bond.id, proximityMinutes)
   }
 
   // 3. Wellness bonus (+1 point per day if both > 70% wellness)
