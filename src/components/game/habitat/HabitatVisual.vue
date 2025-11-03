@@ -131,6 +131,8 @@
           :key="guineaPig.id"
           :guinea-pig="guineaPig"
           :grid-position="getGuineaPigPosition(guineaPig.id)"
+          :offset-x="getGuineaPigOffset(guineaPig.id).x"
+          :offset-y="getGuineaPigOffset(guineaPig.id).y"
           :is-interacting-with-depth-item="isInteractingWithDepthItem(guineaPig.id)"
           :is-selected="selectedGuineaPigId === guineaPig.id"
           @select="handleGuineaPigSelect"
@@ -282,6 +284,17 @@ function getGuineaPigPosition(guineaPigId: string) {
   }
   // Convert habitatConditions position format to grid position format
   return { row: position.y, col: position.x }
+}
+
+function getGuineaPigOffset(guineaPigId: string): { x: number; y: number } {
+  const position = guineaPigPositions.value.get(guineaPigId)
+  if (!position) {
+    return { x: 0, y: 0 }
+  }
+  return {
+    x: position.offsetX || 0,
+    y: position.offsetY || 0
+  }
 }
 
 function isInteractingWithDepthItem(guineaPigId: string): boolean {

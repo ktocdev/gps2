@@ -71,6 +71,8 @@ interface GuineaPigPosition {
   lastMoved: number
   targetPosition?: { x: number; y: number }
   isMoving: boolean
+  offsetX?: number // Pixel offset for visual separation when multiple guinea pigs share same cell
+  offsetY?: number // Pixel offset for visual separation when multiple guinea pigs share same cell
 }
 
 interface ItemUsage {
@@ -710,26 +712,41 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     // Find random unoccupied cell
     const emptyCell = findEmptyCell()
 
+    let x: number
+    let y: number
+
     if (emptyCell) {
-      guineaPigPositions.value.set(guineaPigId, {
-        x: emptyCell.x,
-        y: emptyCell.y,
-        lastMoved: Date.now(),
-        isMoving: false
-      })
-      console.log(`🐹 Guinea pig ${guineaPigId} placed at (${emptyCell.x}, ${emptyCell.y})`)
+      x = emptyCell.x
+      y = emptyCell.y
     } else {
       // Default to center if no empty cells (shouldn't happen)
-      const centerX = Math.floor(gridWidth / 2)
-      const centerY = Math.floor(gridHeight / 2)
-      guineaPigPositions.value.set(guineaPigId, {
-        x: centerX,
-        y: centerY,
-        lastMoved: Date.now(),
-        isMoving: false
-      })
-      console.log(`🐹 Guinea pig ${guineaPigId} placed at center (${centerX}, ${centerY})`)
+      x = Math.floor(gridWidth / 2)
+      y = Math.floor(gridHeight / 2)
     }
+
+    // Check if another guinea pig is already at this position
+    let offsetX = 0
+    let offsetY = 0
+
+    for (const [otherId, otherPos] of guineaPigPositions.value.entries()) {
+      if (otherId !== guineaPigId && otherPos.x === x && otherPos.y === y) {
+        // Another guinea pig is at this position - apply offset for visual separation
+        offsetX = 12
+        offsetY = 8
+        console.log(`🐹 Guinea pig ${guineaPigId} sharing position with ${otherId}, applying offset`)
+        break
+      }
+    }
+
+    guineaPigPositions.value.set(guineaPigId, {
+      x,
+      y,
+      lastMoved: Date.now(),
+      isMoving: false,
+      offsetX,
+      offsetY
+    })
+    console.log(`🐹 Guinea pig ${guineaPigId} placed at (${x}, ${y})${offsetX ? ` with offset (${offsetX}, ${offsetY})` : ''}`)
   }
 
   /**
@@ -748,12 +765,28 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       return false
     }
 
-    // Update position
+    // Check if another guinea pig is already at this position
+    let offsetX = 0
+    let offsetY = 0
+
+    for (const [otherId, otherPos] of guineaPigPositions.value.entries()) {
+      if (otherId !== guineaPigId && otherPos.x === x && otherPos.y === y) {
+        // Another guinea pig is at this position - apply offset for visual separation
+        // Offset by 12px to the right and slightly down for a "cuddling" appearance
+        offsetX = 12
+        offsetY = 8
+        break
+      }
+    }
+
+    // Update position with offset
     guineaPigPositions.value.set(guineaPigId, {
       x,
       y,
       lastMoved: Date.now(),
-      isMoving: false
+      isMoving: false,
+      offsetX,
+      offsetY
     })
 
     // Record movement activity (increases decay)

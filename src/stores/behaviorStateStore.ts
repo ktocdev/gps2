@@ -59,12 +59,33 @@ export const useBehaviorStateStore = defineStore('behaviorState', () => {
     behaviorStates.value.clear()
   }
 
+  /**
+   * Trigger player interaction wiggle animation
+   * Sets guinea pig to 'interacting' state temporarily, then returns to idle
+   */
+  function triggerPlayerInteraction(guineaPigId: string, duration: number = 1500): void {
+    const state = behaviorStates.value.get(guineaPigId)
+    if (state) {
+      state.currentActivity = 'interacting'
+      state.activityStartTime = Date.now()
+
+      // Return to idle after duration
+      setTimeout(() => {
+        const currentState = behaviorStates.value.get(guineaPigId)
+        if (currentState && currentState.currentActivity === 'interacting') {
+          currentState.currentActivity = 'idle'
+        }
+      }, duration)
+    }
+  }
+
   return {
     behaviorStates,
     initializeBehaviorState,
     getBehaviorState,
     updateBehaviorState,
     removeBehaviorState,
-    clearAll
+    clearAll,
+    triggerPlayerInteraction
   }
 })

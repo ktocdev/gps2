@@ -47,7 +47,7 @@ export interface BehaviorGoal {
 
 export interface BehaviorState {
   currentGoal: BehaviorGoal | null
-  currentActivity: 'idle' | 'walking' | 'eating' | 'drinking' | 'sleeping' | 'grooming' | 'hiding' | 'playing'
+  currentActivity: 'idle' | 'walking' | 'eating' | 'drinking' | 'sleeping' | 'grooming' | 'hiding' | 'playing' | 'chewing' | 'interacting'
   activityStartTime: number
   lastDecisionTime: number
   behaviorCooldowns: Map<BehaviorType, number>
@@ -1028,8 +1028,8 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       movement.onArrival(() => resolve())
     })
 
-    // Set chewing state (use eating for now, will add 'chewing' later)
-    behaviorState.value.currentActivity = 'eating'
+    // Set chewing state with chomp animation
+    behaviorState.value.currentActivity = 'chewing'
     behaviorState.value.activityStartTime = Date.now()
 
     // Log to activity feed BEFORE chewing starts (with chew item name)

@@ -71,6 +71,15 @@
           >
             🥕 Hand Feed
           </Button>
+
+          <Button
+            @click="$emit('gentle-wipe')"
+            variant="tertiary"
+            size="sm"
+            full-width
+          >
+            🧼 Gentle Wipe
+          </Button>
         </div>
 
         <!-- Communication -->
@@ -157,6 +166,7 @@ defineEmits<{
   'pet': []
   'hold': []
   'hand-feed': []
+  'gentle-wipe': []
   'talk-to': []
   'sing-to': []
   'call-name': []

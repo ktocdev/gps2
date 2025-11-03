@@ -116,12 +116,27 @@ export function useMovement(guineaPigId: string) {
       controller.value.facingDirection = 'right'
     }
 
-    // Update position in store
+    // Check if another guinea pig is already at this position for offset calculation
+    let offsetX = 0
+    let offsetY = 0
+
+    for (const [otherId, otherPos] of habitatConditions.guineaPigPositions.entries()) {
+      if (otherId !== guineaPigId && otherPos.x === nextPos.col && otherPos.y === nextPos.row) {
+        // Another guinea pig is at this position - apply offset for visual separation
+        offsetX = 12
+        offsetY = 8
+        break
+      }
+    }
+
+    // Update position in store with offset
     habitatConditions.guineaPigPositions.set(guineaPigId, {
       x: nextPos.col,
       y: nextPos.row,
       lastMoved: Date.now(),
-      isMoving: true
+      isMoving: true,
+      offsetX,
+      offsetY
     })
 
     // Calculate time to reach next cell based on speed

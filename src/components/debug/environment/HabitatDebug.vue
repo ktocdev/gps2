@@ -92,6 +92,7 @@
             @pet="handleInteraction('pet')"
             @hold="handleInteraction('hold')"
             @hand-feed="handleInteraction('hand-feed')"
+            @gentle-wipe="handleInteraction('gentle-wipe')"
             @talk-to="handleInteraction('talk-to')"
             @sing-to="handleInteraction('sing-to')"
             @call-name="handleInteraction('call-name')"
@@ -439,6 +440,7 @@ import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useHabitatContainers } from '../../../composables/useHabitatContainers'
 import { useLoggingStore } from '../../../stores/loggingStore'
+import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { CONSUMPTION, CHEW_DEGRADATION } from '../../../constants/supplies'
 import { getInteractionEffect, getInteractionName, getInteractionEmoji } from '../../../utils/interactionEffects'
 import Button from '../../basic/Button.vue'
@@ -458,6 +460,7 @@ const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 const loggingStore = useLoggingStore()
+const behaviorStateStore = useBehaviorStateStore()
 const {
   getHayRackContents,
   getHayRackFreshness,
@@ -607,6 +610,9 @@ function handleInteraction(interactionType: string) {
     console.warn(`No effect data found for interaction: ${interactionType}`)
     return
   }
+
+  // System 23: Trigger wiggle animation for player interaction
+  behaviorStateStore.triggerPlayerInteraction(guineaPig.id, 1500)
 
   // Apply need impacts
   Object.entries(effect.needsImpact).forEach(([need, value]) => {
