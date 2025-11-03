@@ -22,6 +22,7 @@ interface HabitatSnapshot {
   beddingFreshness: number
   hayFreshness: number
   waterLevel: number
+  dirtiness: number
 }
 
 interface CurrentBedding {
@@ -89,6 +90,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   const beddingFreshness = ref<number>(HABITAT_CONDITIONS.DEFAULT_BEDDING_FRESHNESS)
   const hayFreshness = ref<number>(HABITAT_CONDITIONS.DEFAULT_HAY_FRESHNESS)
   const waterLevel = ref<number>(HABITAT_CONDITIONS.DEFAULT_WATER_LEVEL)
+  const dirtiness = ref<number>(0) // 0-100, inverse of cleanliness
 
   // Tracking and history
   const lastCleaningTime = ref(Date.now())
@@ -208,11 +210,174 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   })
 
   // Actions
-  function cleanCage() {
-    cleanliness.value = HABITAT_CONDITIONS.RESET_VALUE
-    lastCleaningTime.value = Date.now()
-    poops.value = [] // Remove all poops
-    recordSnapshot()
+
+  /**
+   * Calculate bedding needed based on current dirtiness
+   * @returns Fraction of bedding bag needed (0-1)
+   */
+  function calculateBeddingNeeded(): number {
+    return dirtiness.value / 100
+  }
+
+  /**
+   * Get total bedding available across all bedding items in inventory
+   * @returns Total bedding amount (in bag units, can be fractional like 2.5)
+   */
+  function getTotalBeddingAvailable(): number {
+    const inventoryStore = useInventoryStore()
+    const suppliesStore = useSuppliesStore()
+
+    let total = 0
+    for (const invItem of inventoryStore.consumables) {
+      const supplyItem = suppliesStore.getItemById(invItem.itemId)
+      if (supplyItem?.category === 'bedding') {
+        for (const instance of invItem.instances) {
+          total += instance.amountRemaining ?? 1 // Default to 1 (full bag) if not set
+        }
+      }
+    }
+    return total
+  }
+
+  /**
+   * Consume bedding from inventory
+   * Uses partial bags first, then opens new bags as needed
+   * @param amount - Amount of bedding to consume (in bag units)
+   * @returns Success boolean
+   */
+  function consumeBedding(amount: number): boolean {
+    if (amount <= 0) return true
+
+    const inventoryStore = useInventoryStore()
+    const suppliesStore = useSuppliesStore()
+
+    let remaining = amount
+
+    // Get all bedding items sorted by amountRemaining (use partial bags first)
+    const beddingItems: Array<{ itemId: string, instance: any, amount: number }> = []
+
+    for (const invItem of inventoryStore.consumables) {
+      const supplyItem = suppliesStore.getItemById(invItem.itemId)
+      if (supplyItem?.category === 'bedding') {
+        for (const instance of invItem.instances) {
+          const amt = instance.amountRemaining ?? 1
+          beddingItems.push({ itemId: invItem.itemId, instance, amount: amt })
+        }
+      }
+    }
+
+    // Sort: partial bags first, then full bags
+    beddingItems.sort((a, b) => a.amount - b.amount)
+
+    // Track instances to remove (empty bags)
+    const instancesToRemove: Array<{ itemId: string, instanceId: string }> = []
+
+    // Consume from bags
+    for (const item of beddingItems) {
+      if (remaining <= 0) break
+
+      const canUse = Math.min(item.amount, remaining)
+      item.instance.amountRemaining = item.amount - canUse
+      item.instance.isOpened = true
+      remaining -= canUse
+
+      // If bag is empty, mark for removal
+      if (item.instance.amountRemaining <= 0.001) { // Use small threshold for floating point
+        instancesToRemove.push({ itemId: item.itemId, instanceId: item.instance.instanceId })
+      }
+    }
+
+    // Remove empty bags from inventory
+    for (const { itemId, instanceId } of instancesToRemove) {
+      const invItem = inventoryStore.items.find(item => item.itemId === itemId)
+      if (invItem) {
+        const index = invItem.instances.findIndex(inst => inst.instanceId === instanceId)
+        if (index !== -1) {
+          invItem.instances.splice(index, 1)
+          invItem.quantity = invItem.instances.length
+
+          // Remove inventory item if no instances left
+          if (invItem.instances.length === 0) {
+            const itemIndex = inventoryStore.items.findIndex(item => item.itemId === itemId)
+            if (itemIndex !== -1) {
+              inventoryStore.items.splice(itemIndex, 1)
+            }
+          }
+        }
+      }
+    }
+
+    return remaining <= 0.001 // Success if we consumed all needed
+  }
+
+  /**
+   * Clean cage with proportional bedding consumption
+   * @returns Object with success status and message
+   */
+  function cleanCage(): { success: boolean; message: string; beddingUsed?: number; beddingRemaining?: number } {
+    const beddingNeeded = calculateBeddingNeeded()
+    const beddingAvailable = getTotalBeddingAvailable()
+
+    if (beddingNeeded === 0) {
+      // Already clean
+      return {
+        success: true,
+        message: 'Habitat is already clean!'
+      }
+    }
+
+    if (beddingAvailable === 0) {
+      return {
+        success: false,
+        message: 'No bedding available! Purchase bedding from the shop.'
+      }
+    }
+
+    if (beddingAvailable < beddingNeeded) {
+      // Partial clean - use all available bedding
+      const cleaningPercent = (beddingAvailable / beddingNeeded) * 100
+      const success = consumeBedding(beddingAvailable)
+
+      if (success) {
+        dirtiness.value = Math.max(0, dirtiness.value - cleaningPercent)
+        cleanliness.value = Math.min(100, 100 - dirtiness.value)
+        lastCleaningTime.value = Date.now()
+        poops.value = [] // Remove all poops
+        recordSnapshot()
+
+        return {
+          success: true,
+          message: `Partially cleaned habitat (used all ${beddingAvailable.toFixed(1)} bags). Habitat is still ${dirtiness.value.toFixed(0)}% dirty.`,
+          beddingUsed: beddingAvailable,
+          beddingRemaining: 0
+        }
+      }
+    }
+
+    // Full clean - have enough bedding
+    const success = consumeBedding(beddingNeeded)
+
+    if (success) {
+      dirtiness.value = 0
+      cleanliness.value = HABITAT_CONDITIONS.RESET_VALUE
+      lastCleaningTime.value = Date.now()
+      poops.value = [] // Remove all poops
+      recordSnapshot()
+
+      const remaining = getTotalBeddingAvailable()
+
+      return {
+        success: true,
+        message: `Habitat fully cleaned! Used ${beddingNeeded.toFixed(1)} bags. ${remaining.toFixed(1)} bags remaining.`,
+        beddingUsed: beddingNeeded,
+        beddingRemaining: remaining
+      }
+    }
+
+    return {
+      success: false,
+      message: 'Failed to clean habitat'
+    }
   }
 
   function addPoop(x: number, y: number) {
@@ -227,6 +392,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     // Reduce cleanliness based on poop count
     const reduction = calculatePoopCleanlinessReduction()
     cleanliness.value = Math.max(HABITAT_CONDITIONS.CONDITION_MIN, cleanliness.value - reduction)
+    dirtiness.value = Math.min(100, 100 - cleanliness.value)
     recordSnapshot()
   }
 
@@ -243,6 +409,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       HABITAT_CONDITIONS.CONDITION_MAX,
       cleanliness.value + POOP_CONSTANTS.CLEANLINESS_RECOVERY_PER_REMOVAL
     )
+    dirtiness.value = Math.max(0, 100 - cleanliness.value)
     recordSnapshot()
     return true
   }
@@ -365,7 +532,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       cleanliness: cleanliness.value,
       beddingFreshness: beddingFreshness.value,
       hayFreshness: hayFreshness.value,
-      waterLevel: waterLevel.value
+      waterLevel: waterLevel.value,
+      dirtiness: dirtiness.value
     }
 
     conditionHistory.value.push(snapshot)
@@ -382,6 +550,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     switch (condition) {
       case 'cleanliness':
         cleanliness.value = value
+        dirtiness.value = Math.max(0, 100 - value)
         break
       case 'beddingFreshness':
         beddingFreshness.value = value
@@ -391,6 +560,10 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
         break
       case 'waterLevel':
         waterLevel.value = value
+        break
+      case 'dirtiness':
+        dirtiness.value = value
+        cleanliness.value = Math.max(0, 100 - value)
         break
     }
 
@@ -403,6 +576,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     beddingFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
     hayFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
     waterLevel.value = HABITAT_CONDITIONS.RESET_VALUE
+    dirtiness.value = 0
 
     // Update all timestamps
     const now = Date.now()
@@ -506,6 +680,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     // 2. Apply cleanliness decay (with speed multiplier)
     const cleanlinessDecay = DECAY.CLEANLINESS_BASE_DECAY_PER_SECOND * decaySpeedMultiplier.value * deltaSeconds
     cleanliness.value = clampCondition(cleanliness.value - cleanlinessDecay)
+    dirtiness.value = Math.max(0, 100 - cleanliness.value)
 
     // 3. Apply hay freshness decay per hay rack (with speed multiplier) - hay oxidizes and loses nutritional value
     const hayDecay = DECAY.HAY_BASE_DECAY_PER_SECOND * decaySpeedMultiplier.value * deltaSeconds
@@ -931,6 +1106,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     beddingFreshness,
     hayFreshness,
     waterLevel,
+    dirtiness,
     lastCleaningTime,
     lastBeddingRefresh,
     lastHayRefill,
@@ -957,6 +1133,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Actions
     cleanCage,
+    calculateBeddingNeeded,
+    getTotalBeddingAvailable,
     addPoop,
     removePoop,
     refreshBedding,

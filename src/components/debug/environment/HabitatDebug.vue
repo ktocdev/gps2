@@ -65,7 +65,7 @@
             :poop-count="habitatVisualRef?.poopCount || 0"
             :has-water-available="hasWaterAvailable"
             @update:selected-bedding-type="selectedBeddingType = String($event)"
-            @clean-cage="habitat.cleanCage"
+            @clean-cage="handleCleanCage"
             @refill-water="habitat.refillWater"
             @refresh-bedding="handleRefreshBedding"
             @clear-all-bowls="clearAllBowls"
@@ -429,6 +429,15 @@
         <p class="text-label--small">Start a game in the Game Controller view to see habitat data.</p>
       </div>
     </div>
+
+    <!-- Clean Cage Dialog -->
+    <CleanCageDialog
+      v-model="showCleanCageDialog"
+      :dirtiness="habitat.dirtiness"
+      :bedding-needed="habitat.calculateBeddingNeeded()"
+      :bedding-available="habitat.getTotalBeddingAvailable()"
+      @confirm="confirmCleanCage"
+    />
   </div>
 </template>
 
@@ -454,6 +463,7 @@ import SocializeSidebar from '../../game/habitat/sidebars/SocializeSidebar.vue'
 import AutonomyDebug from './AutonomyDebug.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import PoopDebug from './PoopDebug.vue'
+import CleanCageDialog from '../../game/dialogs/CleanCageDialog.vue'
 
 const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
@@ -476,6 +486,9 @@ const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
 
 // Active sidebar state
 const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize'>('inventory')
+
+// Clean cage dialog state
+const showCleanCageDialog = ref(false)
 
 // Initialize supplies catalog on mount
 onMounted(() => {
@@ -564,9 +577,9 @@ const selectedGuineaPig = computed(() => {
 // Bedding selection
 const selectedBeddingType = ref<string>('average')
 const beddingOptions = computed(() => [
-  { value: 'cheap', label: `Cheap Bedding (${inventoryStore.getItemQuantity('bedding_cheap')} in stock)`, disabled: !inventoryStore.hasItem('bedding_cheap') },
-  { value: 'average', label: `Average Bedding (${inventoryStore.getItemQuantity('bedding_average')} in stock)`, disabled: !inventoryStore.hasItem('bedding_average') },
-  { value: 'premium', label: `Premium Bedding (${inventoryStore.getItemQuantity('bedding_premium')} in stock)`, disabled: !inventoryStore.hasItem('bedding_premium') }
+  { value: 'cheap', label: `Cheap (${inventoryStore.getItemQuantity('bedding_cheap')})`, disabled: !inventoryStore.hasItem('bedding_cheap') },
+  { value: 'average', label: `Average (${inventoryStore.getItemQuantity('bedding_average')})`, disabled: !inventoryStore.hasItem('bedding_average') },
+  { value: 'premium', label: `Premium (${inventoryStore.getItemQuantity('bedding_premium')})`, disabled: !inventoryStore.hasItem('bedding_premium') }
 ])
 
 // Map quality to item IDs
@@ -587,6 +600,20 @@ function handleRefreshBedding() {
   const success = habitat.refreshBedding(itemId)
   if (!success) {
     console.warn(`Not enough ${selectedBeddingType.value} bedding in inventory`)
+  }
+}
+
+function handleCleanCage() {
+  // Show confirmation dialog with bedding info
+  showCleanCageDialog.value = true
+}
+
+function confirmCleanCage() {
+  const result = habitat.cleanCage()
+  if (result.success) {
+    loggingStore.addPlayerAction(result.message, '🧹')
+  } else {
+    console.warn(result.message)
   }
 }
 
