@@ -1,5 +1,10 @@
-- when two guinea pigs are in a shelter, the guinea pig sprites should not be on top of eachother. right now they are on top of eachother and we just see how when they are both in the shelter
-- guinea pig bonding should go up if they sleep in the shelter together
-- guinea pig should do wiggle when chewing
-- the hay servings count is wrong, it says 1/1, should be 1/4
-- the number of timothy hays in the inventory says 8 and the count of the icon in the inventory sidebar also looks wrong (seems intermittent, not happening now)
+# GPS2 Todos - Active Sprint
+
+See [docs/SPRINT-2025-11-02.md](docs/SPRINT-2025-11-02.md) for full sprint details.
+
+## Quick Reference
+
+All items have been organized and prioritized in the new sprint document.
+
+**Active Sprint:** November 2, 2025
+**Branch:** GPS2-42
