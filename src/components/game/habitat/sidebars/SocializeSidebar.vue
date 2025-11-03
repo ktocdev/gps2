@@ -64,12 +64,14 @@
           </Button>
 
           <Button
-            @click="$emit('hand-feed')"
+            @click="showFoodSelectionDialog = true"
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isHandFeedOnCooldown"
+            :title="handFeedTooltip"
           >
-            🥕 Hand Feed
+            🥕 Hand Feed{{ handFeedCooldownText }}
           </Button>
 
           <Button
@@ -81,6 +83,14 @@
             🧼 Gentle Wipe
           </Button>
         </div>
+
+        <!-- Food Selection Dialog -->
+        <FoodSelectionDialog
+          v-model="showFoodSelectionDialog"
+          :guinea-pig-name="selectedGuineaPig?.name || 'guinea pig'"
+          @select-food="handleFoodSelected"
+        />
+
 
         <!-- Communication -->
         <div class="interaction-section">
@@ -151,8 +161,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import Button from '../../../basic/Button.vue'
+import FoodSelectionDialog from '../../dialogs/FoodSelectionDialog.vue'
 import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
 import type { GuineaPig } from '../../../../stores/guineaPigStore'
 
@@ -162,10 +173,10 @@ interface Props {
 
 const props = defineProps<Props>()
 
-defineEmits<{
+const emit = defineEmits<{
   'pet': []
   'hold': []
-  'hand-feed': []
+  'hand-feed': [foodId: string]
   'gentle-wipe': []
   'talk-to': []
   'sing-to': []
@@ -174,6 +185,72 @@ defineEmits<{
   'wave-hand': []
   'show-toy': []
 }>()
+
+const showFoodSelectionDialog = ref(false)
+
+// Cooldown tracking for interactions
+const interactionCooldowns = ref<Map<string, Map<string, number>>>(new Map())
+const HAND_FEED_COOLDOWN = 45000 // 45 seconds in milliseconds
+
+function handleFoodSelected(foodId: string) {
+  emit('hand-feed', foodId)
+
+  // Track cooldown for this guinea pig's hand-feed action
+  if (props.selectedGuineaPig) {
+    const gpId = props.selectedGuineaPig.id
+    if (!interactionCooldowns.value.has(gpId)) {
+      interactionCooldowns.value.set(gpId, new Map())
+    }
+    interactionCooldowns.value.get(gpId)!.set('hand-feed', Date.now())
+  }
+}
+
+// Calculate remaining cooldown time
+const handFeedRemainingCooldown = computed(() => {
+  if (!props.selectedGuineaPig) return 0
+
+  const gpCooldowns = interactionCooldowns.value.get(props.selectedGuineaPig.id)
+  if (!gpCooldowns) return 0
+
+  const lastHandFeedTime = gpCooldowns.get('hand-feed')
+  if (!lastHandFeedTime) return 0
+
+  const elapsed = Date.now() - lastHandFeedTime
+  const remaining = HAND_FEED_COOLDOWN - elapsed
+
+  return remaining > 0 ? remaining : 0
+})
+
+const isHandFeedOnCooldown = computed(() => handFeedRemainingCooldown.value > 0)
+
+const handFeedCooldownText = computed(() => {
+  if (!isHandFeedOnCooldown.value) return ''
+
+  const seconds = Math.ceil(handFeedRemainingCooldown.value / 1000)
+  return ` (${seconds}s)`
+})
+
+const handFeedTooltip = computed(() => {
+  if (isHandFeedOnCooldown.value) {
+    return 'Hand-feed is on cooldown'
+  }
+  return 'Hand-feed a food item to your guinea pig'
+})
+
+// Update cooldown display every second
+const cooldownInterval = ref<number | null>(null)
+onMounted(() => {
+  cooldownInterval.value = window.setInterval(() => {
+    // Force reactivity update for cooldown countdown
+    interactionCooldowns.value = new Map(interactionCooldowns.value)
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (cooldownInterval.value) {
+    clearInterval(cooldownInterval.value)
+  }
+})
 
 const guineaPigStore = useGuineaPigStore()
 

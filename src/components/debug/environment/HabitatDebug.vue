@@ -91,7 +91,7 @@
             :selected-guinea-pig="selectedGuineaPig"
             @pet="handleInteraction('pet')"
             @hold="handleInteraction('hold')"
-            @hand-feed="handleInteraction('hand-feed')"
+            @hand-feed="handleHandFeed"
             @gentle-wipe="handleInteraction('gentle-wipe')"
             @talk-to="handleInteraction('talk-to')"
             @sing-to="handleInteraction('sing-to')"
@@ -635,6 +635,52 @@ function handleInteraction(interactionType: string) {
   )
 
   console.log(`🤝 ${interactionName}: ${guineaPig.name} | Friendship +${effect.friendshipGain} | Needs:`, effect.needsImpact)
+}
+
+// Handle hand-feed with food selection
+function handleHandFeed(foodId: string) {
+  if (!selectedGuineaPig.value) {
+    console.warn('No guinea pig selected for hand-feed')
+    return
+  }
+
+  const guineaPig = selectedGuineaPig.value
+  const foodItem = suppliesStore.getItemById(foodId)
+
+  if (!foodItem) {
+    console.warn(`Food item ${foodId} not found`)
+    return
+  }
+
+  // Get hand-feed interaction effect
+  const effect = getInteractionEffect('hand-feed')
+  if (!effect) {
+    console.warn('No effect data found for hand-feed interaction')
+    return
+  }
+
+  // System 23: Trigger wiggle animation for player interaction
+  behaviorStateStore.triggerPlayerInteraction(guineaPig.id, 1500)
+
+  // Apply need impacts (hunger from food + social from hand-feeding)
+  Object.entries(effect.needsImpact).forEach(([need, value]) => {
+    if (value && value > 0) {
+      guineaPigStore.satisfyNeed(guineaPig.id, need as any, value)
+    }
+  })
+
+  // Apply friendship gain
+  if (effect.friendshipGain > 0) {
+    guineaPigStore.adjustFriendship(guineaPig.id, effect.friendshipGain)
+  }
+
+  // Log to activity feed with food name
+  loggingStore.addPlayerAction(
+    `🥕 Hand Fed ${foodItem.name} - ${guineaPig.name} enjoyed it!`,
+    '🥕'
+  )
+
+  console.log(`🥕 Hand Fed ${foodItem.name}: ${guineaPig.name} | Friendship +${effect.friendshipGain} | Needs:`, effect.needsImpact)
 }
 
 // Hay Racks Management
