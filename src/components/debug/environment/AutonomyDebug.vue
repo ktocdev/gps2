@@ -1,9 +1,9 @@
 <template>
   <div class="autonomy-debug flex flex-column gap-4">
     <div v-if="hasActiveGuineaPigs" class="panel panel--compact panel--accent panel--overflow-visible">
-      <div class="panel__header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="panel__header flex justify-between items-center">
         <h3>🎮 Autonomy Controls</h3>
-        <div style="display: flex; align-items: center; gap: var(--space-2);">
+        <div class="flex items-center gap-2">
           <!-- Toggle between guinea pigs if there are multiple -->
           <Button
             v-if="guineaPigStore.activeGuineaPigs.length > 1"
@@ -288,7 +288,7 @@
 
     <!-- Global Autonomy Settings (Bottom Section) -->
     <div class="panel panel--compact panel--overflow-visible mb-4">
-      <div class="panel__header" style="display: flex; justify-content: space-between; align-items: center;">
+      <div class="panel__header flex justify-between items-center">
         <h3>Global Autonomy Settings</h3>
         <InfoButton
           message="Game Loop Speed controls how often the game processes AI decisions and updates. Lower values (e.g., 100ms) mean more frequent updates for faster-paced testing. Higher values (e.g., 30s) slow everything down for easier observation of behaviors."

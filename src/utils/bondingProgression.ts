@@ -40,11 +40,12 @@ export function processBondingProgression(bond: ActiveBond, deltaTimeMs: number)
   // This is already handled by increaseBonding() calls in useSocialBehaviors
   // Interactions are tracked in bond.bondingHistory
 
-  // 2. Proximity time (+1 point per hour spent near each other)
+  // 2. Proximity time (+1 point per 10 seconds spent near each other)
   if (areGuineaPigsNear(bond.guineaPig1Id, bond.guineaPig2Id, 2)) {
     const proximityMinutes = deltaTimeMs / (1000 * 60)
-    const proximityHours = proximityMinutes / 60
-    bondingIncrease += proximityHours * 1
+    const proximitySeconds = deltaTimeMs / 1000
+    const proximityBonding = proximitySeconds / 10 // +1 point per 10 seconds
+    bondingIncrease += proximityBonding
 
     // Track total proximity time in minutes (using store method to ensure reactivity)
     guineaPigStore.updateProximityTime(bond.id, proximityMinutes)

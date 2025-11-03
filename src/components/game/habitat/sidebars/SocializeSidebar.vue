@@ -11,8 +11,38 @@
       </div>
 
       <template v-else>
-        <div class="socialize-sidebar__guinea-pig-name">
-          Interacting with: <strong>{{ selectedGuineaPig.name }}</strong>
+        <div class="socialize-sidebar__guinea-pig-header">
+          <span class="socialize-sidebar__label">Interacting with:</span>
+          <Button
+            v-if="guineaPigStore.activeGuineaPigs.length > 1"
+            @click="toggleGuineaPig"
+            variant="tertiary"
+            size="sm"
+          >
+            {{ selectedGuineaPig.name }} ({{ currentGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
+          </Button>
+          <span v-else class="socialize-sidebar__guinea-pig-name-static">
+            {{ selectedGuineaPig.name }}
+          </span>
+        </div>
+
+        <!-- Player Friendship -->
+        <div class="interaction-section">
+          <h4 class="interaction-section__title">👤 Your Friendship</h4>
+          <div class="bond-status">
+            <div class="bond-progress">
+              <div class="bond-progress__bar">
+                <div
+                  class="bond-progress__fill"
+                  :style="{ width: selectedGuineaPig.friendship + '%' }"
+                ></div>
+              </div>
+              <span class="bond-progress__label">{{ Math.round(selectedGuineaPig.friendship) }}%</span>
+            </div>
+            <div class="bond-stats">
+              <span class="bond-stat">{{ getPlayerFriendshipMessage(selectedGuineaPig.friendship) }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- System 21: Bond Status -->
@@ -205,6 +235,17 @@ function handleFoodSelected(foodId: string) {
   }
 }
 
+function toggleGuineaPig() {
+  const activeGuineaPigs = guineaPigStore.activeGuineaPigs
+  if (activeGuineaPigs.length <= 1) return
+
+  const currentIndex = activeGuineaPigs.findIndex(gp => gp.id === props.selectedGuineaPig?.id)
+  const nextIndex = (currentIndex + 1) % activeGuineaPigs.length
+  const nextGuineaPig = activeGuineaPigs[nextIndex]
+
+  guineaPigStore.selectGuineaPig(nextGuineaPig.id)
+}
+
 // Calculate remaining cooldown time
 const handFeedRemainingCooldown = computed(() => {
   if (!props.selectedGuineaPig) return 0
@@ -254,6 +295,12 @@ onUnmounted(() => {
 
 const guineaPigStore = useGuineaPigStore()
 
+// Get current guinea pig index for display
+const currentGuineaPigIndex = computed(() => {
+  if (!props.selectedGuineaPig) return 0
+  return guineaPigStore.activeGuineaPigs.findIndex(gp => gp.id === props.selectedGuineaPig!.id)
+})
+
 // System 21: Get bonds for selected guinea pig
 const companionBonds = computed(() => {
   if (!props.selectedGuineaPig) return []
@@ -290,6 +337,19 @@ function getBondStrengthMessage(bondingLevel: number): string {
   if (bondingLevel >= 20) return '👋 Getting to know each other'
   if (bondingLevel >= 10) return '👀 Cautiously curious'
   return '🆕 New companions'
+}
+
+function getPlayerFriendshipMessage(friendship: number): string {
+  if (friendship >= 90) return '💖 Best friends forever'
+  if (friendship >= 80) return '💕 Very close friends'
+  if (friendship >= 70) return '💗 Trusts you deeply'
+  if (friendship >= 60) return '💚 Good friends'
+  if (friendship >= 50) return '😊 Likes you'
+  if (friendship >= 40) return '🌱 Warming up to you'
+  if (friendship >= 30) return '👋 Getting comfortable'
+  if (friendship >= 20) return '👀 A bit cautious'
+  if (friendship >= 10) return '😐 Unsure about you'
+  return '😟 Needs more care'
 }
 </script>
 
@@ -330,14 +390,23 @@ function getBondStrengthMessage(bondingLevel: number): string {
   font-size: var(--font-size-sm);
 }
 
-.socialize-sidebar__guinea-pig-name {
+.socialize-sidebar__guinea-pig-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.socialize-sidebar__label {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  padding: var(--space-2) var(--space-3);
-  background-color: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-  text-align: center;
-  margin-block-end: var(--space-2);
+  font-weight: var(--font-weight-medium);
+}
+
+.socialize-sidebar__guinea-pig-name-static {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 .interaction-section {
