@@ -11,8 +11,38 @@
       </div>
 
       <template v-else>
-        <div class="socialize-sidebar__guinea-pig-name">
-          Interacting with: <strong>{{ selectedGuineaPig.name }}</strong>
+        <div class="socialize-sidebar__guinea-pig-header">
+          <span class="socialize-sidebar__label">Interacting with:</span>
+          <Button
+            v-if="guineaPigStore.activeGuineaPigs.length > 1"
+            @click="toggleGuineaPig"
+            variant="tertiary"
+            size="sm"
+          >
+            {{ selectedGuineaPig.name }} ({{ currentGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
+          </Button>
+          <span v-else class="socialize-sidebar__guinea-pig-name-static">
+            {{ selectedGuineaPig.name }}
+          </span>
+        </div>
+
+        <!-- Player Friendship -->
+        <div class="interaction-section">
+          <h4 class="interaction-section__title">👤 Your Friendship</h4>
+          <div class="bond-status">
+            <div class="bond-progress">
+              <div class="bond-progress__bar">
+                <div
+                  class="bond-progress__fill"
+                  :style="{ width: selectedGuineaPig.friendship + '%' }"
+                ></div>
+              </div>
+              <span class="bond-progress__label">{{ Math.round(selectedGuineaPig.friendship) }}%</span>
+            </div>
+            <div class="bond-stats">
+              <span class="bond-stat">{{ getPlayerFriendshipMessage(selectedGuineaPig.friendship) }}</span>
+            </div>
+          </div>
         </div>
 
         <!-- System 21: Bond Status -->
@@ -36,7 +66,7 @@
             </div>
             <div class="bond-stats">
               <span class="bond-stat">💕 {{ bondInfo.bond.totalInteractions }} interactions</span>
-              <span class="bond-stat">⏱️ {{ bondInfo.bond.proximityTime.toFixed(1) }}h together</span>
+              <span class="bond-stat">{{ getBondStrengthMessage(bondInfo.bond.bondingLevel) }}</span>
             </div>
           </div>
         </div>
@@ -64,14 +94,33 @@
           </Button>
 
           <Button
-            @click="$emit('hand-feed')"
+            @click="showFoodSelectionDialog = true"
+            variant="tertiary"
+            size="sm"
+            full-width
+            :disabled="isHandFeedOnCooldown"
+            :title="handFeedTooltip"
+          >
+            🥕 Hand Feed{{ handFeedCooldownText }}
+          </Button>
+
+          <Button
+            @click="$emit('gentle-wipe')"
             variant="tertiary"
             size="sm"
             full-width
           >
-            🥕 Hand Feed
+            🧼 Gentle Wipe
           </Button>
         </div>
+
+        <!-- Food Selection Dialog -->
+        <FoodSelectionDialog
+          v-model="showFoodSelectionDialog"
+          :guinea-pig-name="selectedGuineaPig?.name || 'guinea pig'"
+          @select-food="handleFoodSelected"
+        />
+
 
         <!-- Communication -->
         <div class="interaction-section">
@@ -142,10 +191,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onUnmounted } from 'vue'
 import Button from '../../../basic/Button.vue'
+import FoodSelectionDialog from '../../dialogs/FoodSelectionDialog.vue'
 import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
 import type { GuineaPig } from '../../../../stores/guineaPigStore'
+import { getBondStrengthMessage, getPlayerFriendshipMessage } from '../../../../utils/friendshipMessages'
 
 interface Props {
   selectedGuineaPig?: GuineaPig | null
@@ -153,10 +204,11 @@ interface Props {
 
 const props = defineProps<Props>()
 
-defineEmits<{
+const emit = defineEmits<{
   'pet': []
   'hold': []
-  'hand-feed': []
+  'hand-feed': [foodId: string]
+  'gentle-wipe': []
   'talk-to': []
   'sing-to': []
   'call-name': []
@@ -165,28 +217,128 @@ defineEmits<{
   'show-toy': []
 }>()
 
+const showFoodSelectionDialog = ref(false)
+
+// Cooldown tracking for interactions
+const interactionCooldowns = ref<Map<string, Map<string, number>>>(new Map())
+const HAND_FEED_COOLDOWN = 45000 // 45 seconds in milliseconds
+
+function handleFoodSelected(foodId: string) {
+  emit('hand-feed', foodId)
+
+  // Track cooldown for this guinea pig's hand-feed action
+  if (props.selectedGuineaPig) {
+    const gpId = props.selectedGuineaPig.id
+    if (!interactionCooldowns.value.has(gpId)) {
+      interactionCooldowns.value.set(gpId, new Map())
+    }
+    interactionCooldowns.value.get(gpId)!.set('hand-feed', Date.now())
+  }
+}
+
+function toggleGuineaPig() {
+  const activeGuineaPigs = guineaPigStore.activeGuineaPigs
+  if (activeGuineaPigs.length <= 1) return
+
+  const currentIndex = activeGuineaPigs.findIndex(gp => gp.id === props.selectedGuineaPig?.id)
+  const nextIndex = (currentIndex + 1) % activeGuineaPigs.length
+  const nextGuineaPig = activeGuineaPigs[nextIndex]
+
+  guineaPigStore.selectGuineaPig(nextGuineaPig.id)
+}
+
+// Reactive timestamp for cooldown updates (updates every second only when cooldown active)
+const currentTime = ref(Date.now())
+let cooldownInterval: number | null = null
+
+// Calculate remaining cooldown time
+const handFeedRemainingCooldown = computed(() => {
+  if (!props.selectedGuineaPig) return 0
+
+  const gpCooldowns = interactionCooldowns.value.get(props.selectedGuineaPig.id)
+  if (!gpCooldowns) return 0
+
+  const lastHandFeedTime = gpCooldowns.get('hand-feed')
+  if (!lastHandFeedTime) return 0
+
+  const elapsed = currentTime.value - lastHandFeedTime
+  const remaining = HAND_FEED_COOLDOWN - elapsed
+
+  return remaining > 0 ? remaining : 0
+})
+
+const isHandFeedOnCooldown = computed(() => handFeedRemainingCooldown.value > 0)
+
+const handFeedCooldownText = computed(() => {
+  if (!isHandFeedOnCooldown.value) return ''
+
+  const seconds = Math.ceil(handFeedRemainingCooldown.value / 1000)
+  return ` (${seconds}s)`
+})
+
+const handFeedTooltip = computed(() => {
+  if (isHandFeedOnCooldown.value) {
+    return 'Hand-feed is on cooldown'
+  }
+  return 'Hand-feed a food item to your guinea pig'
+})
+
+// Update timestamp only when cooldown is active (efficient)
+function updateCooldownTimer() {
+  if (isHandFeedOnCooldown.value) {
+    currentTime.value = Date.now()
+
+    // Continue interval while cooldown active
+    if (!cooldownInterval) {
+      cooldownInterval = window.setInterval(() => {
+        currentTime.value = Date.now()
+
+        // Stop interval when cooldown expires
+        if (!isHandFeedOnCooldown.value && cooldownInterval) {
+          clearInterval(cooldownInterval)
+          cooldownInterval = null
+        }
+      }, 1000)
+    }
+  }
+}
+
+// Watch for cooldown activation (side effect triggers timer)
+computed(() => {
+  updateCooldownTimer()
+  return isHandFeedOnCooldown.value
+})
+
+onUnmounted(() => {
+  if (cooldownInterval) {
+    clearInterval(cooldownInterval)
+    cooldownInterval = null
+  }
+})
+
 const guineaPigStore = useGuineaPigStore()
 
-// System 21: Get bonds for selected guinea pig
+// Get current guinea pig index for display
+const currentGuineaPigIndex = computed(() => {
+  if (!props.selectedGuineaPig) return 0
+  return guineaPigStore.activeGuineaPigs.findIndex(gp => gp.id === props.selectedGuineaPig!.id)
+})
+
+// System 21: Get bonds for selected guinea pig (optimized)
 const companionBonds = computed(() => {
   if (!props.selectedGuineaPig) return []
 
-  const allBonds = guineaPigStore.getAllBonds()
-  return allBonds
-    .filter(bond =>
-      bond.guineaPig1Id === props.selectedGuineaPig!.id ||
-      bond.guineaPig2Id === props.selectedGuineaPig!.id
-    )
-    .map(bond => {
-      const partnerId = bond.guineaPig1Id === props.selectedGuineaPig!.id
-        ? bond.guineaPig2Id
-        : bond.guineaPig1Id
-      const partner = guineaPigStore.getGuineaPig(partnerId)
-      return {
-        bond,
-        partnerName: partner?.name || 'Unknown'
-      }
-    })
+  const bonds = guineaPigStore.getBondsForGuineaPig(props.selectedGuineaPig.id)
+  return bonds.map(bond => {
+    const partnerId = bond.guineaPig1Id === props.selectedGuineaPig!.id
+      ? bond.guineaPig2Id
+      : bond.guineaPig1Id
+    const partner = guineaPigStore.getGuineaPig(partnerId)
+    return {
+      bond,
+      partnerName: partner?.name || 'Unknown'
+    }
+  })
 })
 
 function formatTier(tier: string): string {
@@ -231,14 +383,23 @@ function formatTier(tier: string): string {
   font-size: var(--font-size-sm);
 }
 
-.socialize-sidebar__guinea-pig-name {
+.socialize-sidebar__guinea-pig-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block-end: var(--space-3);
+}
+
+.socialize-sidebar__label {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
-  padding: var(--space-2) var(--space-3);
-  background-color: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-  text-align: center;
-  margin-block-end: var(--space-2);
+  font-weight: var(--font-weight-medium);
+}
+
+.socialize-sidebar__guinea-pig-name-static {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 .interaction-section {

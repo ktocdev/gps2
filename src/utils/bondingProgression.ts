@@ -19,18 +19,32 @@ import { useLoggingStore } from '../stores/loggingStore'
 import { useSocialBehaviors } from '../composables/game/useSocialBehaviors'
 import { useNeedsController } from '../stores/needsController'
 
+// Lazy-initialized store instances (cached after first call to avoid repeated initialization)
+let guineaPigStore: ReturnType<typeof useGuineaPigStore> | null = null
+let loggingStore: ReturnType<typeof useLoggingStore> | null = null
+let needsController: ReturnType<typeof useNeedsController> | null = null
+let areGuineaPigsNear: ReturnType<typeof useSocialBehaviors>['areGuineaPigsNear'] | null = null
+
+function getStores() {
+  if (!guineaPigStore) {
+    guineaPigStore = useGuineaPigStore()
+    loggingStore = useLoggingStore()
+    needsController = useNeedsController()
+    const behaviors = useSocialBehaviors()
+    areGuineaPigsNear = behaviors.areGuineaPigsNear
+  }
+  return { guineaPigStore, loggingStore, needsController, areGuineaPigsNear }
+}
+
 /**
  * Process bonding progression for a single bond
  * Called periodically (e.g., every game tick)
  */
 export function processBondingProgression(bond: ActiveBond, deltaTimeMs: number): void {
-  const guineaPigStore = useGuineaPigStore()
-  const loggingStore = useLoggingStore()
-  const needsController = useNeedsController()
-  const { areGuineaPigsNear } = useSocialBehaviors()
+  const { guineaPigStore, needsController, areGuineaPigsNear } = getStores()
 
-  const gp1 = guineaPigStore.getGuineaPig(bond.guineaPig1Id)
-  const gp2 = guineaPigStore.getGuineaPig(bond.guineaPig2Id)
+  const gp1 = guineaPigStore!.getGuineaPig(bond.guineaPig1Id)
+  const gp2 = guineaPigStore!.getGuineaPig(bond.guineaPig2Id)
 
   if (!gp1 || !gp2) return
 
@@ -40,18 +54,20 @@ export function processBondingProgression(bond: ActiveBond, deltaTimeMs: number)
   // This is already handled by increaseBonding() calls in useSocialBehaviors
   // Interactions are tracked in bond.bondingHistory
 
-  // 2. Proximity time (+1 point per hour spent near each other)
-  if (areGuineaPigsNear(bond.guineaPig1Id, bond.guineaPig2Id, 2)) {
-    const proximityHours = deltaTimeMs / (1000 * 60 * 60)
-    bondingIncrease += proximityHours * 1
+  // 2. Proximity time (+1 point per 10 seconds spent near each other)
+  if (areGuineaPigsNear!(bond.guineaPig1Id, bond.guineaPig2Id, 2)) {
+    const proximityMinutes = deltaTimeMs / (1000 * 60)
+    const proximitySeconds = deltaTimeMs / 1000
+    const proximityBonding = proximitySeconds / 10 // +1 point per 10 seconds
+    bondingIncrease += proximityBonding
 
-    // Track total proximity time
-    bond.proximityTime += proximityHours
+    // Track total proximity time in minutes (using store method to ensure reactivity)
+    guineaPigStore!.updateProximityTime(bond.id, proximityMinutes)
   }
 
   // 3. Wellness bonus (+1 point per day if both > 70% wellness)
-  const gp1Wellness = needsController.calculateWellness(gp1.id)
-  const gp2Wellness = needsController.calculateWellness(gp2.id)
+  const gp1Wellness = needsController!.calculateWellness(gp1.id)
+  const gp2Wellness = needsController!.calculateWellness(gp2.id)
   if (gp1Wellness > 70 && gp2Wellness > 70) {
     const daysPassed = deltaTimeMs / (1000 * 60 * 60 * 24)
     bondingIncrease += daysPassed * 1
@@ -66,13 +82,14 @@ export function processBondingProgression(bond: ActiveBond, deltaTimeMs: number)
     const previousTier = bond.bondingTier
 
     // Update bonding level
-    guineaPigStore.updateBondingLevel(bond.id, bondingIncrease)
+    guineaPigStore!.updateBondingLevel(bond.id, bondingIncrease)
 
     // Check for tier advancement
-    const currentTier = guineaPigStore.getBondingTier(bond.bondingLevel)
+    const currentTier = guineaPigStore!.getBondingTier(bond.bondingLevel)
     if (currentTier !== previousTier) {
       // Tier changed! Generate milestone message
-      generateTierMilestoneMessage(gp1.name, gp2.name, previousTier, currentTier, loggingStore)
+      const { loggingStore } = getStores()
+      generateTierMilestoneMessage(gp1.name, gp2.name, previousTier, currentTier, loggingStore!)
     }
   }
 }
@@ -145,8 +162,8 @@ export function getBondingTierBenefits(bondingLevel: number): {
  * Called from game timing loop
  */
 export function processAllBonds(deltaTimeMs: number): void {
-  const guineaPigStore = useGuineaPigStore()
-  const allBonds = guineaPigStore.getAllBonds()
+  const { guineaPigStore } = getStores()
+  const allBonds = guineaPigStore!.getAllBonds()
 
   for (const bond of allBonds) {
     processBondingProgression(bond, deltaTimeMs)

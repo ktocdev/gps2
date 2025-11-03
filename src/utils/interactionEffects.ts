@@ -33,6 +33,11 @@ export const interactionEffects = new Map<string, InteractionEffect>([
     friendshipGain: 3,
     cooldownTime: 45
   }],
+  ['gentle-wipe', {
+    needsImpact: { hygiene: 18, comfort: 5 },
+    friendshipGain: 2,
+    cooldownTime: 300 // 5 minutes - longer cooldown to prevent spam
+  }],
 
   // Communication
   ['talk-to', {
@@ -84,6 +89,7 @@ export function getInteractionName(interactionType: string): string {
     'pet': 'Pet',
     'hold': 'Hold',
     'hand-feed': 'Hand Feed',
+    'gentle-wipe': 'Gentle Wipe',
     'talk-to': 'Talk To',
     'sing-to': 'Sing To',
     'call-name': 'Call Name',
@@ -102,6 +108,7 @@ export function getInteractionEmoji(interactionType: string): string {
     'pet': '🫳',
     'hold': '🤲',
     'hand-feed': '🥕',
+    'gentle-wipe': '🧼',
     'talk-to': '💬',
     'sing-to': '🎵',
     'call-name': '📣',

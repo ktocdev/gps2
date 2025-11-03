@@ -65,7 +65,7 @@
             :poop-count="habitatVisualRef?.poopCount || 0"
             :has-water-available="hasWaterAvailable"
             @update:selected-bedding-type="selectedBeddingType = String($event)"
-            @clean-cage="habitat.cleanCage"
+            @clean-cage="handleCleanCage"
             @refill-water="habitat.refillWater"
             @refresh-bedding="handleRefreshBedding"
             @clear-all-bowls="clearAllBowls"
@@ -91,7 +91,8 @@
             :selected-guinea-pig="selectedGuineaPig"
             @pet="handleInteraction('pet')"
             @hold="handleInteraction('hold')"
-            @hand-feed="handleInteraction('hand-feed')"
+            @hand-feed="handleHandFeed"
+            @gentle-wipe="handleInteraction('gentle-wipe')"
             @talk-to="handleInteraction('talk-to')"
             @sing-to="handleInteraction('sing-to')"
             @call-name="handleInteraction('call-name')"
@@ -428,6 +429,15 @@
         <p class="text-label--small">Start a game in the Game Controller view to see habitat data.</p>
       </div>
     </div>
+
+    <!-- Clean Cage Dialog -->
+    <CleanCageDialog
+      v-model="showCleanCageDialog"
+      :dirtiness="habitat.dirtiness"
+      :bedding-needed="habitat.calculateBeddingNeeded()"
+      :bedding-available="habitat.getTotalBeddingAvailable()"
+      @confirm="confirmCleanCage"
+    />
   </div>
 </template>
 
@@ -439,6 +449,7 @@ import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useHabitatContainers } from '../../../composables/useHabitatContainers'
 import { useLoggingStore } from '../../../stores/loggingStore'
+import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { CONSUMPTION, CHEW_DEGRADATION } from '../../../constants/supplies'
 import { getInteractionEffect, getInteractionName, getInteractionEmoji } from '../../../utils/interactionEffects'
 import Button from '../../basic/Button.vue'
@@ -452,12 +463,14 @@ import SocializeSidebar from '../../game/habitat/sidebars/SocializeSidebar.vue'
 import AutonomyDebug from './AutonomyDebug.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import PoopDebug from './PoopDebug.vue'
+import CleanCageDialog from '../../game/dialogs/CleanCageDialog.vue'
 
 const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 const loggingStore = useLoggingStore()
+const behaviorStateStore = useBehaviorStateStore()
 const {
   getHayRackContents,
   getHayRackFreshness,
@@ -473,6 +486,9 @@ const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
 
 // Active sidebar state
 const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize'>('inventory')
+
+// Clean cage dialog state
+const showCleanCageDialog = ref(false)
 
 // Initialize supplies catalog on mount
 onMounted(() => {
@@ -561,9 +577,9 @@ const selectedGuineaPig = computed(() => {
 // Bedding selection
 const selectedBeddingType = ref<string>('average')
 const beddingOptions = computed(() => [
-  { value: 'cheap', label: `Cheap Bedding (${inventoryStore.getItemQuantity('bedding_cheap')} in stock)`, disabled: !inventoryStore.hasItem('bedding_cheap') },
-  { value: 'average', label: `Average Bedding (${inventoryStore.getItemQuantity('bedding_average')} in stock)`, disabled: !inventoryStore.hasItem('bedding_average') },
-  { value: 'premium', label: `Premium Bedding (${inventoryStore.getItemQuantity('bedding_premium')} in stock)`, disabled: !inventoryStore.hasItem('bedding_premium') }
+  { value: 'cheap', label: `Cheap (${inventoryStore.getItemQuantity('bedding_cheap')})`, disabled: !inventoryStore.hasItem('bedding_cheap') },
+  { value: 'average', label: `Average (${inventoryStore.getItemQuantity('bedding_average')})`, disabled: !inventoryStore.hasItem('bedding_average') },
+  { value: 'premium', label: `Premium (${inventoryStore.getItemQuantity('bedding_premium')})`, disabled: !inventoryStore.hasItem('bedding_premium') }
 ])
 
 // Map quality to item IDs
@@ -584,6 +600,20 @@ function handleRefreshBedding() {
   const success = habitat.refreshBedding(itemId)
   if (!success) {
     console.warn(`Not enough ${selectedBeddingType.value} bedding in inventory`)
+  }
+}
+
+function handleCleanCage() {
+  // Show confirmation dialog with bedding info
+  showCleanCageDialog.value = true
+}
+
+function confirmCleanCage() {
+  const result = habitat.cleanCage()
+  if (result.success) {
+    loggingStore.addPlayerAction(result.message, '🧹')
+  } else {
+    console.warn(result.message)
   }
 }
 
@@ -608,6 +638,9 @@ function handleInteraction(interactionType: string) {
     return
   }
 
+  // System 23: Trigger wiggle animation for player interaction
+  behaviorStateStore.triggerPlayerInteraction(guineaPig.id, 1500)
+
   // Apply need impacts
   Object.entries(effect.needsImpact).forEach(([need, value]) => {
     if (value && value > 0) {
@@ -629,6 +662,52 @@ function handleInteraction(interactionType: string) {
   )
 
   console.log(`🤝 ${interactionName}: ${guineaPig.name} | Friendship +${effect.friendshipGain} | Needs:`, effect.needsImpact)
+}
+
+// Handle hand-feed with food selection
+function handleHandFeed(foodId: string) {
+  if (!selectedGuineaPig.value) {
+    console.warn('No guinea pig selected for hand-feed')
+    return
+  }
+
+  const guineaPig = selectedGuineaPig.value
+  const foodItem = suppliesStore.getItemById(foodId)
+
+  if (!foodItem) {
+    console.warn(`Food item ${foodId} not found`)
+    return
+  }
+
+  // Get hand-feed interaction effect
+  const effect = getInteractionEffect('hand-feed')
+  if (!effect) {
+    console.warn('No effect data found for hand-feed interaction')
+    return
+  }
+
+  // System 23: Trigger wiggle animation for player interaction
+  behaviorStateStore.triggerPlayerInteraction(guineaPig.id, 1500)
+
+  // Apply need impacts (hunger from food + social from hand-feeding)
+  Object.entries(effect.needsImpact).forEach(([need, value]) => {
+    if (value && value > 0) {
+      guineaPigStore.satisfyNeed(guineaPig.id, need as any, value)
+    }
+  })
+
+  // Apply friendship gain
+  if (effect.friendshipGain > 0) {
+    guineaPigStore.adjustFriendship(guineaPig.id, effect.friendshipGain)
+  }
+
+  // Log to activity feed with food name
+  loggingStore.addPlayerAction(
+    `🥕 Hand Fed ${foodItem.name} - ${guineaPig.name} enjoyed it!`,
+    '🥕'
+  )
+
+  console.log(`🥕 Hand Fed ${foodItem.name}: ${guineaPig.name} | Friendship +${effect.friendshipGain} | Needs:`, effect.needsImpact)
 }
 
 // Hay Racks Management

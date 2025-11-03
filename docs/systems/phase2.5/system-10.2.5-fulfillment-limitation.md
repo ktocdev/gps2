@@ -350,6 +350,35 @@ export interface InteractionResult {
 - **Friendship bonuses:** High friendship reduces cooldown duration (Phase 4)
 - **Personality variations:** Timid guinea pigs have longer cooldowns (Phase 3+)
 
+## Food Serving Guide (UI Component)
+
+**Priority:** MEDIUM
+**Category:** Documentation & UX
+
+**Goal:** Create visual food serving guide to help players understand feeding limits and recommendations
+
+**Integration Points:**
+- Add info button in InventorySidebar near food category
+- Tooltip/popover showing serving guide
+- Optional: In-game "Guinea Pig Care Guide" section
+
+**Content Format:**
+- **Vegetables:** "Feed 1 cup daily (4-6 servings)"
+- **Fruits:** "Feed sparingly as treats (1-2 servings daily)"
+- **Pellets:** "Feed 1/8 cup daily (2-3 servings)"
+- **Hay:** "Unlimited - always available"
+
+**Files to Create:**
+- Component for food serving guide display (modal or popover)
+- Markdown documentation for reference
+
+**Files to Modify:**
+- [InventorySidebar.vue](../../../src/components/game/habitat/sidebars/InventorySidebar.vue) - Add info button to food section
+
+**Note:** This complements the consumption limits system (System 10.2.5) and provides educational value to players
+
+---
+
 ## Notes
 
 - This system reinforces the need to maintain high wellness for successful interactions

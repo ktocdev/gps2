@@ -293,13 +293,8 @@ export function useHabitatContainers() {
       return false
     }
 
-    const serving = currentData.servings[servingIndex]
-    const inventoryStore = useInventoryStore()
-
-    // Add serving back to inventory
-    inventoryStore.addConsumableWithServings(serving.itemId, 1)
-
-    // Remove serving from rack
+    // Remove serving from rack (when guinea pig eats hay)
+    // NOTE: This does NOT add hay back to inventory - eating consumes the hay entirely
     const updatedServings = currentData.servings.filter((_, index) => index !== servingIndex)
 
     if (updatedServings.length === 0) {

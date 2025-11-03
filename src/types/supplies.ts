@@ -230,6 +230,7 @@ export interface ItemInstance {
   isPlacedInHabitat?: boolean // If placed in habitat, cannot be returned
   servingsRemaining?: number // For consumables (hay, lettuce, carrots) - tracks remaining servings
   maxServings?: number // Total servings when fresh/new
+  amountRemaining?: number // For bedding - fractional amount remaining (0-1, where 1 = full bag)
 }
 
 export interface InventoryItem {

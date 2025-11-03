@@ -154,11 +154,11 @@ const loadMoreMessages = async () => {
   }, 200)
 }
 
-const scrollToBottom = async () => {
+const scrollToTop = async () => {
   if (!props.autoScroll || !feedContainer.value) return
 
   await nextTick()
-  feedContainer.value.scrollTop = feedContainer.value.scrollHeight
+  feedContainer.value.scrollTop = 0
 }
 
 const formatTime = (timestamp: number): string => {
@@ -179,12 +179,12 @@ const getMessageClasses = (message: ActivityMessage): string => {
   return [base, category, level].join(' ')
 }
 
-// Watch for new messages and auto-scroll
+// Watch for new messages and auto-scroll to top (newest messages appear at top)
 watch(
   () => loggingStore.activityMessages.length,
   () => {
     if (!isPaused.value) {
-      scrollToBottom()
+      scrollToTop()
     }
   },
   { flush: 'post' }
@@ -192,7 +192,7 @@ watch(
 
 // Lifecycle
 onMounted(() => {
-  scrollToBottom()
+  scrollToTop()
 })
 </script>
 

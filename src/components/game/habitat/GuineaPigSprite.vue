@@ -5,6 +5,8 @@
       'guinea-pig-sprite--selected': isSelected,
       'guinea-pig-sprite--walking': isWalking,
       'guinea-pig-sprite--playing': isPlaying,
+      'guinea-pig-sprite--chewing': isChewing,
+      'guinea-pig-sprite--interacting': isInteracting,
       'guinea-pig-sprite--facing-left': facingLeft,
       'guinea-pig-sprite--paused': !gameController.isGameActive
     }"
@@ -32,6 +34,8 @@ interface Props {
   isSelected: boolean
   isWalking?: boolean // System 18: Movement state
   facingDirection?: 'left' | 'right' // System 18: Direction facing
+  offsetX?: number // Pixel offset for visual separation
+  offsetY?: number // Pixel offset for visual separation
 }
 
 interface Emits {
@@ -66,6 +70,18 @@ const isPlaying = computed(() => {
   return behaviorState?.currentActivity === 'playing'
 })
 
+// System 22: Chewing state - check if guinea pig is chewing
+const isChewing = computed(() => {
+  const behaviorState = behaviorStateStore.getBehaviorState(props.guineaPig.id)
+  return behaviorState?.currentActivity === 'chewing'
+})
+
+// System 23: Player interaction state - check if guinea pig is being interacted with by player
+const isInteracting = computed(() => {
+  const behaviorState = behaviorStateStore.getBehaviorState(props.guineaPig.id)
+  return behaviorState?.currentActivity === 'interacting'
+})
+
 // Tooltip showing guinea pig metadata
 const tooltipText = computed(() => {
   const gp = props.guineaPig
@@ -87,10 +103,17 @@ Goal: ${goalText}`
 })
 
 // Calculate CSS transform for grid position and dynamic z-index
-const spriteStyle = computed(() => ({
-  transform: `translate(${props.gridPosition.col * CELL_SIZE}px, ${props.gridPosition.row * CELL_SIZE}px)`,
-  zIndex: props.isInteractingWithDepthItem ? 3 : 10
-}))
+const spriteStyle = computed(() => {
+  const baseX = props.gridPosition.col * CELL_SIZE
+  const baseY = props.gridPosition.row * CELL_SIZE
+  const offsetX = props.offsetX || 0
+  const offsetY = props.offsetY || 0
+
+  return {
+    transform: `translate(${baseX + offsetX}px, ${baseY + offsetY}px)`,
+    zIndex: props.isInteractingWithDepthItem ? 3 : 10
+  }
+})
 
 function handleClick() {
   emit('select', props.guineaPig.id)
@@ -194,11 +217,19 @@ function handleClick() {
 /* Pause all animations when game is paused - high specificity to override all animation states */
 .guinea-pig-sprite--paused .guinea-pig-sprite__emoji,
 .guinea-pig-sprite--paused.guinea-pig-sprite--playing .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--chewing .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--interacting .guinea-pig-sprite__emoji,
 .guinea-pig-sprite--paused.guinea-pig-sprite--walking .guinea-pig-sprite__emoji,
 .guinea-pig-sprite--paused.guinea-pig-sprite--facing-left .guinea-pig-sprite__emoji,
 .guinea-pig-sprite--paused.guinea-pig-sprite--playing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--chewing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--interacting.guinea-pig-sprite--walking .guinea-pig-sprite__emoji,
 .guinea-pig-sprite--paused.guinea-pig-sprite--facing-left.guinea-pig-sprite--playing .guinea-pig-sprite__emoji,
-.guinea-pig-sprite--paused.guinea-pig-sprite--facing-left.guinea-pig-sprite--playing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+.guinea-pig-sprite--paused.guinea-pig-sprite--facing-left.guinea-pig-sprite--chewing .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--facing-left.guinea-pig-sprite--interacting .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--facing-left.guinea-pig-sprite--playing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--facing-left.guinea-pig-sprite--chewing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji,
+.guinea-pig-sprite--paused.guinea-pig-sprite--facing-left.guinea-pig-sprite--interacting.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
   animation-play-state: paused !important;
 }
 
@@ -237,6 +268,62 @@ function handleClick() {
   }
   75% {
     transform: rotate(8deg) scaleX(-1.08);
+  }
+}
+
+/* System 22: Chewing animation - vertical chomp motion */
+.guinea-pig-sprite--chewing .guinea-pig-sprite__emoji {
+  /* Chomp animation when chewing - vertical up/down motion */
+  animation: guinea-pig-chomp 0.5s ease-in-out infinite !important;
+}
+
+/* System 23: Player interaction animation - wiggle when player interacts */
+.guinea-pig-sprite--interacting .guinea-pig-sprite__emoji {
+  /* Wiggle animation when player pets, holds, or hand-feeds */
+  animation: guinea-pig-wiggle 0.4s ease-in-out infinite !important;
+}
+
+.guinea-pig-sprite--facing-left.guinea-pig-sprite--interacting .guinea-pig-sprite__emoji {
+  animation: guinea-pig-wiggle-flipped 0.4s ease-in-out infinite !important;
+}
+
+/* When both interacting and walking, use interacting animation only */
+.guinea-pig-sprite--interacting.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+  animation: guinea-pig-wiggle 0.4s ease-in-out infinite !important;
+}
+
+.guinea-pig-sprite--facing-left.guinea-pig-sprite--interacting.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+  animation: guinea-pig-wiggle-flipped 0.4s ease-in-out infinite !important;
+}
+
+.guinea-pig-sprite--facing-left.guinea-pig-sprite--chewing .guinea-pig-sprite__emoji {
+  animation: guinea-pig-chomp-flipped 0.5s ease-in-out infinite !important;
+}
+
+/* When both chewing and walking, use chewing animation only */
+.guinea-pig-sprite--chewing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+  animation: guinea-pig-chomp 0.5s ease-in-out infinite !important;
+}
+
+.guinea-pig-sprite--facing-left.guinea-pig-sprite--chewing.guinea-pig-sprite--walking .guinea-pig-sprite__emoji {
+  animation: guinea-pig-chomp-flipped 0.5s ease-in-out infinite !important;
+}
+
+@keyframes guinea-pig-chomp {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scaleY(0.95);
+  }
+}
+
+@keyframes guinea-pig-chomp-flipped {
+  0%, 100% {
+    transform: translateY(0) scaleX(-1);
+  }
+  50% {
+    transform: translateY(-4px) scaleX(-1) scaleY(0.95);
   }
 }
 </style>
