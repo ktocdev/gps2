@@ -851,6 +851,48 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       guineaPigStore.adjustNeed(guineaPigId, 'energy', energyRestored)
     }
 
+    // System 24: Check for sleeping together bonding bonus
+    if (guineaPig.value) {
+      const myPosition = habitatConditions.getGuineaPigPosition(guineaPigId)
+      if (myPosition) {
+        // Find other guinea pigs at the same position
+        const otherGuineaPigs = guineaPigStore.activeGuineaPigs.filter(gp => {
+          if (gp.id === guineaPigId) return false
+          const theirPosition = habitatConditions.getGuineaPigPosition(gp.id)
+          return theirPosition && theirPosition.x === myPosition.x && theirPosition.y === myPosition.y
+        })
+
+        // For each companion at same position, increase bonding
+        otherGuineaPigs.forEach(companion => {
+          // Check if the companion is also sleeping
+          const companionBehaviorState = behaviorStateStore.getBehaviorState(companion.id)
+          if (companionBehaviorState?.currentActivity === 'sleeping') {
+            // Find bond between these two guinea pigs
+            const allBonds = guineaPigStore.getAllBonds()
+            const bond = allBonds.find(b =>
+              (b.guineaPig1Id === guineaPigId && b.guineaPig2Id === companion.id) ||
+              (b.guineaPig1Id === companion.id && b.guineaPig2Id === guineaPigId)
+            )
+
+            if (bond) {
+              // Increase bonding for sleeping together
+              const bondingIncrease = 2 // Small but meaningful increase
+              guineaPigStore.increaseBonding(
+                bond.id,
+                bondingIncrease,
+                'interaction',
+                `${guineaPig.value!.name} and ${companion.name} cuddled together while sleeping`
+              )
+
+              // Log to activity feed
+              const cuddleMsg = `${guineaPig.value!.name} and ${companion.name} cuddle together in the ${location} 💕`
+              loggingStore.addAutonomousBehavior(cuddleMsg, '💤')
+            }
+          }
+        })
+      }
+    }
+
     // Set cooldown and return to idle
     setCooldown('sleep', 120000) // 2 minute cooldown
     behaviorState.value.currentActivity = 'idle'
