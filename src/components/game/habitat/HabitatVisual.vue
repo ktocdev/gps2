@@ -724,53 +724,9 @@ function handleDrop(event: DragEvent, cell: GridCell) {
     itemId = itemData
   }
 
-  // If dropping food on a bowl, add it to the bowl
-  if (isFood(itemId) && !isRepos) {
-    // Find bowl that covers this cell position
-    const bowlAtPosition = placedItems.value.find(item => {
-      if (!isBowl(item.itemId)) return false
-
-      // Check if the drop cell is within the bowl's occupied area
-      const isWithinBowlX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
-      const isWithinBowlY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
-
-      return isWithinBowlX && isWithinBowlY
-    })
-
-    if (bowlAtPosition) {
-      // Add food to bowl
-      handleAddFoodToBowl(bowlAtPosition.itemId, itemId)
-
-      // Reset drag state
-      draggedItemId.value = null
-      draggedItemSize.value = { width: 1, height: 1 }
-      return
-    }
-  }
-
-  // If dropping hay on a hay rack, add it to the rack
-  if (isHay(itemId) && !isRepos) {
-    // Find hay rack that covers this cell position
-    const hayRackAtPosition = placedItems.value.find(item => {
-      if (!isHayRack(item.itemId)) return false
-
-      // Check if the drop cell is within the hay rack's occupied area
-      const isWithinRackX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
-      const isWithinRackY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
-
-      return isWithinRackX && isWithinRackY
-    })
-
-    if (hayRackAtPosition) {
-      // Add hay to rack
-      handleAddHayToRack(hayRackAtPosition.itemId, itemId)
-
-      // Reset drag state
-      draggedItemId.value = null
-      draggedItemSize.value = { width: 1, height: 1 }
-      return
-    }
-  }
+  // Food bowl and hay rack drop handling is done by the respective components via events
+  // FoodBowl emits @add-food and HayRack emits @add-hay
+  // No need to handle drops on these items here - their drop handlers will emit the events
 
   if (!canPlaceAt(cell.x, cell.y)) {
     console.warn('Cannot place item at this location')
