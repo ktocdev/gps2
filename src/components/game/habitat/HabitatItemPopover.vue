@@ -4,6 +4,8 @@
       v-if="isVisible && popoverPosition"
       class="habitat-item-popover habitat-item-popover--visible"
       :style="popoverStyle"
+      @mouseenter="handlePopoverMouseEnter"
+      @mouseleave="handlePopoverMouseLeave"
     >
       <div class="habitat-item-popover__content">
         <div class="habitat-item-popover__header">
@@ -68,6 +70,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 const isVisible = ref(false)
 const popoverPosition = ref<{ top: number; left: number } | null>(null)
+const isPopoverHovered = ref(false)
 let hideTimeout: number | null = null
 
 // Get position of target element (the item being hovered)
@@ -79,6 +82,25 @@ function updatePopoverPosition() {
     top: rect.top - 10, // Position above element with small gap
     left: rect.left + rect.width / 2 // Center horizontally
   }
+}
+
+// Handle popover hover state
+function handlePopoverMouseEnter() {
+  isPopoverHovered.value = true
+  if (hideTimeout) {
+    clearTimeout(hideTimeout)
+    hideTimeout = null
+  }
+}
+
+function handlePopoverMouseLeave() {
+  isPopoverHovered.value = false
+  // Hide immediately when leaving popover
+  if (hideTimeout) {
+    clearTimeout(hideTimeout)
+    hideTimeout = null
+  }
+  isVisible.value = false
 }
 
 // Show popover after short delay when hovered
@@ -95,10 +117,14 @@ watch(() => props.isHovered, (hovered) => {
       isVisible.value = true
     }, 300)
   } else {
-    // Hide after 100ms delay (allows moving to popover)
+    // Hide after 200ms grace period (allows moving to popover)
+    // But only if the popover itself is not being hovered
     hideTimeout = window.setTimeout(() => {
-      isVisible.value = false
-    }, 100)
+      // Don't hide if user has moved mouse to the popover
+      if (!isPopoverHovered.value) {
+        isVisible.value = false
+      }
+    }, 200)
   }
 })
 
