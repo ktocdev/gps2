@@ -130,8 +130,8 @@ function handleConfirm() {
   color: var(--color-text-primary);
 }
 
-.text-warning {
-  color: var(--color-warning) !important;
+.bedding-info__value.text-warning {
+  color: var(--color-warning);
 }
 
 .clean-cage-dialog__footer {

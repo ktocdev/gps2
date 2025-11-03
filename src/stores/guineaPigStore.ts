@@ -1792,13 +1792,13 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
   /**
    * Update proximity time for a bond
    */
-  const updateProximityTime = (bondId: string, hoursToAdd: number): boolean => {
+  const updateProximityTime = (bondId: string, minutesToAdd: number): boolean => {
     ensureActiveBondsIsMap()
     const bond = activeBonds.value.get(bondId)
     if (!bond) return false
 
-    // Update proximity time
-    bond.proximityTime += hoursToAdd
+    // Update proximity time (stored in minutes)
+    bond.proximityTime += minutesToAdd
 
     // Create new Map to trigger reactivity
     const newBonds = new Map(activeBonds.value)
@@ -1818,6 +1818,22 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       ensureBondsExist()
     }
     return Array.from(activeBonds.value.values())
+  }
+
+  /**
+   * Get bonds for a specific guinea pig (optimized - avoids getAllBonds filter)
+   */
+  const getBondsForGuineaPig = (guineaPigId: string): ActiveBond[] => {
+    ensureActiveBondsIsMap()
+    const bonds: ActiveBond[] = []
+
+    for (const bond of activeBonds.value.values()) {
+      if (bond.guineaPig1Id === guineaPigId || bond.guineaPig2Id === guineaPigId) {
+        bonds.push(bond)
+      }
+    }
+
+    return bonds
   }
 
   /**
@@ -2039,6 +2055,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     getActiveBond,
     getBondById,
     getPartnerGuineaPig,
+    getBondsForGuineaPig,
     updateBondingLevel,
     updateProximityTime,
     getBondingTier,

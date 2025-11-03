@@ -52,7 +52,12 @@ export const CONSUMPTION = {
   DEFAULT_DECAY_RATE: 1.0,
 
   // Food bowl capacity
-  DEFAULT_FOOD_CAPACITY: 2
+  DEFAULT_FOOD_CAPACITY: 2,
+
+  // Water consumption (System 16: Phase 2)
+  WATER_CONSUMPTION_MIN: 10,  // Minimum units per drink
+  WATER_CONSUMPTION_MAX: 15,  // Maximum units per drink
+  WATER_MINIMUM_LEVEL: 5      // Minimum water level to allow drinking
 } as const
 
 // ========================================================================

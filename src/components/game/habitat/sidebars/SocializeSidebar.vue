@@ -191,11 +191,12 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onUnmounted } from 'vue'
 import Button from '../../../basic/Button.vue'
 import FoodSelectionDialog from '../../dialogs/FoodSelectionDialog.vue'
 import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
 import type { GuineaPig } from '../../../../stores/guineaPigStore'
+import { getBondStrengthMessage, getPlayerFriendshipMessage } from '../../../../utils/friendshipMessages'
 
 interface Props {
   selectedGuineaPig?: GuineaPig | null
@@ -246,6 +247,10 @@ function toggleGuineaPig() {
   guineaPigStore.selectGuineaPig(nextGuineaPig.id)
 }
 
+// Reactive timestamp for cooldown updates (updates every second only when cooldown active)
+const currentTime = ref(Date.now())
+let cooldownInterval: number | null = null
+
 // Calculate remaining cooldown time
 const handFeedRemainingCooldown = computed(() => {
   if (!props.selectedGuineaPig) return 0
@@ -256,7 +261,7 @@ const handFeedRemainingCooldown = computed(() => {
   const lastHandFeedTime = gpCooldowns.get('hand-feed')
   if (!lastHandFeedTime) return 0
 
-  const elapsed = Date.now() - lastHandFeedTime
+  const elapsed = currentTime.value - lastHandFeedTime
   const remaining = HAND_FEED_COOLDOWN - elapsed
 
   return remaining > 0 ? remaining : 0
@@ -278,18 +283,36 @@ const handFeedTooltip = computed(() => {
   return 'Hand-feed a food item to your guinea pig'
 })
 
-// Update cooldown display every second
-const cooldownInterval = ref<number | null>(null)
-onMounted(() => {
-  cooldownInterval.value = window.setInterval(() => {
-    // Force reactivity update for cooldown countdown
-    interactionCooldowns.value = new Map(interactionCooldowns.value)
-  }, 1000)
+// Update timestamp only when cooldown is active (efficient)
+function updateCooldownTimer() {
+  if (isHandFeedOnCooldown.value) {
+    currentTime.value = Date.now()
+
+    // Continue interval while cooldown active
+    if (!cooldownInterval) {
+      cooldownInterval = window.setInterval(() => {
+        currentTime.value = Date.now()
+
+        // Stop interval when cooldown expires
+        if (!isHandFeedOnCooldown.value && cooldownInterval) {
+          clearInterval(cooldownInterval)
+          cooldownInterval = null
+        }
+      }, 1000)
+    }
+  }
+}
+
+// Watch for cooldown activation (side effect triggers timer)
+computed(() => {
+  updateCooldownTimer()
+  return isHandFeedOnCooldown.value
 })
 
 onUnmounted(() => {
-  if (cooldownInterval.value) {
-    clearInterval(cooldownInterval.value)
+  if (cooldownInterval) {
+    clearInterval(cooldownInterval)
+    cooldownInterval = null
   }
 })
 
@@ -301,55 +324,25 @@ const currentGuineaPigIndex = computed(() => {
   return guineaPigStore.activeGuineaPigs.findIndex(gp => gp.id === props.selectedGuineaPig!.id)
 })
 
-// System 21: Get bonds for selected guinea pig
+// System 21: Get bonds for selected guinea pig (optimized)
 const companionBonds = computed(() => {
   if (!props.selectedGuineaPig) return []
 
-  const allBonds = guineaPigStore.getAllBonds()
-  return allBonds
-    .filter(bond =>
-      bond.guineaPig1Id === props.selectedGuineaPig!.id ||
-      bond.guineaPig2Id === props.selectedGuineaPig!.id
-    )
-    .map(bond => {
-      const partnerId = bond.guineaPig1Id === props.selectedGuineaPig!.id
-        ? bond.guineaPig2Id
-        : bond.guineaPig1Id
-      const partner = guineaPigStore.getGuineaPig(partnerId)
-      return {
-        bond,
-        partnerName: partner?.name || 'Unknown'
-      }
-    })
+  const bonds = guineaPigStore.getBondsForGuineaPig(props.selectedGuineaPig.id)
+  return bonds.map(bond => {
+    const partnerId = bond.guineaPig1Id === props.selectedGuineaPig!.id
+      ? bond.guineaPig2Id
+      : bond.guineaPig1Id
+    const partner = guineaPigStore.getGuineaPig(partnerId)
+    return {
+      bond,
+      partnerName: partner?.name || 'Unknown'
+    }
+  })
 })
 
 function formatTier(tier: string): string {
   return tier.charAt(0).toUpperCase() + tier.slice(1)
-}
-
-function getBondStrengthMessage(bondingLevel: number): string {
-  if (bondingLevel >= 95) return '💖 Inseparable companions'
-  if (bondingLevel >= 85) return '💕 Very close bond'
-  if (bondingLevel >= 71) return '💗 Strong bond'
-  if (bondingLevel >= 60) return '💚 Good friends'
-  if (bondingLevel >= 45) return '😊 Growing friendship'
-  if (bondingLevel >= 31) return '🌱 Becoming friends'
-  if (bondingLevel >= 20) return '👋 Getting to know each other'
-  if (bondingLevel >= 10) return '👀 Cautiously curious'
-  return '🆕 New companions'
-}
-
-function getPlayerFriendshipMessage(friendship: number): string {
-  if (friendship >= 90) return '💖 Best friends forever'
-  if (friendship >= 80) return '💕 Very close friends'
-  if (friendship >= 70) return '💗 Trusts you deeply'
-  if (friendship >= 60) return '💚 Good friends'
-  if (friendship >= 50) return '😊 Likes you'
-  if (friendship >= 40) return '🌱 Warming up to you'
-  if (friendship >= 30) return '👋 Getting comfortable'
-  if (friendship >= 20) return '👀 A bit cautious'
-  if (friendship >= 10) return '😐 Unsure about you'
-  return '😟 Needs more care'
 }
 </script>
 

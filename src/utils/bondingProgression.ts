@@ -19,15 +19,17 @@ import { useLoggingStore } from '../stores/loggingStore'
 import { useSocialBehaviors } from '../composables/game/useSocialBehaviors'
 import { useNeedsController } from '../stores/needsController'
 
+// Cache store instances to avoid repeated calls (called every tick)
+const guineaPigStore = useGuineaPigStore()
+const loggingStore = useLoggingStore()
+const needsController = useNeedsController()
+const { areGuineaPigsNear } = useSocialBehaviors()
+
 /**
  * Process bonding progression for a single bond
  * Called periodically (e.g., every game tick)
  */
 export function processBondingProgression(bond: ActiveBond, deltaTimeMs: number): void {
-  const guineaPigStore = useGuineaPigStore()
-  const loggingStore = useLoggingStore()
-  const needsController = useNeedsController()
-  const { areGuineaPigsNear } = useSocialBehaviors()
 
   const gp1 = guineaPigStore.getGuineaPig(bond.guineaPig1Id)
   const gp2 = guineaPigStore.getGuineaPig(bond.guineaPig2Id)
@@ -147,7 +149,6 @@ export function getBondingTierBenefits(bondingLevel: number): {
  * Called from game timing loop
  */
 export function processAllBonds(deltaTimeMs: number): void {
-  const guineaPigStore = useGuineaPigStore()
   const allBonds = guineaPigStore.getAllBonds()
 
   for (const bond of allBonds) {

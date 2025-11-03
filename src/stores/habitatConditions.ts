@@ -758,13 +758,14 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     }
 
     // Check if water level is sufficient
-    if (waterLevel.value < 5) {
+    if (waterLevel.value < CONSUMPTION.WATER_MINIMUM_LEVEL) {
       console.warn('Water bottle is empty - cannot drink')
       return false
     }
 
-    // Consume water (10-15 units)
-    const consumption = Math.floor(Math.random() * 6) + 10
+    // Consume water (random amount between min and max)
+    const range = CONSUMPTION.WATER_CONSUMPTION_MAX - CONSUMPTION.WATER_CONSUMPTION_MIN + 1
+    const consumption = Math.floor(Math.random() * range) + CONSUMPTION.WATER_CONSUMPTION_MIN
     waterLevel.value = Math.max(0, waterLevel.value - consumption)
 
     console.log(`💧 Water consumed: ${consumption} units. Remaining: ${waterLevel.value}%`)
@@ -784,7 +785,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       return item?.stats?.itemType === 'water_bottle'
     })
 
-    return waterBottle !== undefined && waterLevel.value >= 5
+    return waterBottle !== undefined && waterLevel.value >= CONSUMPTION.WATER_MINIMUM_LEVEL
   }
 
   /**

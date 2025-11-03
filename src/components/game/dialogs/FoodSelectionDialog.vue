@@ -101,16 +101,25 @@ const filteredFoodItems = computed(() => {
   // Get all food items from supplies for the selected category
   const categoryItems = suppliesStore.itemsBySubCategory(selectedCategory.value)
 
-  // Map to include inventory quantities
-  return categoryItems.map(item => {
+  // Filter and map efficiently - check inventory first before creating objects
+  const items: Array<{ id: string, name: string, emoji: string, quantity: number }> = []
+
+  for (const item of categoryItems) {
     const inventoryItem = inventoryStore.consumables.find(inv => inv.itemId === item.id)
-    return {
-      id: item.id,
-      name: item.name,
-      emoji: item.emoji,
-      quantity: inventoryItem?.quantity || 0
+    const quantity = inventoryItem?.quantity || 0
+
+    // Only create object if player has this item
+    if (quantity > 0) {
+      items.push({
+        id: item.id,
+        name: item.name,
+        emoji: item.emoji || '🍽️', // Fallback emoji
+        quantity
+      })
     }
-  }).filter(item => item.quantity > 0) // Only show items player has
+  }
+
+  return items
 })
 
 function selectFood(item: { id: string, quantity: number }) {
