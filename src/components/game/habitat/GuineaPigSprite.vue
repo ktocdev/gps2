@@ -32,6 +32,7 @@ interface Props {
   gridPosition: { row: number; col: number }
   isInteractingWithDepthItem: boolean
   isSelected: boolean
+  cellSize: number // Cell size from parent HabitatVisual (responsive)
   isWalking?: boolean // System 18: Movement state
   facingDirection?: 'left' | 'right' // System 18: Direction facing
   offsetX?: number // Pixel offset for visual separation
@@ -47,8 +48,6 @@ const emit = defineEmits<Emits>()
 
 const needsController = useNeedsController()
 const gameController = useGameController()
-
-const CELL_SIZE = 60 // Match HabitatVisual cell size
 
 // Get centralized behavior state for this guinea pig
 const behaviorStateStore = useBehaviorStateStore()
@@ -104,8 +103,8 @@ Goal: ${goalText}`
 
 // Calculate CSS transform for grid position and dynamic z-index
 const spriteStyle = computed(() => {
-  const baseX = props.gridPosition.col * CELL_SIZE
-  const baseY = props.gridPosition.row * CELL_SIZE
+  const baseX = props.gridPosition.col * props.cellSize
+  const baseY = props.gridPosition.row * props.cellSize
   const offsetX = props.offsetX || 0
   const offsetY = props.offsetY || 0
 

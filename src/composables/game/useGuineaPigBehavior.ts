@@ -55,6 +55,7 @@ export interface BehaviorState {
 
 // Debug flags - set to false in production
 const DEBUG_SOCIALIZE = false
+const DEBUG_BEHAVIOR = false // Set to true to enable eat/hay behavior logging
 
 // Environmental behavior intervals
 const POOP_INTERVAL_MS = 30000 // 30 seconds - guinea pigs poop frequently for realism
@@ -593,42 +594,44 @@ export function useGuineaPigBehavior(guineaPigId: string) {
    * Execute eat behavior with preference-based food selection
    */
   async function executeEatBehavior(goal: BehaviorGoal): Promise<boolean> {
-    console.log('[executeEatBehavior] Starting eat behavior', { goal, guineaPigId })
+    if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] Starting eat behavior', { goal, guineaPigId })
 
     if (!goal.target) {
-      console.error('[executeEatBehavior] No target specified in goal')
+      if (DEBUG_BEHAVIOR) console.error('[executeEatBehavior] No target specified in goal')
       return false
     }
     if (!guineaPig.value) {
-      console.error('[executeEatBehavior] Guinea pig not found')
+      if (DEBUG_BEHAVIOR) console.error('[executeEatBehavior] Guinea pig not found')
       return false
     }
 
     const currentPos = movement.currentPosition.value
-    console.log('[executeEatBehavior] Guinea pig current position:', currentPos)
-    console.log('[executeEatBehavior] Initiating movement to food bowl at', goal.target)
+    if (DEBUG_BEHAVIOR) {
+      console.log('[executeEatBehavior] Guinea pig current position:', currentPos)
+      console.log('[executeEatBehavior] Initiating movement to food bowl at', goal.target)
+    }
 
     // Navigate to food bowl
     let success = false
     try {
       success = movement.moveTo(goal.target, { avoidOccupiedCells: true })
-      console.log('[executeEatBehavior] moveTo returned:', success)
+      if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] moveTo returned:', success)
     } catch (error) {
-      console.error('[executeEatBehavior] moveTo threw an error:', error)
+      if (DEBUG_BEHAVIOR) console.error('[executeEatBehavior] moveTo threw an error:', error)
       return false
     }
 
     if (!success) {
-      console.warn('[executeEatBehavior] Movement to food bowl FAILED - pathfinding could not find route from', currentPos, 'to', goal.target)
+      if (DEBUG_BEHAVIOR) console.warn('[executeEatBehavior] Movement to food bowl FAILED - pathfinding could not find route from', currentPos, 'to', goal.target)
       return false
     }
 
-    console.log('[executeEatBehavior] Movement initiated successfully, waiting for arrival...')
+    if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] Movement initiated successfully, waiting for arrival...')
 
     // Wait for arrival
     await new Promise<void>(resolve => {
       movement.onArrival(() => {
-        console.log('[executeEatBehavior] Arrived at food bowl!')
+        if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] Arrived at food bowl!')
         resolve()
       })
     })
@@ -638,11 +641,11 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     let foodQuality = 1.0 // Quality multiplier
     let eatenFoodName: string | undefined = undefined
 
-    console.log('[executeEatBehavior] Checking bowl contents for', goal.targetItemId)
+    if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] Checking bowl contents for', goal.targetItemId)
 
     if (goal.targetItemId) {
       const bowlContents = habitatConditions.getBowlContents(goal.targetItemId)
-      console.log('[executeEatBehavior] Bowl contents:', bowlContents)
+      if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] Bowl contents:', bowlContents)
 
       if (bowlContents && bowlContents.length > 0) {
         // Find preferred food if available
@@ -689,19 +692,19 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     const msg = MessageGenerator.generateAutonomousEatMessage(guineaPig.value.name, eatenFoodName)
     loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
 
-    console.log('[executeEatBehavior] Starting eating animation, duration:', goal.estimatedDuration)
+    if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] Starting eating animation, duration:', goal.estimatedDuration)
 
     // Simulate eating duration
     await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
 
-    console.log('[executeEatBehavior] Eating complete, restoring hunger')
+    if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] Eating complete, restoring hunger')
 
     // Satisfy hunger need with quality multiplier
     if (guineaPig.value) {
       hungerRestored = Math.floor(hungerRestored * foodQuality)
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', hungerRestored)
 
-      console.log('[executeEatBehavior] Restored', hungerRestored, 'hunger points')
+      if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] Restored', hungerRestored, 'hunger points')
     }
 
     // Set cooldown and return to idle
@@ -709,7 +712,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'idle'
     behaviorState.value.currentGoal = null
 
-    console.log('[executeEatBehavior] Eat behavior completed successfully')
+    if (DEBUG_BEHAVIOR) console.log('[executeEatBehavior] Eat behavior completed successfully')
 
     return true
   }
@@ -971,33 +974,33 @@ export function useGuineaPigBehavior(guineaPigId: string) {
    * Execute eat hay behavior (from hay rack)
    */
   async function executeEatHayBehavior(goal: BehaviorGoal): Promise<boolean> {
-    console.log('[executeEatHayBehavior] Starting eat hay behavior', { goal, guineaPigId })
+    if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Starting eat hay behavior', { goal, guineaPigId })
 
     if (!goal.target || !guineaPig.value) {
-      console.error('[executeEatHayBehavior] Missing target or guinea pig')
+      if (DEBUG_BEHAVIOR) console.error('[executeEatHayBehavior] Missing target or guinea pig')
       return false
     }
 
-    console.log('[executeEatHayBehavior] Initiating movement to hay rack at', goal.target)
+    if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Initiating movement to hay rack at', goal.target)
 
     // Navigate to hay rack
     const success = movement.moveTo(goal.target, { avoidOccupiedCells: true })
     if (!success) {
-      console.warn('[executeEatHayBehavior] Movement to hay rack FAILED')
+      if (DEBUG_BEHAVIOR) console.warn('[executeEatHayBehavior] Movement to hay rack FAILED')
       return false
     }
 
-    console.log('[executeEatHayBehavior] Movement initiated, waiting for arrival...')
+    if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Movement initiated, waiting for arrival...')
 
     // Wait for arrival
     await new Promise<void>(resolve => {
       movement.onArrival(() => {
-        console.log('[executeEatHayBehavior] Arrived at hay rack!')
+        if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Arrived at hay rack!')
         resolve()
       })
     })
 
-    console.log('[executeEatHayBehavior] Checking hay rack contents')
+    if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Checking hay rack contents')
 
     // Calculate hay quality based on freshness
     let hungerRestored = 35 // Base hay restoration (enough to get above 30% threshold, slightly less than food bowl)
@@ -1005,18 +1008,18 @@ export function useGuineaPigBehavior(guineaPigId: string) {
 
     if (goal.targetItemId) {
       const hayServings = habitatConditions.getHayRackContents(goal.targetItemId)
-      console.log('[executeEatHayBehavior] Hay servings:', hayServings)
+      if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Hay servings:', hayServings)
 
       if (hayServings && hayServings.length > 0) {
         const freshness = habitatConditions.getHayRackFreshness(goal.targetItemId) / 100
         hayQuality = 0.6 + freshness * 0.4 // 60-100% based on freshness
 
-        console.log('[executeEatHayBehavior] Removing hay serving, freshness:', freshness)
+        if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Removing hay serving, freshness:', freshness)
 
         // Remove first hay serving from rack (index 0)
         habitatConditions.removeHayFromRack(goal.targetItemId, 0)
       } else {
-        console.warn('[executeEatHayBehavior] Hay rack is empty!')
+        if (DEBUG_BEHAVIOR) console.warn('[executeEatHayBehavior] Hay rack is empty!')
       }
     }
 
@@ -1030,19 +1033,19 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
     }
 
-    console.log('[executeEatHayBehavior] Starting eating animation, duration:', goal.estimatedDuration)
+    if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Starting eating animation, duration:', goal.estimatedDuration)
 
     // Simulate eating duration
     await new Promise(resolve => setTimeout(resolve, goal.estimatedDuration))
 
-    console.log('[executeEatHayBehavior] Eating complete, restoring hunger')
+    if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Eating complete, restoring hunger')
 
     // Satisfy hunger need with quality multiplier
     if (guineaPig.value) {
       hungerRestored = Math.floor(hungerRestored * hayQuality)
       guineaPigStore.adjustNeed(guineaPigId, 'hunger', hungerRestored)
 
-      console.log('[executeEatHayBehavior] Restored', hungerRestored, 'hunger points')
+      if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Restored', hungerRestored, 'hunger points')
     }
 
     // Set cooldown and return to idle
@@ -1050,7 +1053,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'idle'
     behaviorState.value.currentGoal = null
 
-    console.log('[executeEatHayBehavior] Eat hay behavior completed successfully')
+    if (DEBUG_BEHAVIOR) console.log('[executeEatHayBehavior] Eat hay behavior completed successfully')
 
     return true
   }

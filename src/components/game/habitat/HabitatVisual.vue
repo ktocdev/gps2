@@ -131,6 +131,7 @@
           :key="guineaPig.id"
           :guinea-pig="guineaPig"
           :grid-position="getGuineaPigPosition(guineaPig.id)"
+          :cell-size="cellSize"
           :offset-x="getGuineaPigOffset(guineaPig.id).x"
           :offset-y="getGuineaPigOffset(guineaPig.id).y"
           :is-interacting-with-depth-item="isInteractingWithDepthItem(guineaPig.id)"

@@ -11,4 +11,6 @@ All items have been organized and prioritized in the new sprint document.
 
 
 New
-- bedding type select is getting cut off with the count
+- treats cannot be dragged into habitat
+- cannot have duplicates of some items in habitat
+- can we prevent the emojis from being accidentally highlight/selected when trying to drag and drop
