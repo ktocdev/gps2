@@ -16,7 +16,7 @@ import { useNeedsController } from './needsController'
 // TypeScript interfaces
 interface GameState {
   currentState: 'intro' | 'playing' | 'paused' | 'stopped'
-  pauseReason?: 'manual' | 'orientation' | 'navigation' | null
+  pauseReason?: 'manual' | 'orientation' | 'navigation' | 'visibility' | null
   hasGuineaPig: boolean
   isFirstTimeUser: boolean
   lastSaveTimestamp: number
@@ -86,6 +86,9 @@ export const useGameController = defineStore('gameController', () => {
   )
   const isOrientationPaused = computed(() =>
     gameState.value.currentState === 'paused' && gameState.value.pauseReason === 'orientation'
+  )
+  const isVisibilityPaused = computed(() =>
+    gameState.value.currentState === 'paused' && gameState.value.pauseReason === 'visibility'
   )
 
   // Guinea pig related computed properties
@@ -163,7 +166,7 @@ export const useGameController = defineStore('gameController', () => {
     }
   }
 
-  const pauseGame = (reason: 'manual' | 'orientation' | 'navigation' = 'manual') => {
+  const pauseGame = (reason: 'manual' | 'orientation' | 'navigation' | 'visibility' = 'manual') => {
     if (gameState.value.currentState === 'playing') {
       setState('paused', reason)
 
@@ -175,9 +178,10 @@ export const useGameController = defineStore('gameController', () => {
       const needsController = useNeedsController()
       needsController.pauseProcessing(false) // Not a manual pause, it's game-driven
     } else if (gameState.value.currentState === 'paused') {
-      // Pause reason priority: manual > navigation > orientation
+      // Pause reason priority: manual > visibility > navigation > orientation
       const currentReason = gameState.value.pauseReason
       if (reason === 'manual' ||
+          (reason === 'visibility' && currentReason !== 'manual') ||
           (reason === 'navigation' && currentReason === 'orientation')) {
         gameState.value.pauseReason = reason
       }
@@ -326,6 +330,7 @@ export const useGameController = defineStore('gameController', () => {
     isPaused,
     isManuallyPaused,
     isOrientationPaused,
+    isVisibilityPaused,
     hasGuineaPig,
     activeGuineaPig,
 
