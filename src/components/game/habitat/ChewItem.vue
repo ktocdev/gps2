@@ -6,7 +6,7 @@
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
-    <span class="chew-item__emoji" :style="durabilityStyle">{{ itemEmoji }}</span>
+    <span class="chew-item__emoji no-select" :style="durabilityStyle">{{ itemEmoji }}</span>
 
     <HabitatItemPopover
       :title="itemName"

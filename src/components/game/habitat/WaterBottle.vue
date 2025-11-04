@@ -6,7 +6,7 @@
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
-    <span class="water-bottle__water">💧</span>
+    <span class="water-bottle__water no-select">💧</span>
 
     <HabitatItemPopover
       :title="popoverTitle"

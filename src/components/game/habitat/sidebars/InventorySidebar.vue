@@ -41,9 +41,9 @@
         @touchmove="handleRegularTouchMove($event, item)"
         @touchend="handleRegularTouchEnd($event, item)"
       >
-        <span class="inventory-sidebar__item-emoji">{{ item.emoji }}</span>
-        <span class="inventory-sidebar__item-name">{{ item.name }}</span>
-        <span v-if="item.availableCount > 1" class="inventory-sidebar__item-count">×{{ item.availableCount }}</span>
+        <span class="inventory-sidebar__item-emoji no-select">{{ item.emoji }}</span>
+        <span class="inventory-sidebar__item-name no-select">{{ item.name }}</span>
+        <span v-if="item.availableCount > 1" class="inventory-sidebar__item-count no-select">×{{ item.availableCount }}</span>
       </div>
     </div>
   </div>

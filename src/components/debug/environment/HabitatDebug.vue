@@ -93,6 +93,7 @@
             @hold="handleInteraction('hold')"
             @hand-feed="handleHandFeed"
             @gentle-wipe="handleInteraction('gentle-wipe')"
+            @clip-nails="handleInteraction('clip-nails')"
             @talk-to="handleInteraction('talk-to')"
             @sing-to="handleInteraction('sing-to')"
             @call-name="handleInteraction('call-name')"

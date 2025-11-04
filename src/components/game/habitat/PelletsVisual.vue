@@ -3,7 +3,7 @@
     <span
       v-for="index in 5"
       :key="index"
-      class="pellets-visual__pellet"
+      class="pellets-visual__pellet no-select"
       :class="`pellets-visual__pellet--${index}`"
     >
       {{ pelletEmoji }}

@@ -14,7 +14,7 @@
     :title="tooltipText"
     @click="handleClick"
   >
-    <div class="guinea-pig-sprite__emoji">
+    <div class="guinea-pig-sprite__emoji no-select">
       {{ guineaPigEmoji }}
     </div>
   </div>

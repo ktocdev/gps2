@@ -224,6 +224,13 @@ img {
   border: 0;
 }
 
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
 /* Layout Utilities */
 .container {
   inline-size: 100%;

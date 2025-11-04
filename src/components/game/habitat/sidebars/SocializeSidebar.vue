@@ -98,7 +98,7 @@
             variant="tertiary"
             size="sm"
             full-width
-            :disabled="isHandFeedOnCooldown"
+            :disabled="isHandFeedDisabled"
             :title="handFeedTooltip"
           >
             🥕 Hand Feed{{ handFeedCooldownText }}
@@ -109,8 +109,21 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isGentleWipeDisabled"
+            :title="gentleWipeTooltip"
           >
             🧼 Gentle Wipe
+          </Button>
+
+          <Button
+            @click="$emit('clip-nails')"
+            variant="tertiary"
+            size="sm"
+            full-width
+            :disabled="isClipNailsDisabled"
+            :title="clipNailsTooltip"
+          >
+            ✂️ Clip Nails
           </Button>
         </div>
 
@@ -209,6 +222,7 @@ const emit = defineEmits<{
   'hold': []
   'hand-feed': [foodId: string]
   'gentle-wipe': []
+  'clip-nails': []
   'talk-to': []
   'sing-to': []
   'call-name': []
@@ -269,6 +283,12 @@ const handFeedRemainingCooldown = computed(() => {
 
 const isHandFeedOnCooldown = computed(() => handFeedRemainingCooldown.value > 0)
 
+const isHandFeedDisabled = computed(() => {
+  if (!props.selectedGuineaPig) return true
+  if (props.selectedGuineaPig.needs.hunger >= 95) return true
+  return isHandFeedOnCooldown.value
+})
+
 const handFeedCooldownText = computed(() => {
   if (!isHandFeedOnCooldown.value) return ''
 
@@ -277,10 +297,42 @@ const handFeedCooldownText = computed(() => {
 })
 
 const handFeedTooltip = computed(() => {
+  if (!props.selectedGuineaPig) return 'Select a guinea pig'
+  if (props.selectedGuineaPig.needs.hunger >= 95) {
+    return 'Guinea pig is not hungry (hunger above 95%)'
+  }
   if (isHandFeedOnCooldown.value) {
     return 'Hand-feed is on cooldown'
   }
   return 'Hand-feed a food item to your guinea pig'
+})
+
+// Gentle wipe disabled state
+const isGentleWipeDisabled = computed(() => {
+  if (!props.selectedGuineaPig) return true
+  return props.selectedGuineaPig.needs.hygiene >= 75
+})
+
+const gentleWipeTooltip = computed(() => {
+  if (!props.selectedGuineaPig) return 'Select a guinea pig'
+  if (props.selectedGuineaPig.needs.hygiene >= 75) {
+    return 'Guinea pig is clean (hygiene above 75%)'
+  }
+  return 'Gently wipe your guinea pig clean'
+})
+
+// Clip nails disabled state
+const isClipNailsDisabled = computed(() => {
+  if (!props.selectedGuineaPig) return true
+  return props.selectedGuineaPig.needs.nails >= 75
+})
+
+const clipNailsTooltip = computed(() => {
+  if (!props.selectedGuineaPig) return 'Select a guinea pig'
+  if (props.selectedGuineaPig.needs.nails >= 75) {
+    return 'Nails are still good (wait until below 75%)'
+  }
+  return 'Clip your guinea pig\'s nails'
 })
 
 // Update timestamp only when cooldown is active (efficient)

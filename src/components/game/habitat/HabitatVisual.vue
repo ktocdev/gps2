@@ -119,9 +119,13 @@
             gridColumn: `${item.position.x + 1}`,
             gridRow: `${item.position.y + 1}`
           }"
-          @click="handleSubgridItemClick(item)"
         >
-          {{ getSubgridEmoji(item.type) }}
+          <Poop
+            v-if="item.type === 'poop'"
+            :poop-id="item.id"
+            @remove="handlePoopRemove"
+          />
+          <span v-else class="no-select">{{ getSubgridEmoji(item.type) }}</span>
         </div>
       </div>
 
@@ -155,6 +159,7 @@ import FoodBowl from './FoodBowl.vue'
 import HayRack from './HayRack.vue'
 import WaterBottle from './WaterBottle.vue'
 import ChewItem from './ChewItem.vue'
+import Poop from './Poop.vue'
 import GuineaPigSprite from './GuineaPigSprite.vue'
 
 interface Props {
@@ -449,10 +454,8 @@ function clearAllPoop() {
   habitatConditions.cleanCage()
 }
 
-function handleSubgridItemClick(item: SubgridItem) {
-  if (item.type === 'poop') {
-    habitatConditions.removePoop(item.id)
-  }
+function handlePoopRemove(poopId: string) {
+  habitatConditions.removePoop(poopId)
 }
 
 function getSubgridEmoji(type: string): string {

@@ -9,8 +9,8 @@
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
-    <span class="hay-rack__ladder">🪜</span>
-    <span class="hay-rack__emoji">🌾</span>
+    <span class="hay-rack__ladder no-select">🪜</span>
+    <span class="hay-rack__emoji no-select">🌾</span>
 
     <div v-if="hayServings.length > 0" class="hay-rack__contents">
       <span
