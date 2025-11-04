@@ -30,15 +30,16 @@
         <div class="interaction-section">
           <h4 class="interaction-section__title">👤 Your Friendship</h4>
           <div class="panel panel--compact">
-            <div class="bond-progress">
-              <div class="bond-progress__bar">
-                <div
-                  class="bond-progress__fill"
-                  :style="{ width: selectedGuineaPig.friendship + '%' }"
-                ></div>
-              </div>
-              <span class="bond-progress__label">{{ Math.round(selectedGuineaPig.friendship) }}%</span>
-            </div>
+            <SliderField
+              :model-value="Math.round(selectedGuineaPig.friendship)"
+              :min="0"
+              :max="100"
+              :step="1"
+              disabled
+              size="sm"
+              suffix="%"
+              @update:model-value="() => {}"
+            />
             <div class="bond-stats">
               <span class="bond-stat">{{ getPlayerFriendshipMessage(selectedGuineaPig.friendship) }}</span>
             </div>
@@ -55,15 +56,16 @@
                 {{ formatTier(bondInfo.bond.bondingTier) }}
               </span>
             </div>
-            <div class="bond-progress">
-              <div class="bond-progress__bar">
-                <div
-                  class="bond-progress__fill"
-                  :style="{ width: bondInfo.bond.bondingLevel + '%' }"
-                ></div>
-              </div>
-              <span class="bond-progress__label">{{ Math.round(bondInfo.bond.bondingLevel) }}%</span>
-            </div>
+            <SliderField
+              :model-value="Math.round(bondInfo.bond.bondingLevel)"
+              :min="0"
+              :max="100"
+              :step="1"
+              disabled
+              size="sm"
+              suffix="%"
+              @update:model-value="() => {}"
+            />
             <div class="bond-stats">
               <span class="bond-stat">💕 {{ bondInfo.bond.totalInteractions }} interactions</span>
               <span class="bond-stat">{{ getBondStrengthMessage(bondInfo.bond.bondingLevel) }}</span>
@@ -206,6 +208,7 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from 'vue'
 import Button from '../../../basic/Button.vue'
+import SliderField from '../../../basic/SliderField.vue'
 import FoodSelectionDialog from '../../dialogs/FoodSelectionDialog.vue'
 import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
 import type { GuineaPig } from '../../../../stores/guineaPigStore'
@@ -501,35 +504,6 @@ function formatTier(tier: string): string {
 .bond-tier--bonded {
   background: var(--color-pink-100);
   color: var(--color-pink-700);
-}
-
-.bond-progress {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-block-end: var(--space-2);
-}
-
-.bond-progress__bar {
-  flex: 1;
-  block-size: 6px;
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.bond-progress__fill {
-  block-size: 100%;
-  background: linear-gradient(90deg, var(--color-blue-500), var(--color-pink-500));
-  transition: inline-size 0.3s ease;
-}
-
-.bond-progress__label {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  min-inline-size: 40px;
-  text-align: end;
 }
 
 .bond-stats {
