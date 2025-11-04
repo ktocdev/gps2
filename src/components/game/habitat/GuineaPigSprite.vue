@@ -84,7 +84,8 @@ const isInteracting = computed(() => {
 // Tooltip showing guinea pig metadata
 const tooltipText = computed(() => {
   const gp = props.guineaPig
-  const age = Math.floor((Date.now() - gp.birthDate) / (1000 * 60 * 60 * 24)) // Days old
+  // Age calculation temporarily hidden - will be re-enabled with aging system (Phase 5+)
+  // const age = Math.floor((Date.now() - gp.birthDate) / (1000 * 60 * 60 * 24)) // Days old
   const behaviorState = behaviorStateStore.getBehaviorState(gp.id)
   const currentActivity = behaviorState?.currentActivity || 'idle'
   const currentGoal = behaviorState?.currentGoal
@@ -93,7 +94,6 @@ const tooltipText = computed(() => {
 
   return `${gp.name} (${gp.gender})
 Breed: ${gp.breed}
-Age: ${age} days
 Level: ${gp.stats.level}
 Wellness: ${Math.round(wellness)}%
 Friendship: ${Math.round(gp.friendship)}%

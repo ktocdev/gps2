@@ -48,12 +48,13 @@ defineEmits<{
 /**
  * Calculate urgency level based on need value
  * Value represents satisfaction level: 100 = full/satisfied, 0 = empty/critical
+ * Green (60-100) → Grey (40-60) → Yellow (30-40) → Red (0-30)
  */
 const urgency = computed(() => {
-  if (props.value >= 90) return 'satisfied'  // 90-100: Fully satisfied (green)
-  if (props.value >= 70) return 'good'       // 70-89: Good (slate gray)
-  if (props.value >= 50) return 'medium'     // 50-69: Getting low (yellow)
-  return 'critical'  // 0-49: Critical/empty (red)
+  if (props.value >= 60) return 'satisfied'  // 60-100: Green
+  if (props.value >= 40) return 'good'       // 40-59: Grey
+  if (props.value >= 30) return 'medium'     // 30-39: Yellow
+  return 'critical'  // 0-29: Red
 })
 </script>
 

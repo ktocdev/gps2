@@ -437,22 +437,23 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 
   // Needs decay system
   const needsDecayRates = ref({
-    // Critical Needs (high decay)
-    hunger: 20,       // Critical need - requires attention in 5 min sessions
-    thirst: 25,       // Most critical - water needed quickly (4 min)
-    energy: 15,       // Regular rest needed (7 min)
-    shelter: 18,      // Critical for security/anxiety (6 min)
+    // Critical Needs (decay rates calibrated for 1-second ticks)
+    // Formula: decayRate * (1000ms / 60000ms) = points per second
+    hunger: 10,       // ~0.17 points/sec = 10 minutes from 100 to 0
+    thirst: 8,        // ~0.13 points/sec = 12.5 minutes from 100 to 0
+    energy: 7,        // ~0.12 points/sec = 14 minutes from 100 to 0
+    shelter: 9,       // ~0.15 points/sec = 11 minutes from 100 to 0
 
     // Environmental Needs (medium decay)
-    play: 10,         // Regular play needed (10 min)
-    social: 8,        // Regular interaction needed (12 min)
-    comfort: 5,       // Bedding comfort needed (20 min)
+    play: 5,          // ~0.08 points/sec = 20 minutes from 100 to 0
+    social: 4,        // ~0.07 points/sec = 25 minutes from 100 to 0
+    comfort: 3,       // ~0.05 points/sec = 33 minutes from 100 to 0
 
     // Maintenance Needs (low decay)
-    hygiene: 6,       // Periodic grooming needed (16 min)
-    nails: 1,         // Rare maintenance task (100 min)
-    health: 2,        // Long-term care across sessions (50 min)
-    chew: 5           // Moderate maintenance (20 min)
+    hygiene: 3,       // ~0.05 points/sec = 33 minutes from 100 to 0
+    nails: 0.5,       // ~0.008 points/sec = 200 minutes from 100 to 0
+    health: 1,        // ~0.017 points/sec = 100 minutes from 100 to 0
+    chew: 2.5         // ~0.042 points/sec = 40 minutes from 100 to 0
   })
 
   const needsLastUpdate = ref<Record<string, number>>({})
@@ -612,10 +613,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const deltaTimeMinutes = deltaTimeMs / (1000 * 60) // Convert to minutes
     const decayMultiplier = settings.value.needsDecayRate
 
-    // Individual variation factors (based on personality and age)
-    const ageModifier = Math.max(0.5, Math.min(2.0, guineaPig.stats.age / 365)) // Age in years affects decay
-    const healthModifier = Math.max(0.5, guineaPig.needs.health / 100) // Poor health accelerates some decays
-
     let needsChanged = false
 
     // Process each need with its specific decay rate
@@ -623,18 +620,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       const currentValue = guineaPig.needs[needKey as keyof GuineaPigNeeds]
       const baseDecayRate = needsDecayRates.value[needKey as keyof typeof needsDecayRates.value]
 
-      // Apply modifiers based on need type
+      // Start with base decay rate and global multiplier
       let finalDecayRate = baseDecayRate * decayMultiplier
 
-      if (needKey === 'health' || needKey === 'energy') {
-        finalDecayRate *= ageModifier // Age affects health and energy more
-      }
-
-      if (needKey === 'hunger' || needKey === 'thirst') {
-        finalDecayRate *= healthModifier // Poor health increases basic needs
-      }
-
-      // Apply personality trait modifiers (Phase 2.5 - System 1)
+      // Apply personality trait modifiers only (Phase 2.5 - System 1)
+      // These are stable and don't cause death spirals
       finalDecayRate *= getPersonalityDecayModifier(guineaPig, needKey as keyof GuineaPigNeeds)
 
       // System 21: Apply bonding tier modifiers to social need decay
@@ -648,6 +638,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       }
 
       // Calculate decay amount (needs decay downward from 100 to 0)
+      // No age/health modifiers to prevent unfair death spirals
       const decayAmount = finalDecayRate * deltaTimeMinutes
       const newValue = Math.max(0, Math.min(100, currentValue - decayAmount))
 

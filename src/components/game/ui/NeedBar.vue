@@ -71,19 +71,20 @@ const statusClasses = computed(() => [
   `need-bar__status--${statusLevel.value}`
 ])
 
-// Status levels based on need value (higher value = more urgent need)
+// Status levels: 100=full, 0=empty
+// Green (60-100) → Grey (40-60) → Yellow (30-40) → Red (0-30)
 const statusLevel = computed(() => {
-  if (props.value >= 75) return 'critical'      // Red - Urgent attention needed
-  if (props.value >= 50) return 'warning'       // Orange - Needs attention
-  if (props.value >= 25) return 'moderate'      // Yellow - Okay but declining
-  return 'good'                                 // Green - Well satisfied
+  if (props.value < 30) return 'critical'       // Red - Under 30%
+  if (props.value < 40) return 'warning'        // Yellow - Under 40%
+  if (props.value < 60) return 'moderate'       // Grey - Under 60%
+  return 'good'                                 // Green - 60%+
 })
 
 const statusText = computed(() => {
   switch (statusLevel.value) {
-    case 'critical': return 'URGENT'
-    case 'warning': return 'Attention Needed'
-    case 'moderate': return 'Declining'
+    case 'critical': return 'Low'
+    case 'warning': return 'Getting Low'
+    case 'moderate': return 'Okay'
     case 'good': return 'Satisfied'
     default: return 'Unknown'
   }
@@ -210,16 +211,17 @@ const formatNeedName = (need: string): string => {
 }
 
 /* Status-based fill colors */
+/* Green (60-100) → Grey (40-60) → Yellow (30-40) → Red (0-30) */
 .need-bar__fill--good {
   background-color: var(--color-success);
 }
 
 .need-bar__fill--moderate {
-  background-color: var(--color-warning);
+  background-color: #9ca3af; /* Grey */
 }
 
 .need-bar__fill--warning {
-  background-color: var(--color-error);
+  background-color: #eab308; /* Yellow */
 }
 
 .need-bar__fill--critical {
@@ -233,11 +235,11 @@ const formatNeedName = (need: string): string => {
 }
 
 .need-bar__value--moderate {
-  color: var(--color-warning);
+  color: #6b7280; /* Grey text */
 }
 
 .need-bar__value--warning {
-  color: var(--color-error);
+  color: #ca8a04; /* Yellow text */
 }
 
 .need-bar__value--critical {
@@ -297,11 +299,11 @@ const formatNeedName = (need: string): string => {
 }
 
 .need-bar__status--moderate {
-  color: var(--color-warning);
+  color: #6b7280; /* Grey */
 }
 
 .need-bar__status--warning {
-  color: var(--color-error);
+  color: #ca8a04; /* Yellow */
 }
 
 .need-bar__status--critical {
