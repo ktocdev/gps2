@@ -227,8 +227,8 @@
           <div v-if="foodBowls.length > 0" class="conditions-section">
             <h4>Food Containers</h4>
             <div class="food-bowls-list">
-              <div v-for="bowl in foodBowls" :key="bowl.bowlId" class="food-bowl-container">
-                <div class="food-bowl-container__header">
+              <div v-for="bowl in foodBowls" :key="bowl.bowlId" class="panel panel--compact">
+                <div class="panel__header">
                   <h5>{{ bowl.bowlName }}</h5>
                   <span class="food-bowl-container__count">{{ bowl.foods.length }}/{{ bowl.capacity }}</span>
                 </div>
@@ -1042,25 +1042,16 @@ function getChewDurabilityClass(durability: number): string {
   gap: var(--space-3);
 }
 
-.food-bowl-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
+/* Food bowl container now uses .panel .panel--compact utility */
 
-.food-bowl-container__header {
+/* Custom header layout for food bowl panels */
+.food-bowls-list .panel__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-block-end: var(--space-2);
-  border-block-end: 1px solid var(--color-border);
 }
 
-.food-bowl-container__header h5 {
+.food-bowls-list .panel__header h5 {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-semibold);
   margin: 0;

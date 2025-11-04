@@ -29,7 +29,7 @@
         <!-- Player Friendship -->
         <div class="interaction-section">
           <h4 class="interaction-section__title">👤 Your Friendship</h4>
-          <div class="bond-status">
+          <div class="panel panel--compact">
             <div class="bond-progress">
               <div class="bond-progress__bar">
                 <div
@@ -48,7 +48,7 @@
         <!-- System 21: Bond Status -->
         <div v-if="companionBonds.length > 0" class="interaction-section">
           <h4 class="interaction-section__title">🤝 Companion Bonds</h4>
-          <div v-for="bondInfo in companionBonds" :key="bondInfo.bond.id" class="bond-status">
+          <div v-for="bondInfo in companionBonds" :key="bondInfo.bond.id" class="panel panel--compact">
             <div class="bond-status__header">
               <span class="bond-partner-name">{{ bondInfo.partnerName }}</span>
               <span class="bond-tier" :class="`bond-tier--${bondInfo.bond.bondingTier}`">
@@ -416,14 +416,7 @@ function formatTier(tier: string): string {
   margin-block-end: var(--space-1);
 }
 
-/* System 21: Bond Status Styles */
-.bond-status {
-  padding: var(--space-3);
-  background-color: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-}
-
+/* System 21: Bond Status Styles - Now uses .panel .panel--compact for container */
 .bond-status__header {
   display: flex;
   justify-content: space-between;
