@@ -305,6 +305,10 @@ This phase focuses on **playing the game and observing** to identify issues, ref
   - **Habitat condition influences** (cleanliness, enrichment affecting interactions)
   - **Recent interaction tracking** and guinea pig mood system
 23. **[Enrichment & Resource Management System](systems/phase5/system-23-enrichment-resource-management.md)** - Item effectiveness, rotation mechanics, and strategic purchasing 📋 **Planned**
+  - **Stimulation need re-introduction** (11th need: mental enrichment distinct from physical play)
+    - Stimulation: Variety, novel experiences, exploration, mental engagement
+    - Play: Physical activity, exercise, active toy usage
+    - Satisfied through item rotation, habitat changes, new item introductions
   - Item effectiveness system with newness bonuses (+50% initial effectiveness)
   - Familiarity decay over time (diminishing returns on repeated use)
   - Rotation mechanics encouraging variety in toys and enrichment
