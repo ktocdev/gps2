@@ -36,6 +36,17 @@
         >
           🛏️ Refresh Bedding
         </Button>
+
+        <Button
+          @click="$emit('fill-all-hay-racks')"
+          variant="tertiary"
+          size="sm"
+          full-width
+          :disabled="!canFillHayRacks"
+          :title="fillHayRacksTooltip"
+        >
+          🌾 Fill All Hay Racks
+        </Button>
       </div>
 
       <!-- Bedding Selection -->
@@ -124,6 +135,8 @@ import Select from '../../../basic/Select.vue'
 
 interface Props {
   canRefreshBedding: boolean
+  canFillHayRacks: boolean
+  fillHayRacksTooltip: string
   selectedBeddingType: string
   beddingOptions: Array<{ value: string; label: string; disabled?: boolean }>
   poopCount: number
@@ -136,6 +149,7 @@ defineEmits<{
   'clean-cage': []
   'refill-water': []
   'refresh-bedding': []
+  'fill-all-hay-racks': []
   'update:selectedBeddingType': [value: string | number]
   'clear-all-bowls': []
   'clear-all-hay-racks': []

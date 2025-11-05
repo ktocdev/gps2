@@ -72,6 +72,7 @@
             :capacity="4"
             @add-hay="(hayId) => handleAddHayToRack(item.itemId, hayId)"
             @clear-rack="handleClearHayRack(item.itemId)"
+            @fill-rack="handleFillHayRack(item.itemId)"
           />
           <WaterBottle
             v-else-if="isWaterBottle(item.itemId)"
@@ -119,9 +120,13 @@
             gridColumn: `${item.position.x + 1}`,
             gridRow: `${item.position.y + 1}`
           }"
-          @click="handleSubgridItemClick(item)"
         >
-          {{ getSubgridEmoji(item.type) }}
+          <Poop
+            v-if="item.type === 'poop'"
+            :poop-id="item.id"
+            @remove="handlePoopRemove"
+          />
+          <span v-else class="no-select">{{ getSubgridEmoji(item.type) }}</span>
         </div>
       </div>
 
@@ -131,6 +136,7 @@
           :key="guineaPig.id"
           :guinea-pig="guineaPig"
           :grid-position="getGuineaPigPosition(guineaPig.id)"
+          :cell-size="cellSize"
           :offset-x="getGuineaPigOffset(guineaPig.id).x"
           :offset-y="getGuineaPigOffset(guineaPig.id).y"
           :is-interacting-with-depth-item="isInteractingWithDepthItem(guineaPig.id)"
@@ -154,6 +160,7 @@ import FoodBowl from './FoodBowl.vue'
 import HayRack from './HayRack.vue'
 import WaterBottle from './WaterBottle.vue'
 import ChewItem from './ChewItem.vue'
+import Poop from './Poop.vue'
 import GuineaPigSprite from './GuineaPigSprite.vue'
 
 interface Props {
@@ -448,10 +455,8 @@ function clearAllPoop() {
   habitatConditions.cleanCage()
 }
 
-function handleSubgridItemClick(item: SubgridItem) {
-  if (item.type === 'poop') {
-    habitatConditions.removePoop(item.id)
-  }
+function handlePoopRemove(poopId: string) {
+  habitatConditions.removePoop(poopId)
 }
 
 function getSubgridEmoji(type: string): string {
@@ -927,6 +932,15 @@ function handleAddHayToRack(hayRackItemId: string, hayItemId: string) {
 
 function handleClearHayRack(hayRackItemId: string) {
   habitatConditions.clearHayRack(hayRackItemId)
+}
+
+function handleFillHayRack(hayRackItemId: string) {
+  const result = habitatConditions.fillAllHayRacks([hayRackItemId])
+  if (result.totalAdded > 0) {
+    console.log(`✅ Added ${result.totalAdded} hay serving${result.totalAdded > 1 ? 's' : ''} to rack`)
+  } else {
+    console.warn('No hay was added - check inventory or rack capacity')
+  }
 }
 
 // Water bottle helper function

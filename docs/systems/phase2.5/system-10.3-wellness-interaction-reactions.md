@@ -1,6 +1,9 @@
-# Wellness-Based Interaction Reactions - System 4
+# Wellness-Based Interaction Reactions - System 10.3
 
 **Phase 2.5: Interactive Feedback Enhancement**
+**Status:** ➡️ **Moved to Phase 5 [System 22](../phase5/system-22-interaction-enhancement.md)**
+
+> **⚠️ Note:** This system has been consolidated into Phase 5 **[System 22: Interaction Enhancement System](../phase5/system-22-interaction-enhancement.md)** as Component 1 (Wellness-Based Interaction Reactions). Systems 10.3, 10.4, and 10.5 have been combined into System 22 for cohesive interaction feedback. Please refer to System 22 for the complete specification.
 
 ## Overview
 Comprehensive system defining how wellness scores affect guinea pig responsiveness to both user interactions and guinea-pig-to-guinea-pig social behaviors. Creates meaningful consequences for poor care through behavioral changes, interaction rejection, and reduced effectiveness, making wellness tangible beyond friendship penalties alone.

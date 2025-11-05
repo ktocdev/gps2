@@ -137,6 +137,11 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('scroll', updatePopoverPosition, true)
   window.removeEventListener('resize', updatePopoverPosition)
+  // Clean up any pending timeout to prevent memory leaks
+  if (hideTimeout) {
+    clearTimeout(hideTimeout)
+    hideTimeout = null
+  }
 })
 
 const popoverStyle = computed(() => {

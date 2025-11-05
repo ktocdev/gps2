@@ -38,6 +38,11 @@ export const interactionEffects = new Map<string, InteractionEffect>([
     friendshipGain: 2,
     cooldownTime: 300 // 5 minutes - longer cooldown to prevent spam
   }],
+  ['clip-nails', {
+    needsImpact: { nails: 100, comfort: -5 },
+    friendshipGain: 1,
+    cooldownTime: 600 // 10 minutes - longer cooldown, should only be needed occasionally
+  }],
 
   // Communication
   ['talk-to', {
@@ -90,6 +95,7 @@ export function getInteractionName(interactionType: string): string {
     'hold': 'Hold',
     'hand-feed': 'Hand Feed',
     'gentle-wipe': 'Gentle Wipe',
+    'clip-nails': 'Clip Nails',
     'talk-to': 'Talk To',
     'sing-to': 'Sing To',
     'call-name': 'Call Name',
@@ -109,6 +115,7 @@ export function getInteractionEmoji(interactionType: string): string {
     'hold': '🤲',
     'hand-feed': '🥕',
     'gentle-wipe': '🧼',
+    'clip-nails': '✂️',
     'talk-to': '💬',
     'sing-to': '🎵',
     'call-name': '📣',

@@ -29,16 +29,21 @@
         <!-- Player Friendship -->
         <div class="interaction-section">
           <h4 class="interaction-section__title">👤 Your Friendship</h4>
-          <div class="bond-status">
-            <div class="bond-progress">
-              <div class="bond-progress__bar">
-                <div
-                  class="bond-progress__fill"
-                  :style="{ width: selectedGuineaPig.friendship + '%' }"
-                ></div>
-              </div>
-              <span class="bond-progress__label">{{ Math.round(selectedGuineaPig.friendship) }}%</span>
+          <div class="panel panel--compact">
+            <div class="friendship-value">
+              <span class="friendship-value__label">Friendship:</span>
+              <span class="friendship-value__number">{{ Math.round(selectedGuineaPig.friendship) }}%</span>
             </div>
+            <SliderField
+              :model-value="Math.round(selectedGuineaPig.friendship)"
+              :min="0"
+              :max="100"
+              :step="1"
+              disabled
+              size="sm"
+              suffix="%"
+              @update:model-value="() => {}"
+            />
             <div class="bond-stats">
               <span class="bond-stat">{{ getPlayerFriendshipMessage(selectedGuineaPig.friendship) }}</span>
             </div>
@@ -48,22 +53,27 @@
         <!-- System 21: Bond Status -->
         <div v-if="companionBonds.length > 0" class="interaction-section">
           <h4 class="interaction-section__title">🤝 Companion Bonds</h4>
-          <div v-for="bondInfo in companionBonds" :key="bondInfo.bond.id" class="bond-status">
+          <div v-for="bondInfo in companionBonds" :key="bondInfo.bond.id" class="panel panel--compact">
             <div class="bond-status__header">
               <span class="bond-partner-name">{{ bondInfo.partnerName }}</span>
               <span class="bond-tier" :class="`bond-tier--${bondInfo.bond.bondingTier}`">
                 {{ formatTier(bondInfo.bond.bondingTier) }}
               </span>
             </div>
-            <div class="bond-progress">
-              <div class="bond-progress__bar">
-                <div
-                  class="bond-progress__fill"
-                  :style="{ width: bondInfo.bond.bondingLevel + '%' }"
-                ></div>
-              </div>
-              <span class="bond-progress__label">{{ Math.round(bondInfo.bond.bondingLevel) }}%</span>
+            <div class="friendship-value">
+              <span class="friendship-value__label">Bond Level:</span>
+              <span class="friendship-value__number">{{ Math.round(bondInfo.bond.bondingLevel) }}%</span>
             </div>
+            <SliderField
+              :model-value="Math.round(bondInfo.bond.bondingLevel)"
+              :min="0"
+              :max="100"
+              :step="1"
+              disabled
+              size="sm"
+              suffix="%"
+              @update:model-value="() => {}"
+            />
             <div class="bond-stats">
               <span class="bond-stat">💕 {{ bondInfo.bond.totalInteractions }} interactions</span>
               <span class="bond-stat">{{ getBondStrengthMessage(bondInfo.bond.bondingLevel) }}</span>
@@ -98,7 +108,7 @@
             variant="tertiary"
             size="sm"
             full-width
-            :disabled="isHandFeedOnCooldown"
+            :disabled="isHandFeedDisabled"
             :title="handFeedTooltip"
           >
             🥕 Hand Feed{{ handFeedCooldownText }}
@@ -109,8 +119,21 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isGentleWipeDisabled"
+            :title="gentleWipeTooltip"
           >
             🧼 Gentle Wipe
+          </Button>
+
+          <Button
+            @click="$emit('clip-nails')"
+            variant="tertiary"
+            size="sm"
+            full-width
+            :disabled="isClipNailsDisabled"
+            :title="clipNailsTooltip"
+          >
+            ✂️ Clip Nails
           </Button>
         </div>
 
@@ -193,6 +216,7 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted } from 'vue'
 import Button from '../../../basic/Button.vue'
+import SliderField from '../../../basic/SliderField.vue'
 import FoodSelectionDialog from '../../dialogs/FoodSelectionDialog.vue'
 import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
 import type { GuineaPig } from '../../../../stores/guineaPigStore'
@@ -209,6 +233,7 @@ const emit = defineEmits<{
   'hold': []
   'hand-feed': [foodId: string]
   'gentle-wipe': []
+  'clip-nails': []
   'talk-to': []
   'sing-to': []
   'call-name': []
@@ -269,6 +294,12 @@ const handFeedRemainingCooldown = computed(() => {
 
 const isHandFeedOnCooldown = computed(() => handFeedRemainingCooldown.value > 0)
 
+const isHandFeedDisabled = computed(() => {
+  if (!props.selectedGuineaPig) return true
+  if (props.selectedGuineaPig.needs.hunger >= 95) return true
+  return isHandFeedOnCooldown.value
+})
+
 const handFeedCooldownText = computed(() => {
   if (!isHandFeedOnCooldown.value) return ''
 
@@ -277,10 +308,42 @@ const handFeedCooldownText = computed(() => {
 })
 
 const handFeedTooltip = computed(() => {
+  if (!props.selectedGuineaPig) return 'Select a guinea pig'
+  if (props.selectedGuineaPig.needs.hunger >= 95) {
+    return 'Guinea pig is not hungry (hunger above 95%)'
+  }
   if (isHandFeedOnCooldown.value) {
     return 'Hand-feed is on cooldown'
   }
   return 'Hand-feed a food item to your guinea pig'
+})
+
+// Gentle wipe disabled state
+const isGentleWipeDisabled = computed(() => {
+  if (!props.selectedGuineaPig) return true
+  return props.selectedGuineaPig.needs.hygiene >= 75
+})
+
+const gentleWipeTooltip = computed(() => {
+  if (!props.selectedGuineaPig) return 'Select a guinea pig'
+  if (props.selectedGuineaPig.needs.hygiene >= 75) {
+    return 'Guinea pig is clean (hygiene above 75%)'
+  }
+  return 'Gently wipe your guinea pig clean'
+})
+
+// Clip nails disabled state
+const isClipNailsDisabled = computed(() => {
+  if (!props.selectedGuineaPig) return true
+  return props.selectedGuineaPig.needs.nails >= 75
+})
+
+const clipNailsTooltip = computed(() => {
+  if (!props.selectedGuineaPig) return 'Select a guinea pig'
+  if (props.selectedGuineaPig.needs.nails >= 75) {
+    return 'Nails are still good (wait until below 75%)'
+  }
+  return 'Clip your guinea pig\'s nails'
 })
 
 // Update timestamp only when cooldown is active (efficient)
@@ -416,14 +479,7 @@ function formatTier(tier: string): string {
   margin-block-end: var(--space-1);
 }
 
-/* System 21: Bond Status Styles */
-.bond-status {
-  padding: var(--space-3);
-  background-color: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-}
-
+/* System 21: Bond Status Styles - Now uses .panel .panel--compact for container */
 .bond-status__header {
   display: flex;
   justify-content: space-between;
@@ -458,39 +514,29 @@ function formatTier(tier: string): string {
   color: var(--color-pink-700);
 }
 
-.bond-progress {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-block-end: var(--space-2);
-}
-
-.bond-progress__bar {
-  flex: 1;
-  block-size: 6px;
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-}
-
-.bond-progress__fill {
-  block-size: 100%;
-  background: linear-gradient(90deg, var(--color-blue-500), var(--color-pink-500));
-  transition: inline-size 0.3s ease;
-}
-
-.bond-progress__label {
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  min-inline-size: 40px;
-  text-align: end;
-}
-
 .bond-stats {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+
+.friendship-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-end: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.friendship-value__label {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.friendship-value__number {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
 }
 
 .bond-stat {

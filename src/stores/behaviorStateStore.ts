@@ -11,6 +11,8 @@ import type { BehaviorState } from '../composables/game/useGuineaPigBehavior'
 export const useBehaviorStateStore = defineStore('behaviorState', () => {
   // Map of guinea pig ID to their behavior state
   const behaviorStates = ref<Map<string, BehaviorState>>(new Map())
+  // Track pending interaction timeouts for cleanup
+  const interactionTimeouts = new Map<string, number>()
 
   /**
    * Initialize behavior state for a guinea pig
@@ -49,6 +51,12 @@ export const useBehaviorStateStore = defineStore('behaviorState', () => {
    * Remove behavior state for a guinea pig (cleanup)
    */
   function removeBehaviorState(guineaPigId: string): void {
+    // Clear any pending interaction timeout
+    const timeoutId = interactionTimeouts.get(guineaPigId)
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId)
+      interactionTimeouts.delete(guineaPigId)
+    }
     behaviorStates.value.delete(guineaPigId)
   }
 
@@ -56,6 +64,9 @@ export const useBehaviorStateStore = defineStore('behaviorState', () => {
    * Clear all behavior states
    */
   function clearAll(): void {
+    // Clear all pending timeouts
+    interactionTimeouts.forEach(timeoutId => clearTimeout(timeoutId))
+    interactionTimeouts.clear()
     behaviorStates.value.clear()
   }
 
@@ -69,13 +80,22 @@ export const useBehaviorStateStore = defineStore('behaviorState', () => {
       state.currentActivity = 'interacting'
       state.activityStartTime = Date.now()
 
-      // Return to idle after duration
-      setTimeout(() => {
+      // Clear any existing timeout for this guinea pig
+      const existingTimeout = interactionTimeouts.get(guineaPigId)
+      if (existingTimeout !== undefined) {
+        clearTimeout(existingTimeout)
+      }
+
+      // Return to idle after duration and track timeout for cleanup
+      const timeoutId = window.setTimeout(() => {
         const currentState = behaviorStates.value.get(guineaPigId)
         if (currentState && currentState.currentActivity === 'interacting') {
           currentState.currentActivity = 'idle'
         }
+        interactionTimeouts.delete(guineaPigId)
       }, duration)
+
+      interactionTimeouts.set(guineaPigId, timeoutId)
     }
   }
 

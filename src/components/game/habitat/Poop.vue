@@ -14,7 +14,7 @@ function handleClick() {
 </script>
 
 <template>
-  <div class="poop" @click="handleClick">
+  <div class="poop no-select" @click="handleClick">
     <span class="poop__emoji">💩</span>
   </div>
 </template>

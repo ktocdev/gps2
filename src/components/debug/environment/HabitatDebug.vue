@@ -60,6 +60,8 @@
           <HabitatCareSidebar
             v-else-if="activeSidebar === 'care'"
             :can-refresh-bedding="canRefreshBedding"
+            :can-fill-hay-racks="canFillHayRacks"
+            :fill-hay-racks-tooltip="fillHayRacksTooltip"
             :selected-bedding-type="selectedBeddingType"
             :bedding-options="beddingOptions"
             :poop-count="habitatVisualRef?.poopCount || 0"
@@ -68,6 +70,7 @@
             @clean-cage="handleCleanCage"
             @refill-water="habitat.refillWater"
             @refresh-bedding="handleRefreshBedding"
+            @fill-all-hay-racks="handleFillAllHayRacks"
             @clear-all-bowls="clearAllBowls"
             @clear-all-hay-racks="clearAllHayRacks"
             @add-test-poop="addTestPoop"
@@ -93,6 +96,7 @@
             @hold="handleInteraction('hold')"
             @hand-feed="handleHandFeed"
             @gentle-wipe="handleInteraction('gentle-wipe')"
+            @clip-nails="handleInteraction('clip-nails')"
             @talk-to="handleInteraction('talk-to')"
             @sing-to="handleInteraction('sing-to')"
             @call-name="handleInteraction('call-name')"
@@ -227,8 +231,8 @@
           <div v-if="foodBowls.length > 0" class="conditions-section">
             <h4>Food Containers</h4>
             <div class="food-bowls-list">
-              <div v-for="bowl in foodBowls" :key="bowl.bowlId" class="food-bowl-container">
-                <div class="food-bowl-container__header">
+              <div v-for="bowl in foodBowls" :key="bowl.bowlId" class="panel panel--compact">
+                <div class="panel__header">
                   <h5>{{ bowl.bowlName }}</h5>
                   <span class="food-bowl-container__count">{{ bowl.foods.length }}/{{ bowl.capacity }}</span>
                 </div>
@@ -560,8 +564,71 @@ function testWaterConsumption() {
   }
 }
 
+function handleFillAllHayRacks() {
+  const hayRacks = habitat.habitatItems.filter((itemId: string) => itemId.includes('hay_rack'))
+  const result = habitat.fillAllHayRacks(hayRacks)
+
+  if (result.totalAdded > 0) {
+    loggingStore.addPlayerAction(
+      `Filled ${result.racksFilled} hay rack${result.racksFilled > 1 ? 's' : ''} with ${result.totalAdded} serving${result.totalAdded > 1 ? 's' : ''}`,
+      '🌾'
+    )
+  } else {
+    console.warn('No hay was added to racks')
+  }
+}
+
 const hasWaterAvailable = computed(() => {
   return habitat.hasWaterAvailable()
+})
+
+const canFillHayRacks = computed(() => {
+  const hayRacks = habitat.habitatItems.filter((itemId: string) => itemId.includes('hay_rack'))
+  if (hayRacks.length === 0) return false
+
+  // Check if any rack has empty slots
+  const hasEmptySlots = hayRacks.some((rackId: string) => {
+    const contents = habitat.getHayRackContents(rackId)
+    return contents.length < 10 // HAY_RACK_MAX_CAPACITY
+  })
+
+  if (!hasEmptySlots) return false
+
+  // Check if hay is available in inventory
+  const hayItems = inventoryStore.items.filter(invItem => {
+    const item = suppliesStore.getItemById(invItem.itemId)
+    return item?.category === 'hay' && inventoryStore.getTotalServings(invItem.itemId) > 0
+  })
+
+  return hayItems.length > 0
+})
+
+const fillHayRacksTooltip = computed(() => {
+  const hayRacks = habitat.habitatItems.filter((itemId: string) => itemId.includes('hay_rack'))
+
+  if (hayRacks.length === 0) {
+    return 'No hay racks in habitat'
+  }
+
+  const hasEmptySlots = hayRacks.some((rackId: string) => {
+    const contents = habitat.getHayRackContents(rackId)
+    return contents.length < 10
+  })
+
+  if (!hasEmptySlots) {
+    return 'All hay racks are full'
+  }
+
+  const hayItems = inventoryStore.items.filter(invItem => {
+    const item = suppliesStore.getItemById(invItem.itemId)
+    return item?.category === 'hay' && inventoryStore.getTotalServings(invItem.itemId) > 0
+  })
+
+  if (hayItems.length === 0) {
+    return 'No hay in inventory'
+  }
+
+  return 'Fill all hay racks with available hay'
 })
 
 const hasActiveGuineaPigs = computed(() => {
@@ -1042,25 +1109,16 @@ function getChewDurabilityClass(durability: number): string {
   gap: var(--space-3);
 }
 
-.food-bowl-container {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  background-color: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
+/* Food bowl container now uses .panel .panel--compact utility */
 
-.food-bowl-container__header {
+/* Custom header layout for food bowl panels */
+.food-bowls-list .panel__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-block-end: var(--space-2);
-  border-block-end: 1px solid var(--color-border);
 }
 
-.food-bowl-container__header h5 {
+.food-bowls-list .panel__header h5 {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-semibold);
   margin: 0;

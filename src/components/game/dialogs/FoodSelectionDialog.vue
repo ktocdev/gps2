@@ -30,7 +30,10 @@
             v-for="item in filteredFoodItems"
             :key="item.id"
             class="food-item"
-            :class="{ 'food-item--disabled': item.quantity === 0 }"
+            :class="{
+              'food-item--disabled': item.quantity === 0,
+              'food-item--selected': selectedFoodId === item.id
+            }"
             @click="selectFood(item)"
           >
             <div class="food-item__emoji">{{ item.emoji }}</div>
@@ -54,6 +57,14 @@
           size="md"
         >
           Cancel
+        </Button>
+        <Button
+          @click="confirmFeed"
+          variant="primary"
+          size="md"
+          :disabled="!selectedFoodId"
+        >
+          Feed
         </Button>
       </div>
     </div>
@@ -84,13 +95,15 @@ const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 
 const selectedCategory = ref<string>('vegetables')
+const selectedFoodId = ref<string | null>(null)
 
 const foodCategories = [
   { id: 'vegetables', label: 'Vegetables', emoji: '🥕' },
   { id: 'greens', label: 'Greens', emoji: '🥬' },
   { id: 'fruits', label: 'Fruits', emoji: '🍓' },
   { id: 'herbs', label: 'Herbs', emoji: '🌿' },
-  { id: 'pellets', label: 'Pellets', emoji: '🟤' }
+  { id: 'pellets', label: 'Pellets', emoji: '🟤' },
+  { id: 'treats', label: 'Treats', emoji: '🍪' }
 ]
 
 const selectedCategoryLabel = computed(() => {
@@ -124,9 +137,17 @@ const filteredFoodItems = computed(() => {
 
 function selectFood(item: { id: string, quantity: number }) {
   if (item.quantity === 0) return
+  selectedFoodId.value = item.id
+}
 
-  emit('select-food', item.id)
+function confirmFeed() {
+  if (!selectedFoodId.value) return
+
+  emit('select-food', selectedFoodId.value)
   emit('update:modelValue', false)
+
+  // Reset selection for next time
+  selectedFoodId.value = null
 }
 </script>
 
@@ -224,6 +245,15 @@ function selectFood(item: { id: string, quantity: number }) {
   background-color: var(--color-bg-secondary);
 }
 
+.food-item--selected {
+  border-color: var(--color-primary);
+  background-color: var(--color-primary-bg);
+}
+
+.food-item--selected:hover {
+  border-color: var(--color-primary-hover);
+}
+
 .food-item__emoji {
   font-size: var(--font-size-3xl);
   line-height: 1;
@@ -270,6 +300,7 @@ function selectFood(item: { id: string, quantity: number }) {
   border-block-start: 1px solid var(--color-border);
   display: flex;
   justify-content: flex-end;
+  gap: var(--space-3);
 }
 
 /* Mobile responsive */

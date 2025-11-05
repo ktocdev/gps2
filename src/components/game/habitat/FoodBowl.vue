@@ -8,7 +8,7 @@
     @mouseenter="isHovered = true"
     @mouseleave="isHovered = false"
   >
-    <span class="food-bowl__emoji">{{ bowlEmoji }}</span>
+    <span class="food-bowl__emoji no-select">{{ bowlEmoji }}</span>
 
     <div v-if="foods.length > 0" class="food-bowl__contents">
       <template v-for="(food, index) in foods" :key="`${food.itemId}-${index}`">

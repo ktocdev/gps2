@@ -90,10 +90,10 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 ### Systems
 10.1. **[Personality Trait Influences](docs/systems/phase2.5/system-10.1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay rates, interaction effectiveness, and behavioral reactions ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
 10.2. **[Preferences: Likes & Dislikes](docs/systems/phase2.5/system-10.2-preferences-likes-dislikes.md)** - Individual guinea pig preferences system with hidden discovery mechanics (favorites +50% satisfaction, dislikes -30% with rejection chance) ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
-10.2.5. **[Fulfillment Limitation System](docs/systems/phase2.5/system-10.2.5-fulfillment-limitation.md)** - Consumption limits per hunger cycle (fruit:1, veg:3, pellets:2, treats:1, hay:unlimited), interaction rejection based on personality + friendship + wellness, cooldown system (30s-2min) 🚧 **In Progress** (October 9, 2025)
-10.3. **[Wellness-Based Interaction Reactions](docs/systems/phase2.5/system-10.3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates (95% excellent → 20% critical), behavioral states, and guinea pig responsiveness
-10.4. **[Guinea Pig Rescue System](docs/systems/phase2.5/system-10.4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty, needs reset to 100%, Fresh Start option (resets money to $1000, loses slots 4-10)
-10.5. **[Enhanced Activity Messages](docs/systems/phase2.5/system-10.5-enhanced-activity-messages.md)** - Guinea pig reactions to interactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
+10.2.5. **[Fulfillment Limitation System](docs/systems/phase2.5/system-10.2.5-fulfillment-limitation.md)** - Consumption limits per hunger cycle, strategic resource management ➡️ **Moved to Phase 5 as System 23.5**
+10.3. **[Wellness-Based Interaction Reactions](docs/systems/phase2.5/system-10.3-wellness-interaction-reactions.md)** - Wellness tiers, interaction success rates, behavioral states ➡️ **Moved to Phase 5 System 22**
+10.4. **[Guinea Pig Rescue System](docs/systems/phase2.5/system-10.4-guinea-pig-rescue.md)** - Safety net, economic penalties, Fresh Start option ➡️ **Moved to Phase 5 System 22**
+10.5. **[Enhanced Activity Messages](docs/systems/phase2.5/system-10.5-enhanced-activity-messages.md)** - Context-aware reactions, need warnings, friendship milestones ➡️ **Moved to Phase 5 System 22**
 
 ### Debug Panel Development (Phase 2.5)
 - **Personality Debug Panel** - ✅ **Completed** (October 7, 2025) - PersonalityDebug.vue with trait sliders, decay rate preview, active guinea pigs only
@@ -119,11 +119,18 @@ Strategic development approach organizing 20 systems across 5 phases, with regio
 - ✅ **Game pause fix** - Connected game pause to needs pause/resume
 
 ### Remaining Deliverables - Moved to Phase 5
-These deliverables have been consolidated into System 22 (Interaction Enhancement System) in Phase 5:
-- Wellness-based reactions (5 behavioral tiers)
-- Rescue safety net with economic penalty
-- Comprehensive activity messages with anti-spam throttling
-- Friendship milestone tracking (6 tiers)
+
+**➡️ Moved to Phase 5 System 22 (Interaction Enhancement System):**
+- **System 10.3:** Wellness-based reactions (5 behavioral tiers: Excellent 95% → Critical 20%)
+- **System 10.4:** Rescue safety net (wellness <15% trigger, $200 penalty, Fresh Start option)
+- **System 10.5:** Enhanced activity messages (context-aware reactions, need warnings 60s/30s throttle, friendship milestones)
+- All three systems consolidated under System 22 for cohesive interaction feedback
+
+**➡️ Moved to Phase 5 System 23.5 (Fulfillment Limitation System):**
+- **System 10.2.5:** Consumption limits per hunger cycle (fruit:1, veg:3, pellets:2, treats:1, hay:unlimited)
+- Interaction rejection mechanics based on personality + friendship + wellness
+- Cooldown system (30s-2min) with friendship penalties
+- Strategic resource management gameplay
 
 ### Enhancement Focus
 - **Personality-driven gameplay** making each guinea pig unique to care for ✅ **Implemented**
@@ -212,25 +219,105 @@ These deliverables have been consolidated into System 22 (Interaction Enhancemen
 
 ---
 
-## Phase 5: Polish & Enhancement (Systems 22-25)
+## Phase 4.5: Polish, Testing & Balance 🚧 **IN PROGRESS**
+**Duration:** 3-4 weeks (ongoing)
+**Status:** 🚧 **In Progress** | **Branch:** GPS2-43 (current)
+**Goal:** Manual gameplay testing, bug fixes, balance adjustments, and quality-of-life improvements to ensure polished core gameplay experience
+
+### Approach
+This phase focuses on **playing the game and observing** to identify issues, refine mechanics, and enhance user experience through iterative testing and small incremental fixes.
+
+### Key Focus Areas
+- **Bug Fixes** - Critical gameplay issues, UI/UX problems, interaction bugs
+- **Balance Adjustments** - Need decay rates, resource consumption, economic tuning
+- **Quality-of-Life** - UI improvements, message clarity, visual feedback
+- **Code Quality** - Cleanup, refactoring, performance optimization
+- **Realism & Feel** - Ensuring guinea pig behavior feels natural and engaging
+
+### Major Accomplishments (October 27 - November 3, 2025)
+- ✅ **Smart Bedding System** - Proportional bedding consumption with fractional tracking
+- ✅ **Hand-Feed Food Selection** - Dialog with category filtering and food selection
+- ✅ **Food Serving Amounts** - Realistic serving sizes for all fruits and vegetables
+- ✅ **Pellets Visual System** - Scattered pile display instead of single emoji
+- ✅ **Activity Message Timing** - Messages appear immediately when activity starts
+- ✅ **Poop System Enhancements** - Smart location detection, coordinate fixes, proper punctuation
+- ✅ **Wellness Calculation Fix** - Dynamic calculation instead of stored 0% value
+- ✅ **Pause Functionality** - Complete freeze of movement, animations, and behaviors
+- ✅ **Tooltip System** - Teleport-based rendering prevents clipping, z-index fixes
+- ✅ **Code Quality Audit** - Debug logs removed, duplication eliminated, magic numbers extracted
+- ✅ **CSS Standards Audit** - 9 components audited, 9.6/10 average score, panel utilities applied
+- ✅ **Bond Status Display** - Progress bars and tier badges in SocializeSidebar
+- ✅ **Chomp & Wiggle Animations** - Guinea pig eating and interaction animations
+- ✅ **Activity Feed Fixes** - Scroll to top for newest messages, proper ordering
+
+### Testing & Balance Work
+- **Manual Gameplay Testing** - Extended play sessions to identify real-world issues
+- **Need Decay Tuning** - Adjusting rates for realistic gameplay feel
+- **Resource Consumption** - Balancing bedding, food, and water usage
+- **Message Quality** - Improving grammar, context, and clarity of all activity messages
+- **UI/UX Refinement** - Responsive layout, tooltips, empty states, visual feedback
+
+### Current Sprint Items (SPRINT-2025-11-03.md)
+**High Priority Bugs:**
+- Nails need not displaying
+- Thirst decay rate too fast
+- Treats cannot be dragged into habitat
+- Prevent duplicate habitat items
+
+**Medium Priority UX:**
+- Bond progress bars not updating visually
+- Hand-feed dialog needs confirmation button
+- Emoji selection during drag & drop
+
+**Completed Audits:**
+- Code quality audit (17 files, 1 medium + 3 minor issues)
+- CSS standards audit (9 components, 9.6/10 score)
+
+### Success Criteria
+- [ ] All critical bugs resolved
+- [ ] Gameplay feels balanced and engaging
+- [ ] Activity messages are clear and contextual
+- [ ] Resource consumption feels realistic
+- [ ] UI is polished and responsive
+- [ ] Code quality meets production standards
+- [ ] Extended play sessions (30+ minutes) feel smooth
+
+**Documentation:** See [SPRINT-2025-11-03.md](SPRINT-2025-11-03.md) and [archive/SPRINT-2025-10-27.md](archive/SPRINT-2025-10-27.md) for detailed fixes and iterations.
+
+---
+
+## Phase 5: Polish & Enhancement (Systems 22-29)
 **Duration:** 2-3 weeks
 **Goal:** Add polish, progression systems, context-aware interactions, and optional animation enhancements
 
 ### Systems
-22. **[Interaction Enhancement System](systems/phase5/system-22-interaction-enhancement.md)** - Context-aware activity messages and enhanced user interactions 📋 **Planned**
-  - Context-aware activity messages reflecting friendship level (distant → best friends)
-  - Wellness-based interaction reactions (Excellent 95% success → Critical 20% success)
-  - Habitat condition influences (cleanliness, enrichment)
-  - Comprehensive activity messages with anti-spam throttling (60s warnings, 30s critical)
-  - Friendship milestone tracking with 6 tiers (25% Distant → 95% Best Friend)
-  - Rescue safety net preventing complete failure (economic penalty, Fresh Start option)
-  - Recent interaction tracking and guinea pig mood
+22. **[Interaction Enhancement System](systems/phase5/system-22-interaction-enhancement.md)** - Context-aware activity messages and wellness-based reactions 📋 **Planned** _(Consolidates Phase 2.5 Systems 10.3, 10.4, 10.5)_
+  - **Wellness-based reactions** (5 behavioral tiers: Excellent 95% → Critical 20% success rates)
+  - **Interaction type modifiers** (essential care +15%, physical handling -10%, comfort +10%)
+  - **Rejection cooldown system** (30s-2min based on wellness + personality)
+  - **Guinea pig pair interactions** (grooming, playing, sleeping together with wellness impact)
+  - **Rescue safety net** (wellness <15% trigger, $200 penalty, needs reset to 100%)
+  - **Fresh Start option** (reset to $1000, lose purchased slots 4-10, preserve first 3 favorites)
+  - **Enhanced activity messages** (context-aware reactions, need warnings with 60s/30s throttling)
+  - **Preference discovery clues** (favorite/neutral/disliked food and activity hints)
+  - **Friendship milestone tracking** (6 tiers: 25% Distant → 95% Best Friend)
+  - **Behavioral state manifestations** (movement patterns, social behavior, positioning by wellness)
+  - **Habitat condition influences** (cleanliness, enrichment affecting interactions)
+  - **Recent interaction tracking** and guinea pig mood system
 23. **[Enrichment & Resource Management System](systems/phase5/system-23-enrichment-resource-management.md)** - Item effectiveness, rotation mechanics, and strategic purchasing 📋 **Planned**
   - Item effectiveness system with newness bonuses (+50% initial effectiveness)
   - Familiarity decay over time (diminishing returns on repeated use)
   - Rotation mechanics encouraging variety in toys and enrichment
   - Strategic purchasing decisions (balancing enrichment vs necessities)
   - Inventory planning and resource management gameplay
+23.5. **[Fulfillment Limitation System](systems/phase5/system-23.5-fulfillment-limitation.md)** - Consumption limits and strategic feeding mechanics 📋 **Planned** _(Moved from Phase 2.5 System 10.2.5)_
+  - **Consumption limits per hunger cycle** (fruit:1, veg:3, pellets:2, treats:1, hay:unlimited)
+  - **Hunger cycle definition** (time for hunger 100% → 25%, ~3-5min based on personality)
+  - **Limit reset triggers** (when hunger fulfilled back to 100%)
+  - **Interaction rejection mechanics** (based on personality + friendship + wellness)
+  - **Cooldown system** (30s-2min duration with friendship penalties -1% to -5%)
+  - **Strategic gameplay** (timing matters, wellness management, build friendship first)
+  - **FeedingDebug panel** (consumption tracking, servings remaining counters)
 24. **Progression & Economy System** - Currency earning, achievement tracking, level progression, and supplies store gating 📋 **Planned**
   - Currency earning through care milestones and achievement rewards
   - Achievement/milestone tracking system with progression goals
@@ -250,6 +337,14 @@ These deliverables have been consolidated into System 22 (Interaction Enhancemen
 27. **Sound System** - Audio manager and interaction sound feedback 📋 **Planned**
 28. **Settings & Preferences System** - User preferences and customization 📋 **Planned**
 29. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement) 📋 **Planned**
+
+### Additional Polish Features (Low Priority)
+- **Multi-Type Guinea Pig Interactions** - Expand social interactions (play, sniff/investigate, groom, huddle/cuddle)
+- **Pushable Toys System** - Guinea pigs physically move balls and toys across grid cells
+- **Special Treat Visual Effects** - Fun visual effects when consuming special treats (glow effects, temporary emoji changes)
+- **Pre-Bonded Pairs & Solo Guinea Pigs** - Adoption constraints for bonded pairs vs solo-suitable guinea pigs
+- **Gameplay Testing Checklist** - Comprehensive testing of all systems for balance and realism
+- **Realism Guidelines Documentation** - Document realistic guinea pig care guidelines for game balance
 
 ### Key Deliverables
 - **Context-aware interactions** with friendship, wellness, and habitat-based activity messages
@@ -295,6 +390,7 @@ These deliverables have been consolidated into System 22 (Interaction Enhancemen
 - **Phase 2.5:** Rich interactive feedback with personality, preferences, wellness reactions, and rescue system
 - **Phase 3:** Economic gameplay with habitat management and comprehensive debug tools
 - **Phase 4:** Complete gameplay loop with AI behaviors and full debug coverage
-- **Phase 5:** Polished experience with unified Debug Menu and optional enhancements
+- **Phase 4.5:** Polished core gameplay through testing, bug fixes, and balance adjustments
+- **Phase 5:** Enhanced experience with context-aware interactions, progression systems, and optional enhancements
 
-This phased approach ensures steady progress with continuous validation, early risk mitigation, and a complete playable game by Phase 4, with Phase 5 focused purely on enhancement and polish.
+This phased approach ensures steady progress with continuous validation, early risk mitigation, and a complete playable game by Phase 4, with Phase 4.5 dedicated to polish and Phase 5 focused on enhancement features.
