@@ -1,6 +1,9 @@
-# Enhanced Activity Messages - System 1
+# Enhanced Activity Messages - System 10.5
 
 **Phase 2.5: Interactive Feedback Enhancement**
+**Status:** ➡️ **Moved to Phase 5 [System 22](../phase5/system-22-interaction-enhancement.md)**
+
+> **⚠️ Note:** This system has been consolidated into Phase 5 **[System 22: Interaction Enhancement System](../phase5/system-22-interaction-enhancement.md)** as Component 3 (Enhanced Activity Messages). Systems 10.3, 10.4, and 10.5 have been combined into System 22 for cohesive interaction feedback. Please refer to System 22 for the complete specification.
 
 ## Overview
 Intelligent, contextual activity log messages that enhance player feedback during gameplay. This system builds on the existing activity feed infrastructure to provide rich, non-intrusive communication between the game and player.

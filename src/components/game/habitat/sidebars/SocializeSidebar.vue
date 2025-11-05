@@ -30,6 +30,10 @@
         <div class="interaction-section">
           <h4 class="interaction-section__title">👤 Your Friendship</h4>
           <div class="panel panel--compact">
+            <div class="friendship-value">
+              <span class="friendship-value__label">Friendship:</span>
+              <span class="friendship-value__number">{{ Math.round(selectedGuineaPig.friendship) }}%</span>
+            </div>
             <SliderField
               :model-value="Math.round(selectedGuineaPig.friendship)"
               :min="0"
@@ -55,6 +59,10 @@
               <span class="bond-tier" :class="`bond-tier--${bondInfo.bond.bondingTier}`">
                 {{ formatTier(bondInfo.bond.bondingTier) }}
               </span>
+            </div>
+            <div class="friendship-value">
+              <span class="friendship-value__label">Bond Level:</span>
+              <span class="friendship-value__number">{{ Math.round(bondInfo.bond.bondingLevel) }}%</span>
             </div>
             <SliderField
               :model-value="Math.round(bondInfo.bond.bondingLevel)"
@@ -510,6 +518,25 @@ function formatTier(tier: string): string {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
+}
+
+.friendship-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-end: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.friendship-value__label {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.friendship-value__number {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
 }
 
 .bond-stat {

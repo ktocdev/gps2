@@ -1,6 +1,9 @@
-# Guinea Pig Rescue System - System 2
+# Guinea Pig Rescue System - System 10.4
 
 **Phase 2.5: Interactive Feedback Enhancement**
+**Status:** ➡️ **Moved to Phase 5 [System 22](../phase5/system-22-interaction-enhancement.md)**
+
+> **⚠️ Note:** This system has been consolidated into Phase 5 **[System 22: Interaction Enhancement System](../phase5/system-22-interaction-enhancement.md)** as Component 2 (Guinea Pig Rescue System). Systems 10.3, 10.4, and 10.5 have been combined into System 22 for cohesive interaction feedback. Please refer to System 22 for the complete specification.
 
 ## Overview
 Safety net system that automatically rescues guinea pigs when wellness drops critically low, applying financial consequences while offering players a meaningful choice between continuing with penalties or starting fresh with significant trade-offs.

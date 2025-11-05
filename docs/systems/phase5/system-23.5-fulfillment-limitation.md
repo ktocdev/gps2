@@ -1,14 +1,14 @@
-# System 2.5: Fulfillment Limitation System
+# System 23.5: Fulfillment Limitation System
 
-**Phase:** 2.5 - Interactive Feedback Enhancement
-**Status:** ➡️ **Moved to Phase 5 as [System 23.5](../phase5/system-23.5-fulfillment-limitation.md)**
-**Dependencies:** System 1 (Personality), System 2 (Preferences), System 7 (Needs), System 8 (Needs Controller)
-
-> **⚠️ Note:** This system has been moved to Phase 5 as **[System 23.5: Fulfillment Limitation System](../phase5/system-23.5-fulfillment-limitation.md)** due to its focus on strategic resource management, which fits naturally between System 23 (Enrichment & Resource Management) and System 24 (Progression & Economy). Please refer to the Phase 5 version for the most current specification.
+**Phase:** 5 - Polish & Enhancement
+**Status:** 📋 Planned (Moved from Phase 2.5 System 10.2.5)
+**Dependencies:** System 10.1 (Personality), System 10.2 (Preferences), System 7 (Needs), System 8 (Needs Controller), System 23 (Enrichment & Resource Management)
 
 ## Overview
 
 The Fulfillment Limitation System prevents exploitation of user-to-guinea pig interactions by introducing realistic consumption limits and interaction rejection mechanics. This system adds depth to gameplay by requiring strategic timing and wellness management.
+
+**Note:** This system was originally part of Phase 2.5 (System 10.2.5) but has been moved to Phase 5 as System 23.5 due to its focus on strategic resource management gameplay, which fits naturally between System 23 (Enrichment & Resource Management) and System 24 (Progression & Economy).
 
 ## Core Mechanics
 

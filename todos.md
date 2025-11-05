@@ -1,15 +1,17 @@
 # GPS2 Todos - Active Sprint
 
-See [docs/SPRINT-2025-11-03.md](docs/SPRINT-2025-11-03.md) for full sprint details.
+See [docs/SPRINT-2025-11-04.md](docs/SPRINT-2025-11-04.md) for full sprint details.
 
 ## Quick Reference
 
 All items have been organized and prioritized in the new sprint document.
 
-**Active Sprint:** November 3, 2025
+**Active Sprint:** November 4, 2025
 **Branch:** GPS2-43
 
+**Sprint Focus:**
+- Code audit of SPRINT-2025-11-03 work
+- CSS audit of modified components
+- Begin Phase 5 implementation
 
-New
-- we should show the points value of the friendship in the socialize sidebar by the needs slider
-- the slider is good for debug but we also need a readonly progress bar for needs and the friendship meters gameview
+All todos have been migrated to the sprint document.

@@ -43,10 +43,10 @@ Comprehensive virtual guinea pig care simulator featuring individual personality
 ##### Phase 2.5: Interactive Feedback Enhancement
 - **[System 10.1: Personality Trait Influences](systems/phase2.5/system-10.1-personality-trait-influences.md)** - How Friendliness, Playfulness, Curiosity, Boldness affect need decay, interaction effectiveness, and reactions ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
 - **[System 10.2: Preferences: Likes & Dislikes](systems/phase2.5/system-10.2-preferences-likes-dislikes.md)** - Individual guinea pig preferences with hidden discovery mechanics (favorites/neutral/disliked) ✅ **Completed** (October 7, 2025 | Branch: GPS2-20) - Testing Needed
-- **[System 10.2.5: Fulfillment Limitation System](systems/phase2.5/system-10.2.5-fulfillment-limitation.md)** - Consumption limits per hunger cycle (fruit:1, veg:3, pellets:2, treats:1, hay:unlimited), interaction rejection based on personality + friendship + wellness with cooldown system (30s-2min) 🚧 **In Progress** (October 9, 2025)
-- **[System 10.3: Wellness-Based Interaction Reactions](systems/phase2.5/system-10.3-wellness-interaction-reactions.md)** - How wellness affects interaction success rates, behavioral states, and guinea pig responsiveness
-- **[System 10.4: Guinea Pig Rescue](systems/phase2.5/system-10.4-guinea-pig-rescue.md)** - Safety net when wellness < 15% with $200 penalty and Fresh Start option (slots 4-10 lost)
-- **[System 10.5: Enhanced Activity Messages](systems/phase2.5/system-10.5-enhanced-activity-messages.md)** - Guinea pig reactions, need warnings (60s/30s throttle), wellness messages, like/dislike clues, friendship milestones
+- **[System 10.2.5: Fulfillment Limitation System](systems/phase2.5/system-10.2.5-fulfillment-limitation.md)** - ➡️ **Moved to Phase 5 as [System 23.5](systems/phase5/system-23.5-fulfillment-limitation.md)** - Strategic resource management
+- **[System 10.3: Wellness-Based Interaction Reactions](systems/phase2.5/system-10.3-wellness-interaction-reactions.md)** - ➡️ **Moved to Phase 5 [System 22](systems/phase5/system-22-interaction-enhancement.md)** - Wellness tiers and behavioral states
+- **[System 10.4: Guinea Pig Rescue](systems/phase2.5/system-10.4-guinea-pig-rescue.md)** - ➡️ **Moved to Phase 5 [System 22](systems/phase5/system-22-interaction-enhancement.md)** - Rescue safety net
+- **[System 10.5: Enhanced Activity Messages](systems/phase2.5/system-10.5-enhanced-activity-messages.md)** - ➡️ **Moved to Phase 5 [System 22](systems/phase5/system-22-interaction-enhancement.md)** - Context-aware reactions
 
 ##### Phase 3: Game World & Environment
 - **[System 11: Supplies Store System](systems/phase3/system-11-supplies-store.md)** - Central catalog of all purchasable items (bedding, hay, habitat items, food, treats) ✅ **Completed** (October 15, 2025 | Branch: GPS2-26)
@@ -125,8 +125,9 @@ Phase 4.5 focuses on polishing core gameplay mechanics and fixing bugs discovere
 📋 **Planned** - Interaction enhancements, progression, audio, and settings
 
 **Planned Systems:**
-- **[System 22: Interaction Enhancement System](systems/phase5/system-22-interaction-enhancement.md)** - Context-aware activity messages, wellness-based reactions, friendship milestones, rescue safety net
+- **[System 22: Interaction Enhancement System](systems/phase5/system-22-interaction-enhancement.md)** - Wellness-based reactions (5 tiers), rescue safety net, enhanced activity messages, friendship milestones _(Consolidates Phase 2.5 Systems 10.3, 10.4, 10.5)_
 - **System 23: Enrichment & Resource Management System** - Item effectiveness/rotation mechanics, strategic purchasing decisions, inventory planning
+- **[System 23.5: Fulfillment Limitation System](systems/phase5/system-23.5-fulfillment-limitation.md)** - Consumption limits per hunger cycle, strategic feeding mechanics, cooldown system _(Moved from Phase 2.5 System 10.2.5)_
 - **System 24: Progression & Economy System** - Currency earning mechanics, achievement/milestone tracking, level progression, supplies store item gating (level/achievement-based unlock requirements)
 - **System 25: Game Tutorial System** - Interactive onboarding, contextual help tooltips, feature discovery, progressive tutorial unlocking
 - **System 26: Performance Mode System** - Reduced performance mode toggle, optimized rendering, battery-saving options for mobile devices
