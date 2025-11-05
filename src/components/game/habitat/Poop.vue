@@ -34,6 +34,5 @@ function handleClick() {
 
 .poop__emoji {
   font-size: var(--font-size-lg);
-  user-select: none;
 }
 </style>

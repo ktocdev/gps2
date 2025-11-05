@@ -133,14 +133,14 @@ function handleClose() {
 }
 
 .pause-overlay__icon {
-  font-size: 4rem;
+  font-size: 3rem;
   line-height: 1;
   margin-block-end: var(--space-4);
 }
 
 .pause-overlay__title {
   margin: 0;
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
 }
@@ -175,22 +175,23 @@ function handleClose() {
   padding: var(--space-6);
   border-block-start: 1px solid var(--color-border);
   display: flex;
+  flex-direction: column;
   justify-content: center;
   gap: var(--space-3);
 }
 
-/* Mobile responsive */
-@media (max-width: 640px) {
+/* Tablet and larger - horizontal button layout */
+@media (min-width: 641px) {
   .pause-overlay__icon {
-    font-size: 3rem;
+    font-size: 4rem;
   }
 
   .pause-overlay__title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-2xl);
   }
 
   .pause-overlay__footer {
-    flex-direction: column;
+    flex-direction: row;
   }
 }
 </style>
