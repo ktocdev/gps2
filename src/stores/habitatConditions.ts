@@ -145,7 +145,8 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     getHayRackContents,
     getHayRackFreshness,
     clearHayRack,
-    clearAllHayRacks
+    clearAllHayRacks,
+    fillAllHayRacks
   } = containers
 
   // Poop tracking
@@ -1160,6 +1161,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     getHayRackFreshness,
     clearHayRack,
     clearAllHayRacks,
+    fillAllHayRacks,
 
     // System 16: Phase 2 - Water Consumption
     consumeWater,

@@ -60,6 +60,8 @@
           <HabitatCareSidebar
             v-else-if="activeSidebar === 'care'"
             :can-refresh-bedding="canRefreshBedding"
+            :can-fill-hay-racks="canFillHayRacks"
+            :fill-hay-racks-tooltip="fillHayRacksTooltip"
             :selected-bedding-type="selectedBeddingType"
             :bedding-options="beddingOptions"
             :poop-count="habitatVisualRef?.poopCount || 0"
@@ -68,6 +70,7 @@
             @clean-cage="handleCleanCage"
             @refill-water="habitat.refillWater"
             @refresh-bedding="handleRefreshBedding"
+            @fill-all-hay-racks="handleFillAllHayRacks"
             @clear-all-bowls="clearAllBowls"
             @clear-all-hay-racks="clearAllHayRacks"
             @add-test-poop="addTestPoop"
@@ -561,8 +564,71 @@ function testWaterConsumption() {
   }
 }
 
+function handleFillAllHayRacks() {
+  const hayRacks = habitat.habitatItems.filter((itemId: string) => itemId.includes('hay_rack'))
+  const result = habitat.fillAllHayRacks(hayRacks)
+
+  if (result.totalAdded > 0) {
+    loggingStore.addPlayerAction(
+      `Filled ${result.racksFilled} hay rack${result.racksFilled > 1 ? 's' : ''} with ${result.totalAdded} serving${result.totalAdded > 1 ? 's' : ''}`,
+      '🌾'
+    )
+  } else {
+    console.warn('No hay was added to racks')
+  }
+}
+
 const hasWaterAvailable = computed(() => {
   return habitat.hasWaterAvailable()
+})
+
+const canFillHayRacks = computed(() => {
+  const hayRacks = habitat.habitatItems.filter((itemId: string) => itemId.includes('hay_rack'))
+  if (hayRacks.length === 0) return false
+
+  // Check if any rack has empty slots
+  const hasEmptySlots = hayRacks.some((rackId: string) => {
+    const contents = habitat.getHayRackContents(rackId)
+    return contents.length < 10 // HAY_RACK_MAX_CAPACITY
+  })
+
+  if (!hasEmptySlots) return false
+
+  // Check if hay is available in inventory
+  const hayItems = inventoryStore.items.filter(invItem => {
+    const item = suppliesStore.getItemById(invItem.itemId)
+    return item?.category === 'hay' && inventoryStore.getTotalServings(invItem.itemId) > 0
+  })
+
+  return hayItems.length > 0
+})
+
+const fillHayRacksTooltip = computed(() => {
+  const hayRacks = habitat.habitatItems.filter((itemId: string) => itemId.includes('hay_rack'))
+
+  if (hayRacks.length === 0) {
+    return 'No hay racks in habitat'
+  }
+
+  const hasEmptySlots = hayRacks.some((rackId: string) => {
+    const contents = habitat.getHayRackContents(rackId)
+    return contents.length < 10
+  })
+
+  if (!hasEmptySlots) {
+    return 'All hay racks are full'
+  }
+
+  const hayItems = inventoryStore.items.filter(invItem => {
+    const item = suppliesStore.getItemById(invItem.itemId)
+    return item?.category === 'hay' && inventoryStore.getTotalServings(invItem.itemId) > 0
+  })
+
+  if (hayItems.length === 0) {
+    return 'No hay in inventory'
+  }
+
+  return 'Fill all hay racks with available hay'
 })
 
 const hasActiveGuineaPigs = computed(() => {

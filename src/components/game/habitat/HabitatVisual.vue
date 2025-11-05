@@ -72,6 +72,7 @@
             :capacity="4"
             @add-hay="(hayId) => handleAddHayToRack(item.itemId, hayId)"
             @clear-rack="handleClearHayRack(item.itemId)"
+            @fill-rack="handleFillHayRack(item.itemId)"
           />
           <WaterBottle
             v-else-if="isWaterBottle(item.itemId)"
@@ -931,6 +932,15 @@ function handleAddHayToRack(hayRackItemId: string, hayItemId: string) {
 
 function handleClearHayRack(hayRackItemId: string) {
   habitatConditions.clearHayRack(hayRackItemId)
+}
+
+function handleFillHayRack(hayRackItemId: string) {
+  const result = habitatConditions.fillAllHayRacks([hayRackItemId])
+  if (result.totalAdded > 0) {
+    console.log(`✅ Added ${result.totalAdded} hay serving${result.totalAdded > 1 ? 's' : ''} to rack`)
+  } else {
+    console.warn('No hay was added - check inventory or rack capacity')
+  }
 }
 
 // Water bottle helper function

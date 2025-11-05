@@ -367,6 +367,53 @@ export function useHabitatContainers() {
     hayRackContents.value = newMap
   }
 
+  function fillAllHayRacks(hayRackInstanceIds: string[]): { totalAdded: number, racksFilled: number } {
+    const inventoryStore = useInventoryStore()
+    const suppliesStore = useSuppliesStore()
+
+    // Find available hay in inventory
+    const hayItems = inventoryStore.items.filter(invItem => {
+      const item = suppliesStore.getItemById(invItem.itemId)
+      return item?.category === 'hay'
+    })
+
+    if (hayItems.length === 0) {
+      return { totalAdded: 0, racksFilled: 0 }
+    }
+
+    // Get first hay type with servings available
+    const hayItemId = hayItems[0].itemId
+    let remainingHay = inventoryStore.getTotalServings(hayItemId)
+    let totalAdded = 0
+    let racksFilled = 0
+
+    for (const rackId of hayRackInstanceIds) {
+      if (remainingHay === 0) break
+
+      const currentData = hayRackContents.value.get(rackId) || {
+        servings: [],
+        freshness: 100,
+        lastDecayUpdate: Date.now()
+      }
+
+      const emptySlots = CONSUMPTION.HAY_RACK_MAX_CAPACITY - currentData.servings.length
+      const servingsToAdd = Math.min(emptySlots, remainingHay)
+
+      if (servingsToAdd > 0) {
+        // Add servings to rack
+        for (let i = 0; i < servingsToAdd; i++) {
+          if (addHayToRack(rackId, hayItemId)) {
+            totalAdded++
+            remainingHay--
+          }
+        }
+        racksFilled++
+      }
+    }
+
+    return { totalAdded, racksFilled }
+  }
+
   // ========================================================================
   // Chew Item Management
   // ========================================================================
@@ -520,6 +567,7 @@ export function useHabitatContainers() {
     clearHayRack,
     clearAllHayRacks,
     applyHayRackDecay,
+    fillAllHayRacks,
 
     // Chew item methods
     initializeChewItem,

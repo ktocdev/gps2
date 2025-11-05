@@ -102,7 +102,8 @@ const foodCategories = [
   { id: 'greens', label: 'Greens', emoji: '🥬' },
   { id: 'fruits', label: 'Fruits', emoji: '🍓' },
   { id: 'herbs', label: 'Herbs', emoji: '🌿' },
-  { id: 'pellets', label: 'Pellets', emoji: '🟤' }
+  { id: 'pellets', label: 'Pellets', emoji: '🟤' },
+  { id: 'treats', label: 'Treats', emoji: '🍪' }
 ]
 
 const selectedCategoryLabel = computed(() => {

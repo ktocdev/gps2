@@ -55,6 +55,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   'add-hay': [hayItemId: string]
   'clear-rack': []
+  'fill-rack': []
 }>()
 
 const suppliesStore = useSuppliesStore()
@@ -77,7 +78,17 @@ const popoverMetadata = computed(() => {
 
 const popoverActions = computed(() => {
   const currentFreshness = props.freshness ?? 100
-  const actions: Array<{ label: string; variant: 'default' | 'warning'; onClick: () => void }> = []
+  const actions: Array<{ label: string; variant: 'default' | 'warning'; onClick: () => void; disabled?: boolean; title?: string }> = []
+
+  // Show fill button if rack has empty slots
+  const hasEmptySlots = props.hayServings.length < props.capacity
+  if (hasEmptySlots) {
+    actions.push({
+      label: '🌾 Fill Rack',
+      variant: 'default',
+      onClick: () => emit('fill-rack')
+    })
+  }
 
   // Show empty button if there are any hay servings
   if (props.hayServings.length > 0) {
