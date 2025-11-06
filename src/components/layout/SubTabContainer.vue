@@ -1,6 +1,6 @@
 <template>
   <div class="sub-tab-container">
-    <nav class="sub-tab-container__nav" role="tablist">
+    <nav :class="navClasses" role="tablist">
       <button
         v-for="tab in tabs"
         :key="tab.id"
@@ -35,7 +35,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 
 export interface SubTab {
   id: string
@@ -48,6 +48,7 @@ export interface SubTab {
 interface Props {
   tabs: SubTab[]
   modelValue?: string
+  align?: 'start' | 'end'
 }
 
 interface Emits {
@@ -56,7 +57,8 @@ interface Emits {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  modelValue: ''
+  modelValue: '',
+  align: 'start'
 })
 
 const emit = defineEmits<Emits>()
@@ -89,6 +91,16 @@ watch(() => props.modelValue, (newValue) => {
 watch(activeTab, (newTab, oldTab) => {
   emit('update:modelValue', newTab)
   emit('tab-change', newTab, oldTab || null)
+})
+
+// Computed classes
+const navClasses = computed(() => {
+  return [
+    'sub-tab-container__nav',
+    {
+      'sub-tab-container__nav--end': props.align === 'end'
+    }
+  ]
 })
 
 // Methods
@@ -139,6 +151,10 @@ const getPanelClasses = (tabId: string) => {
   gap: var(--space-1);
   overflow-x: auto;
   scrollbar-width: thin;
+}
+
+.sub-tab-container__nav--end {
+  justify-content: end;
 }
 
 .sub-tab-container__nav::-webkit-scrollbar {

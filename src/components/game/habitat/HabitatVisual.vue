@@ -1,14 +1,5 @@
 <template>
   <div class="habitat-visual">
-    <div class="habitat-visual__header">
-      <h3>Habitat Layout ({{ habitatSize }} - {{ gridWidth }}x{{ gridHeight }})</h3>
-      <div class="habitat-visual__stats">
-        <span>{{ placedItemsCount }} items placed</span>
-        <span>{{ occupiedCells }}/{{ totalCells }} cells occupied</span>
-        <span v-if="poopCount > 0">💩 {{ poopCount }} poops</span>
-      </div>
-    </div>
-
     <div class="habitat-visual__scroll-container">
       <div class="habitat-visual__container">
         <div
@@ -1072,7 +1063,7 @@ watch(
   { deep: true }
 )
 
-// Expose functions for parent component
+// Expose functions and data for parent component
 defineExpose({
   addTestPoop,
   clearAllPoop,
@@ -1081,36 +1072,18 @@ defineExpose({
   clearDraggedItem,
   handleTouchMove,
   handleTouchEnd,
-  placedItems
+  placedItems,
+  gridWidth,
+  gridHeight,
+  totalCells,
+  occupiedCells,
+  placedItemsCount
 })
 </script>
 
 <style>
 .habitat-visual {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.habitat-visual__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-}
-
-.habitat-visual__header h3 {
-  margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-}
-
-.habitat-visual__stats {
-  display: flex;
-  gap: var(--space-4);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
+  block-size: 100%;
 }
 
 .habitat-visual__scroll-container {

@@ -1,6 +1,8 @@
 <template>
-  <div class="chat-bubble-debug">
-    <h3>Chat Bubble Tester</h3>
+  <div class="habitat-sidebar chat-bubble-debug">
+    <div class="chat-bubble-debug__header">
+      <h3>Chat Bubble Tester</h3>
+    </div>
 
     <div class="chat-bubble-debug__controls">
       <!-- Guinea Pig Selector -->
@@ -384,16 +386,20 @@ function showNeedWarning(severity: 'warning' | 'critical') {
 </script>
 
 <style>
+/* Component-specific styles (shared layout from .habitat-sidebar) */
 .chat-bubble-debug {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
 }
 
-.chat-bubble-debug h3 {
-  margin-block-end: var(--space-2);
+.chat-bubble-debug__header {
+  padding: var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+  background-color: var(--color-bg-primary);
+}
+
+.chat-bubble-debug__header h3 {
+  margin: 0;
   font-size: var(--font-size-lg);
-  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 .chat-bubble-debug h4 {
@@ -406,6 +412,7 @@ function showNeedWarning(severity: 'warning' | 'critical') {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  max-inline-size: 100%;
 }
 
 .chat-bubble-debug__actions {
@@ -442,6 +449,8 @@ function showNeedWarning(severity: 'warning' | 'critical') {
 
 .input-field__input {
   inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
   padding-block: var(--space-2);
   padding-inline: var(--space-3);
 

@@ -10,10 +10,13 @@
     @touchmove="handleTouchMove"
     @touchend="handleTouchEnd"
   >
+    <div class="inventory-tile-serving__drag-handle">⋮⋮</div>
     <div class="inventory-tile-serving__emoji">{{ emoji }}</div>
-    <div class="inventory-tile-serving__name">{{ name }}</div>
-    <div class="inventory-tile-serving__servings">
-      {{ servingsRemaining }}/{{ maxServings }} servings
+    <div class="inventory-tile-serving__content">
+      <div class="inventory-tile-serving__name">{{ name }}</div>
+      <div class="inventory-tile-serving__servings">
+        {{ servingsRemaining }}/{{ maxServings }} servings
+      </div>
     </div>
     <span v-if="instanceCount && instanceCount > 1" class="inventory-tile-serving__count">×{{ instanceCount }}</span>
   </div>
@@ -80,6 +83,20 @@ function handleDragStart(event: DragEvent) {
   event.dataTransfer!.effectAllowed = 'move'
   event.dataTransfer!.setData('text/plain', JSON.stringify(dragData))
 
+  // Create custom drag image with only the emoji
+  const dragImage = document.createElement('div')
+  dragImage.textContent = props.emoji || '📦'
+  dragImage.style.fontSize = '2rem'
+  dragImage.style.position = 'absolute'
+  dragImage.style.top = '-1000px'
+  document.body.appendChild(dragImage)
+  event.dataTransfer!.setDragImage(dragImage, 16, 16)
+
+  // Clean up after a short delay
+  setTimeout(() => {
+    document.body.removeChild(dragImage)
+  }, 0)
+
   // Visual feedback
   const target = event.currentTarget as HTMLElement
   target.style.opacity = '0.5'
@@ -131,15 +148,17 @@ function handleTouchEnd(event: TouchEvent) {
 .inventory-tile-serving {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   background: var(--color-bg-secondary);
   border: 2px solid var(--color-border-light);
   border-radius: var(--radius-md);
   cursor: grab;
   transition: all 0.2s ease;
+  inline-size: 100%;
+  min-inline-size: 0;
 }
 
 .inventory-tile-serving:hover {
@@ -152,24 +171,47 @@ function handleTouchEnd(event: TouchEvent) {
   cursor: grabbing;
 }
 
+.inventory-tile-serving__drag-handle {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  flex-shrink: 0;
+  opacity: 0.6;
+  user-select: none;
+}
+
+.inventory-tile-serving:hover .inventory-tile-serving__drag-handle {
+  opacity: 1;
+}
+
 .inventory-tile-serving__emoji {
   font-size: var(--font-size-2xl);
   line-height: 1;
+  flex-shrink: 0;
+}
+
+.inventory-tile-serving__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-inline-size: 0;
 }
 
 .inventory-tile-serving__name {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-  text-align: center;
-  inline-size: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .inventory-tile-serving__servings {
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
-  text-align: center;
+  white-space: nowrap;
 }
 
 /* Depletion color indicators */
@@ -224,9 +266,6 @@ function handleTouchEnd(event: TouchEvent) {
 }
 
 .inventory-tile-serving__count {
-  position: absolute;
-  inset-block-start: var(--space-1);
-  inset-inline-end: var(--space-1);
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
   font-size: var(--font-size-xs);
@@ -235,6 +274,8 @@ function handleTouchEnd(event: TouchEvent) {
   border-radius: var(--radius-full);
   line-height: 1;
   box-shadow: var(--shadow-sm);
+  margin-inline-start: auto;
+  flex-shrink: 0;
 }
 
 /* Disabled state */

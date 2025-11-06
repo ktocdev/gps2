@@ -1,5 +1,5 @@
 <template>
-  <div class="socialize-sidebar">
+  <div class="habitat-sidebar socialize-sidebar">
     <div class="socialize-sidebar__header">
       <h3>Socialize</h3>
     </div>
@@ -430,14 +430,8 @@ function formatTier(tier: string): string {
 </script>
 
 <style>
+/* Component-specific styles (shared layout from .habitat-sidebar) */
 .socialize-sidebar {
-  display: flex;
-  flex-direction: column;
-  inline-size: 240px;
-  block-size: 100%;
-  background-color: var(--color-bg-secondary);
-  border-inline-start: 1px solid var(--color-border);
-  overflow-y: auto;
 }
 
 .socialize-sidebar__header {

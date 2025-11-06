@@ -1,5 +1,5 @@
 <template>
-  <div class="habitat-care-sidebar">
+  <div class="habitat-sidebar habitat-care-sidebar">
     <div class="habitat-care-sidebar__header">
       <h3>Habitat Care</h3>
     </div>
@@ -161,14 +161,8 @@ defineEmits<{
 </script>
 
 <style>
+/* Component-specific styles (shared layout from .habitat-sidebar) */
 .habitat-care-sidebar {
-  display: flex;
-  flex-direction: column;
-  inline-size: 240px;
-  block-size: 100%;
-  background-color: var(--color-bg-secondary);
-  border-inline-start: 1px solid var(--color-border);
-  overflow-y: auto;
 }
 
 .habitat-care-sidebar__header {
@@ -202,15 +196,5 @@ defineEmits<{
   color: var(--color-text-secondary);
   margin: 0;
   margin-block-end: var(--space-1);
-}
-
-/* Mobile: Full width layout */
-@media (max-width: 768px) {
-  .habitat-care-sidebar {
-    inline-size: 100%;
-    max-block-size: 300px;
-    border-inline-start: none;
-    border-block-start: 1px solid var(--color-border);
-  }
 }
 </style>

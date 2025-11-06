@@ -179,6 +179,80 @@ export const guineaPigMessages = {
     }
   },
 
+  // Autonomous eating reactions
+  autonomous: {
+    eating: {
+      favorite: [
+        { message: 'Yum!', emoji: '😋', variant: 'positive' as const },
+        { message: 'My favorite!', emoji: '❤️', variant: 'positive' as const },
+        { message: 'So good!', emoji: '✨', variant: 'positive' as const },
+        { message: 'Munch munch~', emoji: '😊', variant: 'positive' as const }
+      ],
+      neutral: [
+        { message: 'Nom nom', emoji: '🍽️', variant: 'neutral' as const },
+        { message: 'Eating...', emoji: '', variant: 'neutral' as const },
+        { message: 'Munch', emoji: '', variant: 'neutral' as const }
+      ],
+      disliked: [
+        { message: 'Not my fave...', emoji: '😕', variant: 'neutral' as const },
+        { message: 'Meh...', emoji: '', variant: 'neutral' as const },
+        { message: 'I guess...', emoji: '😒', variant: 'neutral' as const }
+      ]
+    },
+    activity: {
+      favorite: [
+        { message: 'Love this!', emoji: '😍', variant: 'positive' as const },
+        { message: 'My favorite!', emoji: '⭐', variant: 'positive' as const },
+        { message: 'So fun!', emoji: '🎉', variant: 'positive' as const }
+      ],
+      neutral: [
+        { message: 'Okay', emoji: '', variant: 'neutral' as const },
+        { message: 'This is fine', emoji: '', variant: 'neutral' as const }
+      ]
+    },
+    habitat: {
+      favorite: [
+        { message: 'Perfect spot!', emoji: '😌', variant: 'positive' as const },
+        { message: 'Love it here!', emoji: '🏠', variant: 'positive' as const },
+        { message: 'So cozy!', emoji: '✨', variant: 'positive' as const }
+      ],
+      neutral: [
+        { message: 'Nice', emoji: '', variant: 'neutral' as const },
+        { message: 'This works', emoji: '', variant: 'neutral' as const }
+      ]
+    }
+  },
+
+  // Care action reactions
+  care: {
+    cageClean: [
+      { message: 'So fresh!', emoji: '✨', variant: 'positive' as const },
+      { message: 'Much better!', emoji: '😊', variant: 'positive' as const },
+      { message: 'Nice and clean!', emoji: '🧹', variant: 'positive' as const },
+      { message: 'Wheek!', emoji: '🎉', variant: 'positive' as const }
+    ],
+    beddingRefresh: [
+      { message: 'Cozy!', emoji: '😌', variant: 'positive' as const },
+      { message: 'Soft bedding!', emoji: '✨', variant: 'positive' as const },
+      { message: 'Comfy!', emoji: '🥰', variant: 'positive' as const }
+    ],
+    waterRefill: [
+      { message: 'Fresh water!', emoji: '💧', variant: 'positive' as const },
+      { message: 'Thank you!', emoji: '😊', variant: 'positive' as const },
+      { message: 'Perfect!', emoji: '✨', variant: 'positive' as const }
+    ],
+    hayRackFill: [
+      { message: 'Hay time!', emoji: '🌾', variant: 'positive' as const },
+      { message: 'Yum yum!', emoji: '😋', variant: 'positive' as const },
+      { message: 'Fresh hay!', emoji: '✨', variant: 'positive' as const }
+    ],
+    bowlFill: [
+      { message: 'Food!', emoji: '🍽️', variant: 'positive' as const },
+      { message: 'Wheek wheek!', emoji: '😍', variant: 'positive' as const },
+      { message: 'Nom time!', emoji: '😋', variant: 'positive' as const }
+    ]
+  },
+
   // Need warnings
   needWarnings: {
     hunger: {
