@@ -134,6 +134,7 @@
         <GuineaPigSprite
           v-for="guineaPig in activeGuineaPigs"
           :key="guineaPig.id"
+          :ref="(el) => registerGuineaPigRef(guineaPig.id, el)"
           :guinea-pig="guineaPig"
           :grid-position="getGuineaPigPosition(guineaPig.id)"
           :cell-size="cellSize"
@@ -263,6 +264,25 @@ const poopCount = computed(() => habitatConditions.poops.length)
 const activeGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs)
 const guineaPigPositions = computed(() => habitatConditions.guineaPigPositions)
 const selectedGuineaPigId = computed(() => guineaPigStore.selectedGuineaPigId)
+
+// Guinea pig sprite refs for chat bubbles
+const guineaPigRefs = ref<Map<string, any>>(new Map())
+
+function registerGuineaPigRef(guineaPigId: string, el: any) {
+  if (el) {
+    guineaPigRefs.value.set(guineaPigId, el)
+  }
+}
+
+// Chat bubble event handler
+function handleShowChatBubble(event: any) {
+  const { guineaPigId, reaction } = event.detail
+  const spriteRef = guineaPigRefs.value.get(guineaPigId)
+
+  if (spriteRef && spriteRef.showReaction) {
+    spriteRef.showReaction(reaction)
+  }
+}
 
 function handleGuineaPigSelect(guineaPigId: string) {
   // Toggle selection: if clicking same guinea pig, deselect it
@@ -1021,6 +1041,9 @@ onMounted(() => {
   initializeGrid()
   updateGridCells()
 
+  // Listen for chat bubble events from debug panel
+  document.addEventListener('show-chat-bubble', handleShowChatBubble as EventListener)
+
   // Initialize chew items that are already in the habitat
   habitatConditions.habitatItems.forEach(itemId => {
     if (isChewItem(itemId)) {
@@ -1039,6 +1062,8 @@ onMounted(() => {
 onUnmounted(() => {
   // Clean up resize listener
   window.removeEventListener('resize', updateWindowWidth)
+  // Clean up chat bubble event listener
+  document.removeEventListener('show-chat-bubble', handleShowChatBubble as EventListener)
 })
 
 watch(

@@ -46,6 +46,14 @@
           >
             🤝 Socialize
           </Button>
+          <Button
+            @click="activeSidebar = 'chatbubble'"
+            variant="tertiary"
+            size="sm"
+            :class="{ 'button--active': activeSidebar === 'chatbubble' }"
+          >
+            💬 Chat Bubble
+          </Button>
         </div>
       </div>
       <div class="panel__content">
@@ -104,6 +112,7 @@
             @wave-hand="handleInteraction('wave-hand')"
             @show-toy="handleInteraction('show-toy')"
           />
+          <ChatBubbleDebug v-else-if="activeSidebar === 'chatbubble'" />
         </div>
       </div>
     </div>
@@ -464,6 +473,7 @@ import InventorySidebar from '../../game/habitat/sidebars/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/sidebars/HabitatCareSidebar.vue'
 import ActivityFeed from '../../game/ui/ActivityFeed.vue'
 import SocializeSidebar from '../../game/habitat/sidebars/SocializeSidebar.vue'
+import ChatBubbleDebug from './ChatBubbleDebug.vue'
 import AutonomyDebug from './AutonomyDebug.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import PoopDebug from './PoopDebug.vue'
@@ -489,7 +499,7 @@ const {
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
 
 // Active sidebar state
-const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize'>('inventory')
+const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize' | 'chatbubble'>('inventory')
 
 // Clean cage dialog state
 const showCleanCageDialog = ref(false)

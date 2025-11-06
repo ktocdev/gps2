@@ -40,6 +40,14 @@
   --space-12: 3rem;    /* 48px */
   --space-16: 4rem;    /* 64px */
 
+  /* Spacing Aliases */
+  --spacing-2xs: var(--space-1);
+  --spacing-xs: var(--space-2);
+  --spacing-sm: var(--space-3);
+  --spacing-md: var(--space-4);
+  --spacing-lg: var(--space-5);
+  --spacing-xl: var(--space-6);
+
   /* Color Palette - Light Mode (Default) */
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f8fafc;
@@ -143,18 +151,35 @@
   /* Status Color Aliases - Updated to use new scale midpoints */
   --color-success: var(--color-accent-green-600);  /* Updated to #178740 for better contrast */
   --color-success-bg: var(--color-accent-green-50);
+  --color-success-surface: var(--color-accent-green-100);
+  --color-success-border: var(--color-accent-green-300);
+
   --color-warning: var(--color-warning-500);        /* Now orange #ea580c */
   --color-warning-hover: var(--color-warning-600);  /* Now #c2410c */
   --color-warning-active: var(--color-warning-700); /* Now #9a3412 */
   --color-warning-bg: var(--color-warning-50);
+  --color-warning-surface: var(--color-warning-100);
+  --color-warning-border: var(--color-warning-300);
+
   --color-error: var(--color-error-500);            /* Now #dc2626 */
   --color-error-hover: var(--color-error-600);      /* Now #b91c1c */
   --color-error-active: var(--color-error-700);     /* Now #991b1b */
   --color-error-bg: var(--color-error-50);
+
   --color-info: var(--color-info-500);              /* Now #2563eb */
   --color-info-hover: var(--color-info-600);        /* Now #1d4ed8 */
   --color-info-active: var(--color-info-700);       /* Now #1e40af */
   --color-info-bg: var(--color-info-50);
+
+  /* Chat Bubble Variants */
+  --color-danger-surface: var(--color-error-100);
+  --color-danger-border: var(--color-error-300);
+  --color-critical-surface: var(--color-error-200);
+  --color-critical-border: var(--color-error-400);
+
+  /* Surface and Border Colors */
+  --color-surface-elevated: var(--color-bg-primary);
+  --color-border-default: var(--color-border-light);
 
   /* Border Radius (Logical Properties) */
   --radius-none: 0;
