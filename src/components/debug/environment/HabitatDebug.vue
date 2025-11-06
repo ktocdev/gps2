@@ -463,6 +463,7 @@ import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useHabitatContainers } from '../../../composables/useHabitatContainers'
 import { useLoggingStore } from '../../../stores/loggingStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
+import { useNeedsController } from '../../../stores/needsController'
 import { CONSUMPTION, CHEW_DEGRADATION } from '../../../constants/supplies'
 import { getInteractionEffect, getInteractionName, getInteractionEmoji } from '../../../utils/interactionEffects'
 import Button from '../../basic/Button.vue'
@@ -485,6 +486,7 @@ const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 const loggingStore = useLoggingStore()
 const behaviorStateStore = useBehaviorStateStore()
+const needsController = useNeedsController()
 const {
   getHayRackContents,
   getHayRackFreshness,
@@ -701,7 +703,7 @@ function getConditionClass(value: number): string {
 }
 
 // Handle social interactions
-function handleInteraction(interactionType: string) {
+async function handleInteraction(interactionType: string) {
   if (!selectedGuineaPig.value) {
     console.warn('No guinea pig selected for interaction')
     return
@@ -712,6 +714,37 @@ function handleInteraction(interactionType: string) {
 
   if (!effect) {
     console.warn(`No effect data found for interaction: ${interactionType}`)
+    return
+  }
+
+  // System 22: Calculate wellness and validate interaction
+  const wellness = needsController.calculateWellness(guineaPig.id)
+  const { attemptInteraction } = await import('../../../utils/interactionValidation')
+
+  const attempt = attemptInteraction(
+    guineaPig,
+    wellness,
+    'socialize' // Map most interactions to 'socialize'
+  )
+
+  // Show reaction chat bubble
+  const event = new CustomEvent('show-chat-bubble', {
+    detail: {
+      guineaPigId: guineaPig.id,
+      reaction: attempt.reactionMessage
+    },
+    bubbles: true
+  })
+  document.dispatchEvent(event)
+
+  // If interaction failed, don't apply effects
+  if (!attempt.success) {
+    const interactionName = getInteractionName(interactionType)
+    loggingStore.addPlayerAction(
+      `${guineaPig.name} rejected the ${interactionName.toLowerCase()} (wellness too low)`,
+      '❌'
+    )
+    console.log(`❌ ${interactionName} rejected: ${guineaPig.name} | Wellness: ${Math.round(wellness)}%`)
     return
   }
 
@@ -738,11 +771,11 @@ function handleInteraction(interactionType: string) {
     emoji
   )
 
-  console.log(`🤝 ${interactionName}: ${guineaPig.name} | Friendship +${effect.friendshipGain} | Needs:`, effect.needsImpact)
+  console.log(`🤝 ${interactionName}: ${guineaPig.name} | Success | Friendship +${effect.friendshipGain} | Wellness: ${Math.round(wellness)}%`)
 }
 
 // Handle hand-feed with food selection
-function handleHandFeed(foodId: string) {
+async function handleHandFeed(foodId: string) {
   if (!selectedGuineaPig.value) {
     console.warn('No guinea pig selected for hand-feed')
     return
@@ -760,6 +793,40 @@ function handleHandFeed(foodId: string) {
   const effect = getInteractionEffect('hand-feed')
   if (!effect) {
     console.warn('No effect data found for hand-feed interaction')
+    return
+  }
+
+  // System 22: Calculate wellness and validate interaction
+  const wellness = needsController.calculateWellness(guineaPig.id)
+  const { attemptInteraction } = await import('../../../utils/interactionValidation')
+
+  // Determine preference level (simplified - could be enhanced with actual preferences)
+  const preferenceLevel: 'favorite' | 'neutral' | 'disliked' = 'neutral'
+
+  const attempt = attemptInteraction(
+    guineaPig,
+    wellness,
+    'feed',
+    preferenceLevel
+  )
+
+  // Show reaction chat bubble
+  const event = new CustomEvent('show-chat-bubble', {
+    detail: {
+      guineaPigId: guineaPig.id,
+      reaction: attempt.reactionMessage
+    },
+    bubbles: true
+  })
+  document.dispatchEvent(event)
+
+  // If interaction failed, don't apply effects
+  if (!attempt.success) {
+    loggingStore.addPlayerAction(
+      `${guineaPig.name} rejected the ${foodItem.name} (wellness too low)`,
+      '❌'
+    )
+    console.log(`❌ Hand-feed rejected: ${guineaPig.name} | Wellness: ${Math.round(wellness)}%`)
     return
   }
 
@@ -784,7 +851,7 @@ function handleHandFeed(foodId: string) {
     '🥕'
   )
 
-  console.log(`🥕 Hand Fed ${foodItem.name}: ${guineaPig.name} | Friendship +${effect.friendshipGain} | Needs:`, effect.needsImpact)
+  console.log(`🥕 Hand Fed ${foodItem.name}: ${guineaPig.name} | Success | Friendship +${effect.friendshipGain} | Wellness: ${Math.round(wellness)}%`)
 }
 
 // Hay Racks Management
