@@ -597,3 +597,25 @@ img {
   .gap-3-responsive { gap: var(--space-3); }
   .gap-4-responsive { gap: var(--space-4); }
 }
+
+/* Habitat Sidebar - Shared styles for all habitat sidebars */
+.habitat-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  inline-size: 360px;
+  max-inline-size: 100%;
+  background-color: var(--color-bg-secondary);
+  border-inline-start: 2px solid var(--color-border-default);
+  padding: var(--space-4);
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .habitat-sidebar {
+    inline-size: 100%;
+    max-block-size: 300px;
+    border-inline-start: none;
+    border-block-start: 2px solid var(--color-border-default);
+  }
+}

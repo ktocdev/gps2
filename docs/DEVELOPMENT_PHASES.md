@@ -333,22 +333,24 @@ This phase focuses on **playing the game and observing** to identify issues, ref
   - Contextual help tooltips and guided workflows
   - Feature discovery prompts for advanced mechanics
   - Progressive tutorial unlocking based on player progress
-26. **Performance Mode System** - Reduced performance mode for lower-end devices 📋 **Planned**
+26. **Performance Mode & Testing System** - Performance optimization and gameplay balance testing 📋 **Planned**
   - Toggle between full and reduced performance modes
   - Reduced animation frequency and complexity
   - Optimized rendering and game loop performance
   - Battery-saving options for mobile devices
+  - **Gameplay Testing & Balance** - Extended play sessions, need decay tuning, resource consumption balance, message quality, UI/UX refinement
 27. **Sound System** - Audio manager and interaction sound feedback 📋 **Planned**
 28. **Settings & Preferences System** - User preferences and customization 📋 **Planned**
 29. **Guinea Pig Animation System** - Full animation framework replacing static emoji graphics (future enhancement) 📋 **Planned**
 
 ### Additional Polish Features (Low Priority)
-- **Multi-Type Guinea Pig Interactions** - Expand social interactions (play, sniff/investigate, groom, huddle/cuddle)
-- **Pushable Toys System** - Guinea pigs physically move balls and toys across grid cells
-- **Special Treat Visual Effects** - Fun visual effects when consuming special treats (glow effects, temporary emoji changes)
-- **Pre-Bonded Pairs & Solo Guinea Pigs** - Adoption constraints for bonded pairs vs solo-suitable guinea pigs
-- **Gameplay Testing Checklist** - Comprehensive testing of all systems for balance and realism
-- **Realism Guidelines Documentation** - Document realistic guinea pig care guidelines for game balance
+**Note:** Most gameplay enhancement features have been integrated into existing Phase 5 systems:
+- **Multi-type guinea pig interactions** → System 22 (play, sniff/investigate, groom, huddle/cuddle)
+- **Pushable toys system** → System 22 (guinea pigs move items across grid)
+- **Special treat visual effects** → System 22 (glow effects, emoji transformations)
+- **Pre-bonded pairs & solo guinea pigs** → System 22 (adoption constraints)
+- **Realism guidelines documentation** → System 23.5 (guinea pig care guidelines for game balance)
+- **Gameplay testing & balance** → System 26 (extended play sessions, need tuning, resource balance)
 
 ### Key Deliverables
 - **Context-aware interactions** with friendship, wellness, and habitat-based activity messages

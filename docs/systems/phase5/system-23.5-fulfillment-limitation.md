@@ -12,6 +12,190 @@ The Fulfillment Limitation System prevents exploitation of user-to-guinea pig in
 
 ## Core Mechanics
 
+### 0. Serving-Based Food Items
+
+**Purpose:** Some food items are purchased in multi-serving packs to balance cost and realism
+
+#### Pack-Based Items
+
+**Fruits (6 servings per pack):**
+- **Strawberries** - 6 strawberries per pack, 1 strawberry per serving
+  - Price: $6 per pack ($1 per serving)
+  - Category: Fruit (1 serving per hunger cycle limit)
+  - Satisfaction: 15-20 hunger per serving
+
+- **Tomatoes** - 6 tomatoes per pack, 1 tomato per serving
+  - Price: $9 per pack ($1.50 per serving)
+  - Category: Vegetable (3 servings per hunger cycle limit)
+  - Satisfaction: 12-18 hunger per serving
+
+**Basic Treats (6 servings per pack):**
+- **Carrot Chips** - 6 chips per pack, 1 chip per serving
+  - Price: $12 per pack ($2 per serving)
+  - Category: Treat (1 serving per hunger cycle limit)
+  - Satisfaction: 10 hunger + 15 happiness
+
+- **Apple Slices** - 6 slices per pack, 1 slice per serving
+  - Price: $12 per pack ($2 per serving)
+  - Category: Treat (1 serving per hunger cycle limit)
+  - Satisfaction: 10 hunger + 15 happiness
+
+- **Dried Herbs** - 6 servings per pack
+  - Price: $15 per pack ($2.50 per serving)
+  - Category: Treat (1 serving per hunger cycle limit)
+  - Satisfaction: 5 hunger + 20 happiness
+
+**Special Treats (1 per purchase):**
+- **Premium Treat Box** - Single-use special treat
+  - Price: $25 per treat
+  - Category: Treat (1 serving per hunger cycle limit)
+  - Satisfaction: 15 hunger + 25 happiness + special visual effects
+
+- **Gourmet Veggie Mix** - Single-use premium food
+  - Price: $20 per treat
+  - Category: Treat (1 serving per hunger cycle limit)
+  - Satisfaction: 20 hunger + 20 happiness + glow effect
+
+#### Inventory Management
+
+**Pack Tracking:**
+```typescript
+interface FoodItem {
+  id: string
+  name: string
+  category: 'fruit' | 'vegetables' | 'pellets' | 'treats' | 'hay'
+  packSize: number // Number of servings per purchase
+  servingsRemaining: number // Current servings left
+  pricePerPack: number
+  pricePerServing: number // Calculated: pricePerPack / packSize
+  hungerSatisfaction: number
+  happinessSatisfaction?: number
+}
+
+// Example: Strawberries
+{
+  id: 'strawberries',
+  name: 'Strawberries',
+  category: 'fruit',
+  packSize: 6,
+  servingsRemaining: 6,
+  pricePerPack: 6.00,
+  pricePerServing: 1.00,
+  hungerSatisfaction: 18,
+  happinessSatisfaction: 5
+}
+```
+
+**Purchase Flow:**
+```typescript
+function purchaseFoodItem(itemId: string): PurchaseResult {
+  const item = getStoreItem(itemId)
+  const player = getPlayerInventory()
+
+  // Check if player can afford the pack
+  if (player.money < item.pricePerPack) {
+    return { success: false, reason: 'Insufficient funds' }
+  }
+
+  // Deduct pack price
+  player.money -= item.pricePerPack
+
+  // Add item to inventory with full servings
+  const inventoryItem = {
+    ...item,
+    servingsRemaining: item.packSize
+  }
+
+  player.inventory.push(inventoryItem)
+
+  return {
+    success: true,
+    message: `Purchased ${item.name} (${item.packSize} servings) for $${item.pricePerPack}`
+  }
+}
+```
+
+**Feeding Flow:**
+```typescript
+function feedGuineaPig(guineaPigId: string, itemId: string): FeedResult {
+  const item = getInventoryItem(itemId)
+  const guineaPig = getGuineaPig(guineaPigId)
+
+  // Check consumption limit for this cycle
+  if (!canConsumeFood(guineaPig, item.category)) {
+    return {
+      success: false,
+      reason: `${item.category} limit reached for this hunger cycle`
+    }
+  }
+
+  // Check if servings remain
+  if (item.servingsRemaining <= 0) {
+    return {
+      success: false,
+      reason: 'No servings remaining. Purchase more from the store.'
+    }
+  }
+
+  // Consume 1 serving
+  item.servingsRemaining -= 1
+
+  // Remove from inventory if depleted
+  if (item.servingsRemaining === 0) {
+    removeFromInventory(itemId)
+  }
+
+  // Apply hunger satisfaction
+  satisfyNeed(guineaPigId, 'hunger', item.hungerSatisfaction)
+  if (item.happinessSatisfaction) {
+    satisfyNeed(guineaPigId, 'happiness', item.happinessSatisfaction)
+  }
+
+  // Track consumption
+  trackConsumption(guineaPigId, item.category)
+
+  return {
+    success: true,
+    message: `Fed 1 serving of ${item.name} (${item.servingsRemaining} servings remaining)`,
+    servingsRemaining: item.servingsRemaining
+  }
+}
+```
+
+**UI Display:**
+```vue
+<!-- InventorySidebar.vue - Food item display -->
+<div class="inventory-item">
+  <span class="inventory-item__name">{{ item.name }}</span>
+  <span class="inventory-item__count">{{ item.servingsRemaining }}/{{ item.packSize }}</span>
+  <button
+    class="button button--sm"
+    :disabled="item.servingsRemaining === 0"
+    @click="feedGuineaPig(item.id)"
+  >
+    Feed (1 serving)
+  </button>
+</div>
+
+<!-- Store display -->
+<div class="store-item">
+  <span class="store-item__name">{{ item.name }}</span>
+  <span class="store-item__pack-info">Pack of {{ item.packSize }}</span>
+  <span class="store-item__price">${{ item.pricePerPack }}</span>
+  <span class="store-item__price-per-serving">${{ item.pricePerServing }}/serving</span>
+  <button class="button button--sm" @click="purchaseItem(item.id)">
+    Buy Pack
+  </button>
+</div>
+```
+
+**Economic Balance:**
+- **Pack items** more cost-effective than single purchases
+- **Special treats** premium pricing for premium effects
+- **Vegetables cheaper per serving** than fruits (reflects real-world costs)
+- **Basic treats** mid-tier pricing (convenience + happiness)
+- **Inventory management** adds strategic depth (buy in bulk vs immediate need)
+
 ### 1. Consumption Limits (Hunger Cycle Based)
 
 #### Hunger Cycle Definition
@@ -381,6 +565,93 @@ export interface InteractionResult {
 
 ---
 
+## Realism Guidelines Documentation
+
+**Purpose:** Document realistic guinea pig behaviors and care practices to guide game design decisions
+
+### Feeding Realism
+
+**Real-World Guinea Pig Diet:**
+- **Hay:** 80% of diet, unlimited access (prevents dental issues, aids digestion)
+- **Pellets:** 1/8 cup daily per guinea pig (~2-3 servings)
+- **Vegetables:** 1 cup daily per guinea pig (~4-6 servings)
+- **Fruits:** Occasional treats only (2-3 times per week, high sugar)
+- **Treats:** Very limited (1-2 times per week maximum)
+
+**Game Implementation:**
+- Hunger cycle = ~4 minutes (compressed timescale)
+- Consumption limits reflect proportional serving ratios
+- Hay remains unlimited (realistic + prevents starvation)
+- Fruit/treats intentionally limited (teaches proper care)
+
+### Behavioral Realism
+
+**Guinea Pig Natural Behaviors:**
+- **Social animals:** Need companionship (2+ guinea pigs ideal)
+- **Crepuscular:** Most active dawn/dusk (moderate activity all day)
+- **Prey animals:** Hide when scared, avoid handling when stressed
+- **Vocalizations:** Wheek (excited/hungry), purr (content), chirp (alert)
+- **Movement:** Popcorn (happy jump), zoomies (playful running)
+
+**Stress & Wellness:**
+- **Low wellness:** Guinea pig becomes withdrawn, less social, hides more
+- **Recovery:** Requires rest, food, water, shelter (not immediate)
+- **Rejection:** Realistic response to stress (animals avoid interaction when unwell)
+- **Bonding:** Takes time, built through consistent positive care
+
+### Care Realism
+
+**Essential Care Requirements:**
+- **Space:** Minimum 7.5 sq ft per guinea pig (habitat size matters)
+- **Companionship:** Guinea pigs are social, should not live alone
+- **Nail trimming:** Every 4-6 weeks (prevents overgrowth injuries)
+- **Grooming:** Weekly brushing (long-haired breeds need daily)
+- **Cage cleaning:** Spot clean daily, full clean weekly
+- **Health checks:** Regular weight monitoring, behavior observation
+
+**Game Simplifications:**
+- Compressed timescale (minutes instead of hours/days)
+- Simplified needs (11 core needs vs complex real requirements)
+- Instant need satisfaction (vs gradual improvement)
+- Abstracted illness mechanics (health need vs specific diseases)
+
+### Interaction Realism
+
+**Realistic Guinea Pig Responses:**
+- **Trust-based:** New guinea pigs are wary, bonded ones are affectionate
+- **Energy-dependent:** Tired guinea pigs avoid play/handling
+- **Mood-influenced:** Stressed guinea pigs hide, happy ones explore
+- **Personality-driven:** Some guinea pigs are naturally bold or shy
+
+**Unrealistic for Gameplay:**
+- **Instant teleportation:** Guinea pigs move instantly (simplified movement)
+- **Perfect obedience:** Guinea pigs always eat when fed (player convenience)
+- **Rapid bonding:** Friendship builds faster than real-world (game pacing)
+- **No aggression:** Guinea pigs don't fight (prevents negative gameplay)
+
+### Documentation Structure
+
+**Guidelines Categories:**
+1. **Diet & Nutrition** - Feeding schedules, food types, portions
+2. **Behavior & Wellness** - Natural behaviors, stress responses, activity patterns
+3. **Care Requirements** - Daily tasks, grooming, health monitoring
+4. **Social Dynamics** - Companionship needs, pair bonding, territory
+5. **Game Abstractions** - Where gameplay diverges from reality (and why)
+
+**Usage:**
+- Reference during feature design (ensure realism where appropriate)
+- Balance realism with fun gameplay (educate without overwhelming)
+- Document intentional abstractions (explain simplifications)
+- Update as new systems added (living document)
+
+**Related Systems:**
+- System 10.1 (Personality) - Reflects real guinea pig personality variation
+- System 10.2 (Preferences) - Based on real guinea pig food preferences
+- System 21 (Social Bonding) - Models real companion bonding
+- System 23.5 (Fulfillment Limitation) - Enforces realistic feeding limits
+
+---
+
 ## Notes
 
 - This system reinforces the need to maintain high wellness for successful interactions
@@ -390,3 +661,4 @@ export interface InteractionResult {
 - Strategic players will aim for high wellness (>70) for easiest interactions
 - Consumption limits prevent "spam feeding" to rapidly boost hunger
 - Hay as unlimited food ensures guinea pig can always eat (realistic behavior)
+- Realism guidelines ensure game balance respects real guinea pig care practices

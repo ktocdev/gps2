@@ -11,108 +11,91 @@
     <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
     <!-- Visual Habitat with Sidebar -->
     <div class="panel panel--full-width">
-      <div class="panel__header">
+      <div class="panel__header flex justify-between items-center">
         <h3>Habitat Visual</h3>
-        <div class="sidebar-toggle">
-          <Button
-            @click="activeSidebar = 'inventory'"
-            variant="tertiary"
-            size="sm"
-            :class="{ 'button--active': activeSidebar === 'inventory' }"
-          >
-            🎒 Inventory
-          </Button>
-          <Button
-            @click="activeSidebar = 'care'"
-            variant="tertiary"
-            size="sm"
-            :class="{ 'button--active': activeSidebar === 'care' }"
-          >
-            🧹 Care Actions
-          </Button>
-          <Button
-            @click="activeSidebar = 'activity'"
-            variant="tertiary"
-            size="sm"
-            :class="{ 'button--active': activeSidebar === 'activity' }"
-          >
-            📜 Activity Feed
-          </Button>
-          <Button
-            @click="activeSidebar = 'socialize'"
-            variant="tertiary"
-            size="sm"
-            :class="{ 'button--active': activeSidebar === 'socialize' }"
-          >
-            🤝 Socialize
-          </Button>
-        </div>
+        <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end">
+          <template v-for="tab in sidebarTabs" :key="tab.id" #[tab.id]>
+            <!-- Content is handled by conditional rendering below -->
+          </template>
+        </SubTabContainer>
       </div>
       <div class="panel__content">
         <div class="habitat-layout">
           <div class="habitat-layout__main">
+            <div class="habitat-visual-header">
+              <h3>Habitat Layout (medium - {{ habitatVisualRef?.gridWidth || 0 }}x{{ habitatVisualRef?.gridHeight || 0 }})</h3>
+              <div class="habitat-visual-header__stats">
+                <span>{{ habitatVisualRef?.placedItemsCount || 0 }} items placed</span>
+                <span>{{ habitatVisualRef?.occupiedCells || 0 }}/{{ habitatVisualRef?.totalCells || 0 }} cells occupied</span>
+                <span v-if="(habitatVisualRef?.poopCount || 0) > 0">💩 {{ habitatVisualRef?.poopCount }} poops</span>
+              </div>
+            </div>
             <HabitatVisual ref="habitatVisualRef" :show-grid="true" habitat-size="medium" />
           </div>
-          <InventorySidebar
-            v-if="activeSidebar === 'inventory'"
-            :habitat-visual-ref="habitatVisualRef"
-          />
-          <HabitatCareSidebar
-            v-else-if="activeSidebar === 'care'"
-            :can-refresh-bedding="canRefreshBedding"
-            :can-fill-hay-racks="canFillHayRacks"
-            :fill-hay-racks-tooltip="fillHayRacksTooltip"
-            :selected-bedding-type="selectedBeddingType"
-            :bedding-options="beddingOptions"
-            :poop-count="habitatVisualRef?.poopCount || 0"
-            :has-water-available="hasWaterAvailable"
-            @update:selected-bedding-type="selectedBeddingType = String($event)"
-            @clean-cage="handleCleanCage"
-            @refill-water="habitat.refillWater"
-            @refresh-bedding="handleRefreshBedding"
-            @fill-all-hay-racks="handleFillAllHayRacks"
-            @clear-all-bowls="clearAllBowls"
-            @clear-all-hay-racks="clearAllHayRacks"
-            @add-test-poop="addTestPoop"
-            @clear-all-poop="clearAllPoop"
-            @clear-water="clearWater"
-            @test-water-consumption="testWaterConsumption"
-          />
-          <div v-else-if="activeSidebar === 'activity'" class="activity-feed-sidebar">
-            <ActivityFeed
-              :max-messages="100"
-              :show-header="true"
-              :auto-scroll="true"
-              height="600px"
-              :compact="false"
-              :categories="['player_action', 'guinea_pig_reaction', 'autonomous_behavior', 'environmental', 'achievement']"
-              title="Activity Log"
+          <div class="habitat-layout__sidebar">
+            <InventorySidebar
+              v-if="activeSidebar === 'inventory'"
+              :habitat-visual-ref="habitatVisualRef"
+            />
+            <HabitatCareSidebar
+              v-else-if="activeSidebar === 'care'"
+              :can-refresh-bedding="canRefreshBedding"
+              :can-fill-hay-racks="canFillHayRacks"
+              :fill-hay-racks-tooltip="fillHayRacksTooltip"
+              :selected-bedding-type="selectedBeddingType"
+              :bedding-options="beddingOptions"
+              :poop-count="habitatVisualRef?.poopCount || 0"
+              :has-water-available="hasWaterAvailable"
+              @update:selected-bedding-type="selectedBeddingType = String($event)"
+              @clean-cage="handleCleanCage"
+              @refill-water="handleRefillWater"
+              @refresh-bedding="handleRefreshBedding"
+              @fill-all-hay-racks="handleFillAllHayRacks"
+              @clear-all-bowls="clearAllBowls"
+              @clear-all-hay-racks="clearAllHayRacks"
+              @add-test-poop="addTestPoop"
+              @clear-all-poop="clearAllPoop"
+              @clear-water="clearWater"
+              @test-water-consumption="testWaterConsumption"
+            />
+            <div v-else-if="activeSidebar === 'activity'" class="activity-feed-sidebar">
+              <ActivityFeed
+                :max-messages="100"
+                :show-header="true"
+                :auto-scroll="true"
+                height="600px"
+                :compact="false"
+                :categories="['player_action', 'guinea_pig_reaction', 'autonomous_behavior', 'environmental', 'achievement']"
+                title="Activity Log"
+              />
+            </div>
+            <SocializeSidebar
+              v-else-if="activeSidebar === 'socialize'"
+              :selected-guinea-pig="selectedGuineaPig"
+              @pet="handleInteraction('pet')"
+              @hold="handleInteraction('hold')"
+              @hand-feed="handleHandFeed"
+              @gentle-wipe="handleInteraction('gentle-wipe')"
+              @clip-nails="handleInteraction('clip-nails')"
+              @talk-to="handleInteraction('talk-to')"
+              @sing-to="handleInteraction('sing-to')"
+              @call-name="handleInteraction('call-name')"
+              @peek-a-boo="handleInteraction('peek-a-boo')"
+              @wave-hand="handleInteraction('wave-hand')"
+              @show-toy="handleInteraction('show-toy')"
+            />
+            <ChatBubbleDebug v-else-if="activeSidebar === 'chatbubble'" />
+            <AutonomySidebar
+              v-else-if="activeSidebar === 'autonomy'"
+              :selected-guinea-pig="selectedGuineaPig"
             />
           </div>
-          <SocializeSidebar
-            v-else-if="activeSidebar === 'socialize'"
-            :selected-guinea-pig="selectedGuineaPig"
-            @pet="handleInteraction('pet')"
-            @hold="handleInteraction('hold')"
-            @hand-feed="handleHandFeed"
-            @gentle-wipe="handleInteraction('gentle-wipe')"
-            @clip-nails="handleInteraction('clip-nails')"
-            @talk-to="handleInteraction('talk-to')"
-            @sing-to="handleInteraction('sing-to')"
-            @call-name="handleInteraction('call-name')"
-            @peek-a-boo="handleInteraction('peek-a-boo')"
-            @wave-hand="handleInteraction('wave-hand')"
-            @show-toy="handleInteraction('show-toy')"
-          />
         </div>
       </div>
     </div>
 
     <!-- Habitat Conditions & Test Controls Row -->
     <div class="habitat-debug__conditions-row">
-      <!-- System 19: Autonomy Debug Panel -->
-      <AutonomyDebug />
-
       <!-- Needs Panel -->
       <NeedsPanel />
 
@@ -454,17 +437,20 @@ import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useHabitatContainers } from '../../../composables/useHabitatContainers'
 import { useLoggingStore } from '../../../stores/loggingStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
+import { useNeedsController } from '../../../stores/needsController'
 import { CONSUMPTION, CHEW_DEGRADATION } from '../../../constants/supplies'
 import { getInteractionEffect, getInteractionName, getInteractionEmoji } from '../../../utils/interactionEffects'
 import Button from '../../basic/Button.vue'
 import InfoButton from '../../basic/InfoButton.vue'
 import SliderField from '../../basic/SliderField.vue'
+import SubTabContainer from '../../layout/SubTabContainer.vue'
 import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/sidebars/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/sidebars/HabitatCareSidebar.vue'
 import ActivityFeed from '../../game/ui/ActivityFeed.vue'
 import SocializeSidebar from '../../game/habitat/sidebars/SocializeSidebar.vue'
-import AutonomyDebug from './AutonomyDebug.vue'
+import AutonomySidebar from '../../game/habitat/sidebars/AutonomySidebar.vue'
+import ChatBubbleDebug from './ChatBubbleDebug.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import PoopDebug from './PoopDebug.vue'
 import CleanCageDialog from '../../game/dialogs/CleanCageDialog.vue'
@@ -475,6 +461,7 @@ const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 const loggingStore = useLoggingStore()
 const behaviorStateStore = useBehaviorStateStore()
+const needsController = useNeedsController()
 const {
   getHayRackContents,
   getHayRackFreshness,
@@ -489,7 +476,17 @@ const {
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
 
 // Active sidebar state
-const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize'>('inventory')
+const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize' | 'chatbubble' | 'autonomy'>('inventory')
+
+// Sidebar tabs for SubTabContainer
+const sidebarTabs = [
+  { id: 'inventory', label: 'Inventory', icon: '🎒' },
+  { id: 'care', label: 'Care Actions', icon: '🧹' },
+  { id: 'activity', label: 'Activity Feed', icon: '📜' },
+  { id: 'socialize', label: 'Socialize', icon: '🤝' },
+  { id: 'chatbubble', label: 'Chat Bubble', icon: '💬' },
+  { id: 'autonomy', label: 'Autonomy', icon: '🎮' }
+]
 
 // Clean cage dialog state
 const showCleanCageDialog = ref(false)
@@ -573,6 +570,7 @@ function handleFillAllHayRacks() {
       `Filled ${result.racksFilled} hay rack${result.racksFilled > 1 ? 's' : ''} with ${result.totalAdded} serving${result.totalAdded > 1 ? 's' : ''}`,
       '🌾'
     )
+    showCareReaction('hayRackFill')
   } else {
     console.warn('No hay was added to racks')
   }
@@ -661,12 +659,41 @@ const canRefreshBedding = computed(() => {
   return inventoryStore.hasItem(itemId)
 })
 
+async function showCareReaction(careType: 'cageClean' | 'beddingRefresh' | 'waterRefill' | 'hayRackFill' | 'bowlFill') {
+  // Show chat bubble for all active guinea pigs
+  const activeGuineaPigs = guineaPigStore.activeGuineaPigs
+  if (activeGuineaPigs.length === 0) return
+
+  const { guineaPigMessages } = await import('../../../data/guineaPigMessages')
+  const messages = guineaPigMessages.care[careType]
+
+  activeGuineaPigs.forEach(guineaPig => {
+    const reaction = messages[Math.floor(Math.random() * messages.length)]
+
+    const event = new CustomEvent('show-chat-bubble', {
+      detail: {
+        guineaPigId: guineaPig.id,
+        reaction
+      },
+      bubbles: true
+    })
+    document.dispatchEvent(event)
+  })
+}
+
+function handleRefillWater() {
+  habitat.refillWater()
+  showCareReaction('waterRefill')
+}
+
 function handleRefreshBedding() {
   // Use the selected bedding type from the dropdown
   const itemId = beddingItemIds[selectedBeddingType.value as 'cheap' | 'average' | 'premium']
   const success = habitat.refreshBedding(itemId)
   if (!success) {
     console.warn(`Not enough ${selectedBeddingType.value} bedding in inventory`)
+  } else {
+    showCareReaction('beddingRefresh')
   }
 }
 
@@ -679,6 +706,7 @@ function confirmCleanCage() {
   const result = habitat.cleanCage()
   if (result.success) {
     loggingStore.addPlayerAction(result.message, '🧹')
+    showCareReaction('cageClean')
   } else {
     console.warn(result.message)
   }
@@ -691,7 +719,7 @@ function getConditionClass(value: number): string {
 }
 
 // Handle social interactions
-function handleInteraction(interactionType: string) {
+async function handleInteraction(interactionType: string) {
   if (!selectedGuineaPig.value) {
     console.warn('No guinea pig selected for interaction')
     return
@@ -702,6 +730,37 @@ function handleInteraction(interactionType: string) {
 
   if (!effect) {
     console.warn(`No effect data found for interaction: ${interactionType}`)
+    return
+  }
+
+  // System 22: Calculate wellness and validate interaction
+  const wellness = needsController.calculateWellness(guineaPig.id)
+  const { attemptInteraction } = await import('../../../utils/interactionValidation')
+
+  const attempt = attemptInteraction(
+    guineaPig,
+    wellness,
+    'socialize' // Map most interactions to 'socialize'
+  )
+
+  // Show reaction chat bubble
+  const event = new CustomEvent('show-chat-bubble', {
+    detail: {
+      guineaPigId: guineaPig.id,
+      reaction: attempt.reactionMessage
+    },
+    bubbles: true
+  })
+  document.dispatchEvent(event)
+
+  // If interaction failed, don't apply effects
+  if (!attempt.success) {
+    const interactionName = getInteractionName(interactionType)
+    loggingStore.addPlayerAction(
+      `${guineaPig.name} rejected the ${interactionName.toLowerCase()} (wellness too low)`,
+      '❌'
+    )
+    console.log(`❌ ${interactionName} rejected: ${guineaPig.name} | Wellness: ${Math.round(wellness)}%`)
     return
   }
 
@@ -728,11 +787,11 @@ function handleInteraction(interactionType: string) {
     emoji
   )
 
-  console.log(`🤝 ${interactionName}: ${guineaPig.name} | Friendship +${effect.friendshipGain} | Needs:`, effect.needsImpact)
+  console.log(`🤝 ${interactionName}: ${guineaPig.name} | Success | Friendship +${effect.friendshipGain} | Wellness: ${Math.round(wellness)}%`)
 }
 
 // Handle hand-feed with food selection
-function handleHandFeed(foodId: string) {
+async function handleHandFeed(foodId: string) {
   if (!selectedGuineaPig.value) {
     console.warn('No guinea pig selected for hand-feed')
     return
@@ -750,6 +809,45 @@ function handleHandFeed(foodId: string) {
   const effect = getInteractionEffect('hand-feed')
   if (!effect) {
     console.warn('No effect data found for hand-feed interaction')
+    return
+  }
+
+  // System 22: Calculate wellness and validate interaction
+  const wellness = needsController.calculateWellness(guineaPig.id)
+  const { attemptInteraction } = await import('../../../utils/interactionValidation')
+
+  // Determine preference level based on guinea pig's actual preferences
+  let preferenceLevel: 'favorite' | 'neutral' | 'disliked' = 'neutral'
+  if (guineaPig.preferences.favoriteFood.includes(foodId)) {
+    preferenceLevel = 'favorite'
+  } else if (guineaPig.preferences.dislikedFood.includes(foodId)) {
+    preferenceLevel = 'disliked'
+  }
+
+  const attempt = attemptInteraction(
+    guineaPig,
+    wellness,
+    'feed',
+    preferenceLevel
+  )
+
+  // Show reaction chat bubble
+  const event = new CustomEvent('show-chat-bubble', {
+    detail: {
+      guineaPigId: guineaPig.id,
+      reaction: attempt.reactionMessage
+    },
+    bubbles: true
+  })
+  document.dispatchEvent(event)
+
+  // If interaction failed, don't apply effects
+  if (!attempt.success) {
+    loggingStore.addPlayerAction(
+      `${guineaPig.name} rejected the ${foodItem.name} (wellness too low)`,
+      '❌'
+    )
+    console.log(`❌ Hand-feed rejected: ${guineaPig.name} | Wellness: ${Math.round(wellness)}%`)
     return
   }
 
@@ -774,7 +872,7 @@ function handleHandFeed(foodId: string) {
     '🥕'
   )
 
-  console.log(`🥕 Hand Fed ${foodItem.name}: ${guineaPig.name} | Friendship +${effect.friendshipGain} | Needs:`, effect.needsImpact)
+  console.log(`🥕 Hand Fed ${foodItem.name}: ${guineaPig.name} | Success | Friendship +${effect.friendshipGain} | Wellness: ${Math.round(wellness)}%`)
 }
 
 // Hay Racks Management
@@ -902,11 +1000,6 @@ function getChewDurabilityClass(durability: number): string {
   gap: var(--space-3);
 }
 
-.sidebar-toggle {
-  display: flex;
-  gap: var(--space-2);
-}
-
 .condition-summary {
   display: flex;
   align-items: center;
@@ -1000,6 +1093,34 @@ function getChewDurabilityClass(durability: number): string {
 .habitat-layout__main {
   flex: 1;
   min-inline-size: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.habitat-layout__sidebar {
+  min-inline-size: 360px;
+}
+
+.habitat-visual-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.habitat-visual-header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.habitat-visual-header__stats {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
 /* Mobile: Stack layout vertically */

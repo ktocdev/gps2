@@ -688,6 +688,46 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'eating'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Show chat bubble for food preference
+    if (goal.targetItemId) {
+      const bowlContents = habitatConditions.getBowlContents(goal.targetItemId)
+      if (bowlContents && bowlContents.length > 0) {
+        const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+
+        // Determine preference level
+        let preferenceLevel: 'favorite' | 'neutral' | 'disliked' = 'neutral'
+        const selectedFood = bowlContents.find(food =>
+          guineaPig.value!.preferences.favoriteFood.some(fav =>
+            food.itemId.toLowerCase().includes(fav.toLowerCase())
+          )
+        ) || bowlContents[0]
+
+        if (guineaPig.value!.preferences.favoriteFood.some(fav =>
+          selectedFood.itemId.toLowerCase().includes(fav.toLowerCase())
+        )) {
+          preferenceLevel = 'favorite'
+        } else if (guineaPig.value!.preferences.dislikedFood.some(dislike =>
+          selectedFood.itemId.toLowerCase().includes(dislike.toLowerCase())
+        )) {
+          preferenceLevel = 'disliked'
+        }
+
+        // Select random message
+        const messages = guineaPigMessages.autonomous.eating[preferenceLevel]
+        const reaction = messages[Math.floor(Math.random() * messages.length)]
+
+        // Dispatch chat bubble event
+        const event = new CustomEvent('show-chat-bubble', {
+          detail: {
+            guineaPigId: guineaPig.value.id,
+            reaction
+          },
+          bubbles: true
+        })
+        document.dispatchEvent(event)
+      }
+    }
+
     // Log to activity feed BEFORE eating starts (so message appears during activity)
     const msg = MessageGenerator.generateAutonomousEatMessage(guineaPig.value.name, eatenFoodName)
     loggingStore.addAutonomousBehavior(msg.message, msg.emoji)
@@ -1027,6 +1067,39 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     behaviorState.value.currentActivity = 'eating'
     behaviorState.value.activityStartTime = Date.now()
 
+    // Show chat bubble for hay eating (check if hay is liked)
+    if (guineaPig.value && goal.targetItemId) {
+      const hayServings = habitatConditions.getHayRackContents(goal.targetItemId)
+      if (hayServings && hayServings.length > 0) {
+        const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+
+        // Check if hay is in favorite foods (could be Timothy hay, Orchard grass, etc.)
+        const likesHay = guineaPig.value.preferences.favoriteFood.some(fav =>
+          fav.toLowerCase().includes('hay') || fav.toLowerCase().includes('grass')
+        )
+        const dislikesHay = guineaPig.value.preferences.dislikedFood.some(dislike =>
+          dislike.toLowerCase().includes('hay') || dislike.toLowerCase().includes('grass')
+        )
+
+        const preferenceLevel: 'favorite' | 'neutral' | 'disliked' =
+          likesHay ? 'favorite' : dislikesHay ? 'disliked' : 'neutral'
+
+        // Select random message
+        const messages = guineaPigMessages.autonomous.eating[preferenceLevel]
+        const reaction = messages[Math.floor(Math.random() * messages.length)]
+
+        // Dispatch chat bubble event
+        const event = new CustomEvent('show-chat-bubble', {
+          detail: {
+            guineaPigId: guineaPig.value.id,
+            reaction
+          },
+          bubbles: true
+        })
+        document.dispatchEvent(event)
+      }
+    }
+
     // Log to activity feed BEFORE eating starts
     if (guineaPig.value) {
       const msg = MessageGenerator.generateAutonomousEatHayMessage(guineaPig.value.name)
@@ -1076,6 +1149,32 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Set chewing state with chomp animation
     behaviorState.value.currentActivity = 'chewing'
     behaviorState.value.activityStartTime = Date.now()
+
+    // Show chat bubble for chewing activity (check if chewing is liked)
+    if (guineaPig.value && goal.targetItemId) {
+      const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+
+      // Check if chewing is in favorite activities
+      const likesChewing = guineaPig.value.preferences.favoriteActivity.some(activity =>
+        activity.toLowerCase().includes('chew')
+      )
+
+      const preferenceLevel: 'favorite' | 'neutral' = likesChewing ? 'favorite' : 'neutral'
+
+      // Select random message
+      const messages = guineaPigMessages.autonomous.activity[preferenceLevel]
+      const reaction = messages[Math.floor(Math.random() * messages.length)]
+
+      // Dispatch chat bubble event
+      const event = new CustomEvent('show-chat-bubble', {
+        detail: {
+          guineaPigId: guineaPig.value.id,
+          reaction
+        },
+        bubbles: true
+      })
+      document.dispatchEvent(event)
+    }
 
     // Log to activity feed BEFORE chewing starts (with chew item name)
     if (guineaPig.value) {
@@ -1127,6 +1226,32 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Set playing state
     behaviorState.value.currentActivity = 'playing'
     behaviorState.value.activityStartTime = Date.now()
+
+    // Show chat bubble for playing activity (check if play is liked)
+    if (guineaPig.value && goal.targetItemId) {
+      const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+
+      // Check if play/toys are in favorite activities
+      const likesPlaying = guineaPig.value.preferences.favoriteActivity.some(activity =>
+        activity.toLowerCase().includes('play') || activity.toLowerCase().includes('toy')
+      )
+
+      const preferenceLevel: 'favorite' | 'neutral' = likesPlaying ? 'favorite' : 'neutral'
+
+      // Select random message
+      const messages = guineaPigMessages.autonomous.activity[preferenceLevel]
+      const reaction = messages[Math.floor(Math.random() * messages.length)]
+
+      // Dispatch chat bubble event
+      const event = new CustomEvent('show-chat-bubble', {
+        detail: {
+          guineaPigId: guineaPig.value.id,
+          reaction
+        },
+        bubbles: true
+      })
+      document.dispatchEvent(event)
+    }
 
     // Log to activity feed BEFORE playing starts (with toy name)
     let toyName: string | undefined
@@ -1402,6 +1527,33 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Set sheltering/hiding state
     behaviorState.value.currentActivity = 'hiding'
     behaviorState.value.activityStartTime = Date.now()
+
+    // Show chat bubble for shelter/habitat preference
+    if (guineaPig.value && goal.targetItemId) {
+      const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+
+      // Check if this shelter type is in habitat preferences
+      const itemId = goal.targetItemId.toLowerCase()
+      const likesShelter = guineaPig.value.preferences.habitatPreference.some(pref =>
+        itemId.includes(pref.toLowerCase()) || pref.toLowerCase().includes('hideout')
+      )
+
+      const preferenceLevel: 'favorite' | 'neutral' = likesShelter ? 'favorite' : 'neutral'
+
+      // Select random message
+      const messages = guineaPigMessages.autonomous.habitat[preferenceLevel]
+      const reaction = messages[Math.floor(Math.random() * messages.length)]
+
+      // Dispatch chat bubble event
+      const event = new CustomEvent('show-chat-bubble', {
+        detail: {
+          guineaPigId: guineaPig.value.id,
+          reaction
+        },
+        bubbles: true
+      })
+      document.dispatchEvent(event)
+    }
 
     // Log to activity feed BEFORE sheltering starts (with shelter name)
     if (guineaPig.value) {

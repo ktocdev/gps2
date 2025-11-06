@@ -17,15 +17,26 @@
     <div class="guinea-pig-sprite__emoji no-select">
       {{ guineaPigEmoji }}
     </div>
+
+    <!-- Chat bubble for reactions -->
+    <GuineaPigChatBubble
+      v-if="currentReaction"
+      :message="currentReaction.message"
+      :emoji="currentReaction.emoji"
+      :variant="currentReaction.variant"
+      :duration="currentReaction.duration"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import type { GuineaPig } from '../../../stores/guineaPigStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useNeedsController } from '../../../stores/needsController'
 import { useGameController } from '../../../stores/gameController'
+import GuineaPigChatBubble from './GuineaPigChatBubble.vue'
+import type { ReactionMessage } from '../../../data/guineaPigMessages'
 
 interface Props {
   guineaPig: GuineaPig
@@ -52,6 +63,24 @@ const gameController = useGameController()
 // Get centralized behavior state for this guinea pig
 const behaviorStateStore = useBehaviorStateStore()
 behaviorStateStore.initializeBehaviorState(props.guineaPig.id)
+
+// Chat bubble state
+const currentReaction = ref<ReactionMessage | null>(null)
+
+// Expose method for triggering reactions
+function showReaction(reaction: ReactionMessage): void {
+  currentReaction.value = reaction
+
+  const duration = reaction.duration || 3000
+  setTimeout(() => {
+    currentReaction.value = null
+  }, duration)
+}
+
+// Expose for external access (debug panel)
+defineExpose({
+  showReaction
+})
 
 // Get guinea pig emoji - use a simple mapping based on gender for now
 const guineaPigEmoji = computed(() => {

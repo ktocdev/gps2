@@ -1,6 +1,6 @@
 <template>
   <div
-    class="inventory-sidebar"
+    class="habitat-sidebar inventory-sidebar"
     @dragover.prevent="handleDragOver"
     @dragleave="handleDragLeave"
     @drop="handleDrop"
@@ -8,7 +8,9 @@
     @touchend="handleTouchEndOnSidebar"
     :class="{ 'inventory-sidebar--drop-target': isDragOver || isTouchOver }"
   >
-    <h4 class="inventory-sidebar__title">Inventory</h4>
+    <div class="inventory-sidebar__header">
+      <h3>🎒 Inventory</h3>
+    </div>
     <div class="inventory-sidebar__items">
       <!-- Serving-based consumables -->
       <InventoryTileServing
@@ -214,6 +216,20 @@ function handleDragStart(event: DragEvent, item: any) {
   // Add category as custom MIME type so we can check it during dragover
   event.dataTransfer.setData(`application/x-item-category-${category}`, '')
 
+  // Create custom drag image with only the emoji
+  const dragImage = document.createElement('div')
+  dragImage.textContent = item.emoji || '📦'
+  dragImage.style.fontSize = '2rem'
+  dragImage.style.position = 'absolute'
+  dragImage.style.top = '-1000px'
+  document.body.appendChild(dragImage)
+  event.dataTransfer.setDragImage(dragImage, 16, 16)
+
+  // Clean up after a short delay
+  setTimeout(() => {
+    document.body.removeChild(dragImage)
+  }, 0)
+
   // Notify HabitatVisual about the drag
   if (props.habitatVisualRef) {
     props.habitatVisualRef.setDraggedItem(item.id, item.size)
@@ -400,18 +416,8 @@ function handleTouchEndOnSidebar(_event: TouchEvent) {
 </script>
 
 <style>
+/* Component-specific styles (shared layout from .habitat-sidebar) */
 .inventory-sidebar {
-  inline-size: 140px;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  background: rgba(0, 0, 0, 0.08);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.15);
-  align-self: stretch;
   transition: background 0.2s ease, border-color 0.2s ease;
 }
 
@@ -421,58 +427,39 @@ function handleTouchEndOnSidebar(_event: TouchEvent) {
   box-shadow: inset 0 2px 8px rgba(16, 185, 129, 0.2), 0 0 0 2px var(--color-success);
 }
 
-.inventory-sidebar__title {
-  margin: 0;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-secondary);
-  text-align: center;
-  padding-block-end: var(--space-2);
+.inventory-sidebar__header {
+  padding: var(--space-4);
   border-block-end: 1px solid var(--color-border);
-  margin-block-end: var(--space-1);
+  background-color: var(--color-bg-primary);
+}
+
+.inventory-sidebar__header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
 }
 
 .inventory-sidebar__items {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  max-block-size: 800px;
-  overflow-y: auto;
-  padding-block-start: var(--space-1);
-  padding-inline-end: var(--space-2);
-  margin-inline-end: calc(var(--space-2) * -1);
-}
-
-.inventory-sidebar__items::-webkit-scrollbar {
-  inline-size: 6px;
-}
-
-.inventory-sidebar__items::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: var(--radius-full);
-}
-
-.inventory-sidebar__items::-webkit-scrollbar-thumb {
-  background: var(--color-primary);
-  border-radius: var(--radius-full);
-}
-
-.inventory-sidebar__items::-webkit-scrollbar-thumb:hover {
-  background: var(--color-primary-hover);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3);
 }
 
 .inventory-sidebar__item-card {
   position: relative;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-3);
+  padding: var(--space-2) var(--space-3);
   background-color: var(--color-bg-tertiary);
   border-radius: var(--radius-md);
   border: 2px solid var(--color-border);
   cursor: grab;
   transition: all 0.2s ease;
+  flex: 0 0 auto;
+  min-inline-size: 0;
 }
 
 .inventory-sidebar__item-card:hover {
@@ -486,18 +473,21 @@ function handleTouchEndOnSidebar(_event: TouchEvent) {
 }
 
 .inventory-sidebar__item-emoji {
-  font-size: var(--font-size-3xl);
+  font-size: var(--font-size-xl);
+  flex-shrink: 0;
 }
 
 .inventory-sidebar__item-name {
   font-size: var(--font-size-xs);
-  text-align: center;
   font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .inventory-sidebar__item-count {
   position: absolute;
-  inset-block-start: var(--space-1);
+  inset-block-start: calc(var(--space-1) * -0.5);
   inset-inline-end: var(--space-1);
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
@@ -507,18 +497,5 @@ function handleTouchEndOnSidebar(_event: TouchEvent) {
   border-radius: var(--radius-full);
   line-height: 1;
   box-shadow: var(--shadow-sm);
-}
-
-/* Mobile: Full width layout */
-@media (max-width: 768px) {
-  .inventory-sidebar {
-    inline-size: 100%;
-    max-inline-size: 100%;
-    max-block-size: 200px;
-  }
-
-  .inventory-sidebar__items {
-    max-block-size: 150px;
-  }
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="socialize-sidebar">
+  <div class="habitat-sidebar socialize-sidebar">
     <div class="socialize-sidebar__header">
       <h3>Socialize</h3>
     </div>
@@ -90,6 +90,7 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isBasicInteractionDisabled"
           >
             🫳 Pet
           </Button>
@@ -99,6 +100,7 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isBasicInteractionDisabled"
           >
             🤲 Hold
           </Button>
@@ -154,6 +156,7 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isBasicInteractionDisabled"
           >
             💬 Talk To
           </Button>
@@ -163,6 +166,7 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isBasicInteractionDisabled"
           >
             🎵 Sing To
           </Button>
@@ -172,6 +176,7 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isBasicInteractionDisabled"
           >
             📣 Call Name
           </Button>
@@ -186,6 +191,7 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isBasicInteractionDisabled"
           >
             👀 Peek-a-Boo
           </Button>
@@ -195,6 +201,7 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isBasicInteractionDisabled"
           >
             👋 Wave Hand
           </Button>
@@ -204,6 +211,7 @@
             variant="tertiary"
             size="sm"
             full-width
+            :disabled="isBasicInteractionDisabled"
           >
             🧸 Show Toy
           </Button>
@@ -219,6 +227,7 @@ import Button from '../../../basic/Button.vue'
 import SliderField from '../../../basic/SliderField.vue'
 import FoodSelectionDialog from '../../dialogs/FoodSelectionDialog.vue'
 import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
+import { useGameController } from '../../../../stores/gameController'
 import type { GuineaPig } from '../../../../stores/guineaPigStore'
 import { getBondStrengthMessage, getPlayerFriendshipMessage } from '../../../../utils/friendshipMessages'
 
@@ -241,6 +250,9 @@ const emit = defineEmits<{
   'wave-hand': []
   'show-toy': []
 }>()
+
+const gameController = useGameController()
+const guineaPigStore = useGuineaPigStore()
 
 const showFoodSelectionDialog = ref(false)
 
@@ -295,6 +307,7 @@ const handFeedRemainingCooldown = computed(() => {
 const isHandFeedOnCooldown = computed(() => handFeedRemainingCooldown.value > 0)
 
 const isHandFeedDisabled = computed(() => {
+  if (gameController.isPaused) return true
   if (!props.selectedGuineaPig) return true
   if (props.selectedGuineaPig.needs.hunger >= 95) return true
   return isHandFeedOnCooldown.value
@@ -320,6 +333,7 @@ const handFeedTooltip = computed(() => {
 
 // Gentle wipe disabled state
 const isGentleWipeDisabled = computed(() => {
+  if (gameController.isPaused) return true
   if (!props.selectedGuineaPig) return true
   return props.selectedGuineaPig.needs.hygiene >= 75
 })
@@ -334,6 +348,7 @@ const gentleWipeTooltip = computed(() => {
 
 // Clip nails disabled state
 const isClipNailsDisabled = computed(() => {
+  if (gameController.isPaused) return true
   if (!props.selectedGuineaPig) return true
   return props.selectedGuineaPig.needs.nails >= 75
 })
@@ -344,6 +359,13 @@ const clipNailsTooltip = computed(() => {
     return 'Nails are still good (wait until below 75%)'
   }
   return 'Clip your guinea pig\'s nails'
+})
+
+// All other interactions disabled when paused or no guinea pig selected
+const isBasicInteractionDisabled = computed(() => {
+  if (gameController.isPaused) return true
+  if (!props.selectedGuineaPig) return true
+  return false
 })
 
 // Update timestamp only when cooldown is active (efficient)
@@ -379,8 +401,6 @@ onUnmounted(() => {
   }
 })
 
-const guineaPigStore = useGuineaPigStore()
-
 // Get current guinea pig index for display
 const currentGuineaPigIndex = computed(() => {
   if (!props.selectedGuineaPig) return 0
@@ -410,14 +430,8 @@ function formatTier(tier: string): string {
 </script>
 
 <style>
+/* Component-specific styles (shared layout from .habitat-sidebar) */
 .socialize-sidebar {
-  display: flex;
-  flex-direction: column;
-  inline-size: 240px;
-  block-size: 100%;
-  background-color: var(--color-bg-secondary);
-  border-inline-start: 1px solid var(--color-border);
-  overflow-y: auto;
 }
 
 .socialize-sidebar__header {
