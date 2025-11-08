@@ -226,6 +226,11 @@ export const useNeedsController = defineStore('needsController', () => {
       }
     })
 
+    // If decay rate is at 0, reset to default (1x) when resuming
+    if (guineaPigStore.settings.needsDecayRate === 0) {
+      guineaPigStore.setNeedsDecayRate(1)
+    }
+
     getLoggingStore().logActivity({
       category: 'system',
       action: 'needs_processing_resumed',
@@ -254,6 +259,48 @@ export const useNeedsController = defineStore('needsController', () => {
         resumeProcessing()
         const logging = getLoggingStore()
         logging.logInfo('Session ended - resetting manual pause state')
+      }
+    }
+  )
+
+  // Watch for needsDecayRate changes and sync manual pause state
+  const guineaPigStore = useGuineaPigStore()
+  watch(
+    () => guineaPigStore.settings.needsDecayRate,
+    (newRate, oldRate) => {
+      // If decay rate is set to 0, mark as manually paused
+      if (newRate === 0 && oldRate !== 0) {
+        manuallyPausedByUser.value = true
+        processingEnabled.value = false
+        getLoggingStore().logActivity({
+          category: 'system',
+          action: 'needs_decay_paused',
+          details: {
+            reason: 'decay_rate_zero',
+            previousRate: oldRate
+          }
+        })
+      }
+      // If decay rate is increased from 0, resume and clear manual pause
+      else if (oldRate === 0 && newRate > 0) {
+        manuallyPausedByUser.value = false
+        processingEnabled.value = true
+        lastBatchUpdate.value = Date.now()
+
+        // Reset needsLastUpdate timestamps to prevent accumulated time delta
+        const currentTime = Date.now()
+        guineaPigStore.activeGuineaPigs.forEach(gp => {
+          guineaPigStore.needsLastUpdate[gp.id] = currentTime
+        })
+
+        getLoggingStore().logActivity({
+          category: 'system',
+          action: 'needs_decay_resumed',
+          details: {
+            reason: 'decay_rate_increased',
+            newRate: newRate
+          }
+        })
       }
     }
   )

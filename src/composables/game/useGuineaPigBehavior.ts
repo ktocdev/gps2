@@ -387,7 +387,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
           type: 'chew',
           target: chewItem.position,
           targetItemId: chewItem.itemId,
-          priority: calculateNeedPriority(needs.chew, thresholds.chew, 55),
+          priority: calculateNeedPriority(needs.chew, thresholds.chew, 75),
           estimatedDuration: 5000, // 5 seconds chewing
           needSatisfied: 'chew'
         })
@@ -402,7 +402,7 @@ export function useGuineaPigBehavior(guineaPigId: string) {
           type: 'play',
           target: toy.position,
           targetItemId: toy.itemId,
-          priority: calculateNeedPriority(needs.play, thresholds.play, 50),
+          priority: calculateNeedPriority(needs.play, thresholds.play, 75),
           estimatedDuration: 6000, // 6 seconds playing
           needSatisfied: 'play'
         })

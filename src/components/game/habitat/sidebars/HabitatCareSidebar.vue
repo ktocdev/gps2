@@ -13,6 +13,40 @@
         </div>
       </BlockMessage>
 
+      <!-- Core Care Actions -->
+      <div class="care-section">
+        <h4 class="care-section__title">Care Actions</h4>
+
+        <Button
+          @click="$emit('clean-cage')"
+          variant="tertiary"
+          size="sm"
+          full-width
+        >
+          🧹 Clean Habitat
+        </Button>
+
+        <Button
+          @click="$emit('refill-water')"
+          variant="tertiary"
+          size="sm"
+          full-width
+        >
+          💧 Refill Water
+        </Button>
+
+        <Button
+          @click="$emit('fill-all-hay-racks')"
+          variant="tertiary"
+          size="sm"
+          full-width
+          :disabled="!canFillHayRacks"
+          :title="fillHayRacksTooltip"
+        >
+          🌾 Fill All Hay Racks
+        </Button>
+      </div>
+
       <!-- Core Conditions -->
       <div class="care-section">
         <h4 class="care-section__title">Core Conditions</h4>
@@ -78,6 +112,29 @@
         </div>
       </div>
 
+      <!-- Container Management -->
+      <div class="care-section">
+        <h4 class="care-section__title">Containers</h4>
+
+        <Button
+          @click="$emit('clear-all-bowls')"
+          variant="warning"
+          size="sm"
+          full-width
+        >
+          🗑️ Clear All Bowls
+        </Button>
+
+        <Button
+          @click="$emit('clear-all-hay-racks')"
+          variant="warning"
+          size="sm"
+          full-width
+        >
+          🗑️ Clear All Hay Racks
+        </Button>
+      </div>
+
       <!-- Chew Items -->
       <div v-if="chewItemsList.length > 0" class="care-section">
         <h4 class="care-section__title">Chew Items</h4>
@@ -104,63 +161,6 @@
             🦷 Used {{ chew.usageCount }} times
           </div>
         </div>
-      </div>
-
-      <!-- Core Care Actions -->
-      <div class="care-section">
-        <h4 class="care-section__title">Care Actions</h4>
-
-        <Button
-          @click="$emit('clean-cage')"
-          variant="tertiary"
-          size="sm"
-          full-width
-        >
-          🧹 Clean Habitat
-        </Button>
-
-        <Button
-          @click="$emit('refill-water')"
-          variant="tertiary"
-          size="sm"
-          full-width
-        >
-          💧 Refill Water
-        </Button>
-
-        <Button
-          @click="$emit('fill-all-hay-racks')"
-          variant="tertiary"
-          size="sm"
-          full-width
-          :disabled="!canFillHayRacks"
-          :title="fillHayRacksTooltip"
-        >
-          🌾 Fill All Hay Racks
-        </Button>
-      </div>
-
-      <!-- Container Management -->
-      <div class="care-section">
-        <h4 class="care-section__title">Containers</h4>
-
-        <Button
-          @click="$emit('clear-all-bowls')"
-          variant="warning"
-          size="sm"
-          full-width
-        >
-          🗑️ Clear All Bowls
-        </Button>
-
-        <Button
-          @click="$emit('clear-all-hay-racks')"
-          variant="warning"
-          size="sm"
-          full-width
-        >
-          🗑️ Clear All Hay Racks
-        </Button>
       </div>
     </div>
   </div>

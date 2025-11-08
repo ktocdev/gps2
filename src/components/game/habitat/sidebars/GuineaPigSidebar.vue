@@ -1,7 +1,11 @@
 <template>
   <div class="habitat-sidebar guinea-pig-sidebar">
     <div class="habitat-sidebar__header guinea-pig-sidebar__header">
-      <h3>🐹 Guinea Pigs</h3>
+      <h3>
+        <span v-if="displayGuineaPig" class="guinea-pig-sidebar__header-emoji">{{ getGuineaPigEmoji(displayGuineaPig) }}</span>
+        <span v-else>🐹</span>
+        Guinea Pigs
+      </h3>
       <Button
         v-if="guineaPigStore.activeGuineaPigs.length > 1"
         @click="toggleGuineaPig"
@@ -436,6 +440,12 @@ function formatTier(tier: string): string {
   return tier.charAt(0).toUpperCase() + tier.slice(1)
 }
 
+// Get guinea pig emoji based on gender
+function getGuineaPigEmoji(guineaPig: typeof displayGuineaPig.value): string {
+  if (!guineaPig) return '🐹'
+  return guineaPig.gender === 'male' ? '🐹' : '🐭'
+}
+
 // Current Status functions
 function getCurrentActivity(guineaPigId: string): string {
   const state = behaviorStateStore.getBehaviorState(guineaPigId)
@@ -461,6 +471,17 @@ function getPosition(guineaPigId: string): string {
   justify-content: space-between;
   align-items: center;
   gap: var(--space-2);
+}
+
+.guinea-pig-sidebar__header h3 {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.guinea-pig-sidebar__header-emoji {
+  font-size: var(--font-size-xl);
+  line-height: 1;
 }
 
 .guinea-pig-sidebar__content {

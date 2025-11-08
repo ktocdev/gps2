@@ -146,28 +146,42 @@ const getPanelClasses = (tabId: string) => {
 /* Navigation - Mobile First */
 .sub-tab-container__nav {
   display: flex;
+  flex-shrink: 1;
+  min-inline-size: 0;
   border-block-end: 2px solid var(--color-border-subtle);
   background-color: var(--color-background-secondary);
   gap: var(--space-1);
   overflow-x: auto;
-  scrollbar-width: thin;
+  padding-block-end: var(--space-1);
 }
 
 .sub-tab-container__nav--end {
   justify-content: end;
 }
 
+/* Custom Scrollbar Styles */
 .sub-tab-container__nav::-webkit-scrollbar {
-  block-size: 4px;
+  inline-size: 8px;
+  block-size: 8px;
 }
 
 .sub-tab-container__nav::-webkit-scrollbar-track {
-  background: var(--color-background-tertiary);
+  background: var(--color-bg-tertiary);
 }
 
 .sub-tab-container__nav::-webkit-scrollbar-thumb {
-  background: var(--color-border-primary);
-  border-radius: 2px;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.sub-tab-container__nav::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-medium);
+}
+
+/* Firefox Scrollbar */
+.sub-tab-container__nav {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) var(--color-bg-tertiary);
 }
 
 /* Sub Tab Buttons (Pills Style) - Mobile First */

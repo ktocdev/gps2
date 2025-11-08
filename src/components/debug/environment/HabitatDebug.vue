@@ -11,14 +11,14 @@
     <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
     <!-- Visual Habitat with Sidebar -->
     <div class="panel panel--full-width">
-      <div class="panel__header flex justify-between items-center">
+      <div class="panel__header">
         <h3>Habitat Visual</h3>
-        <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end">
-          <template v-for="tab in sidebarTabs" :key="tab.id" #[tab.id]>
-            <!-- Content is handled by conditional rendering below -->
-          </template>
-        </SubTabContainer>
       </div>
+      <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end">
+        <template v-for="tab in sidebarTabs" :key="tab.id" #[tab.id]>
+          <!-- Content is handled by conditional rendering below -->
+        </template>
+      </SubTabContainer>
       <div class="panel__content">
         <div class="habitat-layout">
           <div class="habitat-layout__main">
@@ -48,17 +48,14 @@
               @clear-all-bowls="clearAllBowls"
               @clear-all-hay-racks="clearAllHayRacks"
             />
-            <div v-else-if="activeSidebar === 'activity'" class="activity-feed-sidebar">
-              <ActivityFeed
-                :max-messages="100"
-                :show-header="true"
-                :auto-scroll="true"
-                height="600px"
-                :compact="false"
-                :categories="['player_action', 'guinea_pig_reaction', 'autonomous_behavior', 'environmental', 'achievement']"
-                title="Activity Log"
-              />
-            </div>
+            <ActivityFeedSidebar
+              v-else-if="activeSidebar === 'activity'"
+              :max-messages="100"
+              :auto-scroll="true"
+              height="100%"
+              :compact="false"
+              :categories="['player_action', 'guinea_pig_reaction', 'autonomous_behavior', 'environmental', 'achievement']"
+            />
             <GuineaPigSidebar
               v-else-if="activeSidebar === 'socialize'"
               :selected-guinea-pig="selectedGuineaPig"
@@ -250,7 +247,7 @@ import SubTabContainer from '../../layout/SubTabContainer.vue'
 import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/sidebars/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/sidebars/HabitatCareSidebar.vue'
-import ActivityFeed from '../../game/ui/ActivityFeed.vue'
+import ActivityFeedSidebar from '../../game/habitat/sidebars/ActivityFeedSidebar.vue'
 import GuineaPigSidebar from '../../game/habitat/sidebars/GuineaPigSidebar.vue'
 import AutonomySidebar from '../../game/habitat/sidebars/AutonomySidebar.vue'
 import ChatBubbleDebug from './ChatBubbleDebug.vue'
@@ -629,6 +626,11 @@ async function handleHandFeed(foodId: string) {
   gap: var(--space-3);
 }
 
+.panel__header h3 {
+  flex-shrink: 0;
+  margin: 0;
+}
+
 /* Habitat Layout with Sidebar */
 .habitat-layout {
   display: flex;
@@ -756,23 +758,4 @@ async function handleHandFeed(foodId: string) {
   color: var(--color-text-inverse);
 }
 
-/* Activity Feed Sidebar */
-.activity-feed-sidebar {
-  inline-size: 360px;
-  block-size: 100%;
-  display: flex;
-  flex-direction: column;
-  border-inline-start: 1px solid var(--color-border);
-  background-color: var(--color-bg-secondary);
-}
-
-/* Mobile: Full width layout for activity feed sidebar */
-@media (max-width: 768px) {
-  .activity-feed-sidebar {
-    inline-size: 100%;
-    max-block-size: 300px;
-    border-inline-start: none;
-    border-block-start: 1px solid var(--color-border);
-  }
-}
 </style>
