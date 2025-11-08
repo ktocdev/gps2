@@ -1,115 +1,107 @@
 <template>
-  <div class="habitat-sidebar socialize-sidebar">
-    <div class="socialize-sidebar__header">
-      <h3>Socialize</h3>
+  <div class="habitat-sidebar guinea-pig-sidebar">
+    <div class="guinea-pig-sidebar__header">
+      <h3>Guinea Pigs</h3>
     </div>
 
-    <div class="socialize-sidebar__content">
-      <!-- Guinea Pig Selection Info -->
-      <div v-if="!selectedGuineaPig" class="socialize-sidebar__no-selection">
-        <p>👆 Click a guinea pig in the habitat to interact with them</p>
+    <div class="guinea-pig-sidebar__content">
+      <!-- Guinea Pig Selection Header - Always Visible -->
+      <div class="guinea-pig-sidebar__guinea-pig-header">
+        <span class="guinea-pig-sidebar__label">{{ selectedGuineaPig ? 'Interacting with:' : 'Your Guinea Pigs:' }}</span>
+        <Button
+          v-if="guineaPigStore.activeGuineaPigs.length > 1"
+          @click="toggleGuineaPig"
+          variant="tertiary"
+          size="sm"
+        >
+          {{ selectedGuineaPig?.name || guineaPigStore.activeGuineaPigs[0]?.name }} ({{ currentGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
+        </Button>
+        <span v-else-if="guineaPigStore.activeGuineaPigs.length === 1" class="guinea-pig-sidebar__guinea-pig-name-static">
+          {{ guineaPigStore.activeGuineaPigs[0]?.name }}
+        </span>
       </div>
 
-      <template v-else>
-        <div class="socialize-sidebar__guinea-pig-header">
-          <span class="socialize-sidebar__label">Interacting with:</span>
-          <Button
-            v-if="guineaPigStore.activeGuineaPigs.length > 1"
-            @click="toggleGuineaPig"
-            variant="tertiary"
+      <!-- Player Friendship -->
+      <div class="interaction-section">
+        <h4 class="interaction-section__title">👤 Your Friendship</h4>
+        <div class="panel panel--compact">
+          <div class="friendship-value">
+            <span class="friendship-value__label">Friendship:</span>
+            <span class="friendship-value__number">{{ Math.round(displayGuineaPig.friendship) }}%</span>
+          </div>
+          <SliderField
+            :model-value="Math.round(displayGuineaPig.friendship)"
+            :min="0"
+            :max="100"
+            :step="1"
+            disabled
             size="sm"
-          >
-            {{ selectedGuineaPig.name }} ({{ currentGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
-          </Button>
-          <span v-else class="socialize-sidebar__guinea-pig-name-static">
-            {{ selectedGuineaPig.name }}
-          </span>
-        </div>
-
-        <!-- Player Friendship -->
-        <div class="interaction-section">
-          <h4 class="interaction-section__title">👤 Your Friendship</h4>
-          <div class="panel panel--compact">
-            <div class="friendship-value">
-              <span class="friendship-value__label">Friendship:</span>
-              <span class="friendship-value__number">{{ Math.round(selectedGuineaPig.friendship) }}%</span>
-            </div>
-            <SliderField
-              :model-value="Math.round(selectedGuineaPig.friendship)"
-              :min="0"
-              :max="100"
-              :step="1"
-              disabled
-              size="sm"
-              suffix="%"
-              @update:model-value="() => {}"
-            />
-            <div class="bond-stats">
-              <span class="bond-stat">{{ getPlayerFriendshipMessage(selectedGuineaPig.friendship) }}</span>
-            </div>
+            suffix="%"
+            @update:model-value="() => {}"
+          />
+          <div class="bond-stats">
+            <span class="bond-stat">{{ getPlayerFriendshipMessage(displayGuineaPig.friendship) }}</span>
           </div>
         </div>
+      </div>
 
-        <!-- System 21: Bond Status -->
-        <div v-if="companionBonds.length > 0" class="interaction-section">
-          <h4 class="interaction-section__title">🤝 Companion Bonds</h4>
-          <div v-for="bondInfo in companionBonds" :key="bondInfo.bond.id" class="panel panel--compact">
-            <div class="bond-status__header">
-              <span class="bond-partner-name">{{ bondInfo.partnerName }}</span>
-              <span class="bond-tier" :class="`bond-tier--${bondInfo.bond.bondingTier}`">
-                {{ formatTier(bondInfo.bond.bondingTier) }}
-              </span>
-            </div>
-            <div class="friendship-value">
-              <span class="friendship-value__label">Bond Level:</span>
-              <span class="friendship-value__number">{{ Math.round(bondInfo.bond.bondingLevel) }}%</span>
-            </div>
-            <SliderField
-              :model-value="Math.round(bondInfo.bond.bondingLevel)"
-              :min="0"
-              :max="100"
-              :step="1"
-              disabled
-              size="sm"
-              suffix="%"
-              @update:model-value="() => {}"
-            />
-            <div class="bond-stats">
-              <span class="bond-stat">💕 {{ bondInfo.bond.totalInteractions }} interactions</span>
-              <span class="bond-stat">{{ getBondStrengthMessage(bondInfo.bond.bondingLevel) }}</span>
-            </div>
+      <!-- System 21: Bond Status -->
+      <div v-if="companionBonds.length > 0" class="interaction-section">
+        <h4 class="interaction-section__title">🤝 Companion Bonds</h4>
+        <div v-for="bondInfo in companionBonds" :key="bondInfo.bond.id" class="panel panel--compact">
+          <div class="bond-status__header">
+            <span class="bond-partner-name">{{ bondInfo.partnerName }}</span>
+            <span class="bond-tier" :class="`bond-tier--${bondInfo.bond.bondingTier}`">
+              {{ formatTier(bondInfo.bond.bondingTier) }}
+            </span>
+          </div>
+          <div class="friendship-value">
+            <span class="friendship-value__label">Bond Level:</span>
+            <span class="friendship-value__number">{{ Math.round(bondInfo.bond.bondingLevel) }}%</span>
+          </div>
+          <SliderField
+            :model-value="Math.round(bondInfo.bond.bondingLevel)"
+            :min="0"
+            :max="100"
+            :step="1"
+            disabled
+            size="sm"
+            suffix="%"
+            @update:model-value="() => {}"
+          />
+          <div class="bond-stats">
+            <span class="bond-stat">💕 {{ bondInfo.bond.totalInteractions }} interactions</span>
+            <span class="bond-stat">{{ getBondStrengthMessage(bondInfo.bond.bondingLevel) }}</span>
           </div>
         </div>
+      </div>
 
-        <!-- Basic Interactions -->
-        <div class="interaction-section">
-          <h4 class="interaction-section__title">Basic Interactions</h4>
-
+      <!-- Trigger Actions (renamed from Basic Interactions) -->
+      <div class="interaction-section">
+        <h4 class="interaction-section__title">Trigger Actions</h4>
+        <div class="interaction-buttons">
           <Button
-            @click="$emit('pet')"
+            @click="handleTriggerAction('pet')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isBasicInteractionDisabled"
           >
             🫳 Pet
           </Button>
 
           <Button
-            @click="$emit('hold')"
+            @click="handleTriggerAction('hold')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isBasicInteractionDisabled"
           >
             🤲 Hold
           </Button>
 
           <Button
-            @click="showFoodSelectionDialog = true"
+            @click="handleTriggerAction('hand-feed'); showFoodSelectionDialog = true"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isHandFeedDisabled"
             :title="handFeedTooltip"
           >
@@ -117,10 +109,9 @@
           </Button>
 
           <Button
-            @click="$emit('gentle-wipe')"
+            @click="handleTriggerAction('gentle-wipe')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isGentleWipeDisabled"
             :title="gentleWipeTooltip"
           >
@@ -128,95 +119,78 @@
           </Button>
 
           <Button
-            @click="$emit('clip-nails')"
+            @click="handleTriggerAction('clip-nails')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isClipNailsDisabled"
             :title="clipNailsTooltip"
           >
             ✂️ Clip Nails
           </Button>
-        </div>
-
-        <!-- Food Selection Dialog -->
-        <FoodSelectionDialog
-          v-model="showFoodSelectionDialog"
-          :guinea-pig-name="selectedGuineaPig?.name || 'guinea pig'"
-          @select-food="handleFoodSelected"
-        />
-
-
-        <!-- Communication -->
-        <div class="interaction-section">
-          <h4 class="interaction-section__title">Communication</h4>
 
           <Button
-            @click="$emit('talk-to')"
+            @click="handleTriggerAction('talk-to')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isBasicInteractionDisabled"
           >
             💬 Talk To
           </Button>
 
           <Button
-            @click="$emit('sing-to')"
+            @click="handleTriggerAction('sing-to')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isBasicInteractionDisabled"
           >
             🎵 Sing To
           </Button>
 
           <Button
-            @click="$emit('call-name')"
+            @click="handleTriggerAction('call-name')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isBasicInteractionDisabled"
           >
             📣 Call Name
           </Button>
-        </div>
-
-        <!-- Play -->
-        <div class="interaction-section">
-          <h4 class="interaction-section__title">Play</h4>
 
           <Button
-            @click="$emit('peek-a-boo')"
+            @click="handleTriggerAction('peek-a-boo')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isBasicInteractionDisabled"
           >
             👀 Peek-a-Boo
           </Button>
 
           <Button
-            @click="$emit('wave-hand')"
+            @click="handleTriggerAction('wave-hand')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isBasicInteractionDisabled"
           >
             👋 Wave Hand
           </Button>
 
           <Button
-            @click="$emit('show-toy')"
+            @click="handleTriggerAction('show-toy')"
             variant="tertiary"
             size="sm"
-            full-width
             :disabled="isBasicInteractionDisabled"
           >
             🧸 Show Toy
           </Button>
         </div>
-      </template>
+
+      </div>
+
+      <!-- Food Selection Dialog -->
+      <FoodSelectionDialog
+        v-model="showFoodSelectionDialog"
+        :guinea-pig-name="displayGuineaPig?.name || 'guinea pig'"
+        @select-food="handleFoodSelected"
+      />
     </div>
   </div>
 </template>
@@ -273,15 +247,31 @@ function handleFoodSelected(foodId: string) {
   }
 }
 
+// displayGuineaPig: Always show a guinea pig (selectedGuineaPig or first available)
+const displayGuineaPig = computed(() => {
+  return props.selectedGuineaPig || guineaPigStore.activeGuineaPigs[0]
+})
+
 function toggleGuineaPig() {
   const activeGuineaPigs = guineaPigStore.activeGuineaPigs
   if (activeGuineaPigs.length <= 1) return
 
-  const currentIndex = activeGuineaPigs.findIndex(gp => gp.id === props.selectedGuineaPig?.id)
+  const currentIndex = activeGuineaPigs.findIndex(gp => gp.id === (props.selectedGuineaPig?.id || displayGuineaPig.value?.id))
   const nextIndex = (currentIndex + 1) % activeGuineaPigs.length
   const nextGuineaPig = activeGuineaPigs[nextIndex]
 
   guineaPigStore.selectGuineaPig(nextGuineaPig.id)
+}
+
+// handleTriggerAction: Auto-select guinea pig and emit event
+function handleTriggerAction(action: string) {
+  // Auto-select the display guinea pig if no guinea pig is currently selected
+  if (!props.selectedGuineaPig && displayGuineaPig.value) {
+    guineaPigStore.selectGuineaPig(displayGuineaPig.value.id)
+  }
+
+  // Emit the appropriate event
+  emit(action as any)
 }
 
 // Reactive timestamp for cooldown updates (updates every second only when cooldown active)
@@ -290,9 +280,9 @@ let cooldownInterval: number | null = null
 
 // Calculate remaining cooldown time
 const handFeedRemainingCooldown = computed(() => {
-  if (!props.selectedGuineaPig) return 0
+  if (!displayGuineaPig.value) return 0
 
-  const gpCooldowns = interactionCooldowns.value.get(props.selectedGuineaPig.id)
+  const gpCooldowns = interactionCooldowns.value.get(displayGuineaPig.value.id)
   if (!gpCooldowns) return 0
 
   const lastHandFeedTime = gpCooldowns.get('hand-feed')
@@ -308,8 +298,8 @@ const isHandFeedOnCooldown = computed(() => handFeedRemainingCooldown.value > 0)
 
 const isHandFeedDisabled = computed(() => {
   if (gameController.isPaused) return true
-  if (!props.selectedGuineaPig) return true
-  if (props.selectedGuineaPig.needs.hunger >= 95) return true
+  if (!displayGuineaPig.value) return true
+  if (displayGuineaPig.value.needs.hunger >= 95) return true
   return isHandFeedOnCooldown.value
 })
 
@@ -321,8 +311,8 @@ const handFeedCooldownText = computed(() => {
 })
 
 const handFeedTooltip = computed(() => {
-  if (!props.selectedGuineaPig) return 'Select a guinea pig'
-  if (props.selectedGuineaPig.needs.hunger >= 95) {
+  if (!displayGuineaPig.value) return 'No guinea pig available'
+  if (displayGuineaPig.value.needs.hunger >= 95) {
     return 'Guinea pig is not hungry (hunger above 95%)'
   }
   if (isHandFeedOnCooldown.value) {
@@ -334,13 +324,13 @@ const handFeedTooltip = computed(() => {
 // Gentle wipe disabled state
 const isGentleWipeDisabled = computed(() => {
   if (gameController.isPaused) return true
-  if (!props.selectedGuineaPig) return true
-  return props.selectedGuineaPig.needs.hygiene >= 75
+  if (!displayGuineaPig.value) return true
+  return displayGuineaPig.value.needs.hygiene >= 75
 })
 
 const gentleWipeTooltip = computed(() => {
-  if (!props.selectedGuineaPig) return 'Select a guinea pig'
-  if (props.selectedGuineaPig.needs.hygiene >= 75) {
+  if (!displayGuineaPig.value) return 'No guinea pig available'
+  if (displayGuineaPig.value.needs.hygiene >= 75) {
     return 'Guinea pig is clean (hygiene above 75%)'
   }
   return 'Gently wipe your guinea pig clean'
@@ -349,22 +339,22 @@ const gentleWipeTooltip = computed(() => {
 // Clip nails disabled state
 const isClipNailsDisabled = computed(() => {
   if (gameController.isPaused) return true
-  if (!props.selectedGuineaPig) return true
-  return props.selectedGuineaPig.needs.nails >= 75
+  if (!displayGuineaPig.value) return true
+  return displayGuineaPig.value.needs.nails >= 75
 })
 
 const clipNailsTooltip = computed(() => {
-  if (!props.selectedGuineaPig) return 'Select a guinea pig'
-  if (props.selectedGuineaPig.needs.nails >= 75) {
+  if (!displayGuineaPig.value) return 'No guinea pig available'
+  if (displayGuineaPig.value.needs.nails >= 75) {
     return 'Nails are still good (wait until below 75%)'
   }
   return 'Clip your guinea pig\'s nails'
 })
 
-// All other interactions disabled when paused or no guinea pig selected
+// All other interactions disabled when paused
 const isBasicInteractionDisabled = computed(() => {
   if (gameController.isPaused) return true
-  if (!props.selectedGuineaPig) return true
+  if (!displayGuineaPig.value) return true
   return false
 })
 
@@ -403,17 +393,17 @@ onUnmounted(() => {
 
 // Get current guinea pig index for display
 const currentGuineaPigIndex = computed(() => {
-  if (!props.selectedGuineaPig) return 0
-  return guineaPigStore.activeGuineaPigs.findIndex(gp => gp.id === props.selectedGuineaPig!.id)
+  if (!displayGuineaPig.value) return 0
+  return guineaPigStore.activeGuineaPigs.findIndex(gp => gp.id === displayGuineaPig.value!.id)
 })
 
-// System 21: Get bonds for selected guinea pig (optimized)
+// System 21: Get bonds for displayed guinea pig (optimized)
 const companionBonds = computed(() => {
-  if (!props.selectedGuineaPig) return []
+  if (!displayGuineaPig.value) return []
 
-  const bonds = guineaPigStore.getBondsForGuineaPig(props.selectedGuineaPig.id)
+  const bonds = guineaPigStore.getBondsForGuineaPig(displayGuineaPig.value.id)
   return bonds.map(bond => {
-    const partnerId = bond.guineaPig1Id === props.selectedGuineaPig!.id
+    const partnerId = bond.guineaPig1Id === displayGuineaPig.value!.id
       ? bond.guineaPig2Id
       : bond.guineaPig1Id
     const partner = guineaPigStore.getGuineaPig(partnerId)
@@ -431,49 +421,42 @@ function formatTier(tier: string): string {
 
 <style>
 /* Component-specific styles (shared layout from .habitat-sidebar) */
-.socialize-sidebar {
+.guinea-pig-sidebar {
 }
 
-.socialize-sidebar__header {
+.guinea-pig-sidebar__header {
   padding: var(--space-4);
   border-block-end: 1px solid var(--color-border);
   background-color: var(--color-bg-primary);
 }
 
-.socialize-sidebar__header h3 {
+.guinea-pig-sidebar__header h3 {
   margin: 0;
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
 }
 
-.socialize-sidebar__content {
+.guinea-pig-sidebar__content {
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
 }
 
-.socialize-sidebar__no-selection {
-  text-align: center;
-  padding: var(--space-4);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
-
-.socialize-sidebar__guinea-pig-header {
+.guinea-pig-sidebar__guinea-pig-header {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   margin-block-end: var(--space-3);
 }
 
-.socialize-sidebar__label {
+.guinea-pig-sidebar__label {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   font-weight: var(--font-weight-medium);
 }
 
-.socialize-sidebar__guinea-pig-name-static {
+.guinea-pig-sidebar__guinea-pig-name-static {
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
@@ -558,9 +541,16 @@ function formatTier(tier: string): string {
   color: var(--color-text-muted);
 }
 
+/* Interaction buttons: Natural width, wrap as needed */
+.interaction-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
 /* Mobile: Full width layout */
 @media (max-width: 768px) {
-  .socialize-sidebar {
+  .guinea-pig-sidebar {
     inline-size: 100%;
     max-block-size: 300px;
     border-inline-start: none;

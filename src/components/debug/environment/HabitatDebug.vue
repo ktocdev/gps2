@@ -39,24 +39,13 @@
             />
             <HabitatCareSidebar
               v-else-if="activeSidebar === 'care'"
-              :can-refresh-bedding="canRefreshBedding"
               :can-fill-hay-racks="canFillHayRacks"
               :fill-hay-racks-tooltip="fillHayRacksTooltip"
-              :selected-bedding-type="selectedBeddingType"
-              :bedding-options="beddingOptions"
-              :poop-count="habitatVisualRef?.poopCount || 0"
-              :has-water-available="hasWaterAvailable"
-              @update:selected-bedding-type="selectedBeddingType = String($event)"
               @clean-cage="handleCleanCage"
               @refill-water="handleRefillWater"
-              @refresh-bedding="handleRefreshBedding"
               @fill-all-hay-racks="handleFillAllHayRacks"
               @clear-all-bowls="clearAllBowls"
               @clear-all-hay-racks="clearAllHayRacks"
-              @add-test-poop="addTestPoop"
-              @clear-all-poop="clearAllPoop"
-              @clear-water="clearWater"
-              @test-water-consumption="testWaterConsumption"
             />
             <div v-else-if="activeSidebar === 'activity'" class="activity-feed-sidebar">
               <ActivityFeed
@@ -69,7 +58,7 @@
                 title="Activity Log"
               />
             </div>
-            <SocializeSidebar
+            <GuineaPigSidebar
               v-else-if="activeSidebar === 'socialize'"
               :selected-guinea-pig="selectedGuineaPig"
               @pet="handleInteraction('pet')"
@@ -423,13 +412,13 @@
       :dirtiness="habitat.dirtiness"
       :bedding-needed="habitat.calculateBeddingNeeded()"
       :bedding-available="habitat.getTotalBeddingAvailable()"
-      @confirm="confirmCleanCage"
+      @confirm="(beddingType) => confirmCleanCage(beddingType)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
@@ -448,7 +437,7 @@ import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
 import InventorySidebar from '../../game/habitat/sidebars/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/sidebars/HabitatCareSidebar.vue'
 import ActivityFeed from '../../game/ui/ActivityFeed.vue'
-import SocializeSidebar from '../../game/habitat/sidebars/SocializeSidebar.vue'
+import GuineaPigSidebar from '../../game/habitat/sidebars/GuineaPigSidebar.vue'
 import AutonomySidebar from '../../game/habitat/sidebars/AutonomySidebar.vue'
 import ChatBubbleDebug from './ChatBubbleDebug.vue'
 import NeedsPanel from './NeedsPanel.vue'
@@ -480,10 +469,10 @@ const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize' | 'cha
 
 // Sidebar tabs for SubTabContainer
 const sidebarTabs = [
-  { id: 'inventory', label: 'Inventory', icon: '🎒' },
   { id: 'care', label: 'Care Actions', icon: '🧹' },
+  { id: 'inventory', label: 'Inventory', icon: '🎒' },
+  { id: 'socialize', label: 'Guinea Pigs', icon: '🐹' },
   { id: 'activity', label: 'Activity Feed', icon: '📜' },
-  { id: 'socialize', label: 'Socialize', icon: '🤝' },
   { id: 'chatbubble', label: 'Chat Bubble', icon: '💬' },
   { id: 'autonomy', label: 'Autonomy', icon: '🎮' }
 ]
@@ -526,39 +515,13 @@ onMounted(() => {
   console.log('==============================================')
 })
 
-// Test control handlers
-function addTestPoop() {
-  habitatVisualRef.value?.addTestPoop()
-}
-
-function clearAllPoop() {
-  habitatVisualRef.value?.clearAllPoop()
-}
-
+// Container management handlers
 function clearAllBowls() {
   habitat.clearAllBowls()
 }
 
 function clearAllHayRacks() {
   habitat.clearAllHayRacks()
-}
-
-function clearWater() {
-  habitat.waterLevel = 0
-}
-
-// System 16: Phase 2 - Water Consumption Test
-function testWaterConsumption() {
-  const beforeLevel = habitat.waterLevel
-  const success = habitat.consumeWater()
-  const afterLevel = habitat.waterLevel
-
-  if (success) {
-    console.log(`✅ Water consumption test successful! ${beforeLevel.toFixed(0)}% → ${afterLevel.toFixed(0)}% (consumed ${(beforeLevel - afterLevel).toFixed(0)} units)`)
-    console.log('💧 Visual opacity should update automatically via reactive waterLevel binding')
-  } else {
-    console.log('❌ Water consumption test failed')
-  }
 }
 
 function handleFillAllHayRacks() {
@@ -575,10 +538,6 @@ function handleFillAllHayRacks() {
     console.warn('No hay was added to racks')
   }
 }
-
-const hasWaterAvailable = computed(() => {
-  return habitat.hasWaterAvailable()
-})
 
 const canFillHayRacks = computed(() => {
   const hayRacks = habitat.habitatItems.filter((itemId: string) => itemId.includes('hay_rack'))
@@ -639,24 +598,14 @@ const selectedGuineaPig = computed(() => {
   return guineaPigStore.getGuineaPig(guineaPigStore.selectedGuineaPigId)
 })
 
-// Bedding selection
-const selectedBeddingType = ref<string>('average')
-const beddingOptions = computed(() => [
-  { value: 'cheap', label: `Cheap (${inventoryStore.getItemQuantity('bedding_cheap')})`, disabled: !inventoryStore.hasItem('bedding_cheap') },
-  { value: 'average', label: `Average (${inventoryStore.getItemQuantity('bedding_average')})`, disabled: !inventoryStore.hasItem('bedding_average') },
-  { value: 'premium', label: `Premium (${inventoryStore.getItemQuantity('bedding_premium')})`, disabled: !inventoryStore.hasItem('bedding_premium') }
-])
-
-// Map quality to item IDs
-const beddingItemIds: Record<'cheap' | 'average' | 'premium', string> = {
-  cheap: 'bedding_cheap',
-  average: 'bedding_average',
-  premium: 'bedding_premium'
-}
-
-const canRefreshBedding = computed(() => {
-  const itemId = beddingItemIds[selectedBeddingType.value as 'cheap' | 'average' | 'premium']
-  return inventoryStore.hasItem(itemId)
+// Auto-select first guinea pig when switching to Guinea Pigs sidebar
+watch(activeSidebar, (newSidebar) => {
+  if (newSidebar === 'socialize') {
+    // If no guinea pig is selected and there are active guinea pigs, select the first one
+    if (!guineaPigStore.selectedGuineaPigId && guineaPigStore.activeGuineaPigs.length > 0) {
+      guineaPigStore.selectGuineaPig(guineaPigStore.activeGuineaPigs[0].id)
+    }
+  }
 })
 
 async function showCareReaction(careType: 'cageClean' | 'beddingRefresh' | 'waterRefill' | 'hayRackFill' | 'bowlFill') {
@@ -686,24 +635,13 @@ function handleRefillWater() {
   showCareReaction('waterRefill')
 }
 
-function handleRefreshBedding() {
-  // Use the selected bedding type from the dropdown
-  const itemId = beddingItemIds[selectedBeddingType.value as 'cheap' | 'average' | 'premium']
-  const success = habitat.refreshBedding(itemId)
-  if (!success) {
-    console.warn(`Not enough ${selectedBeddingType.value} bedding in inventory`)
-  } else {
-    showCareReaction('beddingRefresh')
-  }
-}
-
 function handleCleanCage() {
   // Show confirmation dialog with bedding info
   showCleanCageDialog.value = true
 }
 
-function confirmCleanCage() {
-  const result = habitat.cleanCage()
+function confirmCleanCage(beddingType: string) {
+  const result = habitat.cleanCage(beddingType)
   if (result.success) {
     loggingStore.addPlayerAction(result.message, '🧹')
     showCareReaction('cageClean')

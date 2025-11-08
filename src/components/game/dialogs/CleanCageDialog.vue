@@ -9,28 +9,40 @@
         <div class="bedding-info">
           <div class="bedding-info__row">
             <span class="bedding-info__label">Habitat Dirtiness:</span>
-            <span class="bedding-info__value">{{ dirtiness }}%</span>
+            <span class="bedding-info__value">{{ dirtiness.toFixed(2) }}%</span>
           </div>
 
           <div class="bedding-info__row">
             <span class="bedding-info__label">Bedding Needed:</span>
             <span class="bedding-info__value">{{ beddingNeeded.toFixed(1) }} bags</span>
           </div>
+        </div>
 
+        <div class="bedding-selection">
+          <label class="bedding-selection__label">Bedding Type:</label>
+          <Select
+            v-model="selectedBeddingType"
+            :options="beddingOptions"
+            placeholder="Select bedding type"
+            size="sm"
+          />
+        </div>
+
+        <div class="bedding-info">
           <div class="bedding-info__row">
-            <span class="bedding-info__label">Bedding Available:</span>
-            <span class="bedding-info__value" :class="{ 'text-warning': beddingAvailable < beddingNeeded }">
-              {{ beddingAvailable.toFixed(1) }} bags
+            <span class="bedding-info__label">Selected Bedding Available:</span>
+            <span class="bedding-info__value" :class="{ 'text-warning': selectedBeddingAvailable < beddingNeeded }">
+              {{ selectedBeddingAvailable.toFixed(1) }} bags
             </span>
           </div>
         </div>
 
-        <BlockMessage v-if="beddingAvailable === 0" variant="warning">
-          ⚠️ No bedding available! Purchase bedding from the shop.
+        <BlockMessage v-if="selectedBeddingAvailable === 0" variant="warning">
+          ⚠️ No {{ selectedBeddingLabel }} bedding available! Select a different type or purchase bedding from the shop.
         </BlockMessage>
 
-        <BlockMessage v-else-if="beddingAvailable < beddingNeeded" variant="warning">
-          ⚠️ Not enough bedding for full clean. Will use all {{ beddingAvailable.toFixed(1) }} bags for partial clean.
+        <BlockMessage v-else-if="selectedBeddingAvailable < beddingNeeded" variant="warning">
+          ⚠️ Not enough bedding for full clean. Will use all {{ selectedBeddingAvailable.toFixed(1) }} bags for partial clean.
         </BlockMessage>
 
         <BlockMessage v-else variant="success">
@@ -46,9 +58,9 @@
           @click="handleConfirm"
           variant="primary"
           size="md"
-          :disabled="beddingAvailable === 0"
+          :disabled="selectedBeddingAvailable === 0"
         >
-          {{ beddingAvailable >= beddingNeeded ? 'Clean Habitat' : 'Partial Clean' }}
+          {{ selectedBeddingAvailable >= beddingNeeded ? 'Clean Habitat' : 'Partial Clean' }}
         </Button>
       </div>
     </div>
@@ -56,9 +68,12 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import BaseDialog from '../../basic/dialogs/BaseDialog.vue'
 import Button from '../../basic/Button.vue'
 import BlockMessage from '../../basic/BlockMessage.vue'
+import Select from '../../basic/Select.vue'
+import { useInventoryStore } from '../../../stores/inventoryStore'
 
 interface Props {
   modelValue: boolean
@@ -71,11 +86,43 @@ defineProps<Props>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: boolean]
-  'confirm': []
+  'confirm': [beddingType: string]
 }>()
 
+const inventoryStore = useInventoryStore()
+
+// Bedding selection
+const selectedBeddingType = ref<string>('average')
+
+const beddingOptions = computed(() => [
+  {
+    value: 'cheap',
+    label: `Cheap (${inventoryStore.getItemQuantity('bedding_cheap')} bags)`,
+    disabled: !inventoryStore.hasItem('bedding_cheap')
+  },
+  {
+    value: 'average',
+    label: `Average (${inventoryStore.getItemQuantity('bedding_average')} bags)`,
+    disabled: !inventoryStore.hasItem('bedding_average')
+  },
+  {
+    value: 'premium',
+    label: `Premium (${inventoryStore.getItemQuantity('bedding_premium')} bags)`,
+    disabled: !inventoryStore.hasItem('bedding_premium')
+  }
+])
+
+const selectedBeddingAvailable = computed(() => {
+  const itemId = `bedding_${selectedBeddingType.value}`
+  return inventoryStore.getItemQuantity(itemId)
+})
+
+const selectedBeddingLabel = computed(() => {
+  return selectedBeddingType.value.charAt(0).toUpperCase() + selectedBeddingType.value.slice(1)
+})
+
 function handleConfirm() {
-  emit('confirm')
+  emit('confirm', selectedBeddingType.value)
   emit('update:modelValue', false)
 }
 </script>
@@ -102,6 +149,18 @@ function handleConfirm() {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+}
+
+.bedding-selection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bedding-selection__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
 }
 
 .bedding-info {
