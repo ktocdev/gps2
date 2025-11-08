@@ -1,19 +1,21 @@
 <template>
   <div class="habitat-sidebar chat-bubble-debug">
-    <div class="chat-bubble-debug__header">
-      <h3>Chat Bubble Tester</h3>
+    <div class="habitat-sidebar__header chat-bubble-debug__header">
+      <h3>💬 Chat Bubble</h3>
+      <Button
+        v-if="activeGuineaPigs.length > 1"
+        @click="toggleGuineaPig"
+        variant="tertiary"
+        size="sm"
+      >
+        {{ selectedGuineaPig?.name || 'Select GP' }} ({{ currentGuineaPigIndex + 1 }}/{{ activeGuineaPigs.length }})
+      </Button>
+      <span v-else-if="activeGuineaPigs.length === 1" class="chat-bubble-debug__guinea-pig-name-static">
+        {{ activeGuineaPigs[0]?.name }}
+      </span>
     </div>
 
     <div class="chat-bubble-debug__controls">
-      <!-- Guinea Pig Selector -->
-      <Select
-        v-model="selectedGuineaPigId"
-        :options="guineaPigOptions"
-        label="Guinea Pig"
-        placeholder="Select Guinea Pig"
-        size="sm"
-      />
-
       <!-- Interaction Type -->
       <Select
         v-model="interactionType"
@@ -84,14 +86,14 @@
       <!-- Action Buttons -->
       <div class="chat-bubble-debug__actions">
         <button
-          class="button button--primary"
+          class="button button--primary button--sm"
           :disabled="!selectedGuineaPigId"
           @click="showGeneratedReaction"
         >
           Show Generated Reaction
         </button>
         <button
-          class="button button--secondary"
+          class="button button--secondary button--sm"
           :disabled="!selectedGuineaPigId || !customMessage"
           @click="showCustomReaction"
         >
@@ -166,16 +168,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { generateReactionMessage, generateNeedWarning } from '../../../data/guineaPigMessages'
 import type { MessageContext, ReactionMessage } from '../../../data/guineaPigMessages'
+import Button from '../../basic/Button.vue'
 import Select from '../../basic/Select.vue'
 
 const guineaPigStore = useGuineaPigStore()
 
 // Form state
-const selectedGuineaPigId = ref('')
 const interactionType = ref<'feed' | 'play' | 'socialize' | 'general'>('feed')
 const wellnessTier = ref<'excellent' | 'good' | 'fair' | 'poor' | 'critical'>('excellent')
 const preferenceLevel = ref<'favorite' | 'neutral' | 'disliked'>('favorite')
@@ -188,14 +190,37 @@ const needType = ref('hunger')
 // Get active guinea pigs
 const activeGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs)
 
-// Options for Select components
-const guineaPigOptions = computed(() => [
-  { label: 'Select Guinea Pig', value: '', disabled: true },
-  ...activeGuineaPigs.value.map(gp => ({
-    label: gp.name,
-    value: gp.id
-  }))
-])
+// Selected guinea pig (computed from store)
+const selectedGuineaPig = computed(() => {
+  if (!guineaPigStore.selectedGuineaPigId) return null
+  return guineaPigStore.activeGuineaPigs.find(gp => gp.id === guineaPigStore.selectedGuineaPigId) || null
+})
+
+// Get selected guinea pig ID for functions
+const selectedGuineaPigId = computed(() => selectedGuineaPig.value?.id || '')
+
+// Get current guinea pig index for display
+const currentGuineaPigIndex = computed(() => {
+  if (!selectedGuineaPig.value) return 0
+  return activeGuineaPigs.value.findIndex(gp => gp.id === selectedGuineaPig.value!.id)
+})
+
+// Auto-select first guinea pig if none selected
+watch(activeGuineaPigs, (newGuineaPigs) => {
+  if (newGuineaPigs.length > 0 && !guineaPigStore.selectedGuineaPigId) {
+    guineaPigStore.selectGuineaPig(newGuineaPigs[0].id)
+  }
+}, { immediate: true })
+
+function toggleGuineaPig() {
+  if (activeGuineaPigs.value.length <= 1) return
+
+  const currentIndex = activeGuineaPigs.value.findIndex(gp => gp.id === selectedGuineaPig.value?.id)
+  const nextIndex = (currentIndex + 1) % activeGuineaPigs.value.length
+  const nextGuineaPig = activeGuineaPigs.value[nextIndex]
+
+  guineaPigStore.selectGuineaPig(nextGuineaPig.id)
+}
 
 const interactionTypeOptions = [
   { label: 'Feed', value: 'feed' },
@@ -387,18 +412,16 @@ function showNeedWarning(severity: 'warning' | 'critical') {
 
 <style>
 /* Component-specific styles (shared layout from .habitat-sidebar) */
-.chat-bubble-debug {
-}
-
 .chat-bubble-debug__header {
-  padding: var(--space-4);
-  border-block-end: 1px solid var(--color-border);
-  background-color: var(--color-bg-primary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
 }
 
-.chat-bubble-debug__header h3 {
-  margin: 0;
-  font-size: var(--font-size-lg);
+.chat-bubble-debug__guinea-pig-name-static {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
 }
 

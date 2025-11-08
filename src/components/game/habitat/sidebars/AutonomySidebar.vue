@@ -1,7 +1,18 @@
 <template>
   <div class="habitat-sidebar autonomy-sidebar">
-    <div class="autonomy-sidebar__header">
+    <div class="habitat-sidebar__header autonomy-sidebar__header">
       <h3>🎮 Autonomy</h3>
+      <Button
+        v-if="selectedGuineaPig && guineaPigStore.activeGuineaPigs.length > 1"
+        @click="toggleGuineaPig"
+        variant="tertiary"
+        size="sm"
+      >
+        {{ selectedGuineaPig.name }} ({{ currentGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
+      </Button>
+      <span v-else-if="selectedGuineaPig && guineaPigStore.activeGuineaPigs.length === 1" class="autonomy-sidebar__guinea-pig-name-static">
+        {{ selectedGuineaPig.name }}
+      </span>
     </div>
 
     <div class="autonomy-sidebar__content">
@@ -11,25 +22,10 @@
       </div>
 
       <template v-else>
-        <!-- Guinea Pig Selector -->
-        <div class="autonomy-sidebar__guinea-pig-header">
-          <span class="autonomy-sidebar__label">Controlling:</span>
-          <Button
-            v-if="guineaPigStore.activeGuineaPigs.length > 1"
-            @click="toggleGuineaPig"
-            variant="tertiary"
-            size="sm"
-          >
-            {{ selectedGuineaPig.name }} ({{ currentGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
-          </Button>
-          <span v-else class="autonomy-sidebar__guinea-pig-name-static">
-            {{ selectedGuineaPig.name }}
-          </span>
-        </div>
 
         <!-- Current Status -->
         <div class="status-section">
-          <h4 class="status-section__title">Current Status</h4>
+          <h4 class="status-section__title">📊 Current Status</h4>
           <div class="panel panel--compact flex flex-column gap-2">
             <div class="status-item">
               <span class="status-item__label">Activity:</span>
@@ -48,98 +44,91 @@
 
         <!-- Manual Triggers -->
         <div class="triggers-section">
-          <h4 class="triggers-section__title">Manual Triggers</h4>
+          <h4 class="triggers-section__title">⚡ Manual Triggers</h4>
 
-          <Button
-            @click="triggerBehavior(selectedGuineaPig.id, 'eat')"
-            variant="tertiary"
-            size="sm"
-            full-width
-            :disabled="!isGameActive"
-          >
-            🍽️ Trigger Eat
-          </Button>
+          <div class="triggers-section__buttons">
+            <Button
+              @click="triggerBehavior(selectedGuineaPig.id, 'eat')"
+              variant="tertiary"
+              size="sm"
+              :disabled="!isGameActive"
+            >
+              🍽️ Eat
+            </Button>
 
-          <Button
-            @click="triggerBehavior(selectedGuineaPig.id, 'drink')"
-            variant="tertiary"
-            size="sm"
-            full-width
-            :disabled="!isGameActive"
-          >
-            💧 Trigger Drink
-          </Button>
+            <Button
+              @click="triggerBehavior(selectedGuineaPig.id, 'drink')"
+              variant="tertiary"
+              size="sm"
+              :disabled="!isGameActive"
+            >
+              💧 Drink
+            </Button>
 
-          <Button
-            @click="triggerBehavior(selectedGuineaPig.id, 'sleep')"
-            variant="tertiary"
-            size="sm"
-            full-width
-            :disabled="!isGameActive"
-          >
-            😴 Trigger Sleep
-          </Button>
+            <Button
+              @click="triggerBehavior(selectedGuineaPig.id, 'sleep')"
+              variant="tertiary"
+              size="sm"
+              :disabled="!isGameActive"
+            >
+              😴 Sleep
+            </Button>
 
-          <Button
-            @click="triggerBehavior(selectedGuineaPig.id, 'seek_shelter')"
-            variant="tertiary"
-            size="sm"
-            full-width
-            :disabled="!isGameActive"
-          >
-            🏠 Seek Shelter
-          </Button>
+            <Button
+              @click="triggerBehavior(selectedGuineaPig.id, 'seek_shelter')"
+              variant="tertiary"
+              size="sm"
+              :disabled="!isGameActive"
+            >
+              🏠 Shelter
+            </Button>
 
-          <Button
-            @click="triggerBehavior(selectedGuineaPig.id, 'groom')"
-            variant="tertiary"
-            size="sm"
-            full-width
-            :disabled="!isGameActive"
-          >
-            🧼 Trigger Groom
-          </Button>
+            <Button
+              @click="triggerBehavior(selectedGuineaPig.id, 'groom')"
+              variant="tertiary"
+              size="sm"
+              :disabled="!isGameActive"
+            >
+              🧼 Groom
+            </Button>
 
-          <Button
-            @click="triggerBehavior(selectedGuineaPig.id, 'chew')"
-            variant="tertiary"
-            size="sm"
-            full-width
-            :disabled="!isGameActive"
-          >
-            🦷 Trigger Chew
-          </Button>
+            <Button
+              @click="triggerBehavior(selectedGuineaPig.id, 'chew')"
+              variant="tertiary"
+              size="sm"
+              :disabled="!isGameActive"
+            >
+              🦷 Chew
+            </Button>
 
-          <Button
-            @click="triggerBehavior(selectedGuineaPig.id, 'play')"
-            variant="tertiary"
-            size="sm"
-            full-width
-            :disabled="!isGameActive"
-          >
-            🎾 Trigger Play
-          </Button>
+            <Button
+              @click="triggerBehavior(selectedGuineaPig.id, 'play')"
+              variant="tertiary"
+              size="sm"
+              :disabled="!isGameActive"
+            >
+              🎾 Play
+            </Button>
 
-          <Button
-            @click="triggerBehavior(selectedGuineaPig.id, 'socialize')"
-            variant="tertiary"
-            size="sm"
-            full-width
-            :disabled="!isGameActive || !hasCompanion(selectedGuineaPig.id)"
-            :title="hasCompanion(selectedGuineaPig.id) ? 'Trigger social interaction with companion' : 'Requires 2+ guinea pigs'"
-          >
-            🤝 Socialize
-          </Button>
+            <Button
+              @click="triggerBehavior(selectedGuineaPig.id, 'socialize')"
+              variant="tertiary"
+              size="sm"
+              :disabled="!isGameActive || !hasCompanion(selectedGuineaPig.id)"
+              :title="hasCompanion(selectedGuineaPig.id) ? 'Social interaction with companion' : 'Requires 2+ guinea pigs'"
+            >
+              🤝 Socialize
+            </Button>
 
-          <Button
-            @click="triggerBehavior(selectedGuineaPig.id, 'wander')"
-            variant="tertiary"
-            size="sm"
-            full-width
-            :disabled="!isGameActive"
-          >
-            🚶 Trigger Wander
-          </Button>
+            <Button
+              @click="triggerBehavior(selectedGuineaPig.id, 'wander')"
+              variant="tertiary"
+              size="sm"
+              :disabled="!isGameActive"
+            >
+              🚶 Wander
+            </Button>
+          </div>
 
           <Button
             @click="cancelBehavior(selectedGuineaPig.id)"
@@ -148,7 +137,7 @@
             full-width
             :disabled="!isGameActive || getCurrentGoal(selectedGuineaPig.id) === 'none'"
           >
-            ❌ Cancel
+            ❌ Cancel Current Action
           </Button>
         </div>
 
@@ -600,19 +589,10 @@ function hasCompanion(_guineaPigId: string): boolean {
 
 <style>
 /* Component-specific styles (shared layout from .habitat-sidebar) */
-.autonomy-sidebar {
-}
-
 .autonomy-sidebar__header {
-  padding: var(--space-4);
-  border-block-end: 1px solid var(--color-border);
-  background-color: var(--color-bg-primary);
-}
-
-.autonomy-sidebar__header h3 {
-  margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .autonomy-sidebar__content {
@@ -629,30 +609,28 @@ function hasCompanion(_guineaPigId: string): boolean {
   font-size: var(--font-size-sm);
 }
 
-.autonomy-sidebar__guinea-pig-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-block-end: var(--space-3);
-}
-
-.autonomy-sidebar__label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-medium);
-}
-
 .autonomy-sidebar__guinea-pig-name-static {
   font-size: var(--font-size-sm);
   color: var(--color-text-primary);
   font-weight: var(--font-weight-semibold);
 }
 
-.status-section,
+.status-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
 .triggers-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.triggers-section__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .status-section__title,

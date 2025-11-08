@@ -1,24 +1,38 @@
 <template>
   <div class="habitat-sidebar guinea-pig-sidebar">
-    <div class="guinea-pig-sidebar__header">
-      <h3>Guinea Pigs</h3>
+    <div class="habitat-sidebar__header guinea-pig-sidebar__header">
+      <h3>🐹 Guinea Pigs</h3>
+      <Button
+        v-if="guineaPigStore.activeGuineaPigs.length > 1"
+        @click="toggleGuineaPig"
+        variant="tertiary"
+        size="sm"
+      >
+        {{ displayGuineaPig?.name }} ({{ currentGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
+      </Button>
+      <span v-else-if="guineaPigStore.activeGuineaPigs.length === 1" class="guinea-pig-sidebar__guinea-pig-name-static">
+        {{ guineaPigStore.activeGuineaPigs[0]?.name }}
+      </span>
     </div>
 
     <div class="guinea-pig-sidebar__content">
-      <!-- Guinea Pig Selection Header - Always Visible -->
-      <div class="guinea-pig-sidebar__guinea-pig-header">
-        <span class="guinea-pig-sidebar__label">{{ selectedGuineaPig ? 'Interacting with:' : 'Your Guinea Pigs:' }}</span>
-        <Button
-          v-if="guineaPigStore.activeGuineaPigs.length > 1"
-          @click="toggleGuineaPig"
-          variant="tertiary"
-          size="sm"
-        >
-          {{ selectedGuineaPig?.name || guineaPigStore.activeGuineaPigs[0]?.name }} ({{ currentGuineaPigIndex + 1 }}/{{ guineaPigStore.activeGuineaPigs.length }})
-        </Button>
-        <span v-else-if="guineaPigStore.activeGuineaPigs.length === 1" class="guinea-pig-sidebar__guinea-pig-name-static">
-          {{ guineaPigStore.activeGuineaPigs[0]?.name }}
-        </span>
+      <!-- Current Status -->
+      <div class="interaction-section">
+        <h4 class="interaction-section__title">📊 Current Status</h4>
+        <div class="panel panel--compact flex flex-column gap-2">
+          <div class="status-item">
+            <span class="status-item__label">Activity:</span>
+            <span class="status-item__value">{{ getCurrentActivity(displayGuineaPig.id) }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-item__label">Goal:</span>
+            <span class="status-item__value">{{ getCurrentGoal(displayGuineaPig.id) }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-item__label">Position:</span>
+            <span class="status-item__value">{{ getPosition(displayGuineaPig.id) }}</span>
+          </div>
+        </div>
       </div>
 
       <!-- Player Friendship -->
@@ -76,9 +90,9 @@
         </div>
       </div>
 
-      <!-- Trigger Actions (renamed from Basic Interactions) -->
+      <!-- Interact with Guinea Pig -->
       <div class="interaction-section">
-        <h4 class="interaction-section__title">Trigger Actions</h4>
+        <h4 class="interaction-section__title">🫱 Interact with Guinea Pig</h4>
         <div class="interaction-buttons">
           <Button
             @click="handleTriggerAction('pet')"
@@ -202,6 +216,8 @@ import SliderField from '../../../basic/SliderField.vue'
 import FoodSelectionDialog from '../../dialogs/FoodSelectionDialog.vue'
 import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
 import { useGameController } from '../../../../stores/gameController'
+import { useHabitatConditions } from '../../../../stores/habitatConditions'
+import { useBehaviorStateStore } from '../../../../stores/behaviorStateStore'
 import type { GuineaPig } from '../../../../stores/guineaPigStore'
 import { getBondStrengthMessage, getPlayerFriendshipMessage } from '../../../../utils/friendshipMessages'
 
@@ -227,6 +243,8 @@ const emit = defineEmits<{
 
 const gameController = useGameController()
 const guineaPigStore = useGuineaPigStore()
+const habitatConditions = useHabitatConditions()
+const behaviorStateStore = useBehaviorStateStore()
 
 const showFoodSelectionDialog = ref(false)
 
@@ -417,23 +435,32 @@ const companionBonds = computed(() => {
 function formatTier(tier: string): string {
   return tier.charAt(0).toUpperCase() + tier.slice(1)
 }
+
+// Current Status functions
+function getCurrentActivity(guineaPigId: string): string {
+  const state = behaviorStateStore.getBehaviorState(guineaPigId)
+  return state?.currentActivity || 'idle'
+}
+
+function getCurrentGoal(guineaPigId: string): string {
+  const state = behaviorStateStore.getBehaviorState(guineaPigId)
+  return state?.currentGoal?.type || 'none'
+}
+
+function getPosition(guineaPigId: string): string {
+  const pos = habitatConditions.guineaPigPositions.get(guineaPigId)
+  if (!pos) return 'unknown'
+  return `(${pos.x}, ${pos.y})`
+}
 </script>
 
 <style>
 /* Component-specific styles (shared layout from .habitat-sidebar) */
-.guinea-pig-sidebar {
-}
-
 .guinea-pig-sidebar__header {
-  padding: var(--space-4);
-  border-block-end: 1px solid var(--color-border);
-  background-color: var(--color-bg-primary);
-}
-
-.guinea-pig-sidebar__header h3 {
-  margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
 }
 
 .guinea-pig-sidebar__content {
@@ -441,19 +468,6 @@ function formatTier(tier: string): string {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-}
-
-.guinea-pig-sidebar__guinea-pig-header {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-block-end: var(--space-3);
-}
-
-.guinea-pig-sidebar__label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-medium);
 }
 
 .guinea-pig-sidebar__guinea-pig-name-static {
@@ -539,6 +553,25 @@ function formatTier(tier: string): string {
 .bond-stat {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+}
+
+/* Status items */
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-item__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.status-item__value {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
 /* Interaction buttons: Natural width, wrap as needed */

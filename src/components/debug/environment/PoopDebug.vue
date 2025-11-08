@@ -1,7 +1,5 @@
 <template>
   <div class="poop-debug">
-    <h4>Poop System Debug</h4>
-
     <div v-if="hasActiveGuineaPigs">
       <div v-for="guineaPig in guineaPigStore.activeGuineaPigs" :key="guineaPig.id" class="guinea-pig-poop">
         <div class="panel panel--compact mb-4">

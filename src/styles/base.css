@@ -611,6 +611,18 @@ img {
   overflow-y: auto;
 }
 
+.habitat-sidebar__header {
+  padding: var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+  background-color: var(--color-bg-primary);
+}
+
+.habitat-sidebar__header h3 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
 @media (max-width: 768px) {
   .habitat-sidebar {
     inline-size: 100%;
@@ -618,4 +630,29 @@ img {
     border-inline-start: none;
     border-block-start: 2px solid var(--color-border-default);
   }
+}
+
+/* Custom Scrollbar Styles */
+.custom-scrollbar::-webkit-scrollbar {
+  inline-size: 8px;
+  block-size: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: var(--color-bg-tertiary);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-medium);
+}
+
+/* For Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) var(--color-bg-tertiary);
 }
