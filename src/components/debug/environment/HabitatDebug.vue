@@ -14,11 +14,9 @@
       <div class="panel__header">
         <h3>Habitat Visual</h3>
       </div>
-      <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end">
-        <template v-for="tab in sidebarTabs" :key="tab.id" #[tab.id]>
-          <!-- Content is handled by conditional rendering below -->
-        </template>
-      </SubTabContainer>
+      <div class="panel__section">
+        <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end" :buttons-only="true" />
+      </div>
       <div class="panel__content">
         <div class="habitat-layout">
           <div class="habitat-layout__main">
@@ -616,19 +614,17 @@ async function handleHandFeed(foodId: string) {
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
+  container-type: inline-size;
+  container-name: habitat-debug;
 }
 
-.panel__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-3);
+.habitat-debug__content .panel__header {
+  margin-block-end: var(--space-2);
+  padding-block-end: 0;
 }
 
-.panel__header h3 {
-  flex-shrink: 0;
-  margin: 0;
+.habitat-debug__content .sub-tab-container {
+  margin-block-end: var(--space-5);
 }
 
 /* Habitat Layout with Sidebar */
