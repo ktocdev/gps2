@@ -1,12 +1,12 @@
 <template>
-  <div class="sub-tab-container">
-    <nav :class="navClasses" role="tablist">
+  <div :class="containerClasses">
+    <nav role="tablist" class="sub-tab-container__nav">
       <button
         v-for="tab in tabs"
         :key="tab.id"
         :class="getTabClasses(tab.id)"
         :aria-selected="activeTab === tab.id"
-        :aria-controls="`sub-panel-${tab.id}`"
+        :aria-controls="buttonsOnly ? undefined : `sub-panel-${tab.id}`"
         :id="`sub-tab-${tab.id}`"
         role="tab"
         type="button"
@@ -18,7 +18,7 @@
       </button>
     </nav>
 
-    <div class="sub-tab-container__content">
+    <div v-if="!buttonsOnly" class="sub-tab-container__content">
       <div
         v-for="tab in tabs"
         :key="`sub-panel-${tab.id}`"
@@ -49,6 +49,7 @@ interface Props {
   tabs: SubTab[]
   modelValue?: string
   align?: 'start' | 'end'
+  buttonsOnly?: boolean
 }
 
 interface Emits {
@@ -58,7 +59,8 @@ interface Emits {
 
 const props = withDefaults(defineProps<Props>(), {
   modelValue: '',
-  align: 'start'
+  align: 'start',
+  buttonsOnly: false
 })
 
 const emit = defineEmits<Emits>()
@@ -94,11 +96,11 @@ watch(activeTab, (newTab, oldTab) => {
 })
 
 // Computed classes
-const navClasses = computed(() => {
+const containerClasses = computed(() => {
   return [
-    'sub-tab-container__nav',
+    'sub-tab-container',
     {
-      'sub-tab-container__nav--end': props.align === 'end'
+      'sub-tab-container--buttons-only': props.buttonsOnly
     }
   ]
 })
@@ -143,31 +145,45 @@ const getPanelClasses = (tabId: string) => {
   block-size: 100%;
 }
 
+/* Buttons Only Variant - No content wrapper */
+.sub-tab-container--buttons-only {
+  block-size: auto;
+}
+
 /* Navigation - Mobile First */
 .sub-tab-container__nav {
   display: flex;
-  border-block-end: 2px solid var(--color-border-subtle);
-  background-color: var(--color-background-secondary);
-  gap: var(--space-1);
+  flex-shrink: 1;
+  min-inline-size: 0;
+  border-block-end: 2px solid var(--color-border-light);
+  gap: var(--space-2);
+  padding-block: var(--space-2);
+  padding-inline: var(--space-2);
   overflow-x: auto;
-  scrollbar-width: thin;
 }
-
-.sub-tab-container__nav--end {
-  justify-content: end;
-}
-
+/* Custom Scrollbar Styles */
 .sub-tab-container__nav::-webkit-scrollbar {
-  block-size: 4px;
+  inline-size: 8px;
+  block-size: 8px;
 }
 
 .sub-tab-container__nav::-webkit-scrollbar-track {
-  background: var(--color-background-tertiary);
+  background: var(--color-bg-tertiary);
 }
 
 .sub-tab-container__nav::-webkit-scrollbar-thumb {
-  background: var(--color-border-primary);
-  border-radius: 2px;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.sub-tab-container__nav::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-medium);
+}
+
+/* Firefox Scrollbar */
+.sub-tab-container__nav {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) var(--color-bg-tertiary);
 }
 
 /* Sub Tab Buttons (Pills Style) - Mobile First */
@@ -176,39 +192,39 @@ const getPanelClasses = (tabId: string) => {
   align-items: center;
   gap: var(--space-2);
   padding-block: var(--space-2);
-  padding-inline: var(--space-2);
+  padding-inline: var(--space-3);
   border: 1px solid transparent;
-  border-radius: 16px;
+  border-radius: var(--radius-full);
   background-color: transparent;
   color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--transition-fast);
   white-space: nowrap;
 }
 
 .sub-tab-container__tab:hover:not(.sub-tab-container__tab--disabled) {
-  background-color: var(--color-background-tertiary);
+  background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
-  border-color: var(--color-border-primary);
+  border-color: var(--color-border-light);
 }
 
-.sub-tab-container__tab:focus {
-  outline: 2px solid var(--color-accent-primary);
+.sub-tab-container__tab:focus-visible {
+  outline: 2px solid var(--color-primary);
   outline-offset: 2px;
 }
 
 .sub-tab-container__tab--active {
-  background-color: var(--color-accent-primary);
-  color: var(--color-text-on-accent);
-  border-color: var(--color-accent-primary);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
 }
 
 .sub-tab-container__tab--active:hover {
-  background-color: var(--color-accent-primary-hover);
-  border-color: var(--color-accent-primary-hover);
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .sub-tab-container__tab--disabled {
@@ -244,16 +260,15 @@ const getPanelClasses = (tabId: string) => {
 }
 
 .sub-tab-container__tab--active .sub-tab-container__tab-badge {
-  background-color: var(--color-background-primary);
-  color: var(--color-accent-primary);
+  background-color: var(--color-bg-primary);
+  color: var(--color-primary);
 }
 
 /* Panel Content - Mobile First */
 .sub-tab-container__content {
   flex: 1;
-  padding-block: var(--space-3);
+  border-block-start: 2px solid var(--color-primary);
   overflow-y: auto;
-  background-color: var(--color-background-primary);
 }
 
 .sub-tab-container__panel {

@@ -70,7 +70,6 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
               @purchase="handlePurchase"
               @sellback="handleSellBack"
             >
@@ -123,7 +122,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -174,7 +173,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -225,7 +224,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -276,7 +275,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -327,7 +326,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -381,7 +380,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -429,7 +428,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -477,7 +476,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -525,7 +524,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -573,7 +572,7 @@
                 returnable: getItemDetails(item.id).returnable
               }))"
               :show-owned="true"
-              :show-status="true"
+              
             >
               <template #actions="{ item }">
                 <Button
@@ -625,7 +624,7 @@
             returnable: getItemDetails(item.id).returnable
           }))"
           :show-owned="true"
-          :show-status="true"
+          
         >
           <template #actions="{ item }">
             <Button

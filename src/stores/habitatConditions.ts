@@ -244,9 +244,10 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
    * Consume bedding from inventory
    * Uses partial bags first, then opens new bags as needed
    * @param amount - Amount of bedding to consume (in bag units)
+   * @param beddingType - Optional bedding type to use (cheap, average, premium). If not specified, uses any available.
    * @returns Success boolean
    */
-  function consumeBedding(amount: number): boolean {
+  function consumeBedding(amount: number, beddingType?: string): boolean {
     if (amount <= 0) return true
 
     const inventoryStore = useInventoryStore()
@@ -257,9 +258,14 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     // Get all bedding items sorted by amountRemaining (use partial bags first)
     const beddingItems: Array<{ itemId: string, instance: any, amount: number }> = []
 
+    const targetItemId = beddingType ? `bedding_${beddingType}` : null
+
     for (const invItem of inventoryStore.consumables) {
       const supplyItem = suppliesStore.getItemById(invItem.itemId)
       if (supplyItem?.category === 'bedding') {
+        // If beddingType specified, only use that type
+        if (targetItemId && invItem.itemId !== targetItemId) continue
+
         for (const instance of invItem.instances) {
           const amt = instance.amountRemaining ?? 1
           beddingItems.push({ itemId: invItem.itemId, instance, amount: amt })
@@ -313,11 +319,13 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
   /**
    * Clean cage with proportional bedding consumption
+   * @param beddingType - Bedding type to use (cheap, average, premium)
    * @returns Object with success status and message
    */
-  function cleanCage(): { success: boolean; message: string; beddingUsed?: number; beddingRemaining?: number } {
+  function cleanCage(beddingType: string = 'average'): { success: boolean; message: string; beddingUsed?: number; beddingRemaining?: number } {
     const beddingNeeded = calculateBeddingNeeded()
-    const beddingAvailable = getTotalBeddingAvailable()
+    const inventoryStore = useInventoryStore()
+    const beddingAvailable = inventoryStore.getItemQuantity(`bedding_${beddingType}`)
 
     if (beddingNeeded === 0) {
       // Already clean
@@ -337,7 +345,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     if (beddingAvailable < beddingNeeded) {
       // Partial clean - use all available bedding
       const cleaningPercent = (beddingAvailable / beddingNeeded) * 100
-      const success = consumeBedding(beddingAvailable)
+      const success = consumeBedding(beddingAvailable, beddingType)
 
       if (success) {
         dirtiness.value = Math.max(0, dirtiness.value - cleaningPercent)
@@ -346,17 +354,19 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
         poops.value = [] // Remove all poops
         recordSnapshot()
 
+        const remaining = inventoryStore.getItemQuantity(`bedding_${beddingType}`)
+
         return {
           success: true,
-          message: `Partially cleaned habitat (used all ${beddingAvailable.toFixed(1)} bags). Habitat is still ${dirtiness.value.toFixed(0)}% dirty.`,
+          message: `Partially cleaned habitat (used all ${beddingAvailable.toFixed(1)} ${beddingType} bags). Habitat is still ${dirtiness.value.toFixed(2)}% dirty. ${remaining.toFixed(1)} ${beddingType} bags remaining.`,
           beddingUsed: beddingAvailable,
-          beddingRemaining: 0
+          beddingRemaining: remaining
         }
       }
     }
 
     // Full clean - have enough bedding
-    const success = consumeBedding(beddingNeeded)
+    const success = consumeBedding(beddingNeeded, beddingType)
 
     if (success) {
       dirtiness.value = 0
@@ -365,11 +375,11 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       poops.value = [] // Remove all poops
       recordSnapshot()
 
-      const remaining = getTotalBeddingAvailable()
+      const remaining = inventoryStore.getItemQuantity(`bedding_${beddingType}`)
 
       return {
         success: true,
-        message: `Habitat fully cleaned! Used ${beddingNeeded.toFixed(1)} bags. ${remaining.toFixed(1)} bags remaining.`,
+        message: `Habitat fully cleaned! Used ${beddingNeeded.toFixed(1)} ${beddingType} bags. ${remaining.toFixed(1)} ${beddingType} bags remaining.`,
         beddingUsed: beddingNeeded,
         beddingRemaining: remaining
       }

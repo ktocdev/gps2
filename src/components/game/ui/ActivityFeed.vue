@@ -7,7 +7,7 @@
 -->
 <template>
   <div class="activity-feed">
-    <div v-if="showHeader" class="activity-feed__header">
+    <div v-if="showHeader && !hideHeader" class="activity-feed__header">
       <h4>{{ title }}</h4>
       <div class="button-group">
         <Button
@@ -83,30 +83,43 @@ import Button from '../../basic/Button.vue'
 interface Props {
   maxMessages?: number
   showHeader?: boolean
+  hideHeader?: boolean
   showFilters?: boolean
   autoScroll?: boolean
   height?: string
   compact?: boolean
   categories?: MessageCategory[]
   title?: string
+  isPausedExternal?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   maxMessages: 50,
   showHeader: true,
+  hideHeader: false,
   showFilters: true,
   autoScroll: true,
   height: '300px',
   compact: false,
   categories: () => ['player_action', 'guinea_pig_reaction', 'autonomous_behavior', 'environmental', 'achievement'],
-  title: 'Activity Feed'
+  title: 'Activity Feed',
+  isPausedExternal: undefined
 })
 
 const loggingStore = useLoggingStore()
 const feedContainer = ref<HTMLElement>()
 
+// Emit events for parent control
+const emit = defineEmits<{
+  'toggle-pause': []
+  'clear': []
+}>()
+
 // State
-const isPaused = ref(false)
+const isPaused = computed(() => {
+  return props.isPausedExternal !== undefined ? props.isPausedExternal : isPausedInternal.value
+})
+const isPausedInternal = ref(false)
 const isLoadingMore = ref(false)
 const displayCount = ref(20)
 const selectedCategories = ref<MessageCategory[]>([...props.categories])
@@ -136,11 +149,19 @@ const remainingCount = computed(() => {
 
 // Methods
 const togglePause = () => {
-  isPaused.value = !isPaused.value
+  if (props.isPausedExternal !== undefined) {
+    emit('toggle-pause')
+  } else {
+    isPausedInternal.value = !isPausedInternal.value
+  }
 }
 
 const clearFeed = () => {
-  loggingStore.clearMessages()
+  if (props.isPausedExternal !== undefined) {
+    emit('clear')
+  } else {
+    loggingStore.clearMessages()
+  }
 }
 
 const loadMoreMessages = async () => {
@@ -206,13 +227,17 @@ onMounted(() => {
   inline-size: 100%;
   block-size: 100%;
   font-family: var(--font-family-body);
+  overflow: hidden;
+}
+
+/* When used standalone (with header visible) */
+.activity-feed:has(.activity-feed__header) {
   background-color: var(--color-bg-primary);
   border: 1px solid var(--color-border-light);
   border-start-start-radius: var(--radius-lg);
   border-start-end-radius: var(--radius-lg);
   border-end-start-radius: var(--radius-lg);
   border-end-end-radius: var(--radius-lg);
-  overflow: hidden;
 }
 
 /* Header */
@@ -239,7 +264,7 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding-block: var(--space-2);
-  padding-inline: var(--space-4);
+  padding-inline: var(--space-2);
   scroll-behavior: smooth;
 }
 
@@ -272,10 +297,11 @@ onMounted(() => {
 .activity-feed__message {
   display: flex;
   flex-direction: column;
-  margin-block-end: var(--space-3);
+  margin-block-end: var(--space-2);
   padding-block: var(--space-2);
   padding-inline: var(--space-3);
-  background-color: var(--color-bg-secondary);
+  background-color: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
   border-start-start-radius: var(--radius-md);
   border-start-end-radius: var(--radius-md);
   border-end-start-radius: var(--radius-md);
