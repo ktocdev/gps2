@@ -1650,7 +1650,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     newBonds.set(bondId, bond)
     activeBonds.value = newBonds
 
-    getLoggingStore().info(`Bond created between ${gp1.name} and ${gp2.name} (compatibility: ${compatibilityScore})`)
+    getLoggingStore().logInfo(`Bond created between ${gp1.name} and ${gp2.name} (compatibility: ${compatibilityScore})`)
     return bond
   }
 
@@ -1724,7 +1724,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     if (bond.bondingTier !== previousTier) {
       const gp1 = collection.value.guineaPigs[bond.guineaPig1Id]
       const gp2 = collection.value.guineaPigs[bond.guineaPig2Id]
-      getLoggingStore().info(`${gp1?.name} and ${gp2?.name} bonding tier changed: ${previousTier} → ${bond.bondingTier}`)
+      getLoggingStore().logInfo(`${gp1?.name} and ${gp2?.name} bonding tier changed: ${previousTier} → ${bond.bondingTier}`)
     }
 
     return true

@@ -11,6 +11,8 @@
         role="tab"
         type="button"
         @click="setActiveTab(tab.id)"
+        @touchstart="handleTouchStart"
+        @touchend="handleTouchEnd(tab.id, $event)"
       >
         <span v-if="tab.icon" class="sub-tab-container__tab-icon">{{ tab.icon }}</span>
         <span class="sub-tab-container__tab-text">{{ tab.label }}</span>
@@ -35,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 
 export interface SubTab {
   id: string
@@ -65,34 +67,17 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>()
 
-// Internal state
-const activeTab = ref<string>('')
-const previousTab = ref<string | null>(null)
+// Use modelValue as single source of truth (no internal state needed)
+const activeTab = computed(() => props.modelValue || '')
 
-// Initialize active tab
+// Initialize active tab on mount if no modelValue provided
 onMounted(() => {
-  if (props.modelValue) {
-    activeTab.value = props.modelValue
-  } else if (props.tabs.length > 0) {
+  if (!props.modelValue && props.tabs.length > 0) {
     const firstEnabledTab = props.tabs.find(tab => !tab.disabled)
     if (firstEnabledTab) {
-      activeTab.value = firstEnabledTab.id
       emit('update:modelValue', firstEnabledTab.id)
     }
   }
-})
-
-// Watch for external model changes
-watch(() => props.modelValue, (newValue) => {
-  if (newValue && newValue !== activeTab.value) {
-    setActiveTab(newValue)
-  }
-})
-
-// Watch for tab changes and emit events
-watch(activeTab, (newTab, oldTab) => {
-  emit('update:modelValue', newTab)
-  emit('tab-change', newTab, oldTab || null)
 })
 
 // Computed classes
@@ -105,12 +90,32 @@ const containerClasses = computed(() => {
   ]
 })
 
+// Touch handling
+const handleTouchStart = (event: TouchEvent) => {
+  // Prevent default to avoid triggering hover state
+  const target = event.currentTarget as HTMLElement
+  target.classList.add('touching')
+}
+
+const handleTouchEnd = (tabId: string, event: TouchEvent) => {
+  const target = event.currentTarget as HTMLElement
+  target.classList.remove('touching')
+
+  // Prevent click event from firing (we'll handle selection here)
+  event.preventDefault()
+
+  // Set active tab
+  setActiveTab(tabId)
+}
+
 // Methods
 const setActiveTab = (tabId: string) => {
   const tab = props.tabs.find(t => t.id === tabId)
-  if (tab && !tab.disabled) {
-    previousTab.value = activeTab.value || null
-    activeTab.value = tabId
+  // Only emit if tab exists, is not disabled, and is not already selected
+  if (tab && !tab.disabled && tabId !== props.modelValue) {
+    const previousTab = props.modelValue || null
+    emit('update:modelValue', tabId)
+    emit('tab-change', tabId, previousTab)
   }
 }
 
@@ -200,7 +205,7 @@ const getPanelClasses = (tabId: string) => {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: opacity var(--transition-fast);
   white-space: nowrap;
 }
 
@@ -233,6 +238,29 @@ const getPanelClasses = (tabId: string) => {
   color: var(--color-text-muted);
 }
 
+/* Touch Device Handling */
+.sub-tab-container__tab.touching:not(.sub-tab-container__tab--disabled) {
+  /* Visual feedback during touch */
+  opacity: 0.7;
+}
+
+/* Touch Device Fix - Disable hover on touch-only devices */
+@media (hover: none) {
+  /* Remove ALL hover states on touch devices */
+  .sub-tab-container__tab:hover {
+    background-color: transparent;
+    color: var(--color-text-secondary);
+    border-color: transparent;
+  }
+
+  /* Active state must override hover */
+  .sub-tab-container__tab--active {
+    background-color: var(--color-primary) !important;
+    color: var(--color-text-inverse) !important;
+    border-color: var(--color-primary) !important;
+  }
+}
+
 /* Tab Content - Mobile First: hide text, show only icon */
 .sub-tab-container__tab-icon {
   font-size: var(--font-size-sm);
@@ -252,7 +280,7 @@ const getPanelClasses = (tabId: string) => {
   block-size: 18px;
   padding-inline: var(--space-1);
   background-color: var(--color-warning);
-  color: var(--color-text-on-warning);
+  color: var(--color-text-inverse);
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   border-radius: 9px;

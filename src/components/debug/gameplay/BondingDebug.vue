@@ -214,13 +214,13 @@ function formatFactorName(factor: string): string {
 .bonding-debug__bonds-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-4);
+  gap: var(--space-4);
 }
 
 .bonding-debug__bond-card {
-  padding: var(--spacing-4);
-  background: var(--color-surface-secondary);
-  border-radius: var(--border-radius-md);
+  padding: var(--space-4);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
 }
 
@@ -228,7 +228,7 @@ function formatFactorName(factor: string): string {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-block-end: var(--spacing-3);
+  margin-block-end: var(--space-3);
 }
 
 .bond-names {
@@ -237,53 +237,53 @@ function formatFactorName(factor: string): string {
 }
 
 .bond-tier {
-  padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--border-radius-sm);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }
 
 .bond-tier--neutral {
-  background: var(--color-gray-200);
-  color: var(--color-gray-700);
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-700);
 }
 
 .bond-tier--friends {
-  background: var(--color-blue-100);
-  color: var(--color-blue-700);
+  background: var(--color-secondary-bg);
+  color: var(--color-secondary);
 }
 
 .bond-tier--bonded {
-  background: var(--color-pink-100);
-  color: var(--color-pink-700);
+  background: var(--color-accent-pink-100);
+  color: var(--color-accent-pink-700);
 }
 
 .bond-benefits {
-  margin-block-start: var(--spacing-3);
+  margin-block-start: var(--space-3);
 }
 
 .bond-benefits ul {
-  margin-block-start: var(--spacing-1);
-  padding-inline-start: var(--spacing-4);
+  margin-block-start: var(--space-1);
+  padding-inline-start: var(--space-4);
 }
 
 .bonding-debug__events {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  gap: var(--space-3);
 }
 
 .bonding-debug__event {
-  padding: var(--spacing-3);
-  background: var(--color-surface-secondary);
-  border-radius: var(--border-radius-sm);
+  padding: var(--space-3);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
   border-inline-start: 3px solid var(--color-primary);
 }
 
 .event-header {
   display: flex;
   justify-content: space-between;
-  margin-block-end: var(--spacing-2);
+  margin-block-end: var(--space-2);
 }
 
 .event-type {
@@ -297,20 +297,20 @@ function formatFactorName(factor: string): string {
 }
 
 .event-change {
-  margin-block-start: var(--spacing-1);
+  margin-block-start: var(--space-1);
   font-weight: var(--font-weight-medium);
 }
 
 .compatibility-breakdown {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: var(--space-2);
 }
 
 .compatibility-factor {
   display: grid;
   grid-template-columns: 120px 50px;
-  gap: var(--spacing-2);
+  gap: var(--space-2);
   align-items: center;
 }
 
