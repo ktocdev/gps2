@@ -123,15 +123,15 @@ const tabCategories: TabCategory[] = [
         panelClass: 'tab-container__panel--constrained'
       },
       {
-        id: 'inventory',
-        label: 'Inventory',
-        icon: '🎒',
-        panelClass: 'tab-container__panel--constrained'
-      },
-      {
         id: 'supplies-store',
         label: 'Supplies Store',
         icon: '🛒',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'inventory',
+        label: 'Inventory',
+        icon: '🎒',
         panelClass: 'tab-container__panel--constrained'
       }
     ]

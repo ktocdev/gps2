@@ -2,18 +2,11 @@
   <div class="habitat-debug debug-view__constrained">
     <h2>
       Habitat Conditions
-      <InfoButton
-        message="Manage habitat conditions, interact with guinea pigs, and view their needs. Use the sidebar buttons to access inventory, care actions, activity feed, and socialization options."
-        position="bottom"
-      />
     </h2>
 
     <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
     <!-- Visual Habitat with Sidebar -->
     <div class="panel panel--full-width">
-      <div class="panel__header">
-        <h3>Habitat Visual</h3>
-      </div>
       <div class="panel__section">
         <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end" :buttons-only="true" />
       </div>
@@ -239,7 +232,6 @@ import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useNeedsController } from '../../../stores/needsController'
 import { getInteractionEffect, getInteractionName, getInteractionEmoji } from '../../../utils/interactionEffects'
 import Button from '../../basic/Button.vue'
-import InfoButton from '../../basic/InfoButton.vue'
 import SliderField from '../../basic/SliderField.vue'
 import SubTabContainer from '../../layout/SubTabContainer.vue'
 import HabitatVisual from '../../game/habitat/HabitatVisual.vue'
@@ -644,7 +636,7 @@ async function handleHandFeed(foodId: string) {
 
 .habitat-layout__sidebar {
   min-inline-size: 360px;
-  max-block-size: 800px;
+  max-block-size: 670px;
   overflow-y: auto;
 }
 

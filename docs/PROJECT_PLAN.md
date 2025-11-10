@@ -100,7 +100,9 @@ Phase 4.5 focuses on polishing core gameplay mechanics and fixing bugs discovere
 - **[SPRINT-2025-10-29](archive/SPRINT-2025-10-29.md)** - Bond initialization, habitat responsiveness, inventory purchase limits, visual tweaks
 - **[SPRINT-2025-10-31](archive/SPRINT-2025-10-31.md)** - Code audits, CSS cleanup, navigation fixes, wellness penalties refined
 - **[SPRINT-2025-11-02](archive/SPRINT-2025-11-02.md)** - Thirst scaling, nails need, bond display, friendship scaling, hand-feed system
-- **[SPRINT-2025-11-03](archive/SPRINT-2025-11-03.md)** - Comprehensive audits, CSS optimizations, bond fixes (active sprint)
+- **[SPRINT-2025-11-03](archive/SPRINT-2025-11-03.md)** - Comprehensive audits, CSS optimizations, bond fixes
+- **[SPRINT-2025-11-04](archive/SPRINT-2025-11-04.md)** - Sidebar redesign, activity feed styling, SubTab navigation enhancements
+- **[SPRINT-2025-11-10](SPRINT-2025-11-10.md)** - Code audits, critical bug fixes, interaction enhancements (active sprint)
 
 **Key Accomplishments:**
 - ✅ Pause state reliability across all systems
