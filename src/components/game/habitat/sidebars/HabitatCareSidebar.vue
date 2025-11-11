@@ -19,29 +19,48 @@
 
         <Button
           @click="$emit('clean-cage')"
+          :disabled="isGamePaused"
+          :title="isGamePaused ? 'Unpause the game to clean habitat' : undefined"
           variant="tertiary"
           size="sm"
           full-width
+          class="habitat-care-button--clean-habitat"
         >
-          🧹 Clean Habitat
+          🧽 Clean Habitat
+        </Button>
+
+        <Button
+          @click="$emit('quick-clean')"
+          :disabled="isGamePaused"
+          :title="isGamePaused ? 'Unpause the game to quick clean' : 'Remove poop without using bedding'"
+          variant="tertiary"
+          size="sm"
+          full-width
+          class="habitat-care-button--quick-clean"
+        >
+          🧹 Quick Clean
         </Button>
 
         <Button
           @click="$emit('refill-water')"
+          :disabled="isGamePaused"
+          :title="isGamePaused ? 'Unpause the game to refill water' : undefined"
           variant="tertiary"
           size="sm"
           full-width
+          class="habitat-care-button--refill-water"
         >
           💧 Refill Water
         </Button>
 
         <Button
           @click="$emit('fill-all-hay-racks')"
+          :disabled="!canFillHayRacks || isGamePaused"
+          :title="isGamePaused ? 'Unpause the game to fill hay racks' : fillHayRacksTooltip"
           variant="tertiary"
           size="sm"
           full-width
-          :disabled="!canFillHayRacks"
-          :title="fillHayRacksTooltip"
+          class="habitat-care-button--fill-hay"
         >
           🌾 Fill All Hay Racks
         </Button>
@@ -171,6 +190,7 @@ import { computed } from 'vue'
 import { useHabitatConditions } from '../../../../stores/habitatConditions'
 import { useHabitatContainers } from '../../../../composables/useHabitatContainers'
 import { useSuppliesStore } from '../../../../stores/suppliesStore'
+import { useGameTimingStore } from '../../../../stores/gameTimingStore'
 import { CHEW_DEGRADATION } from '../../../../constants/supplies'
 import Button from '../../../basic/Button.vue'
 import BlockMessage from '../../../basic/BlockMessage.vue'
@@ -186,6 +206,7 @@ const props = defineProps<Props>()
 
 defineEmits<{
   'clean-cage': []
+  'quick-clean': []
   'refill-water': []
   'fill-all-hay-racks': []
   'clear-all-bowls': []
@@ -194,7 +215,10 @@ defineEmits<{
 
 const habitat = useHabitatConditions()
 const suppliesStore = useSuppliesStore()
+const gameTimingStore = useGameTimingStore()
 const { getChewData, setChewDurability } = useHabitatContainers()
+
+const isGamePaused = computed(() => !gameTimingStore.isRunning)
 
 // Chew Items Management
 const chewItemsList = computed(() => {
@@ -319,5 +343,51 @@ function getOverallConditionVariant(value: number): 'success' | 'warning' | 'err
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
   text-align: center;
+}
+
+/* Color-coded habitat care buttons */
+.habitat-care-button--clean-habitat {
+  background-color: var(--color-accent-green-300);
+  color: #1e293b;
+}
+
+.habitat-care-button--clean-habitat:hover:not(:disabled) {
+  background-color: var(--color-accent-green-400);
+}
+
+.habitat-care-button--quick-clean {
+  background-color: #d4b896;
+  color: #1e293b;
+}
+
+.habitat-care-button--quick-clean:hover:not(:disabled) {
+  background-color: #c4a886;
+}
+
+.habitat-care-button--refill-water {
+  background-color: #7dd3fc;
+  color: #1e293b;
+}
+
+.habitat-care-button--refill-water:hover:not(:disabled) {
+  background-color: #38bdf8;
+}
+
+.habitat-care-button--fill-hay {
+  background-color: var(--color-warning-400);
+  color: #1e293b;
+}
+
+.habitat-care-button--fill-hay:hover:not(:disabled) {
+  background-color: var(--color-warning-500);
+}
+
+/* Disabled state reduces opacity */
+.habitat-care-button--clean-habitat:disabled,
+.habitat-care-button--quick-clean:disabled,
+.habitat-care-button--refill-water:disabled,
+.habitat-care-button--fill-hay:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

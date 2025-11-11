@@ -163,6 +163,10 @@ interface Props {
   showSubgrid?: boolean
 }
 
+interface Emits {
+  (e: 'guinea-pig-selected', guineaPigId: string): void
+}
+
 interface GridCell {
   x: number
   y: number
@@ -185,6 +189,8 @@ const props = withDefaults(defineProps<Props>(), {
   highlightCells: true,
   showSubgrid: false
 })
+
+const emit = defineEmits<Emits>()
 
 const habitatConditions = useHabitatConditions()
 const habitatContainers = useHabitatContainers()
@@ -219,9 +225,29 @@ const subgridWidth = computed(() => gridWidth.value * 4)
 const subgridHeight = computed(() => gridHeight.value * 4)
 const subcellSize = computed(() => cellSize.value / 4)
 
+// Bedding color effect
+const beddingColorFilter = computed(() => {
+  const color = habitatConditions.currentBedding?.color
+  if (!color) return 'none'
+
+  // Map bedding colors to CSS filter effects
+  const colorMap: Record<string, string> = {
+    'yellow': 'sepia(0.5) saturate(1.2) brightness(0.95)', // Regular/average - deeper yellowish
+    'beige': 'sepia(0.45) saturate(0.9) brightness(0.95)', // Cheap - deeper beige
+    'white-cyan': 'saturate(0.7) brightness(1.15) hue-rotate(180deg)', // Premium - white with cyan undertones
+    'pink': 'sepia(0.4) saturate(1.8) hue-rotate(300deg) brightness(0.95)', // Pink tint - deeper
+    'blue': 'sepia(0.35) saturate(1.6) hue-rotate(180deg) brightness(0.95)', // Blue tint - deeper
+    'green': 'sepia(0.35) saturate(1.6) hue-rotate(80deg) brightness(0.95)', // Green tint - deeper
+    'purple': 'sepia(0.3) saturate(1.4) hue-rotate(260deg) brightness(1.05)' // Purple tint - already good
+  }
+
+  return colorMap[color] || 'none'
+})
+
 const gridStyle = computed(() => ({
   gridTemplateColumns: `repeat(${gridWidth.value}, ${cellSize.value}px)`,
-  gridTemplateRows: `repeat(${gridHeight.value}, ${cellSize.value}px)`
+  gridTemplateRows: `repeat(${gridHeight.value}, ${cellSize.value}px)`,
+  filter: beddingColorFilter.value
 }))
 
 const subgridStyle = computed(() => ({
@@ -282,6 +308,8 @@ function handleGuineaPigSelect(guineaPigId: string) {
   } else {
     // Select guinea pig for interaction
     guineaPigStore.selectGuineaPig(guineaPigId)
+    // Emit event for parent to handle sidebar switching
+    emit('guinea-pig-selected', guineaPigId)
   }
 
   // System 20 will display interaction menu when guinea pig is selected
@@ -1088,11 +1116,13 @@ defineExpose({
 
 .habitat-visual__scroll-container {
   overflow-x: auto;
-  overflow-y: auto;
+  overflow-y: visible;
   max-inline-size: 100%;
   max-block-size: 100%;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-lg);
+  padding-block-start: 80px; /* Space for chat bubbles at top */
+  margin-block-start: -80px; /* Offset the padding */
 }
 
 /* Desktop: Remove scrollbar if content fits */

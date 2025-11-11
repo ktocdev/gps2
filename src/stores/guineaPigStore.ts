@@ -186,7 +186,7 @@ export interface GuineaPig {
   observed: boolean                  // True if player has used Observe on this guinea pig
 
   // Pet Adoption organization
-  cageNumber: number | null          // Habitat assignment in pet adoption (null if not in adoption center)
+  habitat: number | null          // Habitat assignment in pet adoption (null if not in adoption center)
 
   // Tracking data
   totalInteractions: number
@@ -400,6 +400,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
         '🔄',
         { guineaPigIds: ids, names }
       )
+    }
+
+    // System 21: Auto-create bonds when setting active pair
+    if (ids.length >= 2) {
+      ensureBondsExist()
     }
 
     return true
@@ -1650,7 +1655,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     newBonds.set(bondId, bond)
     activeBonds.value = newBonds
 
-    getLoggingStore().info(`Bond created between ${gp1.name} and ${gp2.name} (compatibility: ${compatibilityScore})`)
+    getLoggingStore().logInfo(`Bond created between ${gp1.name} and ${gp2.name} (compatibility: ${compatibilityScore})`)
     return bond
   }
 
@@ -1724,7 +1729,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     if (bond.bondingTier !== previousTier) {
       const gp1 = collection.value.guineaPigs[bond.guineaPig1Id]
       const gp2 = collection.value.guineaPigs[bond.guineaPig2Id]
-      getLoggingStore().info(`${gp1?.name} and ${gp2?.name} bonding tier changed: ${previousTier} → ${bond.bondingTier}`)
+      getLoggingStore().logInfo(`${gp1?.name} and ${gp2?.name} bonding tier changed: ${previousTier} → ${bond.bondingTier}`)
     }
 
     return true
@@ -1816,6 +1821,12 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    */
   const getBondsForGuineaPig = (guineaPigId: string): ActiveBond[] => {
     ensureActiveBondsIsMap()
+
+    // Auto-create bonds if they don't exist yet
+    if (activeBonds.value.size === 0 && activeGuineaPigs.value.length >= 2) {
+      ensureBondsExist()
+    }
+
     const bonds: ActiveBond[] = []
 
     for (const bond of activeBonds.value.values()) {
@@ -1898,6 +1909,15 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       cleanlinessMin: 40,
       beddingMin: 40
     }
+  }
+
+  /**
+   * Clear all bonds (called when starting a new game session)
+   */
+  const clearAllBonds = (): void => {
+    ensureActiveBondsIsMap()
+    activeBonds.value.clear()
+    console.log('🧹 Cleared all social bonds')
   }
 
   /**
@@ -2054,6 +2074,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     increaseBonding,
     getAllBonds,
     ensureBondsExist,
+    clearAllBonds,
 
     // Personality-Based Habitat Sensitivity
     getHabitatSensitivityThresholds,
@@ -2130,6 +2151,26 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 }, {
   persist: {
     key: 'gps2-guinea-pig-store',
-    storage: localStorage
+    storage: localStorage,
+    serializer: {
+      serialize: (state: any) => {
+        // Convert activeBonds Map to array for serialization
+        const serializedState = {
+          ...state,
+          activeBonds: Array.from(state.activeBonds.entries())
+        }
+        return JSON.stringify(serializedState)
+      },
+      deserialize: (value: string) => {
+        const state = JSON.parse(value)
+        // Convert activeBonds array back to Map
+        if (Array.isArray(state.activeBonds)) {
+          state.activeBonds = new Map(state.activeBonds)
+        } else {
+          state.activeBonds = new Map()
+        }
+        return state
+      }
+    }
   }
 })

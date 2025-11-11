@@ -314,6 +314,33 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       }
     }
 
+    // Update currentBedding to track the bedding type used (for color effects)
+    if (beddingType && beddingItems.length > 0) {
+      const usedItemId = beddingItems[0].itemId // Use the first item's ID since they're all the same type
+      const beddingItem = suppliesStore.getItemById(usedItemId)
+      if (beddingItem) {
+        // Extract color from bedding ID (e.g., "bedding_color_pink" → "pink")
+        let color: string | undefined
+        if (usedItemId.startsWith('bedding_color_')) {
+          color = usedItemId.replace('bedding_color_', '') // "pink", "blue", etc.
+        } else if (beddingType === 'cheap') {
+          color = 'beige'
+        } else if (beddingType === 'premium') {
+          color = 'white-cyan'
+        } else {
+          color = 'yellow' // average/regular
+        }
+
+        currentBedding.value = {
+          type: beddingItem.name,
+          quality: beddingItem.quality as 'cheap' | 'average' | 'premium' | 'colorful-premium',
+          absorbency: beddingItem.stats?.absorbency || CONSUMPTION.DEFAULT_ABSORBENCY,
+          decayRate: beddingItem.stats?.decayRate || CONSUMPTION.DEFAULT_DECAY_RATE,
+          color
+        }
+      }
+    }
+
     return remaining <= 0.001 // Success if we consumed all needed
   }
 
@@ -350,6 +377,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       if (success) {
         dirtiness.value = Math.max(0, dirtiness.value - cleaningPercent)
         cleanliness.value = Math.min(100, 100 - dirtiness.value)
+        beddingFreshness.value = Math.min(100, beddingFreshness.value + cleaningPercent)
         lastCleaningTime.value = Date.now()
         poops.value = [] // Remove all poops
         recordSnapshot()
@@ -371,6 +399,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     if (success) {
       dirtiness.value = 0
       cleanliness.value = HABITAT_CONDITIONS.RESET_VALUE
+      beddingFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
       lastCleaningTime.value = Date.now()
       poops.value = [] // Remove all poops
       recordSnapshot()
@@ -388,6 +417,39 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     return {
       success: false,
       message: 'Failed to clean habitat'
+    }
+  }
+
+  /**
+   * Quick clean - removes all poop without consuming bedding
+   * Quick maintenance action between full cleans
+   */
+  function quickClean(): { success: boolean; message: string; poopsRemoved: number } {
+    const poopCount = poops.value.length
+
+    if (poopCount === 0) {
+      return {
+        success: true,
+        message: 'No poop to remove!',
+        poopsRemoved: 0
+      }
+    }
+
+    // Remove all poops
+    poops.value = []
+
+    // Slightly improve cleanliness (but not as much as full clean)
+    // Each poop removal adds back a small amount of cleanliness
+    const cleanlinessImprovement = Math.min(20, poopCount * 5)
+    cleanliness.value = Math.min(100, cleanliness.value + cleanlinessImprovement)
+    dirtiness.value = Math.max(0, 100 - cleanliness.value)
+
+    recordSnapshot()
+
+    return {
+      success: true,
+      message: `Removed ${poopCount} poop${poopCount > 1 ? 's' : ''}! Habitat is a bit cleaner.`,
+      poopsRemoved: poopCount
     }
   }
 
@@ -601,6 +663,74 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Record initial snapshot
     recordSnapshot()
+  }
+
+  /**
+   * Reset habitat to default starter state for a new game session
+   * Returns all non-starter items to inventory and clears all contents
+   */
+  function resetToStarterHabitat() {
+    const inventoryStore = useInventoryStore()
+
+    // Define starter item IDs (default items that should remain)
+    const starterItemIds = [
+      'habitat_basic_water_bottle',
+      'habitat_plastic_igloo',
+      'habitat_ceramic_bowl',
+      'habitat_basic_hay_rack'
+    ]
+
+    // Return all non-starter items to inventory
+    const itemsToRemove = habitatItems.value.filter(itemId => !starterItemIds.includes(itemId))
+
+    for (const itemId of itemsToRemove) {
+      // Remove placement flag
+      inventoryStore.unmarkAsPlacedInHabitat(itemId, 1)
+
+      // Remove position tracking
+      itemPositions.value.delete(itemId)
+
+      // Remove from habitat
+      const index = habitatItems.value.indexOf(itemId)
+      if (index !== -1) {
+        habitatItems.value.splice(index, 1)
+      }
+
+      console.log(`📦 Returned ${itemId} to inventory`)
+    }
+
+    // Reset habitat items to only starter items
+    habitatItems.value = [...starterItemIds]
+
+    // Reset positions to default
+    starterItemIds.forEach(itemId => {
+      if (itemId in STARTER_HABITAT_POSITIONS) {
+        const position = STARTER_HABITAT_POSITIONS[itemId as keyof typeof STARTER_HABITAT_POSITIONS]
+        itemPositions.value.set(itemId, position)
+      }
+    })
+
+    // Clear all bowls
+    clearAllBowls()
+
+    // Clear all hay racks
+    clearAllHayRacks()
+
+    // Remove all poop
+    poops.value.length = 0
+
+    // Reset all guinea pig positions
+    guineaPigPositions.value.clear()
+
+    // Clear item usage history for non-starter items
+    for (const itemId of itemsToRemove) {
+      itemUsageHistory.value.delete(itemId)
+    }
+
+    // Reset conditions to 100%
+    resetHabitatConditions()
+
+    console.log(`🏠 Habitat reset to starter state with ${starterItemIds.length} default items`)
   }
 
   function addItemToHabitat(itemId: string, position?: { x: number; y: number }) {
@@ -1145,6 +1275,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Actions
     cleanCage,
+    quickClean,
     calculateBeddingNeeded,
     getTotalBeddingAvailable,
     addPoop,
@@ -1156,6 +1287,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     updateCondition,
     recordSnapshot,
     resetHabitatConditions,
+    resetToStarterHabitat,
     addItemToHabitat,
     removeItemFromHabitat,
     initializeStarterHabitat,

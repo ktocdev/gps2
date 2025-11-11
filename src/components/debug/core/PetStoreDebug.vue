@@ -580,7 +580,7 @@ const activeGuineaPigsByHabitat = computed(() => {
   for (const guineaPig of sortedAvailableGuineaPigs.value) {
     if (!isGuineaPigActive(guineaPig.id)) continue
 
-    const habitat = guineaPig.cageNumber ?? 0
+    const habitat = guineaPig.habitat ?? 0
     if (!grouped.has(habitat)) {
       grouped.set(habitat, [])
     }
@@ -597,7 +597,7 @@ const inactiveGuineaPigsByHabitat = computed(() => {
   for (const guineaPig of sortedAvailableGuineaPigs.value) {
     if (isGuineaPigActive(guineaPig.id)) continue
 
-    const habitat = guineaPig.cageNumber ?? 0
+    const habitat = guineaPig.habitat ?? 0
     if (!grouped.has(habitat)) {
       grouped.set(habitat, [])
     }

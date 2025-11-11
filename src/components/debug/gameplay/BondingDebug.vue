@@ -16,101 +16,104 @@
     </div>
 
     <div v-else>
-      <!-- Active Bonds Overview -->
-      <div class="panel panel--compact mb-6">
-        <div class="panel__header">
-          <h3>Active Bonds ({{ allBonds.length }})</h3>
-        </div>
-        <div class="panel__content">
-          <div v-if="allBonds.length === 0" class="text-center text--muted">
-            No bonds created yet
+      <!-- Three Column Layout -->
+      <div class="panel-row panel-row--grid-3">
+        <!-- Active Bonds Overview -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Active Bonds</h3>
           </div>
-          <div v-else class="bonding-debug__bonds-grid">
-            <div v-for="bond in allBonds" :key="bond.id" class="bonding-debug__bond-card">
-              <div class="bond-header">
-                <span class="bond-names">{{ getGuineaPigName(bond.guineaPig1Id) }} & {{ getGuineaPigName(bond.guineaPig2Id) }}</span>
-                <span class="bond-tier" :class="`bond-tier--${bond.bondingTier}`">{{ formatTier(bond.bondingTier) }}</span>
-              </div>
-
-              <div class="stats-grid mb-3">
-                <div class="stat-item">
-                  <span class="stat-label">Bonding Level:</span>
-                  <span class="stat-value">{{ Math.round(bond.bondingLevel) }}%</span>
+          <div class="panel__content">
+            <div v-if="allBonds.length === 0" class="text-center text--muted">
+              No bonds created yet
+            </div>
+            <div v-else class="bonding-debug__bonds-list">
+              <div v-for="bond in allBonds" :key="bond.id" class="bonding-debug__bond-card">
+                <div class="bond-header">
+                  <span class="bond-names">{{ getGuineaPigName(bond.guineaPig1Id) }} & {{ getGuineaPigName(bond.guineaPig2Id) }}</span>
+                  <span class="bond-tier" :class="`bond-tier--${bond.bondingTier}`">{{ formatTier(bond.bondingTier) }}</span>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-label">Compatibility:</span>
-                  <span class="stat-value">{{ bond.compatibilityScore }}/100</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Total Interactions:</span>
-                  <span class="stat-value">{{ bond.totalInteractions }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Proximity Time:</span>
-                  <span class="stat-value">{{ bond.proximityTime.toFixed(1) }}h</span>
-                </div>
-              </div>
 
-              <div class="progress-bar mb-3">
-                <div class="progress-bar__fill" :style="{ width: bond.bondingLevel + '%' }"></div>
-              </div>
+                <div class="stats-grid mb-3">
+                  <div class="stat-item">
+                    <span class="stat-label">Bonding Level:</span>
+                    <span class="stat-value">{{ Math.round(bond.bondingLevel) }}%</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Compatibility:</span>
+                    <span class="stat-value">{{ bond.compatibilityScore }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Total Interactions:</span>
+                    <span class="stat-value">{{ bond.totalInteractions }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Proximity Time:</span>
+                    <span class="stat-value">{{ bond.proximityTime.toFixed(1) }}h</span>
+                  </div>
+                </div>
 
-              <div class="bond-benefits">
-                <span class="text-label text-label--muted">Benefits:</span>
-                <ul class="text-label--small">
-                  <li>Social decay: {{ getBenefits(bond.bondingLevel).socialDecayModifier }}x</li>
-                  <li>Proximity bonus: {{ getBenefits(bond.bondingLevel).proximityBonus }}x</li>
-                  <li>Interaction frequency: {{ getBenefits(bond.bondingLevel).interactionFrequency }}x</li>
-                </ul>
-              </div>
+                <div class="progress-bar mb-3">
+                  <div class="progress-bar__fill" :style="{ width: bond.bondingLevel + '%' }"></div>
+                </div>
 
-              <!-- Manual Triggers -->
-              <div class="button-group mt-3">
-                <Button @click="triggerGrooming(bond)" size="sm" variant="secondary">🧼 Groom</Button>
-                <Button @click="triggerPlayTogether(bond)" size="sm" variant="secondary">🎮 Play</Button>
-                <Button @click="triggerExplore(bond)" size="sm" variant="secondary">🗺️ Explore</Button>
+                <div class="bond-benefits">
+                  <span class="text-label text-label--muted">Benefits:</span>
+                  <ul class="text-label--small">
+                    <li>Social decay: {{ getBenefits(bond.bondingLevel).socialDecayModifier }}x</li>
+                    <li>Proximity bonus: {{ getBenefits(bond.bondingLevel).proximityBonus }}x</li>
+                    <li>Interaction frequency: {{ getBenefits(bond.bondingLevel).interactionFrequency }}x</li>
+                  </ul>
+                </div>
+
+                <!-- Manual Triggers -->
+                <div class="button-group mt-3">
+                  <Button @click="triggerGrooming(bond)" size="sm" variant="secondary">🧼 Groom</Button>
+                  <Button @click="triggerPlayTogether(bond)" size="sm" variant="secondary">🎮 Play</Button>
+                  <Button @click="triggerExplore(bond)" size="sm" variant="secondary">🗺️ Explore</Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Bonding History -->
-      <div class="panel panel--compact mb-6">
-        <div class="panel__header">
-          <h3>Recent Bonding Events</h3>
-        </div>
-        <div class="panel__content">
-          <div v-if="recentEvents.length === 0" class="text-center text--muted">
-            No bonding events yet
+        <!-- Bonding History -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Recent Bonding Events</h3>
           </div>
-          <div v-else class="bonding-debug__events">
-            <div v-for="event in recentEvents" :key="event.id" class="bonding-debug__event">
-              <div class="event-header">
-                <span class="event-type">{{ formatEventType(event.type) }}</span>
-                <span class="event-time">{{ formatTimestamp(event.timestamp) }}</span>
-              </div>
-              <div class="event-description text-label--small">{{ event.description }}</div>
-              <div class="event-change text-label--small" :class="event.bondingChange > 0 ? 'text--success' : ''">
-                +{{ event.bondingChange.toFixed(1) }} bonding
+          <div class="panel__content">
+            <div v-if="recentEvents.length === 0" class="text-center text--muted">
+              No bonding events yet
+            </div>
+            <div v-else class="bonding-debug__events">
+              <div v-for="event in recentEvents" :key="event.id" class="bonding-debug__event">
+                <div class="event-header">
+                  <span class="event-type">{{ formatEventType(event.type) }}</span>
+                  <span class="event-time">{{ formatTimestamp(event.timestamp) }}</span>
+                </div>
+                <div class="event-description text-label--small">{{ event.description }}</div>
+                <div class="event-change text-label--small" :class="event.bondingChange > 0 ? 'text--success' : ''">
+                  +{{ event.bondingChange.toFixed(1) }} bonding
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Compatibility Breakdown -->
-      <div class="panel panel--compact">
-        <div class="panel__header">
-          <h3>Compatibility Analysis</h3>
-        </div>
-        <div class="panel__content">
-          <div v-for="bond in allBonds" :key="bond.id" class="mb-4">
-            <h4 class="text-label mb-2">{{ getGuineaPigName(bond.guineaPig1Id) }} & {{ getGuineaPigName(bond.guineaPig2Id) }}</h4>
-            <div class="compatibility-breakdown">
-              <div v-for="[factor, score] in getCompatibilityFactors(bond)" :key="factor" class="compatibility-factor">
-                <span class="factor-name text-label--small">{{ formatFactorName(factor) }}:</span>
-                <span class="factor-score">{{ score }}</span>
+        <!-- Compatibility Breakdown -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Compatibility Analysis</h3>
+          </div>
+          <div class="panel__content">
+            <div v-for="bond in allBonds" :key="bond.id" class="mb-4">
+              <h4 class="text-label mb-2">{{ getGuineaPigName(bond.guineaPig1Id) }} & {{ getGuineaPigName(bond.guineaPig2Id) }}</h4>
+              <div class="stats-grid">
+                <div v-for="[factor, score] in getCompatibilityFactors(bond)" :key="factor" class="stat-item">
+                  <span class="stat-label">{{ formatFactorName(factor) }}:</span>
+                  <span class="stat-value">{{ score }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -211,16 +214,16 @@ function formatFactorName(factor: string): string {
 </script>
 
 <style>
-.bonding-debug__bonds-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--spacing-4);
+.bonding-debug__bonds-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
 }
 
 .bonding-debug__bond-card {
-  padding: var(--spacing-4);
-  background: var(--color-surface-secondary);
-  border-radius: var(--border-radius-md);
+  padding: var(--space-4);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
 }
 
@@ -228,7 +231,7 @@ function formatFactorName(factor: string): string {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-block-end: var(--spacing-3);
+  margin-block-end: var(--space-3);
 }
 
 .bond-names {
@@ -237,53 +240,53 @@ function formatFactorName(factor: string): string {
 }
 
 .bond-tier {
-  padding: var(--spacing-1) var(--spacing-2);
-  border-radius: var(--border-radius-sm);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
 }
 
 .bond-tier--neutral {
-  background: var(--color-gray-200);
-  color: var(--color-gray-700);
+  background: var(--color-neutral-200);
+  color: var(--color-neutral-700);
 }
 
 .bond-tier--friends {
-  background: var(--color-blue-100);
-  color: var(--color-blue-700);
+  background: var(--color-secondary-bg);
+  color: var(--color-secondary);
 }
 
 .bond-tier--bonded {
-  background: var(--color-pink-100);
-  color: var(--color-pink-700);
+  background: var(--color-accent-pink-100);
+  color: var(--color-accent-pink-700);
 }
 
 .bond-benefits {
-  margin-block-start: var(--spacing-3);
+  margin-block-start: var(--space-3);
 }
 
 .bond-benefits ul {
-  margin-block-start: var(--spacing-1);
-  padding-inline-start: var(--spacing-4);
+  margin-block-start: var(--space-1);
+  padding-inline-start: var(--space-4);
 }
 
 .bonding-debug__events {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  gap: var(--space-3);
 }
 
 .bonding-debug__event {
-  padding: var(--spacing-3);
-  background: var(--color-surface-secondary);
-  border-radius: var(--border-radius-sm);
+  padding: var(--space-3);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
   border-inline-start: 3px solid var(--color-primary);
 }
 
 .event-header {
   display: flex;
   justify-content: space-between;
-  margin-block-end: var(--spacing-2);
+  margin-block-end: var(--space-2);
 }
 
 .event-type {
@@ -297,24 +300,7 @@ function formatFactorName(factor: string): string {
 }
 
 .event-change {
-  margin-block-start: var(--spacing-1);
-  font-weight: var(--font-weight-medium);
-}
-
-.compatibility-breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-2);
-}
-
-.compatibility-factor {
-  display: grid;
-  grid-template-columns: 120px 50px;
-  gap: var(--spacing-2);
-  align-items: center;
-}
-
-.factor-score {
+  margin-block-start: var(--space-1);
   font-weight: var(--font-weight-medium);
 }
 </style>
