@@ -161,12 +161,8 @@ function handleDialogClose(value: boolean) {
   justify-content: flex-end;
 }
 
-/* Enhanced for larger screens */
-@media (min-width: 641px) {
-  /* Dialog already has good padding defaults */
-}
-  }
-
+/* Mobile styles */
+@media (max-width: 640px) {
   .confirm-dialog__footer {
     padding-block-start: var(--space-3);
     padding-block-end: var(--space-5);

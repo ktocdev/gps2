@@ -7,6 +7,30 @@
         position="bottom"
       />
     </h2>
+
+    <!-- Sanctuary Confirmation Dialog -->
+    <ConfirmDialog
+      v-model="showSanctuaryDialog"
+      title="Move to Stardust Sanctuary?"
+      confirm-text="Move to Sanctuary"
+      cancel-text="Cancel"
+      @confirm="confirmMoveToSanctuary"
+      @cancel="cancelMoveToSanctuary"
+    >
+      <p v-if="selectedGuineaPigForSanctuary">
+        <span class="sanctuary-dialog__names">{{ sanctuaryDialogNames }}</span> will be moved to Stardust Sanctuary together.
+      </p>
+      <div class="sanctuary-dialog__info">
+        <p class="sanctuary-dialog__info-text">While in sanctuary:</p>
+        <ul class="sanctuary-dialog__list">
+          <li>✨ Both guinea pigs will stay until you bring out a new pair</li>
+          <li>💖 Their friendship will be frozen at the current level</li>
+          <li>💯 Their needs will be reset to 100%</li>
+          <li>🏠 The habitat will be reset and cleaned</li>
+        </ul>
+      </div>
+    </ConfirmDialog>
+
     <div class="panel-row">
     <!-- Active Guinea Pigs Section -->
     <div class="panel panel--compact">
@@ -135,7 +159,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { usePetStoreManager } from '../../../stores/petStoreManager'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import FriendshipProgress from '../../game/ui/FriendshipProgress.vue'
@@ -143,16 +167,48 @@ import Button from '../../basic/Button.vue'
 import Badge from '../../basic/Badge.vue'
 import BlockMessage from '../../basic/BlockMessage.vue'
 import InfoButton from '../../basic/InfoButton.vue'
+import ConfirmDialog from '../../basic/dialogs/ConfirmDialog.vue'
 
 const petStoreManager = usePetStoreManager()
 const guineaPigStore = useGuineaPigStore()
+
+const showSanctuaryDialog = ref(false)
+const selectedGuineaPigForSanctuary = ref<string | null>(null)
 
 const activeGuineaPigs = computed(() => {
   return guineaPigStore.activeGuineaPigs
 })
 
+const sanctuaryDialogNames = computed(() => {
+  if (!selectedGuineaPigForSanctuary.value) return ''
+
+  const guineaPig = guineaPigStore.collection.guineaPigs[selectedGuineaPigForSanctuary.value]
+  if (!guineaPig) return ''
+
+  // Find cagemate (the other active guinea pig)
+  const cagemate = activeGuineaPigs.value.find(gp => gp.id !== selectedGuineaPigForSanctuary.value)
+
+  if (cagemate) {
+    return `${guineaPig.name} and ${cagemate.name}`
+  }
+
+  return guineaPig.name
+})
+
 const handleMoveToSanctuary = (guineaPigId: string) => {
-  petStoreManager.moveToSanctuary(guineaPigId)
+  selectedGuineaPigForSanctuary.value = guineaPigId
+  showSanctuaryDialog.value = true
+}
+
+const confirmMoveToSanctuary = () => {
+  if (selectedGuineaPigForSanctuary.value) {
+    petStoreManager.moveToSanctuary(selectedGuineaPigForSanctuary.value)
+  }
+  selectedGuineaPigForSanctuary.value = null
+}
+
+const cancelMoveToSanctuary = () => {
+  selectedGuineaPigForSanctuary.value = null
 }
 
 const handleMoveFromSanctuary = (guineaPigId: string) => {
@@ -234,5 +290,44 @@ const handleMoveFromSanctuary = (guineaPigId: string) => {
 
 .mt-4 {
   margin-block-start: var(--space-4);
+}
+
+/* Sanctuary Dialog Styles */
+.sanctuary-dialog__names {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
+}
+
+.sanctuary-dialog__info {
+  margin-block-start: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+}
+
+.sanctuary-dialog__info-text {
+  margin: 0;
+  margin-block-end: var(--space-3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.sanctuary-dialog__list {
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  list-style-type: none;
+}
+
+.sanctuary-dialog__list li {
+  position: relative;
+  padding-inline-start: var(--space-2);
+  margin-block-end: var(--space-2);
+  line-height: var(--line-height-normal);
+  color: var(--color-text-secondary);
+}
+
+.sanctuary-dialog__list li:last-child {
+  margin-block-end: 0;
 }
 </style>

@@ -531,8 +531,19 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       return false
     }
 
-    // Remove from active session if applicable
+    // Find cagemate (the other active guinea pig)
+    let cagemate: GuineaPig | null = null
+    let cagemateId: string | null = null
     const isActive = activeGameSession.value?.guineaPigIds.includes(guineaPigId) ?? false
+    if (isActive && activeGameSession.value) {
+      const otherIds = activeGameSession.value.guineaPigIds.filter(id => id !== guineaPigId)
+      if (otherIds.length > 0) {
+        cagemateId = otherIds[0]
+        cagemate = guineaPigStore.collection.guineaPigs[cagemateId]
+      }
+    }
+
+    // Remove from active session if applicable
     if (isActive && activeGameSession.value) {
       const index = activeGameSession.value.guineaPigIds.indexOf(guineaPigId)
       if (index !== -1) {
@@ -553,17 +564,56 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Add to sanctuary (create copy to avoid reference issues)
     sanctuaryGuineaPigs.value.push({ ...guineaPig })
 
-    getLoggingStore().addPlayerAction(
-      `${guineaPig.name} has moved to Stardust Sanctuary! ✨`,
-      '✨',
-      { guineaPigId, name: guineaPig.name, friendship: guineaPig.friendship }
-    )
+    // Move cagemate if exists
+    if (cagemate && cagemateId) {
+      const cagemateIndex = activeGameSession.value!.guineaPigIds.indexOf(cagemateId)
+      if (cagemateIndex !== -1) {
+        activeGameSession.value!.guineaPigIds.splice(cagemateIndex, 1)
+      }
+      guineaPigStore.removeFromActivePair(cagemateId)
+
+      // Reset needs to 100%
+      guineaPigStore.resetGuineaPigNeeds(cagemateId)
+
+      // Freeze friendship
+      cagemate.friendshipFrozen = true
+
+      // Phase 5: Save bonds with other sanctuary guinea pigs
+      saveBonds(cagemateId)
+
+      // Add to sanctuary
+      sanctuaryGuineaPigs.value.push({ ...cagemate })
+
+      getLoggingStore().addPlayerAction(
+        `${guineaPig.name} and ${cagemate.name} have moved to Stardust Sanctuary together! ✨`,
+        '✨',
+        { guineaPigId, cagemateId, name1: guineaPig.name, name2: cagemate.name }
+      )
+    } else {
+      getLoggingStore().addPlayerAction(
+        `${guineaPig.name} has moved to Stardust Sanctuary! ✨`,
+        '✨',
+        { guineaPigId, name: guineaPig.name, friendship: guineaPig.friendship }
+      )
+    }
+
+    // End session if all guinea pigs are now in sanctuary
+    if (activeGameSession.value && activeGameSession.value.guineaPigIds.length === 0) {
+      const gameController = useGameController()
+      gameController.stopGame()
+      activeGameSession.value = null
+      getLoggingStore().addPlayerAction(
+        'Game session ended - all guinea pigs in Stardust Sanctuary 🌟',
+        '🌟'
+      )
+    }
 
     return true
   }
 
   /**
    * Move a guinea pig from Stardust Sanctuary back to active
+   * Automatically brings cagemate if currently active
    */
   function moveFromSanctuary(guineaPigId: string): boolean {
     const index = sanctuaryGuineaPigs.value.findIndex(gp => gp.id === guineaPigId)
@@ -572,18 +622,70 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       return false
     }
 
-    // Check if can add to active session (max 2)
+    const guineaPig = sanctuaryGuineaPigs.value[index]
+
+    // Find if there's a current active guinea pig (cagemate)
+    const guineaPigStore = useGuineaPigStore()
+    let cagemate: GuineaPig | null = null
+    let cagemateId: string | null = null
     const currentActive = activeGameSession.value?.guineaPigIds.length ?? 0
-    if (currentActive >= 2) {
+
+    if (currentActive === 1 && activeGameSession.value) {
+      cagemateId = activeGameSession.value.guineaPigIds[0]
+      cagemate = guineaPigStore.collection.guineaPigs[cagemateId]
+    }
+
+    // Check if can add to active session (max 2)
+    // If there's currently 1 active and we're bringing one back, we need to move current to sanctuary
+    if (currentActive === 2) {
       getLoggingStore().addPlayerAction(
-        `Cannot activate more than 2 guinea pigs at once. Deactivate one first 🚫`,
+        `Cannot activate more than 2 guinea pigs at once. Deactivate some first 🚫`,
         '🚫',
         { guineaPigId }
       )
       return false
     }
 
-    const guineaPig = sanctuaryGuineaPigs.value[index]
+    // Reset habitat when reactivating from sanctuary (fresh start)
+    const habitatConditions = useHabitatConditions()
+    habitatConditions.resetHabitatConditions()
+
+    // Remove all poop
+    habitatConditions.poops.length = 0
+
+    // Clear all food from bowls
+    habitatConditions.clearAllBowls()
+
+    // Set average bedding (free on reactivation)
+    habitatConditions.currentBedding = {
+      type: 'Average Bedding',
+      quality: 'average',
+      absorbency: 1.0,
+      decayRate: 1.0,
+      color: 'yellow'
+    }
+
+    // If there's a cagemate, move it to sanctuary first
+    if (cagemate && cagemateId && activeGameSession.value) {
+      // Remove cagemate from active
+      const cagemateIndex = activeGameSession.value.guineaPigIds.indexOf(cagemateId)
+      if (cagemateIndex !== -1) {
+        activeGameSession.value.guineaPigIds.splice(cagemateIndex, 1)
+      }
+      guineaPigStore.removeFromActivePair(cagemateId)
+
+      // Reset needs to 100%
+      guineaPigStore.resetGuineaPigNeeds(cagemateId)
+
+      // Freeze friendship
+      cagemate.friendshipFrozen = true
+
+      // Save bonds
+      saveBonds(cagemateId)
+
+      // Add to sanctuary
+      sanctuaryGuineaPigs.value.push({ ...cagemate })
+    }
 
     // Remove from sanctuary
     sanctuaryGuineaPigs.value.splice(index, 1)
@@ -592,7 +694,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     guineaPig.friendshipFrozen = false
 
     // Add to active session
-    const guineaPigStore = useGuineaPigStore()
     if (!activeGameSession.value) {
       // Create new session
       startGameSession([guineaPigId])
@@ -602,11 +703,20 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
       guineaPigStore.addToActivePair(guineaPigId)
     }
 
-    getLoggingStore().addPlayerAction(
-      `${guineaPig.name} has returned from Stardust Sanctuary! 💚`,
-      '💚',
-      { guineaPigId, name: guineaPig.name }
-    )
+    // Log the movement
+    if (cagemate) {
+      getLoggingStore().addPlayerAction(
+        `${guineaPig.name} has returned from Stardust Sanctuary! ${cagemate.name} moved to sanctuary 💚✨`,
+        '💚',
+        { guineaPigId, cagemateId, name1: guineaPig.name, name2: cagemate.name }
+      )
+    } else {
+      getLoggingStore().addPlayerAction(
+        `${guineaPig.name} has returned from Stardust Sanctuary! 💚`,
+        '💚',
+        { guineaPigId, name: guineaPig.name }
+      )
+    }
 
     return true
   }
@@ -910,18 +1020,38 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     // Guinea pigs come from either available pool or sanctuary
     for (const guineaPigId of guineaPigIds) {
       let guineaPig = availableGuineaPigs.value.find(gp => gp.id === guineaPigId)
+      let fromSanctuary = false
 
       // If not in available pool, check sanctuary
       if (!guineaPig) {
         guineaPig = sanctuaryGuineaPigs.value.find(gp => gp.id === guineaPigId)
+        fromSanctuary = true
       }
 
       if (guineaPig) {
         // Clear adoption timer when guinea pig becomes active
         guineaPig.adoptionTimer = null
 
+        // Unfreeze friendship if coming from sanctuary
+        if (fromSanctuary) {
+          guineaPig.friendshipFrozen = false
+        }
+
         // Add to guinea pig store collection
         guineaPigStore.collection.guineaPigs[guineaPigId] = { ...guineaPig }
+
+        // Remove from source array
+        if (fromSanctuary) {
+          const index = sanctuaryGuineaPigs.value.findIndex(gp => gp.id === guineaPigId)
+          if (index !== -1) {
+            sanctuaryGuineaPigs.value.splice(index, 1)
+          }
+        } else {
+          const index = availableGuineaPigs.value.findIndex(gp => gp.id === guineaPigId)
+          if (index !== -1) {
+            availableGuineaPigs.value.splice(index, 1)
+          }
+        }
       }
     }
 

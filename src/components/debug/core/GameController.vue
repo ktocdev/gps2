@@ -97,7 +97,7 @@
           </div>
           <div class="panel__content">
             <div class="guinea-pig-selection">
-              <template v-if="petStoreManager.activeGameSession">
+              <template v-if="petStoreManager.activeGameSession && guineaPigStore.activeGuineaPigs.length > 0">
                 <div class="form-field">
                   <label class="form-field__label">Guinea Pig 1</label>
                   <input
@@ -151,7 +151,7 @@
                 @click="gameController.pauseGame('manual')"
                 variant="secondary"
                 :disabled="!canPauseGame"
-                :title="!canPauseGame ? 'Game must be active to pause' : 'Pause the game'"
+                :title="guineaPigStore.activeGuineaPigs.length === 0 ? 'No active guinea pigs in habitat' : (!canPauseGame ? 'Game must be active to pause' : 'Pause the game')"
               >
                 Pause Game
               </Button>
@@ -159,7 +159,7 @@
                 @click="gameController.resumeGame()"
                 variant="secondary"
                 :disabled="!canResumeGame"
-                :title="!canResumeGame ? 'Game must be paused to resume' : 'Resume the game'"
+                :title="guineaPigStore.activeGuineaPigs.length === 0 ? 'No active guinea pigs in habitat' : (!canResumeGame ? 'Game must be paused to resume' : 'Resume the game')"
               >
                 Resume Game
               </Button>
@@ -366,12 +366,14 @@ const handleStartSession = () => {
 // Game Control State
 const canPauseGame = computed(() => {
   const hasActiveSession = petStoreManager.activeGameSession !== null
-  return gameController.gameState.currentState === 'playing' && hasActiveSession
+  const hasActiveGuineaPigs = guineaPigStore.activeGuineaPigs.length > 0
+  return gameController.gameState.currentState === 'playing' && hasActiveSession && hasActiveGuineaPigs
 })
 
 const canResumeGame = computed(() => {
   const hasActiveSession = petStoreManager.activeGameSession !== null
-  return gameController.gameState.currentState === 'paused' && hasActiveSession
+  const hasActiveGuineaPigs = guineaPigStore.activeGuineaPigs.length > 0
+  return gameController.gameState.currentState === 'paused' && hasActiveSession && hasActiveGuineaPigs
 })
 
 // System Controls
