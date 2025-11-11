@@ -21,7 +21,12 @@
                 <span v-if="(habitatVisualRef?.poopCount || 0) > 0">💩 {{ habitatVisualRef?.poopCount }} poops</span>
               </div>
             </div>
-            <HabitatVisual ref="habitatVisualRef" :show-grid="true" habitat-size="medium" />
+            <HabitatVisual
+              ref="habitatVisualRef"
+              :show-grid="true"
+              habitat-size="medium"
+              @guinea-pig-selected="handleGuineaPigSelected"
+            />
           </div>
           <div class="habitat-layout__sidebar">
             <InventorySidebar
@@ -34,6 +39,7 @@
               :fill-hay-racks-tooltip="fillHayRacksTooltip"
               :habitat-visual-ref="habitatVisualRef"
               @clean-cage="handleCleanCage"
+              @quick-clean="handleQuickClean"
               @refill-water="handleRefillWater"
               @fill-all-hay-racks="handleFillAllHayRacks"
               @clear-all-bowls="clearAllBowls"
@@ -390,15 +396,26 @@ const selectedGuineaPig = computed(() => {
   return guineaPigStore.getGuineaPig(guineaPigStore.selectedGuineaPigId)
 })
 
-// Auto-select first guinea pig when switching to Guinea Pigs sidebar
+// Auto-select first guinea pig when switching to Guinea Pigs or Autonomy sidebar
 watch(activeSidebar, (newSidebar) => {
-  if (newSidebar === 'socialize') {
+  if (newSidebar === 'socialize' || newSidebar === 'autonomy') {
     // If no guinea pig is selected and there are active guinea pigs, select the first one
     if (!guineaPigStore.selectedGuineaPigId && guineaPigStore.activeGuineaPigs.length > 0) {
       guineaPigStore.selectGuineaPig(guineaPigStore.activeGuineaPigs[0].id)
     }
   }
 })
+
+// Handle guinea pig click - switch to socialize sidebar unless on autonomy
+function handleGuineaPigSelected(guineaPigId: string) {
+  // If on autonomy sidebar, stay on autonomy and just update selection (already handled by store)
+  if (activeSidebar.value === 'autonomy') {
+    return
+  }
+
+  // Otherwise, switch to socialize (Guinea Pig) sidebar
+  activeSidebar.value = 'socialize'
+}
 
 async function showCareReaction(careType: 'cageClean' | 'beddingRefresh' | 'waterRefill' | 'hayRackFill' | 'bowlFill') {
   // Show chat bubble for all active guinea pigs
@@ -439,6 +456,16 @@ function confirmCleanCage(beddingType: string) {
     showCareReaction('cageClean')
   } else {
     console.warn(result.message)
+  }
+}
+
+function handleQuickClean() {
+  const result = habitat.quickClean()
+  if (result.success) {
+    loggingStore.addPlayerAction(result.message, '🧽')
+    if (result.poopsRemoved > 0) {
+      showCareReaction('quickClean')
+    }
   }
 }
 

@@ -32,7 +32,7 @@
           <div class="bedding-info__row">
             <span class="bedding-info__label">Selected Bedding Available:</span>
             <span class="bedding-info__value" :class="{ 'text-warning': selectedBeddingAvailable < beddingNeeded }">
-              {{ selectedBeddingAvailable.toFixed(1) }} bags
+              {{ selectedBeddingAvailable.toFixed(2) }} bags
             </span>
           </div>
         </div>
@@ -42,7 +42,7 @@
         </BlockMessage>
 
         <BlockMessage v-else-if="selectedBeddingAvailable < beddingNeeded" variant="warning">
-          ⚠️ Not enough bedding for full clean. Will use all {{ selectedBeddingAvailable.toFixed(1) }} bags for partial clean.
+          ⚠️ Not enough bedding for full clean. Will use all {{ selectedBeddingAvailable.toFixed(2) }} bags for partial clean.
         </BlockMessage>
 
         <BlockMessage v-else variant="success">
@@ -94,27 +94,41 @@ const inventoryStore = useInventoryStore()
 // Bedding selection
 const selectedBeddingType = ref<string>('average')
 
+// Helper function to calculate total amount remaining across all instances
+function getBeddingAmountRemaining(beddingId: string): number {
+  const inventoryItem = inventoryStore.itemsById.get(beddingId)
+  let totalAmount = 0
+
+  if (inventoryItem) {
+    for (const instance of inventoryItem.instances) {
+      totalAmount += instance.amountRemaining ?? 1 // Default to 1 (full bag) if not set
+    }
+  }
+
+  return totalAmount
+}
+
 const beddingOptions = computed(() => [
   {
     value: 'cheap',
-    label: `Cheap (${inventoryStore.getItemQuantity('bedding_cheap')} bags)`,
+    label: `Cheap (${getBeddingAmountRemaining('bedding_cheap').toFixed(2)} bags)`,
     disabled: !inventoryStore.hasItem('bedding_cheap')
   },
   {
     value: 'average',
-    label: `Average (${inventoryStore.getItemQuantity('bedding_average')} bags)`,
+    label: `Average (${getBeddingAmountRemaining('bedding_average').toFixed(2)} bags)`,
     disabled: !inventoryStore.hasItem('bedding_average')
   },
   {
     value: 'premium',
-    label: `Premium (${inventoryStore.getItemQuantity('bedding_premium')} bags)`,
+    label: `Premium (${getBeddingAmountRemaining('bedding_premium').toFixed(2)} bags)`,
     disabled: !inventoryStore.hasItem('bedding_premium')
   }
 ])
 
 const selectedBeddingAvailable = computed(() => {
   const itemId = `bedding_${selectedBeddingType.value}`
-  return inventoryStore.getItemQuantity(itemId)
+  return getBeddingAmountRemaining(itemId)
 })
 
 const selectedBeddingLabel = computed(() => {

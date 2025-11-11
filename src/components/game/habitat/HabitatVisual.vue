@@ -163,6 +163,10 @@ interface Props {
   showSubgrid?: boolean
 }
 
+interface Emits {
+  (e: 'guinea-pig-selected', guineaPigId: string): void
+}
+
 interface GridCell {
   x: number
   y: number
@@ -185,6 +189,8 @@ const props = withDefaults(defineProps<Props>(), {
   highlightCells: true,
   showSubgrid: false
 })
+
+const emit = defineEmits<Emits>()
 
 const habitatConditions = useHabitatConditions()
 const habitatContainers = useHabitatContainers()
@@ -282,6 +288,8 @@ function handleGuineaPigSelect(guineaPigId: string) {
   } else {
     // Select guinea pig for interaction
     guineaPigStore.selectGuineaPig(guineaPigId)
+    // Emit event for parent to handle sidebar switching
+    emit('guinea-pig-selected', guineaPigId)
   }
 
   // System 20 will display interaction menu when guinea pig is selected

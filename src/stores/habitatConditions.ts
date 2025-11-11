@@ -350,6 +350,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       if (success) {
         dirtiness.value = Math.max(0, dirtiness.value - cleaningPercent)
         cleanliness.value = Math.min(100, 100 - dirtiness.value)
+        beddingFreshness.value = Math.min(100, beddingFreshness.value + cleaningPercent)
         lastCleaningTime.value = Date.now()
         poops.value = [] // Remove all poops
         recordSnapshot()
@@ -371,6 +372,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     if (success) {
       dirtiness.value = 0
       cleanliness.value = HABITAT_CONDITIONS.RESET_VALUE
+      beddingFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
       lastCleaningTime.value = Date.now()
       poops.value = [] // Remove all poops
       recordSnapshot()
@@ -388,6 +390,39 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     return {
       success: false,
       message: 'Failed to clean habitat'
+    }
+  }
+
+  /**
+   * Quick clean - removes all poop without consuming bedding
+   * Quick maintenance action between full cleans
+   */
+  function quickClean(): { success: boolean; message: string; poopsRemoved: number } {
+    const poopCount = poops.value.length
+
+    if (poopCount === 0) {
+      return {
+        success: true,
+        message: 'No poop to remove!',
+        poopsRemoved: 0
+      }
+    }
+
+    // Remove all poops
+    poops.value = []
+
+    // Slightly improve cleanliness (but not as much as full clean)
+    // Each poop removal adds back a small amount of cleanliness
+    const cleanlinessImprovement = Math.min(20, poopCount * 5)
+    cleanliness.value = Math.min(100, cleanliness.value + cleanlinessImprovement)
+    dirtiness.value = Math.max(0, 100 - cleanliness.value)
+
+    recordSnapshot()
+
+    return {
+      success: true,
+      message: `Removed ${poopCount} poop${poopCount > 1 ? 's' : ''}! Habitat is a bit cleaner.`,
+      poopsRemoved: poopCount
     }
   }
 
@@ -1145,6 +1180,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
     // Actions
     cleanCage,
+    quickClean,
     calculateBeddingNeeded,
     getTotalBeddingAvailable,
     addPoop,

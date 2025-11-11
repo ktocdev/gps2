@@ -31,6 +31,18 @@
         @touchend="(_itemId, event) => handleServingTouchEnd(event, item)"
       />
 
+      <!-- Bedding (read-only) -->
+      <div
+        v-for="bedding in beddingItems"
+        :key="bedding.id"
+        class="inventory-sidebar__item-card inventory-sidebar__item-card--readonly"
+        :title="'Bedding is used automatically during habitat cleaning'"
+      >
+        <span class="inventory-sidebar__item-emoji no-select">{{ bedding.emoji }}</span>
+        <span class="inventory-sidebar__item-name no-select">{{ bedding.name }}</span>
+        <span class="inventory-sidebar__item-quantity no-select">{{ bedding.formattedQuantity }}</span>
+      </div>
+
       <!-- Regular habitat items and food -->
       <div
         v-for="item in regularItems"
@@ -161,6 +173,35 @@ const regularItems = computed(() => {
       }
     })
     .filter(item => item.availableCount > 0) // Only show if at least one is available
+})
+
+// Bedding items (read-only display with exact quantities)
+const beddingItems = computed(() => {
+  const beddingTypes = ['bedding_basic', 'bedding_average', 'bedding_premium']
+
+  return beddingTypes
+    .map(beddingId => {
+      // Calculate total amount remaining across all instances (bags) of this type
+      const inventoryItem = inventoryStore.itemsById.get(beddingId)
+      let totalAmount = 0
+
+      if (inventoryItem) {
+        for (const instance of inventoryItem.instances) {
+          totalAmount += instance.amountRemaining ?? 1 // Default to 1 (full bag) if not set
+        }
+      }
+
+      const item = suppliesStore.getItemById(beddingId)
+
+      return {
+        id: beddingId,
+        name: item?.name || 'Bedding',
+        emoji: item?.emoji || '🛏️',
+        quantity: totalAmount,
+        formattedQuantity: totalAmount > 0 ? `${totalAmount.toFixed(2)} bags` : '0 bags'
+      }
+    })
+    .filter(item => item.quantity > 0) // Only show bedding types that are owned
 })
 
 function getItemSize(item: any): { width: number; height: number } {
@@ -497,5 +538,26 @@ function handleTouchEndOnSidebar(_event: TouchEvent) {
   border-radius: var(--radius-full);
   line-height: 1;
   box-shadow: var(--shadow-sm);
+}
+
+/* Read-only items (bedding) */
+.inventory-sidebar__item-card--readonly {
+  cursor: default;
+  background-color: var(--color-bg-tertiary);
+  border-color: var(--color-border-medium);
+  border-style: solid;
+}
+
+.inventory-sidebar__item-card--readonly:hover {
+  transform: none;
+  border-color: var(--color-border-medium);
+  box-shadow: none;
+}
+
+.inventory-sidebar__item-quantity {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-inline-start: auto;
 }
 </style>
