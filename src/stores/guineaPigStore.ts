@@ -2130,6 +2130,26 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
 }, {
   persist: {
     key: 'gps2-guinea-pig-store',
-    storage: localStorage
+    storage: localStorage,
+    serializer: {
+      serialize: (state: any) => {
+        // Convert activeBonds Map to array for serialization
+        const serializedState = {
+          ...state,
+          activeBonds: Array.from(state.activeBonds.entries())
+        }
+        return JSON.stringify(serializedState)
+      },
+      deserialize: (value: string) => {
+        const state = JSON.parse(value)
+        // Convert activeBonds array back to Map
+        if (Array.isArray(state.activeBonds)) {
+          state.activeBonds = new Map(state.activeBonds)
+        } else {
+          state.activeBonds = new Map()
+        }
+        return state
+      }
+    }
   }
 })

@@ -123,6 +123,26 @@ const beddingOptions = computed(() => [
     value: 'premium',
     label: `Premium (${getBeddingAmountRemaining('bedding_premium').toFixed(2)} bags)`,
     disabled: !inventoryStore.hasItem('bedding_premium')
+  },
+  {
+    value: 'color_pink',
+    label: `🌸 Pink (${getBeddingAmountRemaining('bedding_color_pink').toFixed(2)} bags)`,
+    disabled: !inventoryStore.hasItem('bedding_color_pink')
+  },
+  {
+    value: 'color_blue',
+    label: `💙 Blue (${getBeddingAmountRemaining('bedding_color_blue').toFixed(2)} bags)`,
+    disabled: !inventoryStore.hasItem('bedding_color_blue')
+  },
+  {
+    value: 'color_purple',
+    label: `💜 Purple (${getBeddingAmountRemaining('bedding_color_purple').toFixed(2)} bags)`,
+    disabled: !inventoryStore.hasItem('bedding_color_purple')
+  },
+  {
+    value: 'color_green',
+    label: `💚 Green (${getBeddingAmountRemaining('bedding_color_green').toFixed(2)} bags)`,
+    disabled: !inventoryStore.hasItem('bedding_color_green')
   }
 ])
 

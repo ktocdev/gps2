@@ -314,6 +314,33 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       }
     }
 
+    // Update currentBedding to track the bedding type used (for color effects)
+    if (beddingType && beddingItems.length > 0) {
+      const usedItemId = beddingItems[0].itemId // Use the first item's ID since they're all the same type
+      const beddingItem = suppliesStore.getItemById(usedItemId)
+      if (beddingItem) {
+        // Extract color from bedding ID (e.g., "bedding_color_pink" → "pink")
+        let color: string | undefined
+        if (usedItemId.startsWith('bedding_color_')) {
+          color = usedItemId.replace('bedding_color_', '') // "pink", "blue", etc.
+        } else if (beddingType === 'cheap') {
+          color = 'beige'
+        } else if (beddingType === 'premium') {
+          color = 'white-cyan'
+        } else {
+          color = 'yellow' // average/regular
+        }
+
+        currentBedding.value = {
+          type: beddingItem.name,
+          quality: beddingItem.quality as 'cheap' | 'average' | 'premium' | 'colorful-premium',
+          absorbency: beddingItem.stats?.absorbency || CONSUMPTION.DEFAULT_ABSORBENCY,
+          decayRate: beddingItem.stats?.decayRate || CONSUMPTION.DEFAULT_DECAY_RATE,
+          color
+        }
+      }
+    }
+
     return remaining <= 0.001 // Success if we consumed all needed
   }
 
