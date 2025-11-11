@@ -16,101 +16,104 @@
     </div>
 
     <div v-else>
-      <!-- Active Bonds Overview -->
-      <div class="panel panel--compact mb-6">
-        <div class="panel__header">
-          <h3>Active Bonds ({{ allBonds.length }})</h3>
-        </div>
-        <div class="panel__content">
-          <div v-if="allBonds.length === 0" class="text-center text--muted">
-            No bonds created yet
+      <!-- Three Column Layout -->
+      <div class="panel-row panel-row--grid-3">
+        <!-- Active Bonds Overview -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Active Bonds</h3>
           </div>
-          <div v-else class="bonding-debug__bonds-grid">
-            <div v-for="bond in allBonds" :key="bond.id" class="bonding-debug__bond-card">
-              <div class="bond-header">
-                <span class="bond-names">{{ getGuineaPigName(bond.guineaPig1Id) }} & {{ getGuineaPigName(bond.guineaPig2Id) }}</span>
-                <span class="bond-tier" :class="`bond-tier--${bond.bondingTier}`">{{ formatTier(bond.bondingTier) }}</span>
-              </div>
-
-              <div class="stats-grid mb-3">
-                <div class="stat-item">
-                  <span class="stat-label">Bonding Level:</span>
-                  <span class="stat-value">{{ Math.round(bond.bondingLevel) }}%</span>
+          <div class="panel__content">
+            <div v-if="allBonds.length === 0" class="text-center text--muted">
+              No bonds created yet
+            </div>
+            <div v-else class="bonding-debug__bonds-list">
+              <div v-for="bond in allBonds" :key="bond.id" class="bonding-debug__bond-card">
+                <div class="bond-header">
+                  <span class="bond-names">{{ getGuineaPigName(bond.guineaPig1Id) }} & {{ getGuineaPigName(bond.guineaPig2Id) }}</span>
+                  <span class="bond-tier" :class="`bond-tier--${bond.bondingTier}`">{{ formatTier(bond.bondingTier) }}</span>
                 </div>
-                <div class="stat-item">
-                  <span class="stat-label">Compatibility:</span>
-                  <span class="stat-value">{{ bond.compatibilityScore }}/100</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Total Interactions:</span>
-                  <span class="stat-value">{{ bond.totalInteractions }}</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-label">Proximity Time:</span>
-                  <span class="stat-value">{{ bond.proximityTime.toFixed(1) }}h</span>
-                </div>
-              </div>
 
-              <div class="progress-bar mb-3">
-                <div class="progress-bar__fill" :style="{ width: bond.bondingLevel + '%' }"></div>
-              </div>
+                <div class="stats-grid mb-3">
+                  <div class="stat-item">
+                    <span class="stat-label">Bonding Level:</span>
+                    <span class="stat-value">{{ Math.round(bond.bondingLevel) }}%</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Compatibility:</span>
+                    <span class="stat-value">{{ bond.compatibilityScore }}/100</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Total Interactions:</span>
+                    <span class="stat-value">{{ bond.totalInteractions }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">Proximity Time:</span>
+                    <span class="stat-value">{{ bond.proximityTime.toFixed(1) }}h</span>
+                  </div>
+                </div>
 
-              <div class="bond-benefits">
-                <span class="text-label text-label--muted">Benefits:</span>
-                <ul class="text-label--small">
-                  <li>Social decay: {{ getBenefits(bond.bondingLevel).socialDecayModifier }}x</li>
-                  <li>Proximity bonus: {{ getBenefits(bond.bondingLevel).proximityBonus }}x</li>
-                  <li>Interaction frequency: {{ getBenefits(bond.bondingLevel).interactionFrequency }}x</li>
-                </ul>
-              </div>
+                <div class="progress-bar mb-3">
+                  <div class="progress-bar__fill" :style="{ width: bond.bondingLevel + '%' }"></div>
+                </div>
 
-              <!-- Manual Triggers -->
-              <div class="button-group mt-3">
-                <Button @click="triggerGrooming(bond)" size="sm" variant="secondary">🧼 Groom</Button>
-                <Button @click="triggerPlayTogether(bond)" size="sm" variant="secondary">🎮 Play</Button>
-                <Button @click="triggerExplore(bond)" size="sm" variant="secondary">🗺️ Explore</Button>
+                <div class="bond-benefits">
+                  <span class="text-label text-label--muted">Benefits:</span>
+                  <ul class="text-label--small">
+                    <li>Social decay: {{ getBenefits(bond.bondingLevel).socialDecayModifier }}x</li>
+                    <li>Proximity bonus: {{ getBenefits(bond.bondingLevel).proximityBonus }}x</li>
+                    <li>Interaction frequency: {{ getBenefits(bond.bondingLevel).interactionFrequency }}x</li>
+                  </ul>
+                </div>
+
+                <!-- Manual Triggers -->
+                <div class="button-group mt-3">
+                  <Button @click="triggerGrooming(bond)" size="sm" variant="secondary">🧼 Groom</Button>
+                  <Button @click="triggerPlayTogether(bond)" size="sm" variant="secondary">🎮 Play</Button>
+                  <Button @click="triggerExplore(bond)" size="sm" variant="secondary">🗺️ Explore</Button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Bonding History -->
-      <div class="panel panel--compact mb-6">
-        <div class="panel__header">
-          <h3>Recent Bonding Events</h3>
-        </div>
-        <div class="panel__content">
-          <div v-if="recentEvents.length === 0" class="text-center text--muted">
-            No bonding events yet
+        <!-- Bonding History -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Recent Bonding Events</h3>
           </div>
-          <div v-else class="bonding-debug__events">
-            <div v-for="event in recentEvents" :key="event.id" class="bonding-debug__event">
-              <div class="event-header">
-                <span class="event-type">{{ formatEventType(event.type) }}</span>
-                <span class="event-time">{{ formatTimestamp(event.timestamp) }}</span>
-              </div>
-              <div class="event-description text-label--small">{{ event.description }}</div>
-              <div class="event-change text-label--small" :class="event.bondingChange > 0 ? 'text--success' : ''">
-                +{{ event.bondingChange.toFixed(1) }} bonding
+          <div class="panel__content">
+            <div v-if="recentEvents.length === 0" class="text-center text--muted">
+              No bonding events yet
+            </div>
+            <div v-else class="bonding-debug__events">
+              <div v-for="event in recentEvents" :key="event.id" class="bonding-debug__event">
+                <div class="event-header">
+                  <span class="event-type">{{ formatEventType(event.type) }}</span>
+                  <span class="event-time">{{ formatTimestamp(event.timestamp) }}</span>
+                </div>
+                <div class="event-description text-label--small">{{ event.description }}</div>
+                <div class="event-change text-label--small" :class="event.bondingChange > 0 ? 'text--success' : ''">
+                  +{{ event.bondingChange.toFixed(1) }} bonding
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Compatibility Breakdown -->
-      <div class="panel panel--compact">
-        <div class="panel__header">
-          <h3>Compatibility Analysis</h3>
-        </div>
-        <div class="panel__content">
-          <div v-for="bond in allBonds" :key="bond.id" class="mb-4">
-            <h4 class="text-label mb-2">{{ getGuineaPigName(bond.guineaPig1Id) }} & {{ getGuineaPigName(bond.guineaPig2Id) }}</h4>
-            <div class="compatibility-breakdown">
-              <div v-for="[factor, score] in getCompatibilityFactors(bond)" :key="factor" class="compatibility-factor">
-                <span class="factor-name text-label--small">{{ formatFactorName(factor) }}:</span>
-                <span class="factor-score">{{ score }}</span>
+        <!-- Compatibility Breakdown -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Compatibility Analysis</h3>
+          </div>
+          <div class="panel__content">
+            <div v-for="bond in allBonds" :key="bond.id" class="mb-4">
+              <h4 class="text-label mb-2">{{ getGuineaPigName(bond.guineaPig1Id) }} & {{ getGuineaPigName(bond.guineaPig2Id) }}</h4>
+              <div class="stats-grid">
+                <div v-for="[factor, score] in getCompatibilityFactors(bond)" :key="factor" class="stat-item">
+                  <span class="stat-label">{{ formatFactorName(factor) }}:</span>
+                  <span class="stat-value">{{ score }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -211,9 +214,9 @@ function formatFactorName(factor: string): string {
 </script>
 
 <style>
-.bonding-debug__bonds-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+.bonding-debug__bonds-list {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-4);
 }
 
@@ -298,23 +301,6 @@ function formatFactorName(factor: string): string {
 
 .event-change {
   margin-block-start: var(--space-1);
-  font-weight: var(--font-weight-medium);
-}
-
-.compatibility-breakdown {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.compatibility-factor {
-  display: grid;
-  grid-template-columns: 120px 50px;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.factor-score {
   font-weight: var(--font-weight-medium);
 }
 </style>

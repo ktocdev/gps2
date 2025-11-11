@@ -665,6 +665,74 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     recordSnapshot()
   }
 
+  /**
+   * Reset habitat to default starter state for a new game session
+   * Returns all non-starter items to inventory and clears all contents
+   */
+  function resetToStarterHabitat() {
+    const inventoryStore = useInventoryStore()
+
+    // Define starter item IDs (default items that should remain)
+    const starterItemIds = [
+      'habitat_basic_water_bottle',
+      'habitat_plastic_igloo',
+      'habitat_ceramic_bowl',
+      'habitat_basic_hay_rack'
+    ]
+
+    // Return all non-starter items to inventory
+    const itemsToRemove = habitatItems.value.filter(itemId => !starterItemIds.includes(itemId))
+
+    for (const itemId of itemsToRemove) {
+      // Remove placement flag
+      inventoryStore.unmarkAsPlacedInHabitat(itemId, 1)
+
+      // Remove position tracking
+      itemPositions.value.delete(itemId)
+
+      // Remove from habitat
+      const index = habitatItems.value.indexOf(itemId)
+      if (index !== -1) {
+        habitatItems.value.splice(index, 1)
+      }
+
+      console.log(`📦 Returned ${itemId} to inventory`)
+    }
+
+    // Reset habitat items to only starter items
+    habitatItems.value = [...starterItemIds]
+
+    // Reset positions to default
+    starterItemIds.forEach(itemId => {
+      if (itemId in STARTER_HABITAT_POSITIONS) {
+        const position = STARTER_HABITAT_POSITIONS[itemId as keyof typeof STARTER_HABITAT_POSITIONS]
+        itemPositions.value.set(itemId, position)
+      }
+    })
+
+    // Clear all bowls
+    clearAllBowls()
+
+    // Clear all hay racks
+    clearAllHayRacks()
+
+    // Remove all poop
+    poops.value.length = 0
+
+    // Reset all guinea pig positions
+    guineaPigPositions.value.clear()
+
+    // Clear item usage history for non-starter items
+    for (const itemId of itemsToRemove) {
+      itemUsageHistory.value.delete(itemId)
+    }
+
+    // Reset conditions to 100%
+    resetHabitatConditions()
+
+    console.log(`🏠 Habitat reset to starter state with ${starterItemIds.length} default items`)
+  }
+
   function addItemToHabitat(itemId: string, position?: { x: number; y: number }) {
     const inventoryStore = useInventoryStore()
 
@@ -1219,6 +1287,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     updateCondition,
     recordSnapshot,
     resetHabitatConditions,
+    resetToStarterHabitat,
     addItemToHabitat,
     removeItemFromHabitat,
     initializeStarterHabitat,

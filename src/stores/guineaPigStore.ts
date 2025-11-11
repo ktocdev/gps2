@@ -186,7 +186,7 @@ export interface GuineaPig {
   observed: boolean                  // True if player has used Observe on this guinea pig
 
   // Pet Adoption organization
-  cageNumber: number | null          // Habitat assignment in pet adoption (null if not in adoption center)
+  habitat: number | null          // Habitat assignment in pet adoption (null if not in adoption center)
 
   // Tracking data
   totalInteractions: number
@@ -400,6 +400,11 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
         '🔄',
         { guineaPigIds: ids, names }
       )
+    }
+
+    // System 21: Auto-create bonds when setting active pair
+    if (ids.length >= 2) {
+      ensureBondsExist()
     }
 
     return true
@@ -1816,6 +1821,12 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
    */
   const getBondsForGuineaPig = (guineaPigId: string): ActiveBond[] => {
     ensureActiveBondsIsMap()
+
+    // Auto-create bonds if they don't exist yet
+    if (activeBonds.value.size === 0 && activeGuineaPigs.value.length >= 2) {
+      ensureBondsExist()
+    }
+
     const bonds: ActiveBond[] = []
 
     for (const bond of activeBonds.value.values()) {
@@ -1898,6 +1909,15 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       cleanlinessMin: 40,
       beddingMin: 40
     }
+  }
+
+  /**
+   * Clear all bonds (called when starting a new game session)
+   */
+  const clearAllBonds = (): void => {
+    ensureActiveBondsIsMap()
+    activeBonds.value.clear()
+    console.log('🧹 Cleared all social bonds')
   }
 
   /**
@@ -2054,6 +2074,7 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     increaseBonding,
     getAllBonds,
     ensureBondsExist,
+    clearAllBonds,
 
     // Personality-Based Habitat Sensitivity
     getHabitatSensitivityThresholds,

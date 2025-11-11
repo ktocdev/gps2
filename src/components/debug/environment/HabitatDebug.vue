@@ -407,7 +407,7 @@ watch(activeSidebar, (newSidebar) => {
 })
 
 // Handle guinea pig click - switch to socialize sidebar unless on autonomy
-function handleGuineaPigSelected(guineaPigId: string) {
+function handleGuineaPigSelected(_guineaPigId: string) {
   // If on autonomy sidebar, stay on autonomy and just update selection (already handled by store)
   if (activeSidebar.value === 'autonomy') {
     return
@@ -464,7 +464,7 @@ function handleQuickClean() {
   if (result.success) {
     loggingStore.addPlayerAction(result.message, '🧽')
     if (result.poopsRemoved > 0) {
-      showCareReaction('quickClean')
+      showCareReaction('cageClean')
     }
   }
 }
