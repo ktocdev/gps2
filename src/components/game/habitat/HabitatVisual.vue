@@ -260,29 +260,29 @@ const subgridWidth = computed(() => gridWidth.value * 4)
 const subgridHeight = computed(() => gridHeight.value * 4)
 const subcellSize = computed(() => cellSize.value / 4)
 
-// Bedding color effect
-const beddingColorFilter = computed(() => {
+// Bedding color background gradients
+const beddingBackgroundGradient = computed(() => {
   const color = habitatConditions.currentBedding?.color
-  if (!color) return 'none'
+  if (!color) return 'linear-gradient(135deg, #f5f5dc 0%, #f0e68c 100%)' // Default yellow/beige
 
-  // Map bedding colors to CSS filter effects
+  // Map bedding colors to background gradients
   const colorMap: Record<string, string> = {
-    'yellow': 'sepia(0.5) saturate(1.2) brightness(0.95)', // Regular/average - deeper yellowish
-    'beige': 'sepia(0.45) saturate(0.9) brightness(0.95)', // Cheap - deeper beige
-    'white-cyan': 'saturate(0.7) brightness(1.15) hue-rotate(180deg)', // Premium - white with cyan undertones
-    'pink': 'sepia(0.4) saturate(1.8) hue-rotate(300deg) brightness(0.95)', // Pink tint - deeper
-    'blue': 'sepia(0.35) saturate(1.6) hue-rotate(180deg) brightness(0.95)', // Blue tint - deeper
-    'green': 'sepia(0.35) saturate(1.6) hue-rotate(80deg) brightness(0.95)', // Green tint - deeper
-    'purple': 'sepia(0.3) saturate(1.4) hue-rotate(260deg) brightness(1.05)' // Purple tint - already good
+    'yellow': 'linear-gradient(135deg, #f5f5dc 0%, #f0e68c 100%)', // Regular/average - yellowish
+    'beige': 'linear-gradient(135deg, #f5f5dc 0%, #e8d5b7 100%)', // Cheap - light beige
+    'white-cyan': 'linear-gradient(135deg, #f0f8ff 0%, #e0f2f7 100%)', // Premium - white with cyan
+    'pink': 'linear-gradient(135deg, #ffe0f0 0%, #ffc0e0 100%)', // Pink
+    'blue': 'linear-gradient(135deg, #e0f0ff 0%, #c0d8f0 100%)', // Blue
+    'green': 'linear-gradient(135deg, #e0f0e0 0%, #c0e0c0 100%)', // Green
+    'purple': 'linear-gradient(135deg, #f0e0ff 0%, #e0c0f0 100%)' // Purple
   }
 
-  return colorMap[color] || 'none'
+  return colorMap[color] || colorMap['yellow']
 })
 
 const gridStyle = computed(() => ({
   gridTemplateColumns: `repeat(${gridWidth.value}, ${cellSize.value}px)`,
   gridTemplateRows: `repeat(${gridHeight.value}, ${cellSize.value}px)`,
-  filter: beddingColorFilter.value
+  background: beddingBackgroundGradient.value
 }))
 
 const subgridStyle = computed(() => ({
@@ -1420,6 +1420,11 @@ defineExpose({
 }
 
 @media (max-width: 768px) {
+  .habitat-visual__scroll-container {
+    padding-block-start: 0;
+    margin-block-start: 0;
+  }
+
   .habitat-visual__container {
     margin-inline: 0;
   }
@@ -1428,7 +1433,7 @@ defineExpose({
 .habitat-visual__grid {
   display: grid;
   gap: 1px;
-  background: linear-gradient(135deg, #f5f5dc 0%, #f0e68c 100%);
+  /* background set dynamically via gridStyle computed property based on bedding color */
   border: 3px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: var(--space-3);

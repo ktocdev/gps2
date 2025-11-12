@@ -131,29 +131,6 @@
         </div>
       </div>
 
-      <!-- Container Management -->
-      <div class="care-section">
-        <h4 class="care-section__title">Containers</h4>
-
-        <Button
-          @click="$emit('clear-all-bowls')"
-          variant="warning"
-          size="sm"
-          full-width
-        >
-          🗑️ Clear All Bowls
-        </Button>
-
-        <Button
-          @click="$emit('clear-all-hay-racks')"
-          variant="warning"
-          size="sm"
-          full-width
-        >
-          🗑️ Clear All Hay Racks
-        </Button>
-      </div>
-
       <!-- Chew Items -->
       <div v-if="chewItemsList.length > 0" class="care-section">
         <h4 class="care-section__title">Chew Items</h4>
@@ -209,8 +186,6 @@ defineEmits<{
   'quick-clean': []
   'refill-water': []
   'fill-all-hay-racks': []
-  'clear-all-bowls': []
-  'clear-all-hay-racks': []
 }>()
 
 const habitat = useHabitatConditions()

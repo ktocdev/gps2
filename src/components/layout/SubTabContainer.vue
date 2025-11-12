@@ -202,7 +202,7 @@ const getPanelClasses = (tabId: string) => {
   border-radius: var(--radius-full);
   background-color: transparent;
   color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);

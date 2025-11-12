@@ -4,8 +4,8 @@
     @dragover.prevent="handleDragOver"
     @dragleave="handleDragLeave"
     @drop="handleDrop"
-    @touchmove.prevent="handleTouchMoveOnSidebar"
-    @touchend="handleTouchEndOnSidebar"
+    @touchmove="!isSelectMode && handleTouchMoveOnSidebar($event)"
+    @touchend="!isSelectMode && handleTouchEndOnSidebar($event)"
     :class="{ 'inventory-sidebar--drop-target': isDragOver || isTouchOver }"
   >
     <div class="inventory-sidebar__header">
@@ -45,11 +45,11 @@
         :tooltip-message="item.tooltipMessage"
         :draggable="!isSelectMode"
         :is-selected="isSelectMode && selectedItemForPlacement?.itemId === item.itemId"
-        @dragstart="(_itemId, event) => handleServingDragStart(event, item)"
-        @dragend="handleDragEnd"
-        @touchstart="(_itemId, event) => handleServingTouchStart(event, item)"
-        @touchmove="(_itemId, event) => handleServingTouchMove(event, item)"
-        @touchend="(_itemId, event) => handleServingTouchEnd(event, item)"
+        @dragstart="!isSelectMode && ((_itemId, event) => handleServingDragStart(event, item))"
+        @dragend="!isSelectMode && handleDragEnd"
+        @touchstart="!isSelectMode && ((_itemId, event) => handleServingTouchStart(event, item))"
+        @touchmove="!isSelectMode && ((_itemId, event) => handleServingTouchMove(event, item))"
+        @touchend="!isSelectMode && ((_itemId, event) => handleServingTouchEnd(event, item))"
         @click="(_itemId, _event) => handleServingItemClick(item)"
       />
 

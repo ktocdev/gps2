@@ -124,8 +124,7 @@ function handleDragEnd(event: DragEvent) {
 }
 
 function handleTouchStart(event: TouchEvent) {
-  if (props.isDisabled) {
-    event.preventDefault()
+  if (props.isDisabled || !props.draggable) {
     return
   }
 
@@ -137,8 +136,7 @@ function handleTouchStart(event: TouchEvent) {
 }
 
 function handleTouchMove(event: TouchEvent) {
-  if (props.isDisabled) {
-    event.preventDefault()
+  if (props.isDisabled || !props.draggable) {
     return
   }
 
@@ -149,6 +147,10 @@ function handleTouchMove(event: TouchEvent) {
 }
 
 function handleTouchEnd(event: TouchEvent) {
+  if (props.isDisabled || !props.draggable) {
+    return
+  }
+
   const target = event.currentTarget as HTMLElement
   target.style.opacity = '1'
 

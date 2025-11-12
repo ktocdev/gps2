@@ -105,6 +105,7 @@ const clearAllStorage = () => {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  justify-content: flex-end;
 }
 
 .utility-nav__button {
@@ -119,6 +120,19 @@ const clearAllStorage = () => {
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .utility-nav {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .utility-nav__button {
+    padding-block: var(--space-1);
+    padding-inline: var(--space-2);
+    font-size: var(--font-size-xs);
+  }
 }
 
 .utility-nav__button:hover {

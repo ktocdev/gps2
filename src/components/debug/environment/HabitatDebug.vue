@@ -8,29 +8,30 @@
     <!-- Visual Habitat with Sidebar -->
     <div class="panel panel--full-width">
       <div class="panel__content">
-        <div class="habitat-layout">
-          <div class="habitat-layout__main">
-            <div class="habitat-visual-header">
-              <h3>Habitat Layout (medium - {{ habitatVisualRef?.gridWidth || 0 }}x{{ habitatVisualRef?.gridHeight || 0 }})</h3>
-              <div class="habitat-visual-header__stats">
-                <span>{{ habitatVisualRef?.placedItemsCount || 0 }} items placed</span>
-                <span>{{ habitatVisualRef?.occupiedCells || 0 }}/{{ habitatVisualRef?.totalCells || 0 }} cells occupied</span>
-                <span v-if="(habitatVisualRef?.poopCount || 0) > 0">💩 {{ habitatVisualRef?.poopCount }} poops</span>
-              </div>
-            </div>
-            <HabitatVisual
-              ref="habitatVisualRef"
-              :show-grid="true"
-              habitat-size="medium"
-              @guinea-pig-selected="handleGuineaPigSelected"
-              @place-item-at-cell="handlePlaceItemAtCell"
-              @cancel-placement="handleCancelPlacement"
-            />
-          </div>
-          <div class="habitat-layout__tabs">
+        <div class="habitat-layout-wrapper">
+          <div class="habitat-layout-wrapper__tabs">
             <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end" :buttons-only="true" />
           </div>
-          <div class="habitat-layout__sidebar">
+          <div class="habitat-layout">
+            <div class="habitat-layout__main">
+              <div class="habitat-visual-header">
+                <h3>Habitat Layout (medium - {{ habitatVisualRef?.gridWidth || 0 }}x{{ habitatVisualRef?.gridHeight || 0 }})</h3>
+                <div class="habitat-visual-header__stats">
+                  <span>{{ habitatVisualRef?.placedItemsCount || 0 }} items placed</span>
+                  <span>{{ habitatVisualRef?.occupiedCells || 0 }}/{{ habitatVisualRef?.totalCells || 0 }} cells occupied</span>
+                  <span v-if="(habitatVisualRef?.poopCount || 0) > 0">💩 {{ habitatVisualRef?.poopCount }} poops</span>
+                </div>
+              </div>
+              <HabitatVisual
+                ref="habitatVisualRef"
+                :show-grid="true"
+                habitat-size="medium"
+                @guinea-pig-selected="handleGuineaPigSelected"
+                @place-item-at-cell="handlePlaceItemAtCell"
+                @cancel-placement="handleCancelPlacement"
+              />
+            </div>
+            <div class="habitat-layout__sidebar">
             <InventorySidebar
               v-if="activeSidebar === 'inventory'"
               ref="inventorySidebarRef"
@@ -45,8 +46,6 @@
               @quick-clean="handleQuickClean"
               @refill-water="handleRefillWater"
               @fill-all-hay-racks="handleFillAllHayRacks"
-              @clear-all-bowls="clearAllBowls"
-              @clear-all-hay-racks="clearAllHayRacks"
             />
             <ActivityFeedSidebar
               v-else-if="activeSidebar === 'activity'"
@@ -77,6 +76,7 @@
               :selected-guinea-pig="selectedGuineaPig"
             />
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -675,8 +675,17 @@ async function handleHandFeed(foodId: string) {
   padding-block-end: 0;
 }
 
-.habitat-debug__content .sub-tab-container {
-  margin-block-end: var(--space-5);
+
+/* Habitat Layout Wrapper - Contains tabs + layout */
+.habitat-layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Tabs positioned at top on desktop, between visual and sidebar on mobile */
+.habitat-layout-wrapper__tabs {
+  order: 1;
 }
 
 /* Habitat Layout with Sidebar */
@@ -684,7 +693,7 @@ async function handleHandFeed(foodId: string) {
   display: flex;
   gap: var(--space-4);
   align-items: stretch;
-  flex-wrap: wrap;
+  order: 2;
 }
 
 .habitat-layout__main {
@@ -693,19 +702,12 @@ async function handleHandFeed(foodId: string) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  order: 2;
-}
-
-.habitat-layout__tabs {
-  flex-basis: 100%;
-  order: 1;
 }
 
 .habitat-layout__sidebar {
-  min-inline-size: 360px;
-  order: 3;
   max-block-size: 670px;
   overflow-y: auto;
+  border-radius: var(--radius-xl);
 }
 
 .habitat-layout__sidebar::-webkit-scrollbar {
@@ -776,22 +778,31 @@ async function handleHandFeed(foodId: string) {
   transform: translateY(0);
 }
 
-/* Mobile: Stack layout vertically */
+/* Mobile: Stack layout vertically and reorder tabs */
 @media (max-width: 768px) {
+  .habitat-layout-wrapper {
+    display: grid;
+    grid-template-areas:
+      "visual"
+      "tabs"
+      "sidebar";
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .habitat-layout-wrapper__tabs {
+    grid-area: tabs;
+    overflow-x: auto;
+    min-inline-size: 0;
+  }
+
   .habitat-layout {
+    grid-area: visual;
     flex-direction: column;
   }
 
-  .habitat-layout__main {
-    order: 1;
-  }
-
-  .habitat-layout__tabs {
-    order: 2;
-  }
-
   .habitat-layout__sidebar {
-    order: 3;
+    grid-area: sidebar;
+    max-block-size: 350px;
   }
 }
 
