@@ -7,9 +7,6 @@
     <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
     <!-- Visual Habitat with Sidebar -->
     <div class="panel panel--full-width">
-      <div class="panel__section">
-        <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end" :buttons-only="true" />
-      </div>
       <div class="panel__content">
         <div class="habitat-layout">
           <div class="habitat-layout__main">
@@ -26,11 +23,17 @@
               :show-grid="true"
               habitat-size="medium"
               @guinea-pig-selected="handleGuineaPigSelected"
+              @place-item-at-cell="handlePlaceItemAtCell"
+              @cancel-placement="handleCancelPlacement"
             />
+          </div>
+          <div class="habitat-layout__tabs">
+            <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end" :buttons-only="true" />
           </div>
           <div class="habitat-layout__sidebar">
             <InventorySidebar
               v-if="activeSidebar === 'inventory'"
+              ref="inventorySidebarRef"
               :habitat-visual-ref="habitatVisualRef"
             />
             <HabitatCareSidebar
@@ -233,6 +236,7 @@ import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useUiPreferencesStore } from '../../../stores/uiPreferencesStore'
 import { useLoggingStore } from '../../../stores/loggingStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useNeedsController } from '../../../stores/needsController'
@@ -255,12 +259,15 @@ const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const uiPreferencesStore = useUiPreferencesStore()
 const loggingStore = useLoggingStore()
 const behaviorStateStore = useBehaviorStateStore()
 const needsController = useNeedsController()
 
 // Ref to HabitatVisual component
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
+// Ref to InventorySidebar component
+const inventorySidebarRef = ref<any>(null)
 
 // Active sidebar state
 const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize' | 'chatbubble' | 'autonomy'>('care')
@@ -405,6 +412,32 @@ watch(activeSidebar, (newSidebar) => {
     }
   }
 })
+
+// Placement mode (select mode)
+const placementModeLabel = computed(() => {
+  const mode = uiPreferencesStore.itemPlacementMode
+  console.log(`[HabitatDebug] Current placement mode: ${mode}`)
+  return mode === 'drag' ? '🖱️ Drag Mode' : '👆 Select Mode'
+})
+
+function togglePlacementMode() {
+  console.log(`[HabitatDebug] Toggle button clicked! Current mode: ${uiPreferencesStore.itemPlacementMode}`)
+  uiPreferencesStore.togglePlacementMode()
+  console.log(`[HabitatDebug] After toggle, mode is now: ${uiPreferencesStore.itemPlacementMode}`)
+}
+
+function handlePlaceItemAtCell() {
+  if (habitatVisualRef.value && inventorySidebarRef.value) {
+    habitatVisualRef.value.placementItemAtSelectedCell(inventorySidebarRef.value)
+  }
+}
+
+function handleCancelPlacement() {
+  if (habitatVisualRef.value && inventorySidebarRef.value) {
+    habitatVisualRef.value.exitPlacementMode()
+    inventorySidebarRef.value.cancelItemSelection()
+  }
+}
 
 // Handle guinea pig click - switch to socialize sidebar unless on autonomy
 function handleGuineaPigSelected(_guineaPigId: string) {
@@ -651,6 +684,7 @@ async function handleHandFeed(foodId: string) {
   display: flex;
   gap: var(--space-4);
   align-items: stretch;
+  flex-wrap: wrap;
 }
 
 .habitat-layout__main {
@@ -659,10 +693,17 @@ async function handleHandFeed(foodId: string) {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  order: 2;
+}
+
+.habitat-layout__tabs {
+  flex-basis: 100%;
+  order: 1;
 }
 
 .habitat-layout__sidebar {
   min-inline-size: 360px;
+  order: 3;
   max-block-size: 670px;
   overflow-y: auto;
 }
@@ -711,10 +752,46 @@ async function handleHandFeed(foodId: string) {
   color: var(--color-text-muted);
 }
 
+.habitat-debug__mode-toggle {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.habitat-debug__mode-toggle:hover {
+  background-color: var(--color-primary-600);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.habitat-debug__mode-toggle:active {
+  background-color: var(--color-primary-700);
+  transform: translateY(0);
+}
+
 /* Mobile: Stack layout vertically */
 @media (max-width: 768px) {
   .habitat-layout {
     flex-direction: column;
+  }
+
+  .habitat-layout__main {
+    order: 1;
+  }
+
+  .habitat-layout__tabs {
+    order: 2;
+  }
+
+  .habitat-layout__sidebar {
+    order: 3;
   }
 }
 

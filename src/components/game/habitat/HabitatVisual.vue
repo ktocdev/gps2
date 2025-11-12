@@ -14,7 +14,10 @@
             'grid-cell--occupied': cell.occupied,
             'grid-cell--accessible': cell.accessible,
             'grid-cell--drop-target': (isDragOver || isTouchDragging) && isHoverCell(cell) && (draggedItemId ? canPlaceAt(cell.x, cell.y) : true),
-            'grid-cell--drop-invalid': (isDragOver || isTouchDragging) && isHoverCell(cell) && draggedItemId && !canPlaceAt(cell.x, cell.y)
+            'grid-cell--drop-invalid': (isDragOver || isTouchDragging) && isHoverCell(cell) && draggedItemId && !canPlaceAt(cell.x, cell.y),
+            'grid-cell--placement-preview': placementModeActive && isSelectedCell(cell),
+            'grid-cell--placement-valid': placementModeActive && isSelectedCell(cell) && canPlaceAtSelectedCell(),
+            'grid-cell--placement-invalid': placementModeActive && isSelectedCell(cell) && !canPlaceAtSelectedCell()
           }"
           :style="{
             gridColumn: cell.x + 1,
@@ -23,6 +26,7 @@
           @dragover.prevent="handleDragOver($event, cell)"
           @dragleave="handleDragLeave"
           @drop="handleDrop($event, cell)"
+          @click="handleCellClick(cell)"
         />
 
         <div
@@ -30,7 +34,8 @@
           :key="item.instanceId"
           class="grid-item"
           :class="{
-            'grid-item--dragging': draggedPlacedItemId === item.itemId
+            'grid-item--dragging': draggedPlacedItemId === item.itemId,
+            'grid-item--placement-mode': placementModeActive
           }"
           :style="{
             gridColumn: `${item.position.x + 1} / span ${item.size.width}`,
@@ -121,6 +126,33 @@
         </div>
       </div>
 
+      <!-- Placement mode action buttons -->
+      <div v-if="placementModeActive && selectedCell" class="habitat-visual__placement-actions">
+        <Button
+          v-if="!placementErrorMessage"
+          variant="secondary"
+          size="md"
+          @click="$emit('place-item-at-cell')"
+        >
+          ✓ Place Here
+        </Button>
+        <Button
+          v-else
+          variant="danger"
+          size="md"
+          disabled
+        >
+          ✗ {{ placementErrorMessage }}
+        </Button>
+        <Button
+          variant="danger"
+          size="md"
+          @click="$emit('cancel-placement')"
+        >
+          Cancel
+        </Button>
+      </div>
+
       <div class="habitat-visual__guinea-pigs">
         <GuineaPigSprite
           v-for="guineaPig in activeGuineaPigs"
@@ -154,6 +186,7 @@ import WaterBottle from './WaterBottle.vue'
 import ChewItem from './ChewItem.vue'
 import Poop from './Poop.vue'
 import GuineaPigSprite from './GuineaPigSprite.vue'
+import Button from '../../basic/Button.vue'
 
 interface Props {
   habitatSize?: 'small' | 'medium' | 'large'
@@ -165,6 +198,8 @@ interface Props {
 
 interface Emits {
   (e: 'guinea-pig-selected', guineaPigId: string): void
+  (e: 'place-item-at-cell'): void
+  (e: 'cancel-placement'): void
 }
 
 interface GridCell {
@@ -376,6 +411,22 @@ const isRepositioning = ref(false)
 // Touch state
 const isTouchDragging = ref(false)
 const touchStartedOnPlacedItem = ref(false)
+
+// Placement mode state (select mode)
+const placementModeActive = ref(false)
+const selectedCell = ref<{ x: number; y: number } | null>(null)
+const selectedItemForPlacement = ref<{
+  itemId: string
+  instanceId?: string
+  isServingBased: boolean
+  size: { width: number; height: number }
+  emoji: string
+  name: string
+} | null>(null)
+
+const placementErrorMessage = computed(() => {
+  return getPlacementValidationMessage()
+})
 
 function initializeGrid() {
   gridCells.value = []
@@ -832,7 +883,14 @@ function canPlaceAt(x: number, y: number): boolean {
 
       return isWithinBowlX && isWithinBowlY
     })
-    return bowlAtPosition !== undefined
+
+    if (!bowlAtPosition) return false
+
+    // Check if bowl is full
+    const bowlContents = getBowlContents(bowlAtPosition.itemId)
+    const bowlItem = suppliesStore.getItemById(bowlAtPosition.itemId)
+    const capacity = bowlItem?.stats?.foodCapacity || 3
+    return bowlContents.length < capacity
   }
 
   // Hay items can only be placed in hay racks (not directly on habitat floor)
@@ -847,7 +905,13 @@ function canPlaceAt(x: number, y: number): boolean {
 
       return isWithinRackX && isWithinRackY
     })
-    return hayRackAtPosition !== undefined
+
+    if (!hayRackAtPosition) return false
+
+    // Check if hay rack is full
+    const rackContents = getHayRackContents(hayRackAtPosition.itemId)
+    const maxCapacity = 4 // CONSUMPTION.HAY_RACK_MAX_CAPACITY
+    return rackContents.length < maxCapacity
   }
 
   // Water bottles can only be on edges (left, right, top, or bottom)
@@ -1091,6 +1155,215 @@ watch(
   { deep: true }
 )
 
+// Placement mode functions (select mode)
+function enterPlacementMode(itemData: any) {
+  placementModeActive.value = true
+  selectedItemForPlacement.value = itemData
+  draggedItemId.value = itemData.itemId
+  draggedItemSize.value = itemData.size
+  selectedCell.value = null
+
+  console.log(`🎯 Entered placement mode for: ${itemData.name}`)
+}
+
+function exitPlacementMode() {
+  placementModeActive.value = false
+  selectedItemForPlacement.value = null
+  selectedCell.value = null
+  draggedItemId.value = null
+  draggedItemSize.value = { width: 1, height: 1 }
+
+  console.log('🎯 Exited placement mode')
+}
+
+function handleCellClick(cell: GridCell) {
+  console.log(`🖱️ Cell clicked: (${cell.x}, ${cell.y})`, {
+    placementModeActive: placementModeActive.value,
+    hasSelectedItem: !!selectedItemForPlacement.value,
+    selectedItem: selectedItemForPlacement.value?.name
+  })
+
+  if (!placementModeActive.value || !selectedItemForPlacement.value) {
+    console.log('❌ Not in placement mode or no item selected')
+    return
+  }
+
+  // Update selected cell
+  selectedCell.value = { x: cell.x, y: cell.y }
+
+  console.log(`📍 Cell selected: (${cell.x}, ${cell.y})`)
+}
+
+function placementItemAtSelectedCell(inventorySidebarRef: any) {
+  if (!selectedCell.value || !selectedItemForPlacement.value) return
+
+  const itemId = selectedItemForPlacement.value.itemId
+  const cell = selectedCell.value
+
+  // Handle serving-based items (food, hay) - special validation
+  if (selectedItemForPlacement.value.isServingBased) {
+    // Check if it's food - must go in a bowl
+    if (isFood(itemId)) {
+      const bowlAtPosition = placedItems.value.find(item => {
+        if (!isBowl(item.itemId)) return false
+
+        const isWithinBowlX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
+        const isWithinBowlY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
+
+        return isWithinBowlX && isWithinBowlY
+      })
+
+      if (bowlAtPosition) {
+        handleAddFoodToBowl(bowlAtPosition.itemId, itemId)
+        console.log(`✓ Added food to bowl: ${itemId} at (${cell.x}, ${cell.y})`)
+
+        if (inventorySidebarRef) {
+          inventorySidebarRef.onItemPlaced()
+        }
+        exitPlacementMode()
+        return
+      } else {
+        console.warn('❌ Food can only be placed in bowls')
+        return
+      }
+    }
+
+    // Check if it's hay - must go in a hay rack
+    const item = suppliesStore.getItemById(itemId)
+    if (item?.category === 'hay') {
+      const hayRackAtPosition = placedItems.value.find(item => {
+        if (!isHayRack(item.itemId)) return false
+
+        const isWithinRackX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
+        const isWithinRackY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
+
+        return isWithinRackX && isWithinRackY
+      })
+
+      if (hayRackAtPosition) {
+        handleAddHayToRack(hayRackAtPosition.itemId, itemId)
+        console.log(`✓ Added hay to rack: ${itemId} at (${cell.x}, ${cell.y})`)
+
+        if (inventorySidebarRef) {
+          inventorySidebarRef.onItemPlaced()
+        }
+        exitPlacementMode()
+        return
+      } else {
+        console.warn('❌ Hay can only be placed in hay racks')
+        return
+      }
+    }
+  }
+
+  // Handle regular item placement (non-serving items)
+  // Check if placement is valid
+  const canPlace = canPlaceAt(selectedCell.value.x, selectedCell.value.y)
+
+  if (!canPlace) {
+    console.warn('❌ Cannot place item at selected cell')
+    return
+  }
+
+  const success = habitatConditions.addItemToHabitat(itemId, {
+    x: selectedCell.value.x,
+    y: selectedCell.value.y
+  })
+
+  if (success) {
+    console.log(`✓ Placed item: ${itemId} at (${selectedCell.value.x}, ${selectedCell.value.y})`)
+
+    // Notify inventory sidebar
+    if (inventorySidebarRef) {
+      inventorySidebarRef.onItemPlaced()
+    }
+
+    exitPlacementMode()
+  } else {
+    console.warn('❌ Failed to place item')
+  }
+}
+
+function isSelectedCell(cell: GridCell): boolean {
+  if (!selectedCell.value) return false
+  return cell.x === selectedCell.value.x && cell.y === selectedCell.value.y
+}
+
+function getPlacementValidationMessage(): string | null {
+  if (!selectedCell.value || !selectedItemForPlacement.value) {
+    return null
+  }
+
+  const cell = selectedCell.value
+  const itemId = selectedItemForPlacement.value.itemId
+
+  // For serving-based items, check if they can go in their container
+  if (selectedItemForPlacement.value.isServingBased) {
+    // Food must be placed in a bowl
+    if (isFood(itemId)) {
+      const bowlAtPosition = placedItems.value.find(item => {
+        if (!isBowl(item.itemId)) return false
+        const isWithinBowlX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
+        const isWithinBowlY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
+        return isWithinBowlX && isWithinBowlY
+      })
+
+      if (!bowlAtPosition) {
+        return 'No Bowl Here'
+      }
+
+      // Check if bowl is full
+      const bowlContents = getBowlContents(bowlAtPosition.itemId)
+      const bowlItem = suppliesStore.getItemById(bowlAtPosition.itemId)
+      const capacity = bowlItem?.stats?.foodCapacity || 3
+      const isFull = bowlContents.length >= capacity
+
+      if (isFull) {
+        return 'Bowl Is Full'
+      }
+
+      return null // Valid placement
+    }
+
+    // Hay must be placed in a hay rack
+    const item = suppliesStore.getItemById(itemId)
+    if (item?.category === 'hay') {
+      const hayRackAtPosition = placedItems.value.find(item => {
+        if (!isHayRack(item.itemId)) return false
+        const isWithinRackX = cell.x >= item.position.x && cell.x < item.position.x + item.size.width
+        const isWithinRackY = cell.y >= item.position.y && cell.y < item.position.y + item.size.height
+        return isWithinRackX && isWithinRackY
+      })
+
+      if (!hayRackAtPosition) {
+        return 'No Hay Rack Here'
+      }
+
+      // Check if hay rack is full
+      const rackContents = getHayRackContents(hayRackAtPosition.itemId)
+      const maxCapacity = 4 // CONSUMPTION.HAY_RACK_MAX_CAPACITY
+      const isFull = rackContents.length >= maxCapacity
+
+      if (isFull) {
+        return 'Hay Rack Is Full'
+      }
+
+      return null // Valid placement
+    }
+  }
+
+  // For regular items, use standard placement check
+  if (!canPlaceAt(cell.x, cell.y)) {
+    return 'Invalid Location'
+  }
+
+  return null // Valid placement
+}
+
+function canPlaceAtSelectedCell(): boolean {
+  return getPlacementValidationMessage() === null
+}
+
 // Expose functions and data for parent component
 defineExpose({
   addTestPoop,
@@ -1105,7 +1378,14 @@ defineExpose({
   gridHeight,
   totalCells,
   occupiedCells,
-  placedItemsCount
+  placedItemsCount,
+  // Placement mode functions
+  enterPlacementMode,
+  exitPlacementMode,
+  handleCellClick,
+  placementItemAtSelectedCell,
+  isSelectedCell,
+  canPlaceAtSelectedCell
 })
 </script>
 
@@ -1137,6 +1417,12 @@ defineExpose({
   position: relative;
   inline-size: fit-content;
   margin-inline: auto;
+}
+
+@media (max-width: 768px) {
+  .habitat-visual__container {
+    margin-inline: 0;
+  }
 }
 
 .habitat-visual__grid {
@@ -1207,6 +1493,12 @@ defineExpose({
 .grid-item--dragging {
   opacity: 0.5;
   cursor: grabbing;
+}
+
+/* In placement mode, items don't block clicks - allow clicks to pass through to grid cells */
+.grid-item--placement-mode {
+  pointer-events: none;
+  cursor: default;
 }
 
 .grid-item__emoji {
@@ -1300,5 +1592,40 @@ defineExpose({
   inline-size: 100%;
   block-size: 100%;
   pointer-events: none;
+}
+
+/* Placement mode styles */
+.grid-cell--placement-preview {
+  outline: 3px solid var(--color-info);
+  outline-offset: -3px;
+  z-index: 10;
+  cursor: pointer;
+}
+
+.grid-cell--placement-valid {
+  outline-color: var(--color-success);
+  background-color: rgba(16, 185, 129, 0.15);
+}
+
+.grid-cell--placement-invalid {
+  outline-color: var(--color-danger);
+  background-color: rgba(239, 68, 68, 0.15);
+}
+
+.habitat-visual__placement-actions {
+  position: absolute;
+  inset-block-start: var(--space-4);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--space-2);
+  z-index: 100;
+  pointer-events: all;
+}
+
+@media (max-width: 640px) {
+  .habitat-visual__placement-actions {
+    inset-block-start: var(--space-2);
+  }
 }
 </style>

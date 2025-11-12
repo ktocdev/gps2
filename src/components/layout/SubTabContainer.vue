@@ -205,14 +205,19 @@ const getPanelClasses = (tabId: string) => {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
-  transition: opacity var(--transition-fast);
+  transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
   white-space: nowrap;
 }
 
-.sub-tab-container__tab:hover:not(.sub-tab-container__tab--disabled) {
+.sub-tab-container__tab:hover:not(.sub-tab-container__tab--disabled):not(.sub-tab-container__tab--active) {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
   border-color: var(--color-border-light);
+}
+
+.sub-tab-container__tab--active:hover {
+  background-color: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
 }
 
 .sub-tab-container__tab:focus-visible {
@@ -225,11 +230,6 @@ const getPanelClasses = (tabId: string) => {
   color: var(--color-text-inverse);
   border-color: var(--color-primary);
   font-weight: var(--font-weight-semibold);
-}
-
-.sub-tab-container__tab--active:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
 }
 
 .sub-tab-container__tab--disabled {
