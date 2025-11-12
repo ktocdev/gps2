@@ -1,16 +1,23 @@
 <template>
   <div
     class="inventory-tile-serving"
-    :class="[depletionClass, { 'inventory-tile-serving--disabled': isDisabled }]"
+    :class="[
+      depletionClass,
+      {
+        'inventory-tile-serving--disabled': isDisabled,
+        'inventory-tile-serving--selected': isSelected
+      }
+    ]"
     :title="tooltipText"
-    :draggable="!isDisabled"
+    :draggable="!isDisabled && draggable"
     @dragstart="handleDragStart"
     @dragend="handleDragEnd"
     @touchstart="handleTouchStart"
     @touchmove="handleTouchMove"
     @touchend="handleTouchEnd"
+    @click="handleClick"
   >
-    <div class="inventory-tile-serving__drag-handle">⋮⋮</div>
+    <div v-if="draggable" class="inventory-tile-serving__drag-handle">⋮⋮</div>
     <div class="inventory-tile-serving__emoji">{{ emoji }}</div>
     <div class="inventory-tile-serving__content">
       <div class="inventory-tile-serving__name">{{ name }}</div>
@@ -34,11 +41,15 @@ interface Props {
   instanceCount?: number
   isDisabled?: boolean
   tooltipMessage?: string
+  draggable?: boolean
+  isSelected?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isDisabled: false,
-  tooltipMessage: ''
+  tooltipMessage: '',
+  draggable: true,
+  isSelected: false
 })
 
 const emit = defineEmits<{
@@ -47,6 +58,7 @@ const emit = defineEmits<{
   'touchstart': [itemId: string, event: TouchEvent]
   'touchmove': [itemId: string, event: TouchEvent]
   'touchend': [itemId: string, event: TouchEvent]
+  'click': [itemId: string, event: MouseEvent]
 }>()
 
 const depletionPercentage = computed(() => {
@@ -112,8 +124,7 @@ function handleDragEnd(event: DragEvent) {
 }
 
 function handleTouchStart(event: TouchEvent) {
-  if (props.isDisabled) {
-    event.preventDefault()
+  if (props.isDisabled || !props.draggable) {
     return
   }
 
@@ -125,8 +136,7 @@ function handleTouchStart(event: TouchEvent) {
 }
 
 function handleTouchMove(event: TouchEvent) {
-  if (props.isDisabled) {
-    event.preventDefault()
+  if (props.isDisabled || !props.draggable) {
     return
   }
 
@@ -137,10 +147,23 @@ function handleTouchMove(event: TouchEvent) {
 }
 
 function handleTouchEnd(event: TouchEvent) {
+  if (props.isDisabled || !props.draggable) {
+    return
+  }
+
   const target = event.currentTarget as HTMLElement
   target.style.opacity = '1'
 
   emit('touchend', props.itemId, event)
+}
+
+function handleClick(event: MouseEvent) {
+  if (props.isDisabled) {
+    event.preventDefault()
+    return
+  }
+
+  emit('click', props.itemId, event)
 }
 </script>
 
@@ -289,5 +312,18 @@ function handleTouchEnd(event: TouchEvent) {
 .inventory-tile-serving--disabled:hover {
   transform: none;
   box-shadow: var(--shadow-sm);
+}
+
+/* Selected state (for select mode) */
+.inventory-tile-serving--selected {
+  background-color: var(--color-primary-100);
+  border-color: var(--color-primary);
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.inventory-tile-serving--selected:hover {
+  border-color: var(--color-primary);
+  transform: none;
 }
 </style>

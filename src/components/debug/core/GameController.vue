@@ -60,36 +60,6 @@
           </div>
         </div>
 
-        <!-- Session Status -->
-        <div class="panel panel--compact">
-          <div class="panel__header">
-            <h3>Session Status</h3>
-          </div>
-          <div class="panel__content">
-            <div class="stats-grid">
-              <div class="stat-item">
-                <span class="stat-label">Active Session:</span>
-                <span class="stat-value">{{ petStoreManager.activeGameSession ? 'Yes' : 'No' }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Active Guinea Pigs:</span>
-                <span class="stat-value">{{ guineaPigStore.activeGuineaPigs.length }}</span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Session Started:</span>
-                <span class="stat-value">
-                  {{ petStoreManager.activeGameSession
-                    ? new Date(petStoreManager.activeGameSession.startedAt).toLocaleString()
-                    : 'N/A' }}
-                </span>
-              </div>
-              <div class="stat-item">
-                <span class="stat-label">Currency:</span>
-                <span class="stat-value">{{ playerProgression.formattedCurrency }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
         <!-- Guinea Pig Selection -->
         <div class="panel panel--compact">
           <div class="panel__header">
@@ -133,6 +103,37 @@
                   size="sm"
                 />
               </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session Status -->
+        <div class="panel panel--compact">
+          <div class="panel__header">
+            <h3>Session Status</h3>
+          </div>
+          <div class="panel__content">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <span class="stat-label">Active Session:</span>
+                <span class="stat-value">{{ petStoreManager.activeGameSession ? 'Yes' : 'No' }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Active Guinea Pigs:</span>
+                <span class="stat-value">{{ guineaPigStore.activeGuineaPigs.length }}</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Session Started:</span>
+                <span class="stat-value">
+                  {{ petStoreManager.activeGameSession
+                    ? new Date(petStoreManager.activeGameSession.startedAt).toLocaleString()
+                    : 'N/A' }}
+                </span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Currency:</span>
+                <span class="stat-value">{{ playerProgression.formattedCurrency }}</span>
+              </div>
             </div>
           </div>
         </div>

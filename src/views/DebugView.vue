@@ -229,6 +229,15 @@ onUnmounted(() => {
   }
 }
 
+/* Mobile: Horizontal layout */
+@media (max-width: 768px) {
+  .debug-view__header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+}
+
 /* Enhanced for larger screens */
 @media (min-width: 769px) {
   .debug-view__header {

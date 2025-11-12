@@ -4,13 +4,32 @@
     @dragover.prevent="handleDragOver"
     @dragleave="handleDragLeave"
     @drop="handleDrop"
-    @touchmove.prevent="handleTouchMoveOnSidebar"
-    @touchend="handleTouchEndOnSidebar"
+    @touchmove="!isSelectMode && handleTouchMoveOnSidebar($event)"
+    @touchend="!isSelectMode && handleTouchEndOnSidebar($event)"
     :class="{ 'inventory-sidebar--drop-target': isDragOver || isTouchOver }"
   >
     <div class="inventory-sidebar__header">
       <h3>🎒 Inventory</h3>
+      <Button
+        v-if="showToggleButton"
+        variant="primary"
+        size="sm"
+        @click="togglePlacementMode"
+        :title="'Switch between drag-and-drop and tap-to-place'"
+      >
+        {{ placementModeLabel }}
+      </Button>
     </div>
+
+    <!-- Placement instruction banner (always shown on touch devices) -->
+    <BlockMessage v-if="isSelectMode" variant="info" class="inventory-sidebar__placement-instruction">
+      <div class="inventory-sidebar__instruction-content">
+        <span class="no-select">
+          {{ placementInstructionText }}
+        </span>
+        <Button v-if="isSelectMode && selectedItemForPlacement" variant="danger" size="sm" @click="cancelItemSelection">Cancel</Button>
+      </div>
+    </BlockMessage>
     <div class="inventory-sidebar__items">
       <!-- Serving-based consumables -->
       <InventoryTileServing
@@ -24,11 +43,14 @@
         :instance-count="item.instanceCount"
         :is-disabled="item.isDisabled"
         :tooltip-message="item.tooltipMessage"
-        @dragstart="(_itemId, event) => handleServingDragStart(event, item)"
-        @dragend="handleDragEnd"
-        @touchstart="(_itemId, event) => handleServingTouchStart(event, item)"
-        @touchmove="(_itemId, event) => handleServingTouchMove(event, item)"
-        @touchend="(_itemId, event) => handleServingTouchEnd(event, item)"
+        :draggable="!isSelectMode"
+        :is-selected="isSelectMode && selectedItemForPlacement?.itemId === item.itemId"
+        @dragstart="!isSelectMode && ((_itemId, event) => handleServingDragStart(event, item))"
+        @dragend="!isSelectMode && handleDragEnd"
+        @touchstart="!isSelectMode && ((_itemId, event) => handleServingTouchStart(event, item))"
+        @touchmove="!isSelectMode && ((_itemId, event) => handleServingTouchMove(event, item))"
+        @touchend="!isSelectMode && ((_itemId, event) => handleServingTouchEnd(event, item))"
+        @click="(_itemId, _event) => handleServingItemClick(item)"
       />
 
       <!-- Bedding (read-only) -->
@@ -48,12 +70,17 @@
         v-for="item in regularItems"
         :key="item.id"
         class="inventory-sidebar__item-card"
-        draggable="true"
-        @dragstart="handleDragStart($event, item)"
+        :class="{
+          'inventory-sidebar__item-card--selected': isSelectMode && selectedItemForPlacement?.itemId === item.id,
+          'inventory-sidebar__item-card--select-mode': isSelectMode
+        }"
+        :draggable="!isSelectMode"
+        @dragstart="!isSelectMode && handleDragStart($event, item)"
         @dragend="handleDragEnd"
-        @touchstart="handleRegularTouchStart($event, item)"
-        @touchmove="handleRegularTouchMove($event, item)"
-        @touchend="handleRegularTouchEnd($event, item)"
+        @touchstart="!isSelectMode && handleRegularTouchStart($event, item)"
+        @touchmove="!isSelectMode && handleRegularTouchMove($event, item)"
+        @touchend="!isSelectMode && handleRegularTouchEnd($event, item)"
+        @click="handleRegularItemClick(item)"
       >
         <span class="inventory-sidebar__item-emoji no-select">{{ item.emoji }}</span>
         <span class="inventory-sidebar__item-name no-select">{{ item.name }}</span>
@@ -65,11 +92,17 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useHabitatConditions } from '../../../../stores/habitatConditions'
 import { useInventoryStore } from '../../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../../stores/suppliesStore'
 import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
+import { useUiPreferencesStore } from '../../../../stores/uiPreferencesStore'
+import { useHabitatContainers } from '../../../../composables/useHabitatContainers'
+import { isTouchDevice } from '../../../../utils/deviceDetection'
 import InventoryTileServing from '../../shop/InventoryTileServing.vue'
+import Button from '../../../basic/Button.vue'
+import BlockMessage from '../../../basic/BlockMessage.vue'
 
 interface Props {
   habitatVisualRef?: any
@@ -78,9 +111,17 @@ interface Props {
 const props = defineProps<Props>()
 
 const habitat = useHabitatConditions()
+const habitatContainers = useHabitatContainers()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 const guineaPigStore = useGuineaPigStore()
+const uiPreferencesStore = useUiPreferencesStore()
+
+// Use storeToRefs to make store state reactive
+const { itemPlacementMode } = storeToRefs(uiPreferencesStore)
+
+// Detect if this is a touch device
+const isTouchOnly = isTouchDevice()
 
 const isDragOver = ref(false)
 const isTouchOver = ref(false)
@@ -92,6 +133,119 @@ const activeTouchItem = ref<{
   isServingBased: boolean
   size: { width: number; height: number }
 } | null>(null)
+
+// Select mode state
+const selectedItemForPlacement = ref<{
+  itemId: string
+  instanceId?: string
+  isServingBased: boolean
+  size: { width: number; height: number }
+  emoji: string
+  name: string
+} | null>(null)
+
+// Computed: Check if we're in select mode (touch devices are always in select mode)
+const isSelectMode = computed(() => {
+  return isTouchOnly || itemPlacementMode.value === 'select'
+})
+
+// Computed: Show toggle button (hide on touch-only devices)
+const showToggleButton = computed(() => {
+  return !isTouchOnly
+})
+
+// Computed: Label for toggle button
+const placementModeLabel = computed(() => {
+  return itemPlacementMode.value === 'drag' ? '🖱️ Drag' : '👆 Select'
+})
+
+// Helper functions for item type checking
+function isFood(itemId: string): boolean {
+  const item = suppliesStore.getItemById(itemId)
+  return item?.category === 'food'
+}
+
+function isHay(itemId: string): boolean {
+  const item = suppliesStore.getItemById(itemId)
+  return item?.category === 'hay'
+}
+
+function isBowl(itemId: string): boolean {
+  return itemId.includes('bowl')
+}
+
+function isHayRack(itemId: string): boolean {
+  return itemId.includes('hay_rack')
+}
+
+// Computed: Check if all bowls are full
+const allBowlsFull = computed(() => {
+  const bowls = habitat.habitatItems.filter(itemId => isBowl(itemId))
+  if (bowls.length === 0) return false
+
+  return bowls.every(bowlId => {
+    const contents = habitatContainers.getBowlContents(bowlId)
+    const bowlItem = suppliesStore.getItemById(bowlId)
+    const capacity = bowlItem?.stats?.foodCapacity || 3
+    return contents.length >= capacity
+  })
+})
+
+// Computed: Check if all hay racks are full
+const allHayRacksFull = computed(() => {
+  const hayRacks = habitat.habitatItems.filter(itemId => isHayRack(itemId))
+  if (hayRacks.length === 0) return false
+
+  return hayRacks.every(rackId => {
+    const contents = habitatContainers.getHayRackContents(rackId)
+    const maxCapacity = 4
+    return contents.length >= maxCapacity
+  })
+})
+
+// Computed: Instruction text based on mode and selection
+const placementInstructionText = computed(() => {
+  if (isSelectMode.value) {
+    if (selectedItemForPlacement.value) {
+      const itemId = selectedItemForPlacement.value.itemId
+
+      // Check if food and all bowls are full
+      if (isFood(itemId)) {
+        const bowls = habitat.habitatItems.filter(id => isBowl(id))
+        if (bowls.length === 0) {
+          return 'No Bowls Available'
+        }
+        if (allBowlsFull.value) {
+          return 'All Bowls Are Full'
+        }
+      }
+
+      // Check if hay and all hay racks are full
+      if (isHay(itemId)) {
+        const hayRacks = habitat.habitatItems.filter(id => isHayRack(id))
+        if (hayRacks.length === 0) {
+          return 'No Hay Racks Available'
+        }
+        if (allHayRacksFull.value) {
+          return 'All Hay Racks Are Full'
+        }
+      }
+
+      return `Tap grid to place ${selectedItemForPlacement.value.emoji}`
+    }
+    return 'Tap item to select for placement'
+  } else {
+    // Drag mode
+    return 'Drag an item to the habitat. Food must go in food containers.'
+  }
+})
+
+// Toggle between drag and select mode
+function togglePlacementMode() {
+  console.log(`[InventorySidebar] Toggle clicked! Current mode: ${itemPlacementMode.value}`)
+  uiPreferencesStore.togglePlacementMode()
+  console.log(`[InventorySidebar] After toggle: ${itemPlacementMode.value}`)
+}
 
 // Get the first active guinea pig for consumption limit checks
 const activeGuineaPig = computed(() => {
@@ -232,6 +386,22 @@ function handleServingDragStart(event: DragEvent, item: any) {
   event.dataTransfer.setData('text/plain', JSON.stringify(dragData))
   // Add category as custom MIME type so we can check it during dragover
   event.dataTransfer.setData(`application/x-item-category-${category}`, '')
+
+  // Create custom drag ghost with emoji
+  const dragGhost = document.createElement('div')
+  dragGhost.className = 'inventory-drag-ghost'
+  dragGhost.textContent = item.emoji || '📦'
+  dragGhost.style.position = 'absolute'
+  dragGhost.style.top = '-1000px'
+  document.body.appendChild(dragGhost)
+  event.dataTransfer.setDragImage(dragGhost, 20, 20)
+
+  // Clean up after a short delay
+  setTimeout(() => {
+    if (document.body.contains(dragGhost)) {
+      document.body.removeChild(dragGhost)
+    }
+  }, 0)
 
   // Notify HabitatVisual about the drag
   if (props.habitatVisualRef) {
@@ -454,6 +624,71 @@ function handleTouchEndOnSidebar(_event: TouchEvent) {
   // a placed item, it will have repositioning metadata
   // For now, we'll let HabitatVisual handle the drop logic
 }
+
+// Select mode handlers
+function handleServingItemClick(item: any) {
+  if (!isSelectMode.value) return
+
+  // Select this item for placement
+  selectedItemForPlacement.value = {
+    itemId: item.itemId,
+    instanceId: item.instanceId,
+    isServingBased: true,
+    size: { width: 1, height: 1 },
+    emoji: item.emoji,
+    name: item.name
+  }
+
+  // Notify HabitatVisual to enter placement mode
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.enterPlacementMode(selectedItemForPlacement.value)
+  }
+
+  console.log(`📦 Selected for placement: ${item.name}`)
+}
+
+function handleRegularItemClick(item: any) {
+  if (!isSelectMode.value) return
+
+  // Select this item for placement
+  selectedItemForPlacement.value = {
+    itemId: item.id,
+    isServingBased: false,
+    size: item.size,
+    emoji: item.emoji,
+    name: item.name
+  }
+
+  // Notify HabitatVisual to enter placement mode
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.enterPlacementMode(selectedItemForPlacement.value)
+  }
+
+  console.log(`📦 Selected for placement: ${item.name}`)
+}
+
+function cancelItemSelection() {
+  selectedItemForPlacement.value = null
+
+  // Notify HabitatVisual to exit placement mode
+  if (props.habitatVisualRef) {
+    props.habitatVisualRef.exitPlacementMode()
+  }
+
+  console.log('❌ Item selection cancelled')
+}
+
+// Called by HabitatVisual when item is successfully placed
+function onItemPlaced() {
+  selectedItemForPlacement.value = null
+  console.log('✓ Item placed successfully')
+}
+
+// Expose methods for HabitatVisual to call
+defineExpose({
+  onItemPlaced,
+  cancelItemSelection
+})
 </script>
 
 <style>
@@ -469,6 +704,10 @@ function handleTouchEndOnSidebar(_event: TouchEvent) {
 }
 
 .inventory-sidebar__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
   padding: var(--space-4);
   border-block-end: 1px solid var(--color-border);
   background-color: var(--color-bg-primary);
@@ -559,5 +798,54 @@ function handleTouchEndOnSidebar(_event: TouchEvent) {
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   margin-inline-start: auto;
+}
+
+/* Select mode styles */
+.inventory-sidebar__placement-instruction {
+  margin-block-end: 0;
+  border-radius: 0;
+  border-inline: none;
+  border-block-start: none;
+}
+
+.inventory-sidebar__instruction-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Select mode item styling */
+.inventory-sidebar__item-card--select-mode {
+  cursor: pointer;
+}
+
+.inventory-sidebar__item-card--select-mode:not(.inventory-sidebar__item-card--selected):hover {
+  border-color: var(--color-info);
+}
+
+.inventory-sidebar__item-card--selected {
+  background-color: var(--color-primary-100);
+  border-color: var(--color-primary);
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+}
+
+.inventory-sidebar__item-card--selected:hover {
+  border-color: var(--color-primary);
+  transform: none;
+}
+
+/* Drag ghost visual */
+.inventory-drag-ghost {
+  font-size: 2.5rem;
+  opacity: 0.7;
+  transform: rotate(-5deg);
+  padding: var(--space-2);
+  background-color: var(--color-bg-primary);
+  border: 2px dashed var(--color-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
 }
 </style>

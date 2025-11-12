@@ -7,30 +7,34 @@
     <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
     <!-- Visual Habitat with Sidebar -->
     <div class="panel panel--full-width">
-      <div class="panel__section">
-        <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end" :buttons-only="true" />
-      </div>
       <div class="panel__content">
-        <div class="habitat-layout">
-          <div class="habitat-layout__main">
-            <div class="habitat-visual-header">
-              <h3>Habitat Layout (medium - {{ habitatVisualRef?.gridWidth || 0 }}x{{ habitatVisualRef?.gridHeight || 0 }})</h3>
-              <div class="habitat-visual-header__stats">
-                <span>{{ habitatVisualRef?.placedItemsCount || 0 }} items placed</span>
-                <span>{{ habitatVisualRef?.occupiedCells || 0 }}/{{ habitatVisualRef?.totalCells || 0 }} cells occupied</span>
-                <span v-if="(habitatVisualRef?.poopCount || 0) > 0">💩 {{ habitatVisualRef?.poopCount }} poops</span>
-              </div>
-            </div>
-            <HabitatVisual
-              ref="habitatVisualRef"
-              :show-grid="true"
-              habitat-size="medium"
-              @guinea-pig-selected="handleGuineaPigSelected"
-            />
+        <div class="habitat-layout-wrapper">
+          <div class="habitat-layout-wrapper__tabs">
+            <SubTabContainer :tabs="sidebarTabs" v-model="activeSidebar" align="end" :buttons-only="true" />
           </div>
-          <div class="habitat-layout__sidebar">
+          <div class="habitat-layout">
+            <div class="habitat-layout__main">
+              <div class="habitat-visual-header">
+                <h3>Habitat Layout (medium - {{ habitatVisualRef?.gridWidth || 0 }}x{{ habitatVisualRef?.gridHeight || 0 }})</h3>
+                <div class="habitat-visual-header__stats">
+                  <span>{{ habitatVisualRef?.placedItemsCount || 0 }} items placed</span>
+                  <span>{{ habitatVisualRef?.occupiedCells || 0 }}/{{ habitatVisualRef?.totalCells || 0 }} cells occupied</span>
+                  <span v-if="(habitatVisualRef?.poopCount || 0) > 0">💩 {{ habitatVisualRef?.poopCount }} poops</span>
+                </div>
+              </div>
+              <HabitatVisual
+                ref="habitatVisualRef"
+                :show-grid="true"
+                habitat-size="medium"
+                @guinea-pig-selected="handleGuineaPigSelected"
+                @place-item-at-cell="handlePlaceItemAtCell"
+                @cancel-placement="handleCancelPlacement"
+              />
+            </div>
+            <div class="habitat-layout__sidebar">
             <InventorySidebar
               v-if="activeSidebar === 'inventory'"
+              ref="inventorySidebarRef"
               :habitat-visual-ref="habitatVisualRef"
             />
             <HabitatCareSidebar
@@ -42,8 +46,6 @@
               @quick-clean="handleQuickClean"
               @refill-water="handleRefillWater"
               @fill-all-hay-racks="handleFillAllHayRacks"
-              @clear-all-bowls="clearAllBowls"
-              @clear-all-hay-racks="clearAllHayRacks"
             />
             <ActivityFeedSidebar
               v-else-if="activeSidebar === 'activity'"
@@ -74,6 +76,7 @@
               :selected-guinea-pig="selectedGuineaPig"
             />
           </div>
+        </div>
         </div>
       </div>
     </div>
@@ -233,6 +236,7 @@ import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useUiPreferencesStore } from '../../../stores/uiPreferencesStore'
 import { useLoggingStore } from '../../../stores/loggingStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useNeedsController } from '../../../stores/needsController'
@@ -255,12 +259,15 @@ const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const uiPreferencesStore = useUiPreferencesStore()
 const loggingStore = useLoggingStore()
 const behaviorStateStore = useBehaviorStateStore()
 const needsController = useNeedsController()
 
 // Ref to HabitatVisual component
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
+// Ref to InventorySidebar component
+const inventorySidebarRef = ref<any>(null)
 
 // Active sidebar state
 const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize' | 'chatbubble' | 'autonomy'>('care')
@@ -405,6 +412,32 @@ watch(activeSidebar, (newSidebar) => {
     }
   }
 })
+
+// Placement mode (select mode)
+const placementModeLabel = computed(() => {
+  const mode = uiPreferencesStore.itemPlacementMode
+  console.log(`[HabitatDebug] Current placement mode: ${mode}`)
+  return mode === 'drag' ? '🖱️ Drag Mode' : '👆 Select Mode'
+})
+
+function togglePlacementMode() {
+  console.log(`[HabitatDebug] Toggle button clicked! Current mode: ${uiPreferencesStore.itemPlacementMode}`)
+  uiPreferencesStore.togglePlacementMode()
+  console.log(`[HabitatDebug] After toggle, mode is now: ${uiPreferencesStore.itemPlacementMode}`)
+}
+
+function handlePlaceItemAtCell() {
+  if (habitatVisualRef.value && inventorySidebarRef.value) {
+    habitatVisualRef.value.placementItemAtSelectedCell(inventorySidebarRef.value)
+  }
+}
+
+function handleCancelPlacement() {
+  if (habitatVisualRef.value && inventorySidebarRef.value) {
+    habitatVisualRef.value.exitPlacementMode()
+    inventorySidebarRef.value.cancelItemSelection()
+  }
+}
 
 // Handle guinea pig click - switch to socialize sidebar unless on autonomy
 function handleGuineaPigSelected(_guineaPigId: string) {
@@ -642,8 +675,17 @@ async function handleHandFeed(foodId: string) {
   padding-block-end: 0;
 }
 
-.habitat-debug__content .sub-tab-container {
-  margin-block-end: var(--space-5);
+
+/* Habitat Layout Wrapper - Contains tabs + layout */
+.habitat-layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* Tabs positioned at top on desktop, between visual and sidebar on mobile */
+.habitat-layout-wrapper__tabs {
+  order: 1;
 }
 
 /* Habitat Layout with Sidebar */
@@ -651,6 +693,7 @@ async function handleHandFeed(foodId: string) {
   display: flex;
   gap: var(--space-4);
   align-items: stretch;
+  order: 2;
 }
 
 .habitat-layout__main {
@@ -662,9 +705,9 @@ async function handleHandFeed(foodId: string) {
 }
 
 .habitat-layout__sidebar {
-  min-inline-size: 360px;
   max-block-size: 670px;
   overflow-y: auto;
+  border-radius: var(--radius-xl);
 }
 
 .habitat-layout__sidebar::-webkit-scrollbar {
@@ -711,10 +754,55 @@ async function handleHandFeed(foodId: string) {
   color: var(--color-text-muted);
 }
 
-/* Mobile: Stack layout vertically */
+.habitat-debug__mode-toggle {
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.habitat-debug__mode-toggle:hover {
+  background-color: var(--color-primary-600);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.habitat-debug__mode-toggle:active {
+  background-color: var(--color-primary-700);
+  transform: translateY(0);
+}
+
+/* Mobile: Stack layout vertically and reorder tabs */
 @media (max-width: 768px) {
+  .habitat-layout-wrapper {
+    display: grid;
+    grid-template-areas:
+      "visual"
+      "tabs"
+      "sidebar";
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .habitat-layout-wrapper__tabs {
+    grid-area: tabs;
+    overflow-x: auto;
+    min-inline-size: 0;
+  }
+
   .habitat-layout {
+    grid-area: visual;
     flex-direction: column;
+  }
+
+  .habitat-layout__sidebar {
+    grid-area: sidebar;
+    max-block-size: 350px;
   }
 }
 
