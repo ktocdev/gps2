@@ -103,9 +103,10 @@ import { isTouchDevice } from '../../../../utils/deviceDetection'
 import InventoryTileServing from '../../shop/InventoryTileServing.vue'
 import Button from '../../../basic/Button.vue'
 import BlockMessage from '../../../basic/BlockMessage.vue'
+import type HabitatVisual from '../HabitatVisual.vue'
 
 interface Props {
-  habitatVisualRef?: any
+  habitatVisualRef?: InstanceType<typeof HabitatVisual> | null
 }
 
 const props = defineProps<Props>()

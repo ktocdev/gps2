@@ -101,37 +101,40 @@ const clearAllStorage = () => {
 </script>
 
 <style scoped>
+/* Mobile-first: Default mobile layout - stacked vertically */
 .utility-nav {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--space-2);
   justify-content: flex-end;
 }
 
 .utility-nav__button {
-  padding-block: var(--space-2);
-  padding-inline: var(--space-3);
+  padding-block: var(--space-1);
+  padding-inline: var(--space-2);
   background-color: var(--color-primary);
   color: var(--color-text-inverse);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-md);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: var(--font-weight-medium);
   cursor: pointer;
   transition: all var(--transition-fast);
   white-space: nowrap;
 }
 
-@media (max-width: 768px) {
+/* Tablet and up: Horizontal layout with larger buttons */
+@media (min-width: 769px) {
   .utility-nav {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    align-items: center;
   }
 
   .utility-nav__button {
-    padding-block: var(--space-1);
-    padding-inline: var(--space-2);
-    font-size: var(--font-size-xs);
+    padding-block: var(--space-2);
+    padding-inline: var(--space-3);
+    font-size: var(--font-size-sm);
   }
 }
 
