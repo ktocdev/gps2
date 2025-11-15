@@ -45,11 +45,11 @@
         :tooltip-message="item.tooltipMessage"
         :draggable="!isSelectMode"
         :is-selected="isSelectMode && selectedItemForPlacement?.itemId === item.itemId"
-        @dragstart="!isSelectMode && ((_itemId, event) => handleServingDragStart(event, item))"
+        @dragstart="!isSelectMode && ((_itemId: string, event: DragEvent) => handleServingDragStart(event, item))"
         @dragend="!isSelectMode && handleDragEnd"
-        @touchstart="!isSelectMode && ((_itemId, event) => handleServingTouchStart(event, item))"
-        @touchmove="!isSelectMode && ((_itemId, event) => handleServingTouchMove(event, item))"
-        @touchend="!isSelectMode && ((_itemId, event) => handleServingTouchEnd(event, item))"
+        @touchstart="!isSelectMode && ((_itemId: string, event: TouchEvent) => handleServingTouchStart(event, item))"
+        @touchmove="!isSelectMode && ((_itemId: string, event: TouchEvent) => handleServingTouchMove(event, item))"
+        @touchend="!isSelectMode && ((_itemId: string, event: TouchEvent) => handleServingTouchEnd(event, item))"
         @click="(_itemId, _event) => handleServingItemClick(item)"
       />
 

@@ -91,7 +91,6 @@ export const useUiPreferencesStore = defineStore('uiPreferences', () => {
 }, {
   persist: {
     key: 'uiPreferences',
-    storage: localStorage,
-    paths: ['itemPlacementMode', 'hasManuallySetMode']
+    storage: localStorage
   }
 })

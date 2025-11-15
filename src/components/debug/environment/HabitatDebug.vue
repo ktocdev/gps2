@@ -236,7 +236,7 @@ import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
-import { useUiPreferencesStore } from '../../../stores/uiPreferencesStore'
+// import { useUiPreferencesStore } from '../../../stores/uiPreferencesStore'
 import { useLoggingStore } from '../../../stores/loggingStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useNeedsController } from '../../../stores/needsController'
@@ -259,7 +259,7 @@ const habitat = useHabitatConditions()
 const guineaPigStore = useGuineaPigStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
-const uiPreferencesStore = useUiPreferencesStore()
+// const uiPreferencesStore = useUiPreferencesStore()
 const loggingStore = useLoggingStore()
 const behaviorStateStore = useBehaviorStateStore()
 const needsController = useNeedsController()
@@ -321,13 +321,13 @@ onMounted(() => {
 })
 
 // Container management handlers
-function clearAllBowls() {
-  habitat.clearAllBowls()
-}
+// function clearAllBowls() {
+//   habitat.clearAllBowls()
+// }
 
-function clearAllHayRacks() {
-  habitat.clearAllHayRacks()
-}
+// function clearAllHayRacks() {
+//   habitat.clearAllHayRacks()
+// }
 
 function handleFillAllHayRacks() {
   const hayRacks = habitat.habitatItems.filter((itemId: string) => itemId.includes('hay_rack'))
@@ -414,17 +414,17 @@ watch(activeSidebar, (newSidebar) => {
 })
 
 // Placement mode (select mode)
-const placementModeLabel = computed(() => {
-  const mode = uiPreferencesStore.itemPlacementMode
-  console.log(`[HabitatDebug] Current placement mode: ${mode}`)
-  return mode === 'drag' ? '🖱️ Drag Mode' : '👆 Select Mode'
-})
+// const placementModeLabel = computed(() => {
+//   const mode = uiPreferencesStore.itemPlacementMode
+//   console.log(`[HabitatDebug] Current placement mode: ${mode}`)
+//   return mode === 'drag' ? '🖱️ Drag Mode' : '👆 Select Mode'
+// })
 
-function togglePlacementMode() {
-  console.log(`[HabitatDebug] Toggle button clicked! Current mode: ${uiPreferencesStore.itemPlacementMode}`)
-  uiPreferencesStore.togglePlacementMode()
-  console.log(`[HabitatDebug] After toggle, mode is now: ${uiPreferencesStore.itemPlacementMode}`)
-}
+// function togglePlacementMode() {
+//   console.log(`[HabitatDebug] Toggle button clicked! Current mode: ${uiPreferencesStore.itemPlacementMode}`)
+//   uiPreferencesStore.togglePlacementMode()
+//   console.log(`[HabitatDebug] After toggle, mode is now: ${uiPreferencesStore.itemPlacementMode}`)
+// }
 
 function handlePlaceItemAtCell() {
   if (habitatVisualRef.value && inventorySidebarRef.value) {
