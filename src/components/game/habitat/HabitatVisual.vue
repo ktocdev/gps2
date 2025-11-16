@@ -1394,6 +1394,7 @@ defineExpose({
   block-size: 100%;
 }
 
+/* Mobile-first: Default scroll container - no padding/margin to avoid covering tabs */
 .habitat-visual__scroll-container {
   overflow-x: auto;
   overflow-y: visible;
@@ -1401,8 +1402,8 @@ defineExpose({
   max-block-size: 100%;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-lg);
-  padding-block-start: 80px; /* Space for chat bubbles at top */
-  margin-block-start: -80px; /* Offset the padding */
+  padding-block-start: 0;
+  margin-block-start: 0;
 }
 
 /* Desktop: Remove scrollbar if content fits */
@@ -1413,27 +1414,17 @@ defineExpose({
   }
 }
 
+/* Mobile-first: Container defaults */
 .habitat-visual__container {
   position: relative;
   inline-size: fit-content;
-  margin-inline: auto;
-}
-
-/* Mobile-first: Default styles for mobile */
-.habitat-visual__scroll-container {
-  padding-block-start: 0;
-  margin-block-start: 0;
-}
-
-.habitat-visual__container {
   margin-inline: 0;
 }
 
-/* Tablet and up: Add padding/margin */
+/* Tablet and up: Add padding for chat bubbles and center container */
 @media (min-width: 769px) {
   .habitat-visual__scroll-container {
-    padding-block-start: 80px;
-    margin-block-start: -80px;
+    padding-block-start: 40px; /* Space for chat bubbles at top */
   }
 
   .habitat-visual__container {

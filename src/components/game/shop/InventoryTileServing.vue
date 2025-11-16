@@ -43,6 +43,7 @@ interface Props {
   tooltipMessage?: string
   draggable?: boolean
   isSelected?: boolean
+  category?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -94,6 +95,11 @@ function handleDragStart(event: DragEvent) {
 
   event.dataTransfer!.effectAllowed = 'move'
   event.dataTransfer!.setData('text/plain', JSON.stringify(dragData))
+
+  // Add category as custom MIME type for drag validation (e.g., hay, food)
+  if (props.category) {
+    event.dataTransfer!.setData(`application/x-item-category-${props.category}`, '')
+  }
 
   // Create custom drag image with only the emoji
   const dragImage = document.createElement('div')
