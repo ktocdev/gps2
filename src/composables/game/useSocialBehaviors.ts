@@ -2,13 +2,17 @@
  * Social Behaviors Composable
  * System 21: Social Bonding System
  *
- * Implements 6 core social interactions between guinea pigs:
+ * Implements 10 social interactions between guinea pigs:
  * 1. Approach Companion - Move closer for social interaction
- * 2. Groom Partner - Clean other guinea pig (cleanliness + social)
+ * 2. Groom Partner - Clean other guinea pig (cleanliness + social) [Friends/Bonded only]
  * 3. Play Together - Shared play (play + social)
  * 4. Share Food - Eat together (hunger + social)
  * 5. Sleep Together - Rest in proximity (energy + social)
  * 6. Explore Together - Move around as pair (social)
+ * 7. Greet - Initial acknowledgment (all tiers)
+ * 8. Inspect - Curiosity-based investigation (curiosity ≥ 5)
+ * 9. Follow - Movement synchronization (Friends/Bonded only)
+ * 10. Kick - Dominant/territorial behavior (Neutral only, personality-based)
  */
 
 import { useGuineaPigStore, type GuineaPig, type ActiveBond } from '../../stores/guineaPigStore'
@@ -121,16 +125,44 @@ export function useSocialBehaviors() {
   /**
    * 2. Groom Partner
    * One guinea pig grooms the other, cleaning and bonding
+   * Requires Friends (31%+) or Bonded (71%+) tier
    */
   async function groomPartner(
     groomer: GuineaPig,
     partner: GuineaPig,
     bond: ActiveBond
   ): Promise<boolean> {
+    // Bonding tier restriction: Grooming requires trust (Friends or Bonded)
+    if (bond.bondingTier === 'neutral') {
+      return false
+    }
+
+    // Activity feed message (show immediately)
+    loggingStore.addPlayerAction(
+      `${groomer.name} gently grooms ${partner.name} who seems very content 💕`,
+      '🐹'
+    )
+
     // Approach if not near
     if (!areGuineaPigsNear(groomer.id, partner.id, 1.5)) {
       await approachCompanion(groomer, partner, bond)
     }
+
+    // Show chat bubbles
+    const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+    const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
+
+    const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: groomer.id, reaction: reaction1 },
+      bubbles: true
+    }))
+
+    const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: partner.id, reaction: reaction2 },
+      bubbles: true
+    }))
 
     // Record activity for both (grooming counts as movement for now)
     habitatConditions.recordGuineaPigActivity('movement')
@@ -149,12 +181,6 @@ export function useSocialBehaviors() {
       5,
       'interaction',
       `${groomer.name} gently grooms ${partner.name}`
-    )
-
-    // Activity feed message
-    loggingStore.addPlayerAction(
-      `${groomer.name} gently grooms ${partner.name} who seems very content 💕`,
-      '🐹'
     )
 
     return true
@@ -185,6 +211,22 @@ export function useSocialBehaviors() {
 
     // Record activity
     habitatConditions.recordGuineaPigActivity('movement')
+
+    // Show chat bubbles
+    const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+    const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
+
+    const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp1.id, reaction: reaction1 },
+      bubbles: true
+    }))
+
+    const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp2.id, reaction: reaction2 },
+      bubbles: true
+    }))
 
     // Wait for play duration
     await delay(5000)
@@ -249,6 +291,28 @@ export function useSocialBehaviors() {
       moveToPosition(gp2.id, { x: foodPos.x + 1, y: foodPos.y })
     ])
 
+    // Activity feed message (show immediately)
+    loggingStore.addPlayerAction(
+      `${gp1.name} and ${gp2.name} munch happily side by side 🥬`,
+      '🍽️'
+    )
+
+    // Show chat bubbles
+    const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+    const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
+
+    const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp1.id, reaction: reaction1 },
+      bubbles: true
+    }))
+
+    const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp2.id, reaction: reaction2 },
+      bubbles: true
+    }))
+
     // Record eating activity
     habitatConditions.recordGuineaPigActivity('eating')
 
@@ -269,12 +333,6 @@ export function useSocialBehaviors() {
       `${gp1.name} and ${gp2.name} share a meal`
     )
 
-    // Activity feed message
-    loggingStore.addPlayerAction(
-      `${gp1.name} and ${gp2.name} munch happily side by side 🥬`,
-      '🍽️'
-    )
-
     return true
   }
 
@@ -287,6 +345,12 @@ export function useSocialBehaviors() {
     gp2: GuineaPig,
     bond: ActiveBond
   ): Promise<boolean> {
+    // Activity feed message (show immediately)
+    loggingStore.addPlayerAction(
+      `${gp1.name} and ${gp2.name} sleep peacefully together 😴`,
+      '💤'
+    )
+
     // Find shelter or comfortable spot
     const shelters = habitatConditions.habitatItems.filter(id =>
       id.includes('hideaway') || id.includes('tunnel') || id.includes('house')
@@ -318,6 +382,22 @@ export function useSocialBehaviors() {
       moveToPosition(gp2.id, { x: sleepPos.x + 1, y: sleepPos.y })
     ])
 
+    // Show chat bubbles
+    const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+    const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
+
+    const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp1.id, reaction: reaction1 },
+      bubbles: true
+    }))
+
+    const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp2.id, reaction: reaction2 },
+      bubbles: true
+    }))
+
     // Record activity
     habitatConditions.recordGuineaPigActivity('movement')
 
@@ -340,12 +420,6 @@ export function useSocialBehaviors() {
       `${gp1.name} and ${gp2.name} sleep together`
     )
 
-    // Activity feed message
-    loggingStore.addPlayerAction(
-      `${gp1.name} and ${gp2.name} sleep peacefully together 😴`,
-      '💤'
-    )
-
     return true
   }
 
@@ -358,6 +432,12 @@ export function useSocialBehaviors() {
     gp2: GuineaPig,
     bond: ActiveBond
   ): Promise<boolean> {
+    // Activity feed message (show immediately)
+    loggingStore.addPlayerAction(
+      `${gp1.name} and ${gp2.name} explore the habitat together 🔍`,
+      '🐹'
+    )
+
     // Pick random destination in habitat (using medium habitat size as default)
     // TODO: Get actual habitat size from settings when available
     const gridWidth = 14
@@ -371,6 +451,22 @@ export function useSocialBehaviors() {
       moveToPosition(gp1.id, { x: targetX, y: targetY }),
       moveToPosition(gp2.id, { x: Math.min(targetX + 1, gridWidth - 1), y: targetY })
     ])
+
+    // Show chat bubbles
+    const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+    const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
+
+    const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp1.id, reaction: reaction1 },
+      bubbles: true
+    }))
+
+    const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp2.id, reaction: reaction2 },
+      bubbles: true
+    }))
 
     // Record activity
     habitatConditions.recordGuineaPigActivity('movement')
@@ -392,13 +488,275 @@ export function useSocialBehaviors() {
       `${gp1.name} and ${gp2.name} explore together`
     )
 
-    // Activity feed message (less frequent, only for bonded pairs)
-    if (bond.bondingTier === 'bonded') {
-      loggingStore.addPlayerAction(
-        `${gp1.name} and ${gp2.name} explore the habitat together, staying close 🔍`,
-        '🐹'
-      )
+    return true
+  }
+
+  /**
+   * 7. Greet Companion
+   * Brief friendly acknowledgment between guinea pigs
+   * Trigger: After separation or first meeting
+   * Bonding: All tiers
+   */
+  async function greetCompanion(
+    gp1: GuineaPig,
+    gp2: GuineaPig,
+    bond: ActiveBond
+  ): Promise<boolean> {
+    // Activity message (show immediately)
+    loggingStore.addPlayerAction(
+      `${gp1.name} and ${gp2.name} greet each other with a friendly sniff 👃`,
+      '🐹'
+    )
+
+    // Approach if not near
+    if (!areGuineaPigsNear(gp1.id, gp2.id, 1.5)) {
+      await approachCompanion(gp1, gp2, bond)
     }
+
+    // Show chat bubbles for both guinea pigs
+    const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+    const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
+
+    // Show bubble for initiator (gp1)
+    const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    const event1 = new CustomEvent('show-chat-bubble', {
+      detail: {
+        guineaPigId: gp1.id,
+        reaction: reaction1
+      },
+      bubbles: true
+    })
+    document.dispatchEvent(event1)
+
+    // Brief greeting duration
+    await delay(2000)
+
+    // Show bubble for partner (gp2)
+    const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    const event2 = new CustomEvent('show-chat-bubble', {
+      detail: {
+        guineaPigId: gp2.id,
+        reaction: reaction2
+      },
+      bubbles: true
+    })
+    document.dispatchEvent(event2)
+
+    // Small social satisfaction
+    guineaPigStore.satisfyNeed(gp1.id, 'social', 5)
+    guineaPigStore.satisfyNeed(gp2.id, 'social', 5)
+
+    // Small bonding increase
+    guineaPigStore.increaseBonding(
+      bond.id,
+      1,
+      'interaction',
+      `${gp1.name} greets ${gp2.name}`
+    )
+
+    return true
+  }
+
+  /**
+   * 8. Inspect Companion
+   * Curiosity-based investigation of another guinea pig
+   * Requires: Curiosity ≥ 5
+   * Bonding: All tiers (more frequent in Neutral/Friends)
+   */
+  async function inspectCompanion(
+    inspector: GuineaPig,
+    partner: GuineaPig,
+    bond: ActiveBond
+  ): Promise<boolean> {
+    // Personality check: Requires curiosity ≥ 5
+    if (inspector.personality.curiosity < 5) {
+      return false
+    }
+
+    // Activity feed message (show immediately)
+    loggingStore.addPlayerAction(
+      `${inspector.name} curiously inspects ${partner.name} 🔍`,
+      '🐹'
+    )
+
+    // Approach if not near
+    if (!areGuineaPigsNear(inspector.id, partner.id, 1.5)) {
+      await approachCompanion(inspector, partner, bond)
+    }
+
+    // Show chat bubbles
+    const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+    const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
+
+    const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: inspector.id, reaction: reaction1 },
+      bubbles: true
+    }))
+
+    const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: partner.id, reaction: reaction2 },
+      bubbles: true
+    }))
+
+    // Record activity
+    habitatConditions.recordGuineaPigActivity('movement')
+
+    // Wait for inspection duration
+    await delay(3000)
+
+    // Satisfy needs (inspector gets more satisfaction from curiosity)
+    guineaPigStore.satisfyNeed(inspector.id, 'social', 10)
+    guineaPigStore.satisfyNeed(partner.id, 'social', 5)
+
+    // Increase bonding
+    guineaPigStore.increaseBonding(
+      bond.id,
+      2,
+      'interaction',
+      `${inspector.name} inspects ${partner.name}`
+    )
+
+    return true
+  }
+
+  /**
+   * 9. Follow Companion
+   * One guinea pig follows the other's movement
+   * Requires: Friends (31%+) or Bonded (71%+) tier
+   * Personality: Friendliness ≥ 6 for Friends tier (Bonded always eligible)
+   */
+  async function followCompanion(
+    follower: GuineaPig,
+    leader: GuineaPig,
+    bond: ActiveBond
+  ): Promise<boolean> {
+    // Bonding requirement: Friends or Bonded
+    if (bond.bondingTier === 'neutral') {
+      return false
+    }
+
+    // Personality check for Friends tier (Bonded always eligible)
+    if (bond.bondingTier === 'friends' && follower.personality.friendliness < 6) {
+      return false
+    }
+
+    // Activity message (show immediately)
+    loggingStore.addPlayerAction(
+      `${follower.name} follows ${leader.name} around the habitat`,
+      '🐹'
+    )
+
+    const leaderPos = habitatConditions.getGuineaPigPosition(leader.id)
+    if (!leaderPos) return false
+
+    // Move to position near leader (1-2 cells away)
+    const followDistance = bond.bondingTier === 'bonded' ? 1 : 2
+    const targetPos = {
+      x: leaderPos.x + (Math.random() > 0.5 ? followDistance : -followDistance),
+      y: leaderPos.y
+    }
+
+    const success = await moveToPosition(follower.id, targetPos)
+    if (!success) return false
+
+    // Show chat bubbles
+    const { guineaPigMessages } = await import('../../data/guineaPigMessages')
+    const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
+
+    const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: follower.id, reaction: reaction1 },
+      bubbles: true
+    }))
+
+    const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: leader.id, reaction: reaction2 },
+      bubbles: true
+    }))
+
+    // Small social satisfaction
+    guineaPigStore.satisfyNeed(follower.id, 'social', 3)
+    guineaPigStore.satisfyNeed(leader.id, 'social', 2)
+
+    // Small bonding increase
+    guineaPigStore.increaseBonding(
+      bond.id,
+      1,
+      'proximity',
+      `${follower.name} follows ${leader.name}`
+    )
+
+    return true
+  }
+
+  /**
+   * 10. Kick Companion
+   * Dominant/territorial behavior (negative interaction)
+   * Only occurs in Neutral tier (0-30%) with specific personalities
+   * Requires: Boldness ≥ 8 OR Friendliness ≤ 3
+   */
+  async function kickCompanion(
+    aggressor: GuineaPig,
+    target: GuineaPig,
+    bond: ActiveBond
+  ): Promise<boolean> {
+    // ONLY happens in Neutral tier (0-30%)
+    if (bond.bondingTier !== 'neutral') {
+      return false
+    }
+
+    // Personality requirements
+    const isBold = aggressor.personality.boldness >= 8
+    const isUnfriendly = aggressor.personality.friendliness <= 3
+
+    // Must meet at least one personality condition
+    if (!isBold && !isUnfriendly) {
+      return false
+    }
+
+    // Calculate kick probability
+    let kickChance = 0
+    if (isBold && isUnfriendly) {
+      kickChance = 0.15 // 15% chance
+    } else if (isBold) {
+      kickChance = 0.08 // 8% chance
+    } else if (isUnfriendly) {
+      kickChance = 0.05 // 5% chance
+    }
+
+    // Roll for kick
+    if (Math.random() > kickChance) {
+      return false
+    }
+
+    // Approach if not near
+    if (!areGuineaPigsNear(aggressor.id, target.id, 1.5)) {
+      await approachCompanion(aggressor, target, bond)
+    }
+
+    // Brief kick action
+    await delay(1000)
+
+    // NEGATIVE bonding decrease
+    const bondingPenalty = isBold && isUnfriendly ? -5 : -3
+    guineaPigStore.increaseBonding(
+      bond.id,
+      bondingPenalty, // Negative value
+      'interaction',
+      `${aggressor.name} kicks ${target.name} (territorial)`
+    )
+
+    // Small stress increase for target (reduce comfort)
+    guineaPigStore.adjustNeed(target.id, 'comfort', -10)
+
+    // Activity feed message (always show - important player feedback)
+    loggingStore.addPlayerAction(
+      `${aggressor.name} gives ${target.name} a warning kick! They need more time to bond 😬`,
+      '⚠️'
+    )
 
     return true
   }
@@ -408,12 +766,16 @@ export function useSocialBehaviors() {
     areGuineaPigsNear,
     getMidpoint,
 
-    // 6 Core social behaviors
+    // 10 Social behaviors (6 original + 4 new)
     approachCompanion,
     groomPartner,
     playTogether,
     shareFood,
     sleepTogether,
-    exploreTogether
+    exploreTogether,
+    greetCompanion,
+    inspectCompanion,
+    followCompanion,
+    kickCompanion
   }
 }
