@@ -2,28 +2,29 @@
  * Social Behaviors Composable
  * System 21: Social Bonding System
  *
- * Implements 10 social interactions between guinea pigs:
+ * Implements 9 social interactions between guinea pigs:
  * 1. Approach Companion - Move closer for social interaction
  * 2. Groom Partner - Clean other guinea pig (cleanliness + social) [Friends/Bonded only]
  * 3. Play Together - Shared play (play + social)
  * 4. Share Food - Eat together (hunger + social)
  * 5. Sleep Together - Rest in proximity (energy + social)
- * 6. Explore Together - Move around as pair (social)
- * 7. Greet - Initial acknowledgment (all tiers)
- * 8. Inspect - Curiosity-based investigation (curiosity ≥ 5)
- * 9. Follow - Movement synchronization (Friends/Bonded only)
- * 10. Kick - Dominant/territorial behavior (Neutral only, personality-based)
+ * 6. Greet - Initial acknowledgment (all tiers)
+ * 7. Inspect - Curiosity-based investigation (curiosity ≥ 5)
+ * 8. Follow - Movement synchronization (Friends/Bonded only)
+ * 9. Kick - Dominant/territorial behavior (Neutral only, personality-based)
  */
 
 import { useGuineaPigStore, type GuineaPig, type ActiveBond } from '../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useLoggingStore } from '../../stores/loggingStore'
 import { usePathfinding } from './usePathfinding'
+import { useBehaviorStateStore } from '../../stores/behaviorStateStore'
 
 export function useSocialBehaviors() {
   const guineaPigStore = useGuineaPigStore()
   const habitatConditions = useHabitatConditions()
   const loggingStore = useLoggingStore()
+  const behaviorStateStore = useBehaviorStateStore()
   const { findPath } = usePathfinding()
 
   /**
@@ -148,16 +149,27 @@ export function useSocialBehaviors() {
       await approachCompanion(groomer, partner, bond)
     }
 
-    // Show chat bubbles
+    // Groomer wiggles first
+    behaviorStateStore.triggerPlayerInteraction(groomer.id, 1500)
+
+    // Show chat bubbles (STAGGERED)
     const { guineaPigMessages } = await import('../../data/guineaPigMessages')
     const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
 
+    // Show groomer's bubble first
     const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: groomer.id, reaction: reaction1 },
       bubbles: true
     }))
 
+    // Wait before showing partner's bubble
+    await delay(1500)
+
+    // Partner wiggles back
+    behaviorStateStore.triggerPlayerInteraction(partner.id, 1500)
+
+    // Show partner's bubble
     const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: partner.id, reaction: reaction2 },
@@ -168,7 +180,7 @@ export function useSocialBehaviors() {
     habitatConditions.recordGuineaPigActivity('movement')
 
     // Wait for grooming duration
-    await delay(4000)
+    await delay(2500)
 
     // Satisfy needs
     guineaPigStore.satisfyNeed(groomer.id, 'social', 20)
@@ -209,19 +221,28 @@ export function useSocialBehaviors() {
       moveToPosition(gp2.id, { x: meetingPoint.x + 1, y: meetingPoint.y })
     ])
 
+    // Set both to 'playing' state
+    behaviorStateStore.updateBehaviorState(gp1.id, { currentActivity: 'playing' })
+    behaviorStateStore.updateBehaviorState(gp2.id, { currentActivity: 'playing' })
+
     // Record activity
     habitatConditions.recordGuineaPigActivity('movement')
 
-    // Show chat bubbles
+    // Show chat bubbles (STAGGERED)
     const { guineaPigMessages } = await import('../../data/guineaPigMessages')
     const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
 
+    // Show gp1's bubble first
     const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: gp1.id, reaction: reaction1 },
       bubbles: true
     }))
 
+    // Wait before showing gp2's bubble
+    await delay(1500)
+
+    // Show gp2's bubble
     const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: gp2.id, reaction: reaction2 },
@@ -229,7 +250,11 @@ export function useSocialBehaviors() {
     }))
 
     // Wait for play duration
-    await delay(5000)
+    await delay(3500)
+
+    // Return to idle state
+    behaviorStateStore.updateBehaviorState(gp1.id, { currentActivity: 'idle' })
+    behaviorStateStore.updateBehaviorState(gp2.id, { currentActivity: 'idle' })
 
     // Satisfy needs - use 'play' instead of 'happiness'
     guineaPigStore.satisfyNeed(gp1.id, 'play', 25)
@@ -297,16 +322,21 @@ export function useSocialBehaviors() {
       '🍽️'
     )
 
-    // Show chat bubbles
+    // Show chat bubbles (STAGGERED)
     const { guineaPigMessages } = await import('../../data/guineaPigMessages')
     const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
 
+    // Show gp1's bubble first
     const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: gp1.id, reaction: reaction1 },
       bubbles: true
     }))
 
+    // Wait before showing gp2's bubble
+    await delay(1500)
+
+    // Show gp2's bubble
     const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: gp2.id, reaction: reaction2 },
@@ -317,7 +347,7 @@ export function useSocialBehaviors() {
     habitatConditions.recordGuineaPigActivity('eating')
 
     // Wait for eating duration
-    await delay(4500)
+    await delay(3000)
 
     // Satisfy needs (less hunger satisfaction than solo eating, but social bonus)
     guineaPigStore.satisfyNeed(gp1.id, 'hunger', 15)
@@ -338,7 +368,7 @@ export function useSocialBehaviors() {
 
   /**
    * 5. Sleep Together
-   * Guinea pigs rest together in proximity
+   * Guinea pigs rest together in the same shelter/bed, triggering autonomous sleep bonding
    */
   async function sleepTogether(
     gp1: GuineaPig,
@@ -347,7 +377,7 @@ export function useSocialBehaviors() {
   ): Promise<boolean> {
     // Activity feed message (show immediately)
     loggingStore.addPlayerAction(
-      `${gp1.name} and ${gp2.name} sleep peacefully together 😴`,
+      `${gp1.name} and ${gp2.name} settle in together for a nap 😴`,
       '💤'
     )
 
@@ -357,9 +387,11 @@ export function useSocialBehaviors() {
     )
 
     let sleepPos: { x: number; y: number }
+    let shelterItemId: string | undefined
 
     if (shelters.length > 0) {
       // Use shelter
+      shelterItemId = shelters[0]
       const shelterPos = habitatConditions.itemPositions.get(shelters[0])
       if (shelterPos) {
         sleepPos = shelterPos
@@ -376,33 +408,54 @@ export function useSocialBehaviors() {
       sleepPos = pos1
     }
 
-    // Both move to sleep position (in parallel)
+    // Both move to the EXACT SAME position (so bonding check detects them together)
     await Promise.all([
       moveToPosition(gp1.id, sleepPos),
-      moveToPosition(gp2.id, { x: sleepPos.x + 1, y: sleepPos.y })
+      moveToPosition(gp2.id, sleepPos)
     ])
 
-    // Show chat bubbles
+    // Set both to 'sleeping' state with extended duration
+    // This allows the autonomous sleep bonding check to run
+    const sleepDuration = 8000 // 8 seconds to ensure bonding check triggers
+    behaviorStateStore.updateBehaviorState(gp1.id, {
+      currentActivity: 'sleeping',
+      activityStartTime: Date.now()
+    })
+    behaviorStateStore.updateBehaviorState(gp2.id, {
+      currentActivity: 'sleeping',
+      activityStartTime: Date.now()
+    })
+
+    // Show chat bubbles (STAGGERED)
     const { guineaPigMessages } = await import('../../data/guineaPigMessages')
     const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
 
+    // Show gp1's bubble first
     const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: gp1.id, reaction: reaction1 },
       bubbles: true
     }))
 
+    // Wait before showing gp2's bubble
+    await delay(1500)
+
+    // Show gp2's bubble
     const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: gp2.id, reaction: reaction2 },
       bubbles: true
     }))
 
-    // Record activity
+    // Record activity (use 'movement' since 'sleeping' is not a valid activity type for recording)
     habitatConditions.recordGuineaPigActivity('movement')
 
     // Wait for sleep duration
-    await delay(6000)
+    await delay(sleepDuration)
+
+    // Return to idle state
+    behaviorStateStore.updateBehaviorState(gp1.id, { currentActivity: 'idle' })
+    behaviorStateStore.updateBehaviorState(gp2.id, { currentActivity: 'idle' })
 
     // Satisfy needs
     guineaPigStore.satisfyNeed(gp1.id, 'energy', 30)
@@ -412,12 +465,15 @@ export function useSocialBehaviors() {
     guineaPigStore.satisfyNeed(gp1.id, 'comfort', 20)
     guineaPigStore.satisfyNeed(gp2.id, 'comfort', 20)
 
-    // Increase bonding
+    // Sleeping together bonding (mimics autonomous sleep bonding behavior)
+    const cuddleMsg = `${gp1.name} and ${gp2.name} cuddle together${shelterItemId ? ' in the ' + shelterItemId.split('_')[0] : ''} 💕`
+    loggingStore.addAutonomousBehavior(cuddleMsg, '💤')
+
     guineaPigStore.increaseBonding(
       bond.id,
-      4,
-      'shared_experience',
-      `${gp1.name} and ${gp2.name} sleep together`
+      2, // Same as autonomous sleep bonding
+      'interaction',
+      `${gp1.name} and ${gp2.name} cuddled together while sleeping`
     )
 
     return true
@@ -452,16 +508,21 @@ export function useSocialBehaviors() {
       moveToPosition(gp2.id, { x: Math.min(targetX + 1, gridWidth - 1), y: targetY })
     ])
 
-    // Show chat bubbles
+    // Show chat bubbles (STAGGERED)
     const { guineaPigMessages } = await import('../../data/guineaPigMessages')
     const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
 
+    // Show gp1's bubble first
     const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: gp1.id, reaction: reaction1 },
       bubbles: true
     }))
 
+    // Wait before showing gp2's bubble
+    await delay(1500)
+
+    // Show gp2's bubble
     const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: gp2.id, reaction: reaction2 },
@@ -472,7 +533,7 @@ export function useSocialBehaviors() {
     habitatConditions.recordGuineaPigActivity('movement')
 
     // Small pause for exploration
-    await delay(2000)
+    await delay(500)
 
     // Satisfy needs
     guineaPigStore.satisfyNeed(gp1.id, 'social', 10)
@@ -496,6 +557,7 @@ export function useSocialBehaviors() {
    * Brief friendly acknowledgment between guinea pigs
    * Trigger: After separation or first meeting
    * Bonding: All tiers
+   * Animation: Initiator approaches, both wiggle, staggered chat bubbles
    */
   async function greetCompanion(
     gp1: GuineaPig,
@@ -513,34 +575,35 @@ export function useSocialBehaviors() {
       await approachCompanion(gp1, gp2, bond)
     }
 
-    // Show chat bubbles for both guinea pigs
+    // Initiator wiggles first
+    behaviorStateStore.triggerPlayerInteraction(gp1.id, 1500)
+
+    // Show chat bubbles for both guinea pigs (STAGGERED)
     const { guineaPigMessages } = await import('../../data/guineaPigMessages')
     const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
 
-    // Show bubble for initiator (gp1)
+    // Show bubble for initiator (gp1) first
     const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
-    const event1 = new CustomEvent('show-chat-bubble', {
-      detail: {
-        guineaPigId: gp1.id,
-        reaction: reaction1
-      },
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp1.id, reaction: reaction1 },
       bubbles: true
-    })
-    document.dispatchEvent(event1)
+    }))
 
-    // Brief greeting duration
-    await delay(2000)
+    // Wait before partner responds
+    await delay(1500)
 
-    // Show bubble for partner (gp2)
+    // Partner wiggles back
+    behaviorStateStore.triggerPlayerInteraction(gp2.id, 1500)
+
+    // Show bubble for partner (gp2) after delay
     const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
-    const event2 = new CustomEvent('show-chat-bubble', {
-      detail: {
-        guineaPigId: gp2.id,
-        reaction: reaction2
-      },
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: gp2.id, reaction: reaction2 },
       bubbles: true
-    })
-    document.dispatchEvent(event2)
+    }))
+
+    // Wait for interaction to complete
+    await delay(1000)
 
     // Small social satisfaction
     guineaPigStore.satisfyNeed(gp1.id, 'social', 5)
@@ -584,16 +647,27 @@ export function useSocialBehaviors() {
       await approachCompanion(inspector, partner, bond)
     }
 
-    // Show chat bubbles
+    // Inspector wiggles first
+    behaviorStateStore.triggerPlayerInteraction(inspector.id, 1500)
+
+    // Show chat bubbles (STAGGERED)
     const { guineaPigMessages } = await import('../../data/guineaPigMessages')
     const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
 
+    // Show inspector's bubble first
     const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: inspector.id, reaction: reaction1 },
       bubbles: true
     }))
 
+    // Wait before showing partner's bubble
+    await delay(1500)
+
+    // Partner wiggles back
+    behaviorStateStore.triggerPlayerInteraction(partner.id, 1500)
+
+    // Show partner's bubble
     const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: partner.id, reaction: reaction2 },
@@ -604,7 +678,7 @@ export function useSocialBehaviors() {
     habitatConditions.recordGuineaPigActivity('movement')
 
     // Wait for inspection duration
-    await delay(3000)
+    await delay(1500)
 
     // Satisfy needs (inspector gets more satisfaction from curiosity)
     guineaPigStore.satisfyNeed(inspector.id, 'social', 10)
@@ -651,26 +725,31 @@ export function useSocialBehaviors() {
     const leaderPos = habitatConditions.getGuineaPigPosition(leader.id)
     if (!leaderPos) return false
 
-    // Move to position near leader (1-2 cells away)
+    // Move to position near leader (1-2 cells away, side by side)
     const followDistance = bond.bondingTier === 'bonded' ? 1 : 2
     const targetPos = {
-      x: leaderPos.x + (Math.random() > 0.5 ? followDistance : -followDistance),
+      x: leaderPos.x + followDistance,
       y: leaderPos.y
     }
 
     const success = await moveToPosition(follower.id, targetPos)
     if (!success) return false
 
-    // Show chat bubbles
+    // Show chat bubbles (STAGGERED)
     const { guineaPigMessages } = await import('../../data/guineaPigMessages')
     const tierMessages = guineaPigMessages.autonomous.social[bond.bondingTier]
 
+    // Show follower's bubble first
     const reaction1 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: follower.id, reaction: reaction1 },
       bubbles: true
     }))
 
+    // Wait before showing leader's bubble
+    await delay(1500)
+
+    // Show leader's bubble
     const reaction2 = tierMessages[Math.floor(Math.random() * tierMessages.length)]
     document.dispatchEvent(new CustomEvent('show-chat-bubble', {
       detail: { guineaPigId: leader.id, reaction: reaction2 },
@@ -766,13 +845,13 @@ export function useSocialBehaviors() {
     areGuineaPigsNear,
     getMidpoint,
 
-    // 10 Social behaviors (6 original + 4 new)
+    // 9 Social behaviors (6 original + 3 new)
     approachCompanion,
     groomPartner,
     playTogether,
     shareFood,
     sleepTogether,
-    exploreTogether,
+    exploreTogether, // Still available for autonomous AI, not player-triggerable
     greetCompanion,
     inspectCompanion,
     followCompanion,

@@ -72,16 +72,6 @@
               🎾 Play
             </Button>
 
-            <Button
-              @click="triggerInteraction('explore')"
-              variant="tertiary"
-              size="sm"
-              :disabled="isGameInactive || !hasCompanion"
-              :title="hasCompanion ? 'Explore together' : 'Requires companion'"
-            >
-              🗺️ Explore
-            </Button>
-
             <!-- Friends/Bonded Tier Interactions -->
             <Button
               @click="triggerInteraction('groom')"

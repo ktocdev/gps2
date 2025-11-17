@@ -1332,9 +1332,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
         case 'play':
           success = await socialBehaviors.playTogether(guineaPig.value, partner, bond)
           break
-        case 'explore':
-          success = await socialBehaviors.exploreTogether(guineaPig.value, partner, bond)
-          break
         case 'groom':
           success = await socialBehaviors.groomPartner(guineaPig.value, partner, bond)
           break
