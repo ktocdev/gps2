@@ -1394,6 +1394,7 @@ defineExpose({
   block-size: 100%;
 }
 
+/* Mobile-first: Default scroll container - no padding/margin to avoid covering tabs */
 .habitat-visual__scroll-container {
   overflow-x: auto;
   overflow-y: visible;
@@ -1401,8 +1402,8 @@ defineExpose({
   max-block-size: 100%;
   -webkit-overflow-scrolling: touch;
   border-radius: var(--radius-lg);
-  padding-block-start: 80px; /* Space for chat bubbles at top */
-  margin-block-start: -80px; /* Offset the padding */
+  padding-block-start: 0;
+  margin-block-start: 0;
 }
 
 /* Desktop: Remove scrollbar if content fits */
@@ -1413,20 +1414,21 @@ defineExpose({
   }
 }
 
+/* Mobile-first: Container defaults */
 .habitat-visual__container {
   position: relative;
   inline-size: fit-content;
-  margin-inline: auto;
+  margin-inline: 0;
 }
 
-@media (max-width: 768px) {
+/* Tablet and up: Add padding for chat bubbles and center container */
+@media (min-width: 769px) {
   .habitat-visual__scroll-container {
-    padding-block-start: 0;
-    margin-block-start: 0;
+    padding-block-start: 40px; /* Space for chat bubbles at top */
   }
 
   .habitat-visual__container {
-    margin-inline: 0;
+    margin-inline: auto;
   }
 }
 
@@ -1506,46 +1508,47 @@ defineExpose({
   cursor: default;
 }
 
+/* Mobile-first: Default emoji sizes for mobile (35px cells) */
 .grid-item__emoji {
-  font-size: var(--font-size-2xl); /* 24px - Desktop (60px cells) */
+  font-size: var(--font-size-base); /* 16px - Mobile */
   line-height: 1;
 }
 
 .grid-item__emoji--bowl {
-  font-size: 3rem; /* 48px - Desktop */
+  font-size: 1.5rem; /* 24px - Mobile */
 }
 
 .grid-item__emoji--large {
-  font-size: 3rem; /* 48px - Desktop */
+  font-size: 1.5rem; /* 24px - Mobile */
 }
 
-/* Tablet: Scale emojis down for 45px cells */
-@media (max-width: 1023px) {
+/* Tablet and up: Scale emojis up for 45px cells */
+@media (min-width: 640px) {
   .grid-item__emoji {
-    font-size: var(--font-size-lg); /* 18px - 75% of desktop */
+    font-size: var(--font-size-lg); /* 18px - Tablet */
   }
 
   .grid-item__emoji--bowl {
-    font-size: 2rem; /* 32px - ~67% of desktop */
+    font-size: 2rem; /* 32px - Tablet */
   }
 
   .grid-item__emoji--large {
-    font-size: 2rem; /* 32px */
+    font-size: 2rem; /* 32px - Tablet */
   }
 }
 
-/* Mobile: Scale emojis down further for 35px cells */
-@media (max-width: 639px) {
+/* Desktop and up: Scale emojis to full size for 60px cells */
+@media (min-width: 1024px) {
   .grid-item__emoji {
-    font-size: var(--font-size-base); /* 16px - ~67% of desktop */
+    font-size: var(--font-size-2xl); /* 24px - Desktop */
   }
 
   .grid-item__emoji--bowl {
-    font-size: 1.5rem; /* 24px - 50% of desktop */
+    font-size: 3rem; /* 48px - Desktop */
   }
 
   .grid-item__emoji--large {
-    font-size: 1.5rem; /* 24px */
+    font-size: 3rem; /* 48px - Desktop */
   }
 }
 
@@ -1617,9 +1620,10 @@ defineExpose({
   background-color: rgba(239, 68, 68, 0.15);
 }
 
+/* Mobile-first: Placement actions positioning */
 .habitat-visual__placement-actions {
   position: absolute;
-  inset-block-start: var(--space-4);
+  inset-block-start: var(--space-2); /* Mobile default */
   inset-inline-start: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1628,9 +1632,10 @@ defineExpose({
   pointer-events: all;
 }
 
-@media (max-width: 640px) {
+/* Tablet and up: More spacing from top */
+@media (min-width: 641px) {
   .habitat-visual__placement-actions {
-    inset-block-start: var(--space-2);
+    inset-block-start: var(--space-4);
   }
 }
 </style>

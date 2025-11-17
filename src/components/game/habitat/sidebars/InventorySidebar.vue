@@ -38,6 +38,7 @@
         :item-id="item.itemId"
         :name="item.name"
         :emoji="item.emoji"
+        :category="item.category"
         :servings-remaining="item.servingsRemaining"
         :max-servings="item.maxServings"
         :instance-count="item.instanceCount"
@@ -103,9 +104,10 @@ import { isTouchDevice } from '../../../../utils/deviceDetection'
 import InventoryTileServing from '../../shop/InventoryTileServing.vue'
 import Button from '../../../basic/Button.vue'
 import BlockMessage from '../../../basic/BlockMessage.vue'
+import type HabitatVisual from '../HabitatVisual.vue'
 
 interface Props {
-  habitatVisualRef?: any
+  habitatVisualRef?: InstanceType<typeof HabitatVisual> | null
 }
 
 const props = defineProps<Props>()
@@ -291,6 +293,7 @@ const servingBasedItems = computed(() => {
         itemId: invItem.itemId,
         name: item?.name || 'Unknown',
         emoji: item?.emoji || '📦',
+        category: item?.category || '',
         servingsRemaining: firstInstance?.servingsRemaining || 0,
         maxServings: firstInstance?.maxServings || 0,
         instanceCount: availableInstances.length,
@@ -331,24 +334,24 @@ const regularItems = computed(() => {
 
 // Bedding items (read-only display with exact quantities)
 const beddingItems = computed(() => {
-  const beddingTypes = ['bedding_basic', 'bedding_average', 'bedding_premium']
-
-  return beddingTypes
-    .map(beddingId => {
+  // Get all bedding items from inventory
+  return inventoryStore.items
+    .filter(invItem => {
+      const item = suppliesStore.getItemById(invItem.itemId)
+      return item?.category === 'bedding'
+    })
+    .map(invItem => {
       // Calculate total amount remaining across all instances (bags) of this type
-      const inventoryItem = inventoryStore.itemsById.get(beddingId)
       let totalAmount = 0
 
-      if (inventoryItem) {
-        for (const instance of inventoryItem.instances) {
-          totalAmount += instance.amountRemaining ?? 1 // Default to 1 (full bag) if not set
-        }
+      for (const instance of invItem.instances) {
+        totalAmount += instance.amountRemaining ?? 1 // Default to 1 (full bag) if not set
       }
 
-      const item = suppliesStore.getItemById(beddingId)
+      const item = suppliesStore.getItemById(invItem.itemId)
 
       return {
-        id: beddingId,
+        id: invItem.itemId,
         name: item?.name || 'Bedding',
         emoji: item?.emoji || '🛏️',
         quantity: totalAmount,
@@ -781,7 +784,7 @@ defineExpose({
 
 /* Read-only items (bedding) */
 .inventory-sidebar__item-card--readonly {
-  cursor: default;
+  cursor: not-allowed;
   background-color: var(--color-bg-tertiary);
   border-color: var(--color-border-medium);
   border-style: solid;

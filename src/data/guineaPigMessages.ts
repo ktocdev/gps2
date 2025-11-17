@@ -10,7 +10,7 @@ export interface MessageContext {
   wellnessTier: 'excellent' | 'good' | 'fair' | 'poor' | 'critical'
   preferenceLevel?: 'favorite' | 'liked' | 'neutral' | 'disliked'
   needLevel?: number
-  rejectionReason?: 'tired' | 'stressed' | 'full' | 'limit_reached' | 'low_friendship'
+  rejectionReason?: 'tired' | 'stressed' | 'full' | 'limit_reached' | 'low_friendship' | 'low_wellness' | 'dirty_habitat' | 'too_shy' | 'not_bold_enough'
 }
 
 export const guineaPigMessages = {
@@ -96,6 +96,33 @@ export const guineaPigMessages = {
       tired: [
         { message: 'Too tired...', emoji: '😴', variant: 'negative' as const },
         { message: 'Need rest...', emoji: '💤', variant: 'negative' as const }
+      ],
+      low_wellness: [
+        { message: "Not feeling well...", emoji: '😔', variant: 'negative' as const },
+        { message: "Too uncomfortable...", emoji: '😓', variant: 'negative' as const },
+        { message: "Need to rest...", emoji: '💤', variant: 'warning' as const }
+      ],
+      dirty_habitat: [
+        { message: "Habitat is dirty!", emoji: '🧹', variant: 'warning' as const },
+        { message: "Clean my cage first!", emoji: '🚫', variant: 'warning' as const },
+        { message: "Too uncomfortable here...", emoji: '😣', variant: 'negative' as const }
+      ],
+      too_shy: [
+        { message: "Too nervous...", emoji: '😰', variant: 'neutral' as const },
+        { message: "Need more time...", emoji: '🙈', variant: 'neutral' as const },
+        { message: "I'm shy...", emoji: '😳', variant: 'neutral' as const }
+      ],
+      not_bold_enough: [
+        { message: "Scared...", emoji: '😟', variant: 'neutral' as const },
+        { message: "Not ready yet...", emoji: '😌', variant: 'neutral' as const }
+      ],
+      low_friendship: [
+        { message: "Don't know you well...", emoji: '🤔', variant: 'neutral' as const },
+        { message: "Need more bonding...", emoji: '💭', variant: 'neutral' as const }
+      ],
+      stressed: [
+        { message: "Too stressed...", emoji: '😰', variant: 'warning' as const },
+        { message: "Need calm...", emoji: '😥', variant: 'warning' as const }
       ]
     }
   },
@@ -136,6 +163,22 @@ export const guineaPigMessages = {
       low_friendship: [
         { message: "I don't know you...", emoji: '😐', variant: 'negative' as const },
         { message: 'No thanks!', emoji: '', variant: 'negative' as const }
+      ],
+      low_wellness: [
+        { message: "Not feeling well...", emoji: '😔', variant: 'negative' as const },
+        { message: "Too uncomfortable...", emoji: '😓', variant: 'negative' as const }
+      ],
+      dirty_habitat: [
+        { message: "Clean my cage first!", emoji: '🧹', variant: 'warning' as const },
+        { message: "Too messy here...", emoji: '😣', variant: 'negative' as const }
+      ],
+      too_shy: [
+        { message: "Too nervous...", emoji: '😰', variant: 'neutral' as const },
+        { message: "I'm shy...", emoji: '🙈', variant: 'neutral' as const }
+      ],
+      not_bold_enough: [
+        { message: "Scared...", emoji: '😟', variant: 'neutral' as const },
+        { message: "Not ready...", emoji: '😌', variant: 'neutral' as const }
       ]
     }
   },
@@ -175,6 +218,22 @@ export const guineaPigMessages = {
       low_friendship: [
         { message: 'Who are you?', emoji: '😐', variant: 'negative' as const },
         { message: 'No!', emoji: '', variant: 'negative' as const }
+      ],
+      low_wellness: [
+        { message: "Not feeling well...", emoji: '😔', variant: 'negative' as const },
+        { message: "Too uncomfortable...", emoji: '😓', variant: 'negative' as const }
+      ],
+      dirty_habitat: [
+        { message: "Habitat is dirty!", emoji: '🧹', variant: 'warning' as const },
+        { message: "Clean my cage!", emoji: '🚫', variant: 'warning' as const }
+      ],
+      too_shy: [
+        { message: "Too nervous...", emoji: '😰', variant: 'neutral' as const },
+        { message: "Need more time...", emoji: '🙈', variant: 'neutral' as const }
+      ],
+      not_bold_enough: [
+        { message: "Scared...", emoji: '😟', variant: 'neutral' as const },
+        { message: "Not ready yet...", emoji: '😌', variant: 'neutral' as const }
       ]
     }
   },
@@ -219,6 +278,26 @@ export const guineaPigMessages = {
       neutral: [
         { message: 'Nice', emoji: '', variant: 'neutral' as const },
         { message: 'This works', emoji: '', variant: 'neutral' as const }
+      ]
+    },
+    social: {
+      bonded: [
+        { message: 'My bestie!', emoji: '💕', variant: 'positive' as const },
+        { message: 'Love you!', emoji: '🥰', variant: 'positive' as const },
+        { message: 'So happy!', emoji: '✨', variant: 'positive' as const },
+        { message: 'Popcorn!', emoji: '🎉', variant: 'positive' as const }
+      ],
+      friends: [
+        { message: 'Hey friend!', emoji: '😊', variant: 'positive' as const },
+        { message: 'Nice to see you!', emoji: '👋', variant: 'positive' as const },
+        { message: 'Wheek!', emoji: '😄', variant: 'positive' as const },
+        { message: 'Fun!', emoji: '🎈', variant: 'neutral' as const }
+      ],
+      neutral: [
+        { message: 'Oh, hi', emoji: '', variant: 'neutral' as const },
+        { message: 'Hmm', emoji: '🤔', variant: 'neutral' as const },
+        { message: 'Sniff sniff', emoji: '👃', variant: 'neutral' as const },
+        { message: 'Okay', emoji: '', variant: 'neutral' as const }
       ]
     }
   },
@@ -423,15 +502,15 @@ export function generateReactionMessage(context: MessageContext): ReactionMessag
   // Handle rejections
   if (rejectionReason) {
     if (interactionType === 'feed') {
-      if (rejectionReason === 'full' || rejectionReason === 'limit_reached' || rejectionReason === 'tired') {
+      if (rejectionReason === 'full' || rejectionReason === 'limit_reached' || rejectionReason === 'tired' || rejectionReason === 'low_wellness' || rejectionReason === 'dirty_habitat' || rejectionReason === 'too_shy' || rejectionReason === 'not_bold_enough' || rejectionReason === 'low_friendship' || rejectionReason === 'stressed') {
         return selectRandomMessage(guineaPigMessages.feeding.rejected[rejectionReason])
       }
     } else if (interactionType === 'play') {
-      if (rejectionReason === 'tired' || rejectionReason === 'stressed' || rejectionReason === 'low_friendship') {
+      if (rejectionReason === 'tired' || rejectionReason === 'stressed' || rejectionReason === 'low_friendship' || rejectionReason === 'low_wellness' || rejectionReason === 'dirty_habitat' || rejectionReason === 'too_shy' || rejectionReason === 'not_bold_enough') {
         return selectRandomMessage(guineaPigMessages.play.rejected[rejectionReason])
       }
     } else if (interactionType === 'socialize') {
-      if (rejectionReason === 'tired' || rejectionReason === 'stressed' || rejectionReason === 'low_friendship') {
+      if (rejectionReason === 'tired' || rejectionReason === 'stressed' || rejectionReason === 'low_friendship' || rejectionReason === 'low_wellness' || rejectionReason === 'dirty_habitat' || rejectionReason === 'too_shy' || rejectionReason === 'not_bold_enough') {
         return selectRandomMessage(guineaPigMessages.socialize.rejected[rejectionReason])
       }
     }

@@ -165,10 +165,9 @@ onUnmounted(() => {
   container-name: debug-view;
 }
 
+/* Mobile-first: Header with compact mobile layout */
 .debug-view__header {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
   gap: var(--space-4);
   padding-block: var(--space-3);
   padding-inline: var(--space-3);
@@ -229,21 +228,17 @@ onUnmounted(() => {
   }
 }
 
-/* Mobile: Horizontal layout */
-@media (max-width: 768px) {
-  .debug-view__header {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
+/* Mobile-first: Default mobile header layout - horizontal with space-between */
+.debug-view__header {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 
-/* Enhanced for larger screens */
+/* Tablet and up: Enhanced layout with more spacing */
 @media (min-width: 769px) {
   .debug-view__header {
-    flex-direction: row;
     align-items: center;
-    justify-content: space-between;
     padding-block: var(--space-6);
     padding-inline: var(--space-6);
   }

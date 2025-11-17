@@ -117,7 +117,7 @@ const fullnessClass = computed(() => {
 
 function handleDragOver(event: DragEvent) {
   event.preventDefault()
-  event.stopPropagation()
+  // Don't stop propagation - let HabitatVisual handle the drop logic
 
   // Check capacity - show not-allowed cursor if full
   if (props.hayServings.length >= props.capacity) {
@@ -141,14 +141,14 @@ function handleDragOver(event: DragEvent) {
   event.dataTransfer!.dropEffect = 'move'
 }
 
-function handleDragLeave(event: DragEvent) {
-  event.stopPropagation()
+function handleDragLeave(_event: DragEvent) {
+  // Don't stop propagation - let it bubble up
   isDragOver.value = false
 }
 
 function handleDrop(event: DragEvent) {
   event.preventDefault()
-  event.stopPropagation()
+  // Don't stop propagation - let HabitatVisual handle the drop logic
   isDragOver.value = false
 
   // Check if we have capacity

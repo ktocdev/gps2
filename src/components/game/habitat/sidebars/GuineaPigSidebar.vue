@@ -20,25 +20,6 @@
     </div>
 
     <div class="guinea-pig-sidebar__content">
-      <!-- Current Status -->
-      <div class="interaction-section">
-        <h4 class="interaction-section__title">📊 Current Status</h4>
-        <div class="panel panel--compact flex flex-column gap-2">
-          <div class="status-item">
-            <span class="status-item__label">Activity:</span>
-            <span class="status-item__value">{{ getCurrentActivity(displayGuineaPig.id) }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-item__label">Goal:</span>
-            <span class="status-item__value">{{ getCurrentGoal(displayGuineaPig.id) }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-item__label">Position:</span>
-            <span class="status-item__value">{{ getPosition(displayGuineaPig.id) }}</span>
-          </div>
-        </div>
-      </div>
-
       <!-- Player Friendship -->
       <div class="interaction-section">
         <h4 class="interaction-section__title">👤 Your Friendship</h4>
@@ -220,8 +201,6 @@ import SliderField from '../../../basic/SliderField.vue'
 import FoodSelectionDialog from '../../dialogs/FoodSelectionDialog.vue'
 import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
 import { useGameController } from '../../../../stores/gameController'
-import { useHabitatConditions } from '../../../../stores/habitatConditions'
-import { useBehaviorStateStore } from '../../../../stores/behaviorStateStore'
 import type { GuineaPig } from '../../../../stores/guineaPigStore'
 import { getBondStrengthMessage, getPlayerFriendshipMessage } from '../../../../utils/friendshipMessages'
 
@@ -247,8 +226,6 @@ const emit = defineEmits<{
 
 const gameController = useGameController()
 const guineaPigStore = useGuineaPigStore()
-const habitatConditions = useHabitatConditions()
-const behaviorStateStore = useBehaviorStateStore()
 
 const showFoodSelectionDialog = ref(false)
 
@@ -444,23 +421,6 @@ function formatTier(tier: string): string {
 function getGuineaPigEmoji(guineaPig: typeof displayGuineaPig.value): string {
   if (!guineaPig) return '🐹'
   return guineaPig.gender === 'male' ? '🐹' : '🐭'
-}
-
-// Current Status functions
-function getCurrentActivity(guineaPigId: string): string {
-  const state = behaviorStateStore.getBehaviorState(guineaPigId)
-  return state?.currentActivity || 'idle'
-}
-
-function getCurrentGoal(guineaPigId: string): string {
-  const state = behaviorStateStore.getBehaviorState(guineaPigId)
-  return state?.currentGoal?.type || 'none'
-}
-
-function getPosition(guineaPigId: string): string {
-  const pos = habitatConditions.guineaPigPositions.get(guineaPigId)
-  if (!pos) return 'unknown'
-  return `(${pos.x}, ${pos.y})`
 }
 </script>
 

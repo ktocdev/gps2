@@ -70,6 +70,7 @@
               @wave-hand="handleInteraction('wave-hand')"
               @show-toy="handleInteraction('show-toy')"
             />
+            <BondingSidebar v-else-if="activeSidebar === 'bonding'" />
             <ChatBubbleDebug v-else-if="activeSidebar === 'chatbubble'" />
             <AutonomySidebar
               v-else-if="activeSidebar === 'autonomy'"
@@ -249,6 +250,7 @@ import InventorySidebar from '../../game/habitat/sidebars/InventorySidebar.vue'
 import HabitatCareSidebar from '../../game/habitat/sidebars/HabitatCareSidebar.vue'
 import ActivityFeedSidebar from '../../game/habitat/sidebars/ActivityFeedSidebar.vue'
 import GuineaPigSidebar from '../../game/habitat/sidebars/GuineaPigSidebar.vue'
+import BondingSidebar from '../../game/habitat/sidebars/BondingSidebar.vue'
 import AutonomySidebar from '../../game/habitat/sidebars/AutonomySidebar.vue'
 import ChatBubbleDebug from './ChatBubbleDebug.vue'
 import NeedsPanel from './NeedsPanel.vue'
@@ -270,13 +272,14 @@ const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
 const inventorySidebarRef = ref<any>(null)
 
 // Active sidebar state
-const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize' | 'chatbubble' | 'autonomy'>('care')
+const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize' | 'bonding' | 'chatbubble' | 'autonomy'>('care')
 
 // Sidebar tabs for SubTabContainer
 const sidebarTabs = [
   { id: 'care', label: 'Habitat Conditions', icon: '🏠' },
   { id: 'inventory', label: 'Inventory', icon: '🎒' },
   { id: 'socialize', label: 'Guinea Pigs', icon: '🐹' },
+  { id: 'bonding', label: 'Bonding', icon: '💕' },
   { id: 'activity', label: 'Activity Feed', icon: '📜' },
   { id: 'autonomy', label: 'Autonomy', icon: '🎮' },
   { id: 'chatbubble', label: 'Chat Bubble', icon: '💬' }
@@ -439,10 +442,10 @@ function handleCancelPlacement() {
   }
 }
 
-// Handle guinea pig click - switch to socialize sidebar unless on autonomy
+// Handle guinea pig click - switch to socialize sidebar unless on autonomy or bonding
 function handleGuineaPigSelected(_guineaPigId: string) {
-  // If on autonomy sidebar, stay on autonomy and just update selection (already handled by store)
-  if (activeSidebar.value === 'autonomy') {
+  // If on autonomy or bonding sidebar, stay on current sidebar and just update selection (already handled by store)
+  if (activeSidebar.value === 'autonomy' || activeSidebar.value === 'bonding') {
     return
   }
 
@@ -778,52 +781,65 @@ async function handleHandFeed(foodId: string) {
   transform: translateY(0);
 }
 
-/* Mobile: Stack layout vertically and reorder tabs */
-@media (max-width: 768px) {
-  .habitat-layout-wrapper {
-    display: grid;
-    grid-template-areas:
-      "visual"
-      "tabs"
-      "sidebar";
-    grid-template-columns: minmax(0, 1fr);
-  }
+/* Mobile-first: Default mobile layout - stacked vertically */
+.habitat-layout-wrapper {
+  display: grid;
+  grid-template-areas:
+    "visual"
+    "tabs"
+    "sidebar";
+  grid-template-columns: minmax(0, 1fr);
+}
 
-  .habitat-layout-wrapper__tabs {
-    grid-area: tabs;
-    overflow-x: auto;
-    min-inline-size: 0;
+.habitat-layout-wrapper__tabs {
+  grid-area: tabs;
+  overflow-x: auto;
+  min-inline-size: 0;
+}
+
+.habitat-layout {
+  grid-area: visual;
+  flex-direction: column;
+}
+
+.habitat-layout__sidebar {
+  grid-area: sidebar;
+  max-block-size: 350px;
+}
+
+/* Tablet and up: Horizontal layout */
+@media (min-width: 769px) {
+  .habitat-layout-wrapper {
+    display: block;
   }
 
   .habitat-layout {
-    grid-area: visual;
-    flex-direction: column;
+    flex-direction: row;
   }
 
   .habitat-layout__sidebar {
-    grid-area: sidebar;
-    max-block-size: 350px;
+    max-block-size: none;
   }
 }
 
-/* Habitat Conditions & Test Controls Row */
+/* Mobile-first: Habitat conditions row - default 1 column */
 .habitat-debug__conditions-row {
   display: grid;
   gap: var(--space-4);
   grid-template-columns: 1fr;
 }
 
-/* Desktop: 3 columns - equal width for all panels */
-@media (min-width: 1200px) {
+/* Tablet and up: 2 columns */
+@media (min-width: 768px) {
   .habitat-debug__conditions-row {
-    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr;
   }
 }
 
-/* Tablet: 2 columns - stack panels */
-@media (min-width: 768px) and (max-width: 1199px) {
+/* Desktop and up: 3 columns */
+@media (min-width: 1200px) {
   .habitat-debug__conditions-row {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
   }
 }
 

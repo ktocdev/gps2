@@ -6,7 +6,7 @@ export interface InteractionValidation {
   canInteract: boolean
   successRate: number
   wellnessTier: 'excellent' | 'good' | 'fair' | 'poor' | 'critical'
-  rejectionReason?: 'tired' | 'stressed' | 'full' | 'limit_reached' | 'low_friendship'
+  rejectionReason?: 'tired' | 'stressed' | 'full' | 'limit_reached' | 'low_friendship' | 'low_wellness' | 'dirty_habitat' | 'too_shy' | 'not_bold_enough'
   reactionMessage?: ReactionMessage
 }
 
@@ -95,14 +95,22 @@ export function getFriendshipModifier(friendship: number): number {
 }
 
 /**
- * Validate if an interaction can proceed based on wellness and calculate success rate
+ * Validate if an interaction can proceed based on wellness, habitat quality, and personality
  */
 export function validateInteraction(
   guineaPig: GuineaPig,
   wellness: number,
-  interactionType: string
+  interactionType: string,
+  habitatQuality?: number
 ): InteractionValidation {
   const wellnessTier = getWellnessTier(wellness)
+  const boldness = guineaPig.personality.boldness
+  const friendship = guineaPig.friendship
+  const habitat = habitatQuality ?? 100 // Default to perfect if not provided
+
+  // Categorize interaction types
+  const isPhysicalInteraction = ['pet', 'hold', 'pick-up', 'weigh'].includes(interactionType)
+  const isCareInteraction = ['hand-feed', 'gentle-wipe', 'clean', 'water'].includes(interactionType)
 
   // Base success rate from wellness
   let successRate = getSuccessRateForWellness(wellnessTier)
@@ -110,15 +118,51 @@ export function validateInteraction(
   // Apply modifiers
   successRate += getInteractionTypeModifier(interactionType)
   successRate += getPersonalityModifier(guineaPig)
-  successRate += getFriendshipModifier(guineaPig.friendship)
+  successRate += getFriendshipModifier(friendship)
+
+  // Habitat quality modifier (poor habitat = stressed guinea pig)
+  if (habitat < 50) {
+    successRate -= 0.20 // -20% for dirty/uncomfortable habitat
+  } else if (habitat < 70) {
+    successRate -= 0.10 // -10% for somewhat dirty habitat
+  }
 
   // Clamp between 0 and 1
   successRate = Math.max(0, Math.min(1, successRate))
 
-  // Determine rejection reason if wellness is very low
+  // Determine rejection reason based on three-factor system
   let rejectionReason: InteractionValidation['rejectionReason']
-  if (wellness < 30) {
+
+  // Factor 1: Wellness-Based Rejection (< 50% wellness)
+  // Physical interactions rejected, but care interactions ALWAYS accepted
+  if (wellness < 50 && isPhysicalInteraction) {
+    rejectionReason = 'low_wellness'
+    successRate = 0 // Force rejection for physical interactions when unwell
+  }
+
+  // Factor 2: Habitat Conditions-Based Rejection (< 50% habitat quality)
+  // Stressed guinea pig in dirty environment
+  if (habitat < 50 && !rejectionReason) {
+    rejectionReason = 'dirty_habitat'
+    // Don't force rejection, but success rate already reduced above
+  }
+
+  // Factor 3: Personality-Based Rejection
+  // Shy/not bold guinea pigs with low friendship reject physical interactions
+  if (isPhysicalInteraction && boldness <= 3 && friendship < 40 && !rejectionReason) {
+    rejectionReason = 'too_shy'
+    successRate = Math.min(successRate, 0.20) // Max 20% success when shy and unfamiliar
+  }
+
+  // Legacy: Very low wellness = tired
+  if (wellness < 30 && !rejectionReason) {
     rejectionReason = 'tired'
+  }
+
+  // Care interactions ALWAYS accepted when wellness < 50
+  if (isCareInteraction && wellness < 50) {
+    successRate = Math.max(successRate, 0.90) // Ensure 90%+ success for care interactions
+    rejectionReason = undefined // Clear rejection reason for care
   }
 
   return {
@@ -136,9 +180,10 @@ export function attemptInteraction(
   guineaPig: GuineaPig,
   wellness: number,
   interactionType: 'feed' | 'play' | 'socialize' | 'general',
-  preferenceLevel?: 'favorite' | 'liked' | 'neutral' | 'disliked'
+  preferenceLevel?: 'favorite' | 'liked' | 'neutral' | 'disliked',
+  habitatQuality?: number
 ): InteractionAttempt {
-  const validation = validateInteraction(guineaPig, wellness, interactionType)
+  const validation = validateInteraction(guineaPig, wellness, interactionType, habitatQuality)
 
   // Roll for success
   const roll = Math.random()
