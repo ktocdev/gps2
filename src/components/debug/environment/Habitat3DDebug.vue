@@ -81,9 +81,12 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { use3DScene } from '../../../composables/use3DScene'
 import { use3DCamera } from '../../../composables/use3DCamera'
 import { use3DSync } from '../../../composables/use3DSync'
+import { use3DItems } from '../../../composables/use3DItems'
+import { use3DPoop } from '../../../composables/use3DPoop'
 import FloatingActionButton from '../../basic/FloatingActionButton.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useGameController } from '../../../stores/gameController'
+import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useGuineaPigBehavior, type BehaviorType } from '../../../composables/game/useGuineaPigBehavior'
 import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG } from '../../../constants/3d'
 import { disposeObject3D } from '../../../utils/three-cleanup'
@@ -95,6 +98,7 @@ const selectedGuineaPigId = ref<string | null>(null)
 // Stores
 const guineaPigStore = useGuineaPigStore()
 const gameController = useGameController()
+const habitatConditions = useHabitatConditions()
 
 // Computed
 const isGameActive = computed(() => gameController.isGameActive)
@@ -130,6 +134,11 @@ let animationId: number | null = null
 let guineaPigModels: Map<string, THREE.Group> | null = null
 let cleanupSync: (() => void) | null = null
 
+// Items and poop cleanup
+let cleanupItems: (() => void) | null = null
+let cleanupPoop: (() => void) | null = null
+let handlePoopClick: ((clickedObject: THREE.Object3D) => string | null) | null = null
+
 // Selection ring
 let selectionRing: THREE.Mesh | null = null
 
@@ -154,6 +163,15 @@ onMounted(() => {
   guineaPigModels = syncResult.guineaPigModels
   cleanupSync = syncResult.cleanup
 
+  // Setup habitat items
+  const itemsResult = use3DItems(worldGroup)
+  cleanupItems = itemsResult.cleanup
+
+  // Setup poop pellets
+  const poopResult = use3DPoop(worldGroup)
+  cleanupPoop = poopResult.cleanup
+  handlePoopClick = poopResult.handlePoopClick
+
   // Add basic environment
   addEnvironment()
 
@@ -176,6 +194,16 @@ onUnmounted(() => {
   // Cleanup sync watchers and guinea pig models
   if (cleanupSync) {
     cleanupSync()
+  }
+
+  // Cleanup items
+  if (cleanupItems) {
+    cleanupItems()
+  }
+
+  // Cleanup poop
+  if (cleanupPoop) {
+    cleanupPoop()
   }
 
   // Cleanup camera controls
@@ -269,7 +297,7 @@ function updateSelectionRing() {
   }
 }
 
-// Handle canvas click for guinea pig selection
+// Handle canvas click for guinea pig selection and poop removal
 function handleCanvasClick(event: MouseEvent) {
   if (!canvasRef.value || !guineaPigModels) return
 
@@ -285,17 +313,23 @@ function handleCanvasClick(event: MouseEvent) {
   const raycaster = new THREE.Raycaster()
   raycaster.setFromCamera(mouse, camera)
 
-  // Check intersections with guinea pig models
-  const models: THREE.Object3D[] = []
-  guineaPigModels.forEach(model => {
-    models.push(model)
-  })
-
-  const intersects = raycaster.intersectObjects(models, true)
+  // Check all objects in the scene
+  const intersects = raycaster.intersectObjects(worldGroup.children, true)
 
   if (intersects.length > 0) {
-    // Find which guinea pig was clicked
     const clickedObject = intersects[0].object
+
+    // Priority 1: Check if poop was clicked
+    if (handlePoopClick) {
+      const poopId = handlePoopClick(clickedObject)
+      if (poopId) {
+        habitatConditions.removePoop(poopId)
+        console.log('Removed poop:', poopId)
+        return
+      }
+    }
+
+    // Priority 2: Check if guinea pig was clicked
     let clickedModel: THREE.Group | null = null
 
     guineaPigModels.forEach((model, id) => {

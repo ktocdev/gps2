@@ -6,6 +6,7 @@ export interface CameraControls {
   isDragging: boolean
   previousMousePosition: { x: number; y: number }
   keysPressed: Record<string, boolean>
+  isHovering: boolean
 }
 
 export function use3DCamera(
@@ -17,6 +18,7 @@ export function use3DCamera(
     isDragging: false,
     previousMousePosition: { x: 0, y: 0 },
     keysPressed: {},
+    isHovering: false,
   })
 
   // Mouse Rotation
@@ -45,15 +47,36 @@ export function use3DCamera(
 
   // Scroll Zoom
   function handleWheel(e: WheelEvent) {
-    camera.position.y += e.deltaY * CAMERA_CONFIG.WHEEL_ZOOM_SPEED
-    camera.position.y = Math.max(
-      CAMERA_CONFIG.HEIGHT_MIN,
-      Math.min(CAMERA_CONFIG.HEIGHT_MAX, camera.position.y)
-    )
+    // Only zoom when hovering over canvas
+    if (controls.value.isHovering) {
+      e.preventDefault() // Prevent page scroll
+      camera.position.y += e.deltaY * CAMERA_CONFIG.WHEEL_ZOOM_SPEED
+      camera.position.y = Math.max(
+        CAMERA_CONFIG.HEIGHT_MIN,
+        Math.min(CAMERA_CONFIG.HEIGHT_MAX, camera.position.y)
+      )
+    }
+  }
+
+  // Mouse Hover Tracking
+  function handleMouseEnter() {
+    controls.value.isHovering = true
+  }
+
+  function handleMouseLeave() {
+    controls.value.isHovering = false
   }
 
   // Keyboard Controls
   function handleKeyDown(e: KeyboardEvent) {
+    // Prevent page scroll when hovering over canvas
+    if (controls.value.isHovering) {
+      const scrollKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'z', 'x', 'Z', 'X']
+      if (scrollKeys.includes(e.key) || scrollKeys.includes(e.code)) {
+        e.preventDefault()
+      }
+    }
+
     controls.value.keysPressed[e.key.toLowerCase()] = true
     controls.value.keysPressed[e.code] = true
   }
@@ -90,12 +113,17 @@ export function use3DCamera(
 
   // Update camera position based on keyboard input
   function updateCameraPosition() {
+    // Left/right arrows work all the time
     if (controls.value.keysPressed['arrowleft']) camera.position.x -= CAMERA_CONFIG.PAN_SPEED
     if (controls.value.keysPressed['arrowright']) camera.position.x += CAMERA_CONFIG.PAN_SPEED
-    if (controls.value.keysPressed['arrowup']) camera.position.z -= CAMERA_CONFIG.PAN_SPEED
-    if (controls.value.keysPressed['arrowdown']) camera.position.z += CAMERA_CONFIG.PAN_SPEED
-    if (controls.value.keysPressed['z']) camera.position.y += CAMERA_CONFIG.VERTICAL_SPEED
-    if (controls.value.keysPressed['x']) camera.position.y -= CAMERA_CONFIG.VERTICAL_SPEED
+
+    // Up/down arrows and Z/X only work when hovering over canvas
+    if (controls.value.isHovering) {
+      if (controls.value.keysPressed['arrowup']) camera.position.z -= CAMERA_CONFIG.PAN_SPEED
+      if (controls.value.keysPressed['arrowdown']) camera.position.z += CAMERA_CONFIG.PAN_SPEED
+      if (controls.value.keysPressed['z']) camera.position.y += CAMERA_CONFIG.VERTICAL_SPEED
+      if (controls.value.keysPressed['x']) camera.position.y -= CAMERA_CONFIG.VERTICAL_SPEED
+    }
 
     // Alternate rotation keys
     if (controls.value.keysPressed[','] || controls.value.keysPressed['<']) {
@@ -123,8 +151,12 @@ export function use3DCamera(
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
 
-    // Scroll - use passive for better performance
-    canvasElement.addEventListener('wheel', handleWheel, { passive: true })
+    // Mouse hover tracking
+    canvasElement.addEventListener('mouseenter', handleMouseEnter)
+    canvasElement.addEventListener('mouseleave', handleMouseLeave)
+
+    // Scroll - non-passive so we can preventDefault when hovering
+    canvasElement.addEventListener('wheel', handleWheel, { passive: false })
 
     // Keyboard
     document.addEventListener('keydown', handleKeyDown)
@@ -141,6 +173,8 @@ export function use3DCamera(
     canvasElement.removeEventListener('mousedown', handleMouseDown)
     document.removeEventListener('mousemove', handleMouseMove)
     document.removeEventListener('mouseup', handleMouseUp)
+    canvasElement.removeEventListener('mouseenter', handleMouseEnter)
+    canvasElement.removeEventListener('mouseleave', handleMouseLeave)
     canvasElement.removeEventListener('wheel', handleWheel)
     document.removeEventListener('keydown', handleKeyDown)
     document.removeEventListener('keyup', handleKeyUp)

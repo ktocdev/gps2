@@ -40,7 +40,7 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 ### **Navigation**
 
-- **[PHASES.md](PHASES.md)** - Comprehensive phase documentation and roadmap
+- **[DEVELOPMENT_PHASES.md](DEVELOPMENT_PHASES.md)** - Comprehensive phase documentation and roadmap
 - **Phase 1: MVP** - [phase1/](phase1/)
   - [threejs-integration.md](phase1/threejs-integration.md) - Three.js setup with Vue 3
   - [coordinate-mapping.md](phase1/coordinate-mapping.md) - Grid to 3D world conversion
@@ -118,7 +118,7 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 **Milestone:** Movement quality matches demo smoothness
 
-**Reference:** See [PHASES.md](PHASES.md#phase-4-movement-polish--animation) for detailed implementation plan
+**Reference:** See [DEVELOPMENT_PHASES.md](DEVELOPMENT_PHASES.md#phase-4-movement-polish--animation) for detailed implementation plan
 
 ---
 
