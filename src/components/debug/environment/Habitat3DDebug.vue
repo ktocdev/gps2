@@ -5,10 +5,71 @@
     <div class="panel panel--full-width">
       <div class="panel__content">
         <div class="habitat-3d-debug__info">
-          Drag or &lt; &gt; to rotate | Scroll/Z/X for Up/Down | Arrows to pan
+          Drag or &lt; &gt; to rotate | Scroll/Z/X for Up/Down | Arrows to pan | Click guinea pig to select
         </div>
         <div class="habitat-3d-debug__canvas-wrapper">
-          <canvas ref="canvasRef"></canvas>
+          <canvas ref="canvasRef" @click="handleCanvasClick"></canvas>
+
+          <!-- Floating Action Buttons -->
+          <FloatingActionButton
+            v-if="selectedGuineaPigId"
+            icon="🥕"
+            label="Feed"
+            variant="primary"
+            position="bottom-right"
+            :disabled="!selectedGuineaPigId"
+            ariaLabel="Feed guinea pig"
+            @click="handleFeed"
+            style="bottom: 240px;"
+          />
+          <FloatingActionButton
+            v-if="selectedGuineaPigId"
+            icon="💧"
+            label="Water"
+            variant="info"
+            position="bottom-right"
+            :disabled="!selectedGuineaPigId"
+            ariaLabel="Give water to guinea pig"
+            @click="handleWater"
+            style="bottom: 180px;"
+          />
+          <FloatingActionButton
+            v-if="selectedGuineaPigId"
+            icon="🎾"
+            label="Play"
+            variant="secondary"
+            position="bottom-right"
+            :disabled="!selectedGuineaPigId"
+            ariaLabel="Play with guinea pig"
+            @click="handlePlay"
+            style="bottom: 120px;"
+          />
+          <FloatingActionButton
+            v-if="selectedGuineaPigId"
+            icon="💚"
+            label="Pet"
+            variant="secondary"
+            position="bottom-right"
+            :disabled="!selectedGuineaPigId"
+            ariaLabel="Pet guinea pig"
+            @click="handlePet"
+            style="bottom: 60px;"
+          />
+          <FloatingActionButton
+            v-if="selectedGuineaPigId"
+            icon="❌"
+            label="Deselect"
+            variant="danger"
+            position="bottom-right"
+            :disabled="!selectedGuineaPigId"
+            ariaLabel="Deselect guinea pig"
+            @click="handleDeselect"
+          />
+        </div>
+
+        <!-- Selected Guinea Pig Info -->
+        <div v-if="selectedGuineaPig" class="habitat-3d-debug__selection-info">
+          <strong>Selected:</strong> {{ selectedGuineaPig.name }}
         </div>
       </div>
     </div>
@@ -16,13 +77,44 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { use3DScene } from '../../../composables/use3DScene'
 import { use3DCamera } from '../../../composables/use3DCamera'
 import { use3DSync } from '../../../composables/use3DSync'
+import FloatingActionButton from '../../basic/FloatingActionButton.vue'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import { useGameController } from '../../../stores/gameController'
+import { useGuineaPigBehavior, type BehaviorType } from '../../../composables/game/useGuineaPigBehavior'
 import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const selectedGuineaPigId = ref<string | null>(null)
+
+// Stores
+const guineaPigStore = useGuineaPigStore()
+const gameController = useGameController()
+
+// Computed
+const isGameActive = computed(() => gameController.isGameActive)
+const selectedGuineaPig = computed(() => {
+  if (!selectedGuineaPigId.value) return null
+  return guineaPigStore.activeGuineaPigs.find(gp => gp.id === selectedGuineaPigId.value)
+})
+
+// Behavior composables registry
+const behaviorComposables = new Map<string, ReturnType<typeof useGuineaPigBehavior>>()
+
+/**
+ * Get or create behavior composable for a guinea pig
+ */
+function getBehaviorComposable(guineaPigId: string) {
+  let behavior = behaviorComposables.get(guineaPigId)
+  if (!behavior) {
+    behavior = useGuineaPigBehavior(guineaPigId)
+    behaviorComposables.set(guineaPigId, behavior)
+  }
+  return behavior
+}
 
 // Initialize 3D scene
 const { scene, camera, worldGroup, initRenderer, handleResize, cleanup: cleanupScene, getRenderer } = use3DScene(canvasRef)
@@ -31,6 +123,12 @@ const { scene, camera, worldGroup, initRenderer, handleResize, cleanup: cleanupS
 let cleanupCamera: (() => void) | null = null
 let updateCameraPosition: (() => void) | null = null
 let animationId: number | null = null
+
+// Guinea pig models registry (from use3DSync)
+let guineaPigModels: Map<string, THREE.Group> | null = null
+
+// Selection ring
+let selectionRing: THREE.Mesh | null = null
 
 onMounted(() => {
   if (!canvasRef.value) return
@@ -44,11 +142,15 @@ onMounted(() => {
   updateCameraPosition = cameraControls.updateCameraPosition
   cleanupCamera = cameraControls.cleanup
 
-  // Setup position sync
-  use3DSync(worldGroup)
+  // Setup position sync and get guinea pig models
+  const syncResult = use3DSync(worldGroup)
+  guineaPigModels = syncResult.guineaPigModels
 
   // Add basic environment
   addEnvironment()
+
+  // Create selection ring
+  createSelectionRing()
 
   // Add window resize listener
   window.addEventListener('resize', handleResize)
@@ -84,10 +186,202 @@ function animate() {
     updateCameraPosition()
   }
 
+  // Update selection ring position
+  updateSelectionRing()
+
   // Render the scene
   const renderer = getRenderer()
   if (renderer) {
     renderer.render(scene, camera)
+  }
+}
+
+// Create selection ring
+function createSelectionRing() {
+  const ringGeometry = new THREE.RingGeometry(0.8, 1.0, 32)
+  const ringMaterial = new THREE.MeshBasicMaterial({
+    color: 0x00ff00,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.6
+  })
+  selectionRing = new THREE.Mesh(ringGeometry, ringMaterial)
+  selectionRing.rotation.x = -Math.PI / 2 // Rotate to be horizontal
+  selectionRing.position.y = 0.05 // Slightly above ground
+  selectionRing.visible = false
+  worldGroup.add(selectionRing)
+}
+
+// Update selection ring position
+function updateSelectionRing() {
+  if (!selectionRing || !selectedGuineaPigId.value || !guineaPigModels) return
+
+  const selectedModel = guineaPigModels.get(selectedGuineaPigId.value)
+  if (selectedModel) {
+    selectionRing.position.x = selectedModel.position.x
+    selectionRing.position.z = selectedModel.position.z
+    selectionRing.visible = true
+
+    // Pulse animation
+    const time = Date.now() * 0.002
+    selectionRing.scale.set(1 + Math.sin(time) * 0.1, 1, 1 + Math.sin(time) * 0.1)
+  } else {
+    selectionRing.visible = false
+  }
+}
+
+// Handle canvas click for guinea pig selection
+function handleCanvasClick(event: MouseEvent) {
+  if (!canvasRef.value || !guineaPigModels) return
+
+  const canvas = canvasRef.value
+  const rect = canvas.getBoundingClientRect()
+
+  // Calculate mouse position in normalized device coordinates (-1 to +1)
+  const mouse = new THREE.Vector2()
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+  // Create raycaster
+  const raycaster = new THREE.Raycaster()
+  raycaster.setFromCamera(mouse, camera)
+
+  // Check intersections with guinea pig models
+  const models: THREE.Object3D[] = []
+  guineaPigModels.forEach(model => {
+    models.push(model)
+  })
+
+  const intersects = raycaster.intersectObjects(models, true)
+
+  if (intersects.length > 0) {
+    // Find which guinea pig was clicked
+    const clickedObject = intersects[0].object
+    let clickedModel: THREE.Group | null = null
+
+    guineaPigModels.forEach((model, id) => {
+      if (clickedObject.parent === model || clickedObject.parent?.parent === model) {
+        clickedModel = model
+        selectedGuineaPigId.value = id
+      }
+    })
+
+    if (clickedModel) {
+      console.log('Selected guinea pig:', selectedGuineaPigId.value)
+    }
+  }
+}
+
+// Action button handlers
+async function handleFeed() {
+  if (!selectedGuineaPigId.value || !isGameActive.value) return
+  await triggerBehavior(selectedGuineaPigId.value, 'eat')
+}
+
+async function handleWater() {
+  if (!selectedGuineaPigId.value || !isGameActive.value) return
+  await triggerBehavior(selectedGuineaPigId.value, 'drink')
+}
+
+async function handlePlay() {
+  if (!selectedGuineaPigId.value || !isGameActive.value) return
+  await triggerBehavior(selectedGuineaPigId.value, 'play')
+}
+
+async function handlePet() {
+  if (!selectedGuineaPigId.value || !isGameActive.value) return
+  await triggerBehavior(selectedGuineaPigId.value, 'groom')
+}
+
+function handleDeselect() {
+  selectedGuineaPigId.value = null
+}
+
+/**
+ * Trigger a specific behavior for a guinea pig (adapted from AutonomyDebug)
+ */
+async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) {
+  const behavior = getBehaviorComposable(guineaPigId)
+  const guineaPig = guineaPigStore.activeGuineaPigs.find(gp => gp.id === guineaPigId)
+
+  if (!guineaPig) {
+    console.warn(`Guinea pig ${guineaPigId} not found`)
+    return
+  }
+
+  // Store original need values
+  const originalNeeds = { ...guineaPig.needs }
+
+  try {
+    // Set the appropriate need to 0 to force this behavior
+    const needMap: Partial<Record<BehaviorType, keyof typeof guineaPig.needs>> = {
+      eat: 'hunger',
+      eat_hay: 'hunger',
+      drink: 'thirst',
+      sleep: 'energy',
+      seek_shelter: 'shelter',
+      groom: 'hygiene',
+      chew: 'nails',
+      play: 'play',
+      socialize: 'social',
+    }
+
+    const needKey = needMap[behaviorType]
+    if (needKey) {
+      guineaPig.needs[needKey] = 0
+    }
+
+    // Get behavior thresholds (use defaults for now)
+    const thresholds = {
+      hunger: 40,
+      thirst: 40,
+      energy: 40,
+      shelter: 30,
+      hygiene: 30,
+      chew: 30,
+      play: 30,
+      social: 30,
+    }
+
+    // Let the AI select the appropriate goal (now that need is low)
+    const goal = behavior.selectBehaviorGoal(thresholds)
+
+    // Check if goal matches requested behavior type
+    const isMatchingGoal = goal && (
+      goal.type === behaviorType ||
+      (behaviorType === 'eat' && goal.type === 'eat_hay')
+    )
+
+    if (isMatchingGoal && goal) {
+      // Execute the behavior
+      const success = await behavior.executeBehavior(goal)
+
+      if (success) {
+        console.log(`✅ Triggered ${goal.type} behavior`)
+      }
+
+      // Restore needs to 100% after behavior completes
+      Object.keys(originalNeeds).forEach((key) => {
+        const needKey = key as keyof typeof originalNeeds
+        guineaPig.needs[needKey] = 100
+      })
+    } else {
+      console.warn(`❌ Could not trigger ${behaviorType} - goal not selected`)
+
+      // Restore original needs
+      Object.keys(originalNeeds).forEach((key) => {
+        const needKey = key as keyof typeof originalNeeds
+        guineaPig.needs[needKey] = originalNeeds[needKey]
+      })
+    }
+  } catch (error) {
+    console.error(`Error executing behavior ${behaviorType}:`, error)
+
+    // Restore original needs on error
+    Object.keys(originalNeeds).forEach((key) => {
+      const needKey = key as keyof typeof originalNeeds
+      guineaPig.needs[needKey] = originalNeeds[needKey]
+    })
   }
 }
 
@@ -204,5 +498,15 @@ function createBeddingTexture(): THREE.CanvasTexture {
   display: block;
   inline-size: 100%;
   block-size: 100%;
+  cursor: pointer;
+}
+
+.habitat-3d-debug__selection-info {
+  margin-block-start: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  text-align: center;
+  color: var(--color-text-primary);
 }
 </style>
