@@ -73,6 +73,55 @@
         </div>
       </div>
     </div>
+
+    <!-- Water Bottle Rotation Debug Row -->
+    <div class="habitat-3d-debug__debug-row">
+      <div class="panel panel--compact">
+        <div class="panel__header">
+          <h3>Water Bottle Rotation Debug</h3>
+        </div>
+        <div class="panel__content">
+          <div class="rotation-debug">
+            <SliderField
+              v-model="debugRotation"
+              label="Rotation (radians)"
+              :min="-Math.PI"
+              :max="Math.PI"
+              :step="0.01"
+              :show-value="true"
+              :show-min-max="true"
+              @change="applyDebugRotation"
+            />
+            <div class="rotation-debug__input-group">
+              <label for="rotation-input" class="rotation-debug__label">Precise Value:</label>
+              <input
+                id="rotation-input"
+                v-model.number="debugRotation"
+                type="number"
+                class="rotation-debug__input"
+                :min="-Math.PI"
+                :max="Math.PI"
+                :step="0.01"
+                @input="applyDebugRotation"
+              />
+            </div>
+            <div class="rotation-debug__presets">
+              <button @click="setRotation(0)" class="rotation-debug__preset">0° (Right)</button>
+              <button @click="setRotation(Math.PI / 4)" class="rotation-debug__preset">45°</button>
+              <button @click="setRotation(Math.PI / 2)" class="rotation-debug__preset">90° (Up)</button>
+              <button @click="setRotation(3 * Math.PI / 4)" class="rotation-debug__preset">135°</button>
+              <button @click="setRotation(Math.PI)" class="rotation-debug__preset">180° (Left)</button>
+              <button @click="setRotation(-Math.PI / 4)" class="rotation-debug__preset">-45°</button>
+              <button @click="setRotation(-Math.PI / 2)" class="rotation-debug__preset">-90° (Down)</button>
+              <button @click="setRotation(-3 * Math.PI / 4)" class="rotation-debug__preset">-135°</button>
+            </div>
+            <div class="rotation-debug__info">
+              Current rotation: {{ debugRotation.toFixed(3) }} rad ({{ (debugRotation * 180 / Math.PI).toFixed(1) }}°)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -84,6 +133,7 @@ import { use3DSync } from '../../../composables/use3DSync'
 import { use3DItems } from '../../../composables/use3DItems'
 import { use3DPoop } from '../../../composables/use3DPoop'
 import FloatingActionButton from '../../basic/FloatingActionButton.vue'
+import SliderField from '../../basic/SliderField.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useGameController } from '../../../stores/gameController'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
@@ -94,6 +144,7 @@ import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const selectedGuineaPigId = ref<string | null>(null)
+const debugRotation = ref<number>(0)
 
 // Stores
 const guineaPigStore = useGuineaPigStore()
@@ -146,6 +197,30 @@ let selectionRing: THREE.Mesh | null = null
 let environmentObjects: THREE.Object3D[] = []
 let beddingTexture: THREE.CanvasTexture | null = null
 
+// Water bottle rotation debug functions
+let itemModels: Map<string, THREE.Group> | null = null
+
+/**
+ * Apply debug rotation to all water bottles in the scene
+ */
+function applyDebugRotation() {
+  if (!itemModels) return
+
+  itemModels.forEach((model, itemId) => {
+    if (itemId.includes('water') && itemId.includes('bottle')) {
+      model.rotation.y = debugRotation.value
+    }
+  })
+}
+
+/**
+ * Set rotation to a specific value and apply it
+ */
+function setRotation(radians: number) {
+  debugRotation.value = radians
+  applyDebugRotation()
+}
+
 onMounted(() => {
   if (!canvasRef.value) return
 
@@ -165,6 +240,7 @@ onMounted(() => {
 
   // Setup habitat items
   const itemsResult = use3DItems(worldGroup)
+  itemModels = itemsResult.itemModels
   cleanupItems = itemsResult.cleanup
 
   // Setup poop pellets
@@ -586,5 +662,99 @@ function createBeddingTexture(): THREE.CanvasTexture {
   border-radius: var(--radius-md);
   text-align: center;
   color: var(--color-text-primary);
+}
+
+/* Mobile-first: Debug row - default 1 column */
+.habitat-3d-debug__debug-row {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr;
+  margin-block-start: var(--space-4);
+}
+
+/* Tablet and up: 2 columns */
+@media (min-width: 768px) {
+  .habitat-3d-debug__debug-row {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Desktop and up: 3 columns */
+@media (min-width: 1200px) {
+  .habitat-3d-debug__debug-row {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+.rotation-debug {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.rotation-debug__input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.rotation-debug__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.rotation-debug__input {
+  flex: 1;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family-mono);
+}
+
+.rotation-debug__input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.1);
+}
+
+.rotation-debug__presets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: var(--spacing-xs);
+}
+
+.rotation-debug__preset {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.rotation-debug__preset:hover {
+  background-color: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.rotation-debug__preset:active {
+  transform: scale(0.98);
+}
+
+.rotation-debug__info {
+  padding: var(--spacing-sm);
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+  font-family: var(--font-family-mono);
 }
 </style>

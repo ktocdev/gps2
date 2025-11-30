@@ -92,3 +92,25 @@ export const ANIMATION_CONFIG = {
     PULSE_AMPLITUDE: 0.1,
   } as const,
 } as const
+
+// Item Model Configuration
+export const ITEM_CONFIG = {
+  // Hay Configuration (Simplified for performance)
+  HAY: {
+    COLORS: [0xfffacd, 0xffe4b5, 0xdaa520, 0xc0d9af, 0xeedd82] as const,
+    INSTANCES_UPRIGHT: 250,
+    INSTANCES_FLAT: 250,
+    STRAND_WIDTH: 0.08,
+    STRAND_THICKNESS: 0.015,
+  } as const,
+
+  // Wood Texture
+  WOOD_TEXTURE_SIZE: 512,
+
+  // Food Positions in Bowl
+  FOOD_POSITION: {
+    SINGLE: { x: 0, y: 1.6, z: 0 } as const,
+    LEFT: { x: -0.8, y: 1.6, z: 0.3 } as const,
+    RIGHT: { x: 0.8, y: 1.6, z: -0.3 } as const,
+  } as const,
+} as const
