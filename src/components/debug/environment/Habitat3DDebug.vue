@@ -16,7 +16,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { use3DScene } from '../../../composables/use3DScene'
 import { use3DCamera } from '../../../composables/use3DCamera'
 import { use3DSync } from '../../../composables/use3DSync'
@@ -25,17 +25,24 @@ import * as THREE from 'three'
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 
 // Initialize 3D scene
-const { camera, worldGroup } = use3DScene(canvasRef)
+const { scene, camera, worldGroup, initRenderer, handleResize, cleanup: cleanupScene, getRenderer } = use3DScene(canvasRef)
 
-// Initialize camera controls
-let updateCameraPosition: () => void
+// Camera controls cleanup function
+let cleanupCamera: (() => void) | null = null
+let updateCameraPosition: (() => void) | null = null
+let animationId: number | null = null
 
 onMounted(() => {
   if (!canvasRef.value) return
 
+  // Initialize renderer
+  const renderer = initRenderer()
+  if (!renderer) return
+
   // Setup camera controls
   const cameraControls = use3DCamera(camera, worldGroup, canvasRef.value)
   updateCameraPosition = cameraControls.updateCameraPosition
+  cleanupCamera = cameraControls.cleanup
 
   // Setup position sync
   use3DSync(worldGroup)
@@ -43,17 +50,44 @@ onMounted(() => {
   // Add basic environment
   addEnvironment()
 
+  // Add window resize listener
+  window.addEventListener('resize', handleResize)
+
   // Start animation loop
   animate()
 })
 
+onUnmounted(() => {
+  // Stop animation loop
+  if (animationId !== null) {
+    cancelAnimationFrame(animationId)
+  }
+
+  // Cleanup camera controls
+  if (cleanupCamera) {
+    cleanupCamera()
+  }
+
+  // Cleanup renderer
+  cleanupScene()
+
+  // Remove resize listener
+  window.removeEventListener('resize', handleResize)
+})
+
 // Animation loop
 function animate() {
-  requestAnimationFrame(animate)
+  animationId = requestAnimationFrame(animate)
 
   // Update camera position based on keyboard input
   if (updateCameraPosition) {
     updateCameraPosition()
+  }
+
+  // Render the scene
+  const renderer = getRenderer()
+  if (renderer) {
+    renderer.render(scene, camera)
   }
 }
 

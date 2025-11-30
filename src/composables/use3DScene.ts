@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, type Ref } from 'vue'
+import type { Ref } from 'vue'
 import * as THREE from 'three'
 
 export function use3DScene(canvasRef: Ref<HTMLCanvasElement | null>) {
@@ -10,7 +10,7 @@ export function use3DScene(canvasRef: Ref<HTMLCanvasElement | null>) {
   // Camera
   const camera = new THREE.PerspectiveCamera(
     45, // FOV
-    window.innerWidth / window.innerHeight, // Aspect
+    1, // Aspect - will be set in initRenderer
     0.1, // Near
     1000, // Far
   )
@@ -41,57 +41,54 @@ export function use3DScene(canvasRef: Ref<HTMLCanvasElement | null>) {
 
   // Initialize renderer
   function initRenderer() {
-    if (!canvasRef.value) return
+    if (!canvasRef.value) return null
+
+    const canvas = canvasRef.value
+    const width = canvas.clientWidth
+    const height = canvas.clientHeight
 
     renderer = new THREE.WebGLRenderer({
-      canvas: canvasRef.value,
+      canvas: canvas,
       antialias: true,
     })
-    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setSize(width, height, false)
     renderer.shadowMap.enabled = true
     renderer.shadowMap.type = THREE.PCFSoftShadowMap
     renderer.localClippingEnabled = true
-  }
 
-  // Handle window resize
-  function handleResize() {
-    if (!renderer) return
-
-    camera.aspect = window.innerWidth / window.innerHeight
+    // Set camera aspect
+    camera.aspect = width / height
     camera.updateProjectionMatrix()
-    renderer.setSize(window.innerWidth, window.innerHeight)
+
+    return renderer
   }
 
-  // Animation loop
-  let animationId: number | null = null
-  function animate() {
-    animationId = requestAnimationFrame(animate)
-    if (renderer) {
-      renderer.render(scene, camera)
-    }
+  // Handle canvas resize
+  function handleResize() {
+    if (!renderer || !canvasRef.value) return
+
+    const width = canvasRef.value.clientWidth
+    const height = canvasRef.value.clientHeight
+
+    camera.aspect = width / height
+    camera.updateProjectionMatrix()
+    renderer.setSize(width, height, false)
   }
 
-  // Lifecycle
-  onMounted(() => {
-    initRenderer()
-    window.addEventListener('resize', handleResize)
-    animate()
-  })
-
-  onUnmounted(() => {
-    window.removeEventListener('resize', handleResize)
-    if (animationId !== null) {
-      cancelAnimationFrame(animationId)
-    }
+  // Cleanup
+  function cleanup() {
     if (renderer) {
       renderer.dispose()
     }
-  })
+  }
 
   return {
     scene,
     camera,
-    renderer: () => renderer,
     worldGroup,
+    initRenderer,
+    handleResize,
+    cleanup,
+    getRenderer: () => renderer,
   }
 }

@@ -1,4 +1,4 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import type * as THREE from 'three'
 
 export interface CameraControls {
@@ -10,7 +10,7 @@ export interface CameraControls {
 export function use3DCamera(
   camera: THREE.PerspectiveCamera,
   worldGroup: THREE.Group,
-  canvasElement: HTMLCanvasElement | null,
+  canvasElement: HTMLCanvasElement,
 ) {
   const controls = ref<CameraControls>({
     isDragging: false,
@@ -112,10 +112,8 @@ export function use3DCamera(
     camera.lookAt(camera.position.x, 2.0, camera.position.z - tiltOffset)
   }
 
-  // Lifecycle
-  onMounted(() => {
-    if (!canvasElement) return
-
+  // Initialize event listeners
+  function init() {
     // Mouse events
     canvasElement.addEventListener('mousedown', handleMouseDown)
     document.addEventListener('mousemove', handleMouseMove)
@@ -132,12 +130,10 @@ export function use3DCamera(
     canvasElement.addEventListener('touchstart', handleTouchStart)
     canvasElement.addEventListener('touchmove', handleTouchMove)
     canvasElement.addEventListener('touchend', handleTouchEnd)
-  })
+  }
 
-  onUnmounted(() => {
-    if (!canvasElement) return
-
-    // Cleanup all event listeners
+  // Cleanup event listeners
+  function cleanup() {
     canvasElement.removeEventListener('mousedown', handleMouseDown)
     document.removeEventListener('mousemove', handleMouseMove)
     document.removeEventListener('mouseup', handleMouseUp)
@@ -147,10 +143,14 @@ export function use3DCamera(
     canvasElement.removeEventListener('touchstart', handleTouchStart)
     canvasElement.removeEventListener('touchmove', handleTouchMove)
     canvasElement.removeEventListener('touchend', handleTouchEnd)
-  })
+  }
+
+  // Auto-initialize
+  init()
 
   return {
     controls,
     updateCameraPosition,
+    cleanup,
   }
 }
