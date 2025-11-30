@@ -1,0 +1,156 @@
+import { ref, onMounted, onUnmounted } from 'vue'
+import type * as THREE from 'three'
+
+export interface CameraControls {
+  isDragging: boolean
+  previousMousePosition: { x: number; y: number }
+  keysPressed: Record<string, boolean>
+}
+
+export function use3DCamera(
+  camera: THREE.PerspectiveCamera,
+  worldGroup: THREE.Group,
+  canvasElement: HTMLCanvasElement | null,
+) {
+  const controls = ref<CameraControls>({
+    isDragging: false,
+    previousMousePosition: { x: 0, y: 0 },
+    keysPressed: {},
+  })
+
+  // Mouse Rotation
+  function handleMouseDown(e: MouseEvent) {
+    controls.value.isDragging = true
+    controls.value.previousMousePosition = { x: e.offsetX, y: e.offsetY }
+  }
+
+  function handleMouseMove(e: MouseEvent) {
+    if (!controls.value.isDragging) return
+
+    const deltaMove = {
+      x: e.offsetX - controls.value.previousMousePosition.x,
+      y: e.offsetY - controls.value.previousMousePosition.y,
+    }
+
+    // Rotate world on Y-axis
+    worldGroup.rotation.y += deltaMove.x * 0.01
+
+    controls.value.previousMousePosition = { x: e.offsetX, y: e.offsetY }
+  }
+
+  function handleMouseUp() {
+    controls.value.isDragging = false
+  }
+
+  // Scroll Zoom
+  function handleWheel(e: WheelEvent) {
+    camera.position.y += e.deltaY * 0.01
+    camera.position.y = Math.max(0.5, Math.min(20, camera.position.y))
+  }
+
+  // Keyboard Controls
+  function handleKeyDown(e: KeyboardEvent) {
+    controls.value.keysPressed[e.key.toLowerCase()] = true
+    controls.value.keysPressed[e.code] = true
+  }
+
+  function handleKeyUp(e: KeyboardEvent) {
+    controls.value.keysPressed[e.key.toLowerCase()] = false
+    controls.value.keysPressed[e.code] = false
+  }
+
+  // Touch Controls
+  function handleTouchStart(e: TouchEvent) {
+    controls.value.isDragging = true
+    controls.value.previousMousePosition = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    }
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    if (!controls.value.isDragging) return
+
+    const currentX = e.touches[0].clientX
+    const currentY = e.touches[0].clientY
+
+    worldGroup.rotation.y +=
+      (currentX - controls.value.previousMousePosition.x) * 0.01
+
+    controls.value.previousMousePosition = { x: currentX, y: currentY }
+  }
+
+  function handleTouchEnd() {
+    controls.value.isDragging = false
+  }
+
+  // Update camera position based on keyboard input
+  function updateCameraPosition() {
+    const panSpeed = 0.15
+    const verticalSpeed = 0.1
+
+    if (controls.value.keysPressed['arrowleft']) camera.position.x -= panSpeed
+    if (controls.value.keysPressed['arrowright']) camera.position.x += panSpeed
+    if (controls.value.keysPressed['arrowup']) camera.position.z -= panSpeed
+    if (controls.value.keysPressed['arrowdown']) camera.position.z += panSpeed
+    if (controls.value.keysPressed['z']) camera.position.y += verticalSpeed
+    if (controls.value.keysPressed['x']) camera.position.y -= verticalSpeed
+
+    // Alternate rotation keys
+    if (controls.value.keysPressed[','] || controls.value.keysPressed['<']) {
+      worldGroup.rotation.y -= 0.03
+    }
+    if (controls.value.keysPressed['.'] || controls.value.keysPressed['>']) {
+      worldGroup.rotation.y += 0.03
+    }
+
+    // Clamp camera height
+    camera.position.y = Math.max(0.5, Math.min(20, camera.position.y))
+
+    // Update camera look-at with tilt
+    const tiltOffset = 5 + camera.position.y * 0.5
+    camera.lookAt(camera.position.x, 2.0, camera.position.z - tiltOffset)
+  }
+
+  // Lifecycle
+  onMounted(() => {
+    if (!canvasElement) return
+
+    // Mouse events
+    canvasElement.addEventListener('mousedown', handleMouseDown)
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    // Scroll
+    canvasElement.addEventListener('wheel', handleWheel)
+
+    // Keyboard
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('keyup', handleKeyUp)
+
+    // Touch
+    canvasElement.addEventListener('touchstart', handleTouchStart)
+    canvasElement.addEventListener('touchmove', handleTouchMove)
+    canvasElement.addEventListener('touchend', handleTouchEnd)
+  })
+
+  onUnmounted(() => {
+    if (!canvasElement) return
+
+    // Cleanup all event listeners
+    canvasElement.removeEventListener('mousedown', handleMouseDown)
+    document.removeEventListener('mousemove', handleMouseMove)
+    document.removeEventListener('mouseup', handleMouseUp)
+    canvasElement.removeEventListener('wheel', handleWheel)
+    document.removeEventListener('keydown', handleKeyDown)
+    document.removeEventListener('keyup', handleKeyUp)
+    canvasElement.removeEventListener('touchstart', handleTouchStart)
+    canvasElement.removeEventListener('touchmove', handleTouchMove)
+    canvasElement.removeEventListener('touchend', handleTouchEnd)
+  })
+
+  return {
+    controls,
+    updateCameraPosition,
+  }
+}
