@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import type * as THREE from 'three'
+import { CAMERA_CONFIG } from '../constants/3d'
 
 export interface CameraControls {
   isDragging: boolean
@@ -33,7 +34,7 @@ export function use3DCamera(
     }
 
     // Rotate world on Y-axis
-    worldGroup.rotation.y += deltaMove.x * 0.01
+    worldGroup.rotation.y += deltaMove.x * CAMERA_CONFIG.MOUSE_ROTATION_SPEED
 
     controls.value.previousMousePosition = { x: e.offsetX, y: e.offsetY }
   }
@@ -44,8 +45,11 @@ export function use3DCamera(
 
   // Scroll Zoom
   function handleWheel(e: WheelEvent) {
-    camera.position.y += e.deltaY * 0.01
-    camera.position.y = Math.max(0.5, Math.min(20, camera.position.y))
+    camera.position.y += e.deltaY * CAMERA_CONFIG.WHEEL_ZOOM_SPEED
+    camera.position.y = Math.max(
+      CAMERA_CONFIG.HEIGHT_MIN,
+      Math.min(CAMERA_CONFIG.HEIGHT_MAX, camera.position.y)
+    )
   }
 
   // Keyboard Controls
@@ -75,7 +79,7 @@ export function use3DCamera(
     const currentY = e.touches[0].clientY
 
     worldGroup.rotation.y +=
-      (currentX - controls.value.previousMousePosition.x) * 0.01
+      (currentX - controls.value.previousMousePosition.x) * CAMERA_CONFIG.MOUSE_ROTATION_SPEED
 
     controls.value.previousMousePosition = { x: currentX, y: currentY }
   }
@@ -86,29 +90,29 @@ export function use3DCamera(
 
   // Update camera position based on keyboard input
   function updateCameraPosition() {
-    const panSpeed = 0.15
-    const verticalSpeed = 0.1
-
-    if (controls.value.keysPressed['arrowleft']) camera.position.x -= panSpeed
-    if (controls.value.keysPressed['arrowright']) camera.position.x += panSpeed
-    if (controls.value.keysPressed['arrowup']) camera.position.z -= panSpeed
-    if (controls.value.keysPressed['arrowdown']) camera.position.z += panSpeed
-    if (controls.value.keysPressed['z']) camera.position.y += verticalSpeed
-    if (controls.value.keysPressed['x']) camera.position.y -= verticalSpeed
+    if (controls.value.keysPressed['arrowleft']) camera.position.x -= CAMERA_CONFIG.PAN_SPEED
+    if (controls.value.keysPressed['arrowright']) camera.position.x += CAMERA_CONFIG.PAN_SPEED
+    if (controls.value.keysPressed['arrowup']) camera.position.z -= CAMERA_CONFIG.PAN_SPEED
+    if (controls.value.keysPressed['arrowdown']) camera.position.z += CAMERA_CONFIG.PAN_SPEED
+    if (controls.value.keysPressed['z']) camera.position.y += CAMERA_CONFIG.VERTICAL_SPEED
+    if (controls.value.keysPressed['x']) camera.position.y -= CAMERA_CONFIG.VERTICAL_SPEED
 
     // Alternate rotation keys
     if (controls.value.keysPressed[','] || controls.value.keysPressed['<']) {
-      worldGroup.rotation.y -= 0.03
+      worldGroup.rotation.y -= CAMERA_CONFIG.KEYBOARD_ROTATION_SPEED
     }
     if (controls.value.keysPressed['.'] || controls.value.keysPressed['>']) {
-      worldGroup.rotation.y += 0.03
+      worldGroup.rotation.y += CAMERA_CONFIG.KEYBOARD_ROTATION_SPEED
     }
 
     // Clamp camera height
-    camera.position.y = Math.max(0.5, Math.min(20, camera.position.y))
+    camera.position.y = Math.max(
+      CAMERA_CONFIG.HEIGHT_MIN,
+      Math.min(CAMERA_CONFIG.HEIGHT_MAX, camera.position.y)
+    )
 
     // Update camera look-at with tilt
-    const tiltOffset = 5 + camera.position.y * 0.5
+    const tiltOffset = CAMERA_CONFIG.TILT_OFFSET_BASE + camera.position.y * CAMERA_CONFIG.TILT_OFFSET_MULTIPLIER
     camera.lookAt(camera.position.x, 2.0, camera.position.z - tiltOffset)
   }
 
@@ -119,17 +123,17 @@ export function use3DCamera(
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
 
-    // Scroll
-    canvasElement.addEventListener('wheel', handleWheel)
+    // Scroll - use passive for better performance
+    canvasElement.addEventListener('wheel', handleWheel, { passive: true })
 
     // Keyboard
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('keyup', handleKeyUp)
 
-    // Touch
-    canvasElement.addEventListener('touchstart', handleTouchStart)
-    canvasElement.addEventListener('touchmove', handleTouchMove)
-    canvasElement.addEventListener('touchend', handleTouchEnd)
+    // Touch - use passive for better scroll performance
+    canvasElement.addEventListener('touchstart', handleTouchStart, { passive: true })
+    canvasElement.addEventListener('touchmove', handleTouchMove, { passive: true })
+    canvasElement.addEventListener('touchend', handleTouchEnd, { passive: true })
   }
 
   // Cleanup event listeners

@@ -2,21 +2,16 @@ import { watch } from 'vue'
 import * as THREE from 'three'
 import { useHabitatConditions } from '../stores/habitatConditions'
 import { useGuineaPigStore } from '../stores/guineaPigStore'
-import { createGuineaPigModel } from './use3DGuineaPig'
-
-// Grid configuration
-const GRID_COLS = 14
-const GRID_ROWS = 10
-const CELL_SIZE = 3.0 // 3 units per grid cell (increased to match guinea pig scale)
-const PIXELS_PER_CELL = 64 // 2D sprite size
+import { createGuineaPigModel, disposeGuineaPigModel } from './use3DGuineaPig'
+import { GRID_CONFIG, ANIMATION_CONFIG } from '../constants/3d'
 
 /**
  * Convert 2D grid position to 3D world coordinates
  */
 export function gridToWorld(col: number, row: number): THREE.Vector3 {
   // Center the grid (col 7, row 5 → world 0, 0)
-  const worldX = (col - GRID_COLS / 2) * CELL_SIZE
-  const worldZ = (row - GRID_ROWS / 2) * CELL_SIZE
+  const worldX = (col - GRID_CONFIG.COLS / 2) * GRID_CONFIG.CELL_SIZE
+  const worldZ = (row - GRID_CONFIG.ROWS / 2) * GRID_CONFIG.CELL_SIZE
   const worldY = 0 // Ground level
 
   return new THREE.Vector3(worldX, worldY, worldZ)
@@ -32,12 +27,12 @@ export function gridToWorldWithOffset(pos: {
   offsetY?: number
 }): THREE.Vector3 {
   // Base world position (x and y in the store correspond to col and row)
-  const worldX = (pos.x - GRID_COLS / 2) * CELL_SIZE
-  const worldZ = (pos.y - GRID_ROWS / 2) * CELL_SIZE
+  const worldX = (pos.x - GRID_CONFIG.COLS / 2) * GRID_CONFIG.CELL_SIZE
+  const worldZ = (pos.y - GRID_CONFIG.ROWS / 2) * GRID_CONFIG.CELL_SIZE
 
   // Convert pixel offsets to world offsets
-  const offsetX = ((pos.offsetX || 0) / PIXELS_PER_CELL) * CELL_SIZE
-  const offsetZ = ((pos.offsetY || 0) / PIXELS_PER_CELL) * CELL_SIZE
+  const offsetX = ((pos.offsetX || 0) / GRID_CONFIG.PIXELS_PER_CELL) * GRID_CONFIG.CELL_SIZE
+  const offsetZ = ((pos.offsetY || 0) / GRID_CONFIG.PIXELS_PER_CELL) * GRID_CONFIG.CELL_SIZE
 
   return new THREE.Vector3(worldX + offsetX, 0, worldZ + offsetZ)
 }
@@ -53,8 +48,11 @@ export function use3DSync(worldGroup: THREE.Group) {
   const guineaPigModels = new Map<string, THREE.Group>()
   const previousPositions = new Map<string, THREE.Vector3>()
 
+  // Store watcher stop handles for cleanup
+  const stopWatchers: (() => void)[] = []
+
   // Watch for guinea pig additions/removals
-  watch(
+  stopWatchers.push(watch(
     () => guineaPigStore.collection.activeGuineaPigIds,
     (activeIds) => {
       // Add models for active guinea pigs
@@ -73,6 +71,7 @@ export function use3DSync(worldGroup: THREE.Group) {
       // Remove models for inactive guinea pigs
       guineaPigModels.forEach((model, guineaPigId) => {
         if (!activeIds.includes(guineaPigId)) {
+          disposeGuineaPigModel(model)
           worldGroup.remove(model)
           guineaPigModels.delete(guineaPigId)
           previousPositions.delete(guineaPigId)
@@ -80,10 +79,10 @@ export function use3DSync(worldGroup: THREE.Group) {
       })
     },
     { immediate: true },
-  )
+  ))
 
   // Watch guinea pig positions and update 3D models
-  watch(
+  stopWatchers.push(watch(
     () => habitatConditions.guineaPigPositions,
     (positions) => {
       positions.forEach((pos: { x: number; y: number; offsetX?: number; offsetY?: number }, guineaPigId: string) => {
@@ -102,7 +101,7 @@ export function use3DSync(worldGroup: THREE.Group) {
             const distanceMoved = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ)
 
             // Only update rotation if guinea pig actually moved
-            if (distanceMoved > 0.01) {
+            if (distanceMoved > ANIMATION_CONFIG.MOVEMENT_THRESHOLD) {
               // Calculate angle to face movement direction
               // atan2 gives angle from positive X axis, rotating counter-clockwise
               const angle = Math.atan2(deltaX, deltaZ)
@@ -119,11 +118,28 @@ export function use3DSync(worldGroup: THREE.Group) {
       })
     },
     { deep: true },
-  )
+  ))
+
+  /**
+   * Cleanup function - stops watchers and disposes models
+   */
+  function cleanup() {
+    // Stop all watchers
+    stopWatchers.forEach(stop => stop())
+
+    // Dispose all guinea pig models
+    guineaPigModels.forEach(model => {
+      disposeGuineaPigModel(model)
+      worldGroup.remove(model)
+    })
+    guineaPigModels.clear()
+    previousPositions.clear()
+  }
 
   return {
     guineaPigModels,
     gridToWorld,
     gridToWorldWithOffset,
+    cleanup,
   }
 }

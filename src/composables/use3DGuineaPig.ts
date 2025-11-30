@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { disposeObject3D } from '../utils/three-cleanup'
 
 export interface GuineaPigColors {
   fur: number
@@ -139,4 +140,11 @@ export function createGuineaPigModel(colors?: Partial<GuineaPigColors>): THREE.G
   }
 
   return guineaPig
+}
+
+/**
+ * Dispose a guinea pig model and all its resources
+ */
+export function disposeGuineaPigModel(model: THREE.Group): void {
+  disposeObject3D(model)
 }

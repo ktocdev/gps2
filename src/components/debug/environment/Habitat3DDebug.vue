@@ -85,6 +85,8 @@ import FloatingActionButton from '../../basic/FloatingActionButton.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useGameController } from '../../../stores/gameController'
 import { useGuineaPigBehavior, type BehaviorType } from '../../../composables/game/useGuineaPigBehavior'
+import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG } from '../../../constants/3d'
+import { disposeObject3D } from '../../../utils/three-cleanup'
 import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -126,9 +128,14 @@ let animationId: number | null = null
 
 // Guinea pig models registry (from use3DSync)
 let guineaPigModels: Map<string, THREE.Group> | null = null
+let cleanupSync: (() => void) | null = null
 
 // Selection ring
 let selectionRing: THREE.Mesh | null = null
+
+// Environment objects that need disposal
+let environmentObjects: THREE.Object3D[] = []
+let beddingTexture: THREE.CanvasTexture | null = null
 
 onMounted(() => {
   if (!canvasRef.value) return
@@ -145,6 +152,7 @@ onMounted(() => {
   // Setup position sync and get guinea pig models
   const syncResult = use3DSync(worldGroup)
   guineaPigModels = syncResult.guineaPigModels
+  cleanupSync = syncResult.cleanup
 
   // Add basic environment
   addEnvironment()
@@ -165,12 +173,38 @@ onUnmounted(() => {
     cancelAnimationFrame(animationId)
   }
 
+  // Cleanup sync watchers and guinea pig models
+  if (cleanupSync) {
+    cleanupSync()
+  }
+
   // Cleanup camera controls
   if (cleanupCamera) {
     cleanupCamera()
   }
 
-  // Cleanup renderer
+  // Dispose selection ring
+  if (selectionRing) {
+    disposeObject3D(selectionRing)
+    selectionRing = null
+  }
+
+  // Dispose environment objects
+  environmentObjects.forEach(obj => {
+    disposeObject3D(obj)
+  })
+  environmentObjects = []
+
+  // Dispose bedding texture
+  if (beddingTexture) {
+    beddingTexture.dispose()
+    beddingTexture = null
+  }
+
+  // Clear behavior composables
+  behaviorComposables.clear()
+
+  // Cleanup scene and renderer
   cleanupScene()
 
   // Remove resize listener
@@ -198,16 +232,20 @@ function animate() {
 
 // Create selection ring
 function createSelectionRing() {
-  const ringGeometry = new THREE.RingGeometry(0.8, 1.0, 32)
+  const ringGeometry = new THREE.RingGeometry(
+    ANIMATION_CONFIG.SELECTION_RING.INNER_RADIUS,
+    ANIMATION_CONFIG.SELECTION_RING.OUTER_RADIUS,
+    32
+  )
   const ringMaterial = new THREE.MeshBasicMaterial({
-    color: 0x00ff00,
+    color: ANIMATION_CONFIG.SELECTION_RING.COLOR,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: 0.6
+    opacity: ANIMATION_CONFIG.SELECTION_RING.OPACITY
   })
   selectionRing = new THREE.Mesh(ringGeometry, ringMaterial)
   selectionRing.rotation.x = -Math.PI / 2 // Rotate to be horizontal
-  selectionRing.position.y = 0.05 // Slightly above ground
+  selectionRing.position.y = ANIMATION_CONFIG.SELECTION_RING.Y_OFFSET
   selectionRing.visible = false
   worldGroup.add(selectionRing)
 }
@@ -223,8 +261,9 @@ function updateSelectionRing() {
     selectionRing.visible = true
 
     // Pulse animation
-    const time = Date.now() * 0.002
-    selectionRing.scale.set(1 + Math.sin(time) * 0.1, 1, 1 + Math.sin(time) * 0.1)
+    const time = Date.now() * ANIMATION_CONFIG.SELECTION_RING.PULSE_SPEED
+    const pulseAmount = ANIMATION_CONFIG.SELECTION_RING.PULSE_AMPLITUDE
+    selectionRing.scale.set(1 + Math.sin(time) * pulseAmount, 1, 1 + Math.sin(time) * pulseAmount)
   } else {
     selectionRing.visible = false
   }
@@ -388,11 +427,11 @@ async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) 
 // Add basic environment (floor)
 function addEnvironment() {
   // Create bedding texture
-  const beddingTexture = createBeddingTexture()
+  beddingTexture = createBeddingTexture()
 
-  // Floor dimensions (14x10 grid cells * 3 units per cell)
-  const floorWidth = 42 // 14 cols * 3
-  const floorDepth = 30 // 10 rows * 3
+  // Floor dimensions from grid config
+  const floorWidth = GRID_CONFIG.WIDTH
+  const floorDepth = GRID_CONFIG.DEPTH
 
   // Floor
   const floorGeo = new THREE.PlaneGeometry(floorWidth, floorDepth)
@@ -406,10 +445,11 @@ function addEnvironment() {
   floor.rotation.x = -Math.PI / 2 // Rotate to horizontal
   floor.receiveShadow = true
   worldGroup.add(floor)
+  environmentObjects.push(floor)
 
   // Walls
-  const wallHeight = 2.0
-  const wallThickness = 0.5
+  const wallHeight = ENVIRONMENT_CONFIG.WALL_HEIGHT
+  const wallThickness = ENVIRONMENT_CONFIG.WALL_THICKNESS
 
   const wallGeoH = new THREE.BoxGeometry(floorWidth + wallThickness * 2, wallHeight, wallThickness)
   const wallGeoV = new THREE.BoxGeometry(wallThickness, wallHeight, floorDepth)
@@ -418,26 +458,30 @@ function addEnvironment() {
   wall1.position.set(0, wallHeight / 2, -floorDepth / 2 - wallThickness / 2)
   wall1.receiveShadow = true
   worldGroup.add(wall1)
+  environmentObjects.push(wall1)
 
   const wall2 = new THREE.Mesh(wallGeoH, floorMat)
   wall2.position.set(0, wallHeight / 2, floorDepth / 2 + wallThickness / 2)
   wall2.receiveShadow = true
   worldGroup.add(wall2)
+  environmentObjects.push(wall2)
 
   const wall3 = new THREE.Mesh(wallGeoV, floorMat)
   wall3.position.set(-floorWidth / 2 - wallThickness / 2, wallHeight / 2, 0)
   wall3.receiveShadow = true
   worldGroup.add(wall3)
+  environmentObjects.push(wall3)
 
   const wall4 = new THREE.Mesh(wallGeoV, floorMat)
   wall4.position.set(floorWidth / 2 + wallThickness / 2, wallHeight / 2, 0)
   wall4.receiveShadow = true
   worldGroup.add(wall4)
+  environmentObjects.push(wall4)
 }
 
 // Create bedding texture
 function createBeddingTexture(): THREE.CanvasTexture {
-  const size = 1024
+  const size = ENVIRONMENT_CONFIG.BEDDING_TEXTURE_SIZE
   const canvas = document.createElement('canvas')
   canvas.width = size
   canvas.height = size
@@ -448,7 +492,7 @@ function createBeddingTexture(): THREE.CanvasTexture {
   ctx.fillRect(0, 0, size, size)
 
   // Add bedding pieces
-  for (let i = 0; i < 5000; i++) {
+  for (let i = 0; i < ENVIRONMENT_CONFIG.BEDDING_PIECES; i++) {
     const x = Math.random() * size
     const y = Math.random() * size
     const w = 15 + Math.random() * 25

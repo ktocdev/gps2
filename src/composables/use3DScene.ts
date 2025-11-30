@@ -1,20 +1,26 @@
 import type { Ref } from 'vue'
 import * as THREE from 'three'
+import { CAMERA_CONFIG, SCENE_COLORS, LIGHTING_CONFIG } from '../constants/3d'
+import { disposeScene, disposeRenderer } from '../utils/three-cleanup'
 
 export function use3DScene(canvasRef: Ref<HTMLCanvasElement | null>) {
   // Scene
   const scene = new THREE.Scene()
-  scene.background = new THREE.Color(0x87CEEB) // Light Sky Blue
-  scene.fog = new THREE.Fog(0x87CEEB, 40, 120) // Matching fog (scaled for larger scene)
+  scene.background = new THREE.Color(SCENE_COLORS.SKY)
+  scene.fog = new THREE.Fog(SCENE_COLORS.SKY, 40, 120)
 
   // Camera
   const camera = new THREE.PerspectiveCamera(
-    45, // FOV
+    CAMERA_CONFIG.FOV,
     1, // Aspect - will be set in initRenderer
-    0.1, // Near
-    1000, // Far
+    CAMERA_CONFIG.NEAR,
+    CAMERA_CONFIG.FAR,
   )
-  camera.position.set(10, 15, 30)
+  camera.position.set(
+    CAMERA_CONFIG.INITIAL_POSITION.x,
+    CAMERA_CONFIG.INITIAL_POSITION.y,
+    CAMERA_CONFIG.INITIAL_POSITION.z
+  )
   camera.lookAt(0, 0, 0)
 
   // Renderer
@@ -25,21 +31,30 @@ export function use3DScene(canvasRef: Ref<HTMLCanvasElement | null>) {
   scene.add(worldGroup)
 
   // Lighting
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
+  const ambientLight = new THREE.AmbientLight(
+    SCENE_COLORS.AMBIENT_LIGHT,
+    LIGHTING_CONFIG.AMBIENT_INTENSITY
+  )
   scene.add(ambientLight)
 
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8)
+  const dirLight = new THREE.DirectionalLight(
+    SCENE_COLORS.DIRECTIONAL_LIGHT,
+    LIGHTING_CONFIG.DIRECTIONAL_INTENSITY
+  )
   dirLight.position.set(15, 30, 20)
   dirLight.castShadow = true
-  dirLight.shadow.mapSize.width = 2048
-  dirLight.shadow.mapSize.height = 2048
-  dirLight.shadow.camera.left = -30
-  dirLight.shadow.camera.right = 30
-  dirLight.shadow.camera.top = 30
-  dirLight.shadow.camera.bottom = -30
+  dirLight.shadow.mapSize.width = LIGHTING_CONFIG.SHADOW_MAP_SIZE
+  dirLight.shadow.mapSize.height = LIGHTING_CONFIG.SHADOW_MAP_SIZE
+  dirLight.shadow.camera.left = -LIGHTING_CONFIG.SHADOW_CAMERA_BOUNDS
+  dirLight.shadow.camera.right = LIGHTING_CONFIG.SHADOW_CAMERA_BOUNDS
+  dirLight.shadow.camera.top = LIGHTING_CONFIG.SHADOW_CAMERA_BOUNDS
+  dirLight.shadow.camera.bottom = -LIGHTING_CONFIG.SHADOW_CAMERA_BOUNDS
   scene.add(dirLight)
 
-  const backLight = new THREE.DirectionalLight(0xccccff, 0.4)
+  const backLight = new THREE.DirectionalLight(
+    SCENE_COLORS.BACK_LIGHT,
+    LIGHTING_CONFIG.BACK_LIGHT_INTENSITY
+  )
   backLight.position.set(-15, 15, -15)
   scene.add(backLight)
 
@@ -79,11 +94,14 @@ export function use3DScene(canvasRef: Ref<HTMLCanvasElement | null>) {
     renderer.setSize(width, height, false)
   }
 
-  // Cleanup
+  // Cleanup - dispose all Three.js resources
   function cleanup() {
-    if (renderer) {
-      renderer.dispose()
-    }
+    // Dispose scene and all its children
+    disposeScene(scene)
+
+    // Dispose renderer
+    disposeRenderer(renderer)
+    renderer = null
   }
 
   return {
