@@ -5,7 +5,7 @@ export function use3DScene(canvasRef: Ref<HTMLCanvasElement | null>) {
   // Scene
   const scene = new THREE.Scene()
   scene.background = new THREE.Color(0x87CEEB) // Light Sky Blue
-  scene.fog = new THREE.Fog(0x87CEEB, 20, 60) // Matching fog
+  scene.fog = new THREE.Fog(0x87CEEB, 40, 120) // Matching fog (scaled for larger scene)
 
   // Camera
   const camera = new THREE.PerspectiveCamera(
@@ -14,8 +14,8 @@ export function use3DScene(canvasRef: Ref<HTMLCanvasElement | null>) {
     0.1, // Near
     1000, // Far
   )
-  camera.position.set(4, 3, 8)
-  camera.lookAt(4, 0, 0)
+  camera.position.set(10, 15, 30)
+  camera.lookAt(0, 0, 0)
 
   // Renderer
   let renderer: THREE.WebGLRenderer | null = null
@@ -29,14 +29,18 @@ export function use3DScene(canvasRef: Ref<HTMLCanvasElement | null>) {
   scene.add(ambientLight)
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.8)
-  dirLight.position.set(5, 10, 7)
+  dirLight.position.set(15, 30, 20)
   dirLight.castShadow = true
-  dirLight.shadow.mapSize.width = 1024
-  dirLight.shadow.mapSize.height = 1024
+  dirLight.shadow.mapSize.width = 2048
+  dirLight.shadow.mapSize.height = 2048
+  dirLight.shadow.camera.left = -30
+  dirLight.shadow.camera.right = 30
+  dirLight.shadow.camera.top = 30
+  dirLight.shadow.camera.bottom = -30
   scene.add(dirLight)
 
   const backLight = new THREE.DirectionalLight(0xccccff, 0.4)
-  backLight.position.set(-5, 5, -5)
+  backLight.position.set(-15, 15, -15)
   scene.add(backLight)
 
   // Initialize renderer

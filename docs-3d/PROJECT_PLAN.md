@@ -1,8 +1,8 @@
 # GPS2 3D Environment System - Project Plan
 
-> **Status:** 🚧 In Development - Phase 1
+> **Status:** 🚧 In Development - Phase 2
 > **Started:** November 29, 2025
-> **Current Phase:** Phase 1 - MVP (Basic 3D Scene with Guinea Pig Movement)
+> **Current Phase:** Phase 2 - Items & Interactions
 
 ---
 
@@ -40,7 +40,7 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 ### **Navigation**
 
-- **[DEVELOPMENT_PHASES.md](DEVELOPMENT_PHASES.md)** - Phase breakdown and roadmap
+- **[PHASES.md](PHASES.md)** - Comprehensive phase documentation and roadmap
 - **Phase 1: MVP** - [phase1/](phase1/)
   - [threejs-integration.md](phase1/threejs-integration.md) - Three.js setup with Vue 3
   - [coordinate-mapping.md](phase1/coordinate-mapping.md) - Grid to 3D world conversion
@@ -57,34 +57,34 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 ## 🗺️ **Development Phases**
 
-### **Phase 1: MVP - Basic 3D Scene with Guinea Pig Movement** 🚧
-**Status:** In Progress
+### **Phase 1: MVP - Basic 3D Scene with Guinea Pig Movement** ✅
+**Status:** Complete
 **Goal:** Basic 3D habitat with guinea pigs moving in real-time
 
-**Key Features:**
+**Completed Features:**
 - Three.js integration with Vue 3
 - Grid-to-3D coordinate mapping (14x10 grid → Vector3)
 - Guinea pig 3D model (ported from demo)
 - Real-time position sync from `habitatConditions` store
-- Camera system (perspective with orbit controls)
+- Camera system (orbit controls: drag, scroll, keyboard)
 - Basic environment (floor, walls, lighting, sky)
+- Guinea pigs face movement direction
 
-**Milestone:** Guinea pigs move in 3D when clicking 2D game or using 2D controls
+**Milestone:** ✅ Guinea pigs move in 3D, camera controls working
 
 ---
 
-### **Phase 2: Enhanced Objects and Basic Interactions** 📋
-**Status:** Not Started
-**Goal:** All habitat items rendered in 3D with click-to-move
+### **Phase 2: Items & Interactions** 🚧
+**Status:** In Progress
+**Goal:** All habitat items rendered in 3D with interactions
 
 **Key Features:**
-- 3D models for all items (bowls, water bottles, shelters, toys, etc.)
+- 3D models for all items (using demo models: bowl, igloo, water bottle, stick, ball)
 - Item positioning from `habitatConditions.itemPositions`
-- Click interactions (raycasting for floor movement)
-- Poop visualization and cleanup
-- Walking animation (procedural cycle)
+- Poop visualization and click-to-cleanup
+- Basic raycasting for interactions
 
-**Milestone:** Full 3D habitat environment with clickable floor movement
+**Milestone:** Full 3D habitat environment with all items visible
 
 ---
 
@@ -93,10 +93,10 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 **Goal:** Complete playable 3D game with minimal guinea pig care
 
 **Key Features:**
-- Floating action buttons (feed, water, clean)
-- Navigation and UI overlay (stats, activity feed)
-- Item interactions (click items to use them)
-- Behavior animations (eat, drink, sleep)
+- Guinea pig selection (click to select)
+- Floating action buttons (feed, water, play, pet, clean)
+- Button triggers call existing autonomy functions
+- Item interactions
 - Debug panel integration
 - All starter objects working
 
@@ -104,7 +104,25 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 ---
 
-### **Phase 4: Polish & Parity** 📋
+### **Phase 4: Movement Polish & Animation** 📋
+**Status:** Not Started
+**Goal:** Smooth movement like demo (guinea-pig-sim-demo-backup.html)
+
+**Key Features:**
+- Position interpolation (lerping between grid updates)
+- Rotation interpolation (smooth turning)
+- Walking animation (feet alternating up/down)
+- Body bobbing while walking
+- Nose wiggle animation
+- Idle vs. moving state detection
+
+**Milestone:** Movement quality matches demo smoothness
+
+**Reference:** See [PHASES.md](PHASES.md#phase-4-movement-polish--animation) for detailed implementation plan
+
+---
+
+### **Phase 5: Polish & Parity** 📋
 **Status:** Not Started
 **Goal:** Full feature parity with 2D game + polish
 
@@ -114,6 +132,7 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 - Sound system
 - Performance optimization
 - Mobile refinement
+- UI overlays (stats, activity feed)
 
 ---
 
@@ -154,15 +173,25 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 ### **Current Status**
 - ✅ Project plan created
-- 🚧 Phase 1 in progress
-- 📋 Phases 2-4 planned
+- ✅ Phase 1 complete (MVP with camera controls)
+- 🚧 Phase 2 in progress (Items & Interactions)
+- 📋 Phases 3-5 planned
 
-### **Next Steps**
-1. Complete documentation structure
-2. Install Three.js
-3. Implement Phase 1 composables
-4. Create 3D habitat debug page
-5. Test guinea pig movement synchronization
+### **Completed**
+- ✅ Three.js installed and integrated
+- ✅ Phase 1 composables implemented (`use3DScene`, `use3DCamera`, `use3DSync`, `use3DGuineaPig`)
+- ✅ 3D habitat debug page created
+- ✅ Guinea pig movement synchronization working
+- ✅ Camera controls fixed (drag, scroll, keyboard)
+- ✅ Guinea pigs face movement direction
+- ✅ Floor scaled to match guinea pig proportions
+
+### **Next Steps (Phase 2)**
+1. Create `use3DItems.ts` composable
+2. Extract 3D models from demo (bowl, igloo, water bottle, stick, ball)
+3. Create flat mat model for beds
+4. Implement poop pellet visualization
+5. Add raycasting for click-to-cleanup poop
 
 ---
 
@@ -174,4 +203,4 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 ---
 
-**Last Updated:** November 29, 2025
+**Last Updated:** November 29, 2025 (Phase 4 Movement Polish added)

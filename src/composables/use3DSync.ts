@@ -7,7 +7,7 @@ import { createGuineaPigModel } from './use3DGuineaPig'
 // Grid configuration
 const GRID_COLS = 14
 const GRID_ROWS = 10
-const CELL_SIZE = 1.0 // 1 unit per grid cell
+const CELL_SIZE = 3.0 // 3 units per grid cell (increased to match guinea pig scale)
 const PIXELS_PER_CELL = 64 // 2D sprite size
 
 /**
@@ -49,8 +49,9 @@ export function use3DSync(worldGroup: THREE.Group) {
   const habitatConditions = useHabitatConditions()
   const guineaPigStore = useGuineaPigStore()
 
-  // Registry of guinea pig 3D models
+  // Registry of guinea pig 3D models and their previous positions
   const guineaPigModels = new Map<string, THREE.Group>()
+  const previousPositions = new Map<string, THREE.Vector3>()
 
   // Watch for guinea pig additions/removals
   watch(
@@ -74,6 +75,7 @@ export function use3DSync(worldGroup: THREE.Group) {
         if (!activeIds.includes(guineaPigId)) {
           worldGroup.remove(model)
           guineaPigModels.delete(guineaPigId)
+          previousPositions.delete(guineaPigId)
         }
       })
     },
@@ -87,10 +89,32 @@ export function use3DSync(worldGroup: THREE.Group) {
       positions.forEach((pos: { x: number; y: number; offsetX?: number; offsetY?: number }, guineaPigId: string) => {
         const worldPos = gridToWorldWithOffset(pos)
 
-        // Update 3D model position
+        // Update 3D model position and rotation
         const model = guineaPigModels.get(guineaPigId)
         if (model) {
+          // Get previous position to calculate movement direction
+          const prevPos = previousPositions.get(guineaPigId)
+
+          if (prevPos) {
+            // Calculate movement direction
+            const deltaX = worldPos.x - prevPos.x
+            const deltaZ = worldPos.z - prevPos.z
+            const distanceMoved = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ)
+
+            // Only update rotation if guinea pig actually moved
+            if (distanceMoved > 0.01) {
+              // Calculate angle to face movement direction
+              // atan2 gives angle from positive X axis, rotating counter-clockwise
+              const angle = Math.atan2(deltaX, deltaZ)
+              model.rotation.y = angle
+            }
+          }
+
+          // Update position
           model.position.copy(worldPos)
+
+          // Store current position as previous for next update
+          previousPositions.set(guineaPigId, worldPos.clone())
         }
       })
     },

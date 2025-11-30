@@ -96,8 +96,12 @@ function addEnvironment() {
   // Create bedding texture
   const beddingTexture = createBeddingTexture()
 
+  // Floor dimensions (14x10 grid cells * 3 units per cell)
+  const floorWidth = 42 // 14 cols * 3
+  const floorDepth = 30 // 10 rows * 3
+
   // Floor
-  const floorGeo = new THREE.PlaneGeometry(14, 10) // Match grid size
+  const floorGeo = new THREE.PlaneGeometry(floorWidth, floorDepth)
   const floorMat = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: beddingTexture,
@@ -110,30 +114,29 @@ function addEnvironment() {
   worldGroup.add(floor)
 
   // Walls
-  const wallHeight = 0.5
+  const wallHeight = 2.0
   const wallThickness = 0.5
-  const floorSize = 10 // Adjusted for 10 row depth
 
-  const wallGeoH = new THREE.BoxGeometry(14 + wallThickness * 2, wallHeight, wallThickness)
-  const wallGeoV = new THREE.BoxGeometry(wallThickness, wallHeight, floorSize)
+  const wallGeoH = new THREE.BoxGeometry(floorWidth + wallThickness * 2, wallHeight, wallThickness)
+  const wallGeoV = new THREE.BoxGeometry(wallThickness, wallHeight, floorDepth)
 
   const wall1 = new THREE.Mesh(wallGeoH, floorMat)
-  wall1.position.set(0, wallHeight / 2, -floorSize / 2 - wallThickness / 2)
+  wall1.position.set(0, wallHeight / 2, -floorDepth / 2 - wallThickness / 2)
   wall1.receiveShadow = true
   worldGroup.add(wall1)
 
   const wall2 = new THREE.Mesh(wallGeoH, floorMat)
-  wall2.position.set(0, wallHeight / 2, floorSize / 2 + wallThickness / 2)
+  wall2.position.set(0, wallHeight / 2, floorDepth / 2 + wallThickness / 2)
   wall2.receiveShadow = true
   worldGroup.add(wall2)
 
   const wall3 = new THREE.Mesh(wallGeoV, floorMat)
-  wall3.position.set(-14 / 2 - wallThickness / 2, wallHeight / 2, 0)
+  wall3.position.set(-floorWidth / 2 - wallThickness / 2, wallHeight / 2, 0)
   wall3.receiveShadow = true
   worldGroup.add(wall3)
 
   const wall4 = new THREE.Mesh(wallGeoV, floorMat)
-  wall4.position.set(14 / 2 + wallThickness / 2, wallHeight / 2, 0)
+  wall4.position.set(floorWidth / 2 + wallThickness / 2, wallHeight / 2, 0)
   wall4.receiveShadow = true
   worldGroup.add(wall4)
 }
