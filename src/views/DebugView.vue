@@ -28,6 +28,7 @@
       <BondingDebug v-if="activeTab === 'bonding'" />
       <InventoryDebugView v-if="activeTab === 'inventory'" />
       <HabitatDebugView v-if="activeTab === 'habitat'" />
+      <Habitat3DDebug v-if="activeTab === 'habitat-3d'" />
       <SuppliesStoreDebug v-if="activeTab === 'supplies-store'" />
       <LoggingSystemView v-if="activeTab === 'logging'" />
     </div>
@@ -47,6 +48,7 @@ import BondingDebug from '../components/debug/gameplay/BondingDebug.vue'
 import StardustSanctuaryDebug from '../components/debug/core/StardustSanctuaryDebug.vue'
 import HabitatDebugView from './HabitatDebugView.vue'
 import SuppliesStoreDebug from '../components/debug/environment/SuppliesStoreDebug.vue'
+import Habitat3DDebug from '../components/debug/environment/Habitat3DDebug.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import { useGameController } from '../stores/gameController'
 
@@ -120,6 +122,12 @@ const tabCategories: TabCategory[] = [
         id: 'habitat',
         label: 'Habitat Debug',
         icon: '🏠',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'habitat-3d',
+        label: '3D Habitat',
+        icon: '🎲',
         panelClass: 'tab-container__panel--constrained'
       },
       {
