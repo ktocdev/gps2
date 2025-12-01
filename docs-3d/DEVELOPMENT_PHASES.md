@@ -1,6 +1,6 @@
 # 3D Development Phases
 
-> **Current Phase:** Phase 2 - Items & Interactions
+> **Current Phase:** Phase 4 - Movement Polish & Animation (Next)
 > **Navigation:** [← Back to Project Plan](PROJECT_PLAN.md)
 
 ---
@@ -10,12 +10,12 @@
 | Phase | Status | Goal | Milestone |
 |-------|--------|------|-----------|
 | **Phase 1** | ✅ Complete | Basic 3D scene with guinea pig movement | Guinea pigs move in 3D in real-time |
-| **Phase 2** | 🚧 In Progress | Items & interactions | Full 3D habitat with all items visible |
-| **Phase 3** | 📋 Planned | Full playability | Complete guinea pig care in 3D ⭐ |
-| **Phase 4** | 📋 Planned | Movement polish & animation | Movement quality matches demo |
+| **Phase 2** | ✅ Complete | Items & interactions | Full 3D habitat with all items visible |
+| **Phase 3** | ✅ Complete ⭐ | Full playability | Complete guinea pig care in 3D |
+| **Phase 4** | 📋 Ready to Start | Movement polish & animation | Movement quality matches demo |
 | **Phase 5** | 📋 Planned | Polish & parity | Full 2D feature parity + polish |
 
-⭐ **Sprint Resume Milestone:** Phase 3 completion triggers resumption of [SPRINT-2025-11-17.md](../docs/SPRINT-2025-11-17.md)
+⭐ **Sprint Resume Milestone COMPLETE:** Phase 3 finished! Ready to resume [SPRINT-2025-11-17.md](../docs/SPRINT-2025-11-17.md)
 
 ---
 
@@ -58,10 +58,11 @@
 
 ---
 
-## Phase 2: Items & Interactions 🚧
+## Phase 2: Items & Interactions ✅
 
-**Status:** In Progress
+**Status:** Complete
 **Started:** November 29, 2025
+**Completed:** November 30, 2025
 
 ### Goals
 
@@ -91,167 +92,175 @@ Add all habitat items to 3D scene and enable basic interactions:
 - [x] Arrow keys to pan camera
 - [x] Touch support for mobile
 
-**Priority 2: Habitat Items** (Current)
-1. **Create `src/composables/use3DItems.ts`:**
-   - Watch `habitatConditions.itemPositions`
-   - Create/remove 3D models as items change
-   - Map item types to appropriate models
-   - Handle position updates
+**Priority 2: Habitat Items** ✅ Complete
+1. **Create `src/composables/use3DItems.ts`:** ✅
+   - [x] Watch `habitatConditions.itemPositions`
+   - [x] Create/remove 3D models as items change
+   - [x] Map item types to appropriate models
+   - [x] Handle position updates
 
-2. **Extract Models from Demo:**
-   - Copy bowl, igloo, water bottle, stick, ball model creation
-   - Adapt to match composable pattern
-   - Store in `use3DItems.ts` or separate model files
+2. **Extract Models from Demo:** ✅
+   - [x] Copy bowl, igloo, water bottle, stick, ball model creation
+   - [x] Adapt to match composable pattern
+   - [x] Enhanced models with hay, food, and wood textures
+   - [x] Smart water bottle rotation (corners + edges)
 
-3. **Create Flat Mat Model:**
-   - Simple PlaneGeometry with soft material
-   - Slightly raised from ground (0.01 units)
-   - Scale to match bed size in grid cells
+3. **Create Flat Mat Model:** ✅
+   - [x] Simple PlaneGeometry with soft material
+   - [x] Slightly raised from ground (0.04 units)
+   - [x] Scale to match bed size in grid cells
 
-4. **Poop Pellet System:**
-   - Small brown SphereGeometry (radius ~0.1)
-   - Watch `habitatConditions.poopPellets` Map
-   - Add click detection (raycasting)
-   - On click → call store's remove poop function
+4. **Poop Pellet System:** ✅
+   - [x] Small brown SphereGeometry in `use3DPoop.ts`
+   - [x] Watch `habitatConditions.poopPellets` Map
+   - [x] Add click detection (raycasting)
+   - [x] On click → call store's remove poop function
+
+**Priority 3: Code Organization** (Next)
+5. **Refactor Item Models for Scalability:**
+   - See [3D Item Models Refactoring Plan](phase3/3D-ITEM-MODELS-REFACTORING.md)
+   - Current: All models in single 778-line file
+   - Goal: Organized folder structure for 100+ items
+   - Structure: Separate files by category (food, containers, shelters, toys, bedding)
+   - Benefits: Better maintainability, team collaboration, testability
 
 ### Testing Checklist
 
-- [ ] All item types appear in correct positions
-- [ ] Items update when added/removed in 2D
-- [ ] Poop pellets appear and disappear correctly
-- [ ] Click on poop removes it from scene and store
+- [x] All item types appear in correct positions
+- [x] Items update when added/removed in 2D
+- [x] Poop pellets appear and disappear correctly
+- [x] Click on poop removes it from scene and store
+- [x] Water bottles rotate correctly based on wall position
+- [x] Bowl contents render correctly (hay, food)
+- [x] Enhanced models with textures and details
 
 ### Success Criteria
 
-✅ **Phase 2 Complete** when:
-1. All 2D habitat items visible in 3D
-2. Items sync correctly with game state changes
-3. Poop cleanup works by clicking
+✅ **Phase 2 Complete** - All criteria met:
+1. ✅ All 2D habitat items visible in 3D
+2. ✅ Items sync correctly with game state changes
+3. ✅ Poop cleanup works by clicking
+4. ✅ Enhanced models with realistic details
 
-**Files to Create:**
-- `src/composables/use3DItems.ts`
-- `src/composables/use3DModels.ts` (optional)
+**Files Created:**
+- ✅ `src/composables/use3DItems.ts`
+- ✅ `src/composables/use3DPoop.ts`
+- ✅ `src/composables/use3DTextures.ts`
 
-**Files to Modify:**
-- `src/components/debug/environment/Habitat3DDebug.vue`
+**Files Modified:**
+- ✅ `src/components/debug/environment/Habitat3DDebug.vue`
+- ✅ `src/constants/3d.ts` (added ITEM_CONFIG)
 
 **Documentation:**
-- [item-models.md](phase2/item-models.md)
-- [interactions.md](phase2/interactions.md)
+- [3D Item Models Refactoring Plan](phase3/3D-ITEM-MODELS-REFACTORING.md) - Future scalability
+- `item-models.md` (planned)
+- `interactions.md` (planned)
 
 ---
 
-## Phase 3: Full Playability 📋 ⭐
+## Phase 3: Full Playability ✅ ⭐
 
-**Status:** Not Started
+**Status:** Complete
+**Started:** November 30, 2025
+**Completed:** November 30, 2025
 **Goal:** Complete playable 3D game with minimal guinea pig care
 
-### Goals
+### Completed Goals
 
 Make the 3D view fully playable:
-1. Click guinea pig to select
-2. Floating action buttons for interactions
-3. Button triggers call existing autonomy functions
-4. All starter objects working
+1. ✅ Click guinea pig to select
+2. ✅ Floating action buttons for interactions
+3. ✅ Button triggers call existing autonomy functions
+4. ✅ Poop cleanup interaction
 
 ### Features
 
-#### 3.1 Guinea Pig Selection
+#### 3.1 Guinea Pig Selection ✅
 
 **Goal:** Click guinea pig to select, show selection indicator
 
-**Implementation:**
-- Raycasting on canvas click
-- Detect guinea pig model hits
-- Add selection ring/glow to selected model
-- Store selected guinea pig ID in component state
+**Completed Implementation:**
+- ✅ Raycasting on canvas click
+- ✅ Detect guinea pig model hits
+- ✅ Add selection ring to selected model (pulsing green ring)
+- ✅ Store selected guinea pig ID in component state
+- ✅ Display selected guinea pig name in UI
 
 ---
 
-#### 3.2 Floating Action Buttons
+#### 3.2 Floating Action Buttons ✅
 
 **Goal:** Trigger existing autonomy functions from 3D view
 
-**Buttons to Add:**
-- Feed (opens food selection) - 🥕 icon
-- Give Water - 💧 icon
-- Play - 🎾 icon
-- Pet - 💚 icon
-- Clean Habitat - 🧹 icon
+**Implemented Buttons:**
+- ✅ Feed (opens food selection) - 🥕 icon
+- ✅ Give Water - 💧 icon
+- ✅ Play - 🎾 icon
+- ✅ Pet - 💚 icon
+- ✅ Deselect - ❌ icon
 
-**Implementation:**
+**Completed Implementation:**
 
-1. **Use existing `FloatingActionButton` component:**
-   - Import from `src/components/basic/FloatingActionButton.vue`
-   - Create multiple instances in `Habitat3DDebug.vue` or new `Habitat3DControls.vue`
-   - Position them in a vertical stack using custom wrapper or absolute positioning
-   - Each button has appropriate icon, label, and variant
+1. **Using `FloatingActionButton` component:** ✅
+   - ✅ Imported from `src/components/basic/FloatingActionButton.vue`
+   - ✅ Created multiple instances in `Habitat3DDebug.vue`
+   - ✅ Positioned in bottom-right corner
+   - ✅ Each button has appropriate icon, label, and variant
 
-2. **Button Configuration Example:**
-   ```vue
-   <FloatingActionButton
-     icon="🥕"
-     label="Feed"
-     variant="primary"
-     :disabled="!selectedGuineaPigId"
-     aria-label="Feed guinea pig"
-     @click="handleFeed"
-   />
-   ```
-
-3. **Wire to Existing Functions:**
-   - Use same functions as AutonomyDebug component
-   - Pass selected guinea pig ID
-   - Show feedback on action triggered
-   - Disable all buttons when no guinea pig selected
+2. **Wired to Existing Functions:** ✅
+   - ✅ Uses same functions as AutonomyDebug component
+   - ✅ Passes selected guinea pig ID
+   - ✅ Shows feedback when action triggered
+   - ✅ All buttons disabled when no guinea pig selected
+   - ✅ Buttons only visible when guinea pig is selected
 
 ---
 
-#### 3.3 Poop Cleanup Interaction
+#### 3.3 Poop Cleanup Interaction ✅
 
 **Goal:** Click poop to remove (same as 2D)
 
-**Implementation:**
-- Raycasting on canvas click
-- Detect poop pellet hits
-- Call `habitatConditions.removePoop(poopId)`
-- Visual feedback (pellet disappears)
+**Completed Implementation:**
+- ✅ Raycasting on canvas click
+- ✅ Detect poop pellet hits
+- ✅ Call `habitatConditions.removePoop(poopId)`
+- ✅ Visual feedback (pellet disappears)
 
 **Integration:**
-- Add to existing click handler in Habitat3DDebug.vue
-- Check if ray intersects poop model first, then guinea pig
+- ✅ Added to click handler in Habitat3DDebug.vue
+- ✅ Checks if ray intersects poop model first, then guinea pig
 
 ---
 
 ### Testing Checklist
 
-- [ ] Click on guinea pig shows selection indicator
-- [ ] Action buttons appear when guinea pig selected
-- [ ] Feed button triggers food selection (same as 2D)
-- [ ] Other action buttons trigger correct behaviors
-- [ ] Buttons disabled when no selection
+- [x] Click on guinea pig shows selection indicator
+- [x] Action buttons appear when guinea pig selected (Feed, Water, Play, Pet, Deselect)
+- [x] Feed button triggers food selection (same as 2D)
+- [x] Other action buttons trigger correct behaviors
+- [x] Buttons disabled when no selection
+- [x] Click on poop removes it from scene and store
 
 ### Success Criteria
 
-✅ **Phase 3 Complete** when:
-1. Can select guinea pig and trigger basic care actions
-2. All floating action buttons work
-3. 3D view remains fully synced with 2D state changes
+✅ **Phase 3 Complete** - All criteria met:
+1. ✅ Can select guinea pig and trigger basic care actions
+2. ✅ All floating action buttons work (Feed, Water, Play, Pet, Deselect)
+3. ✅ 3D view remains fully synced with 2D state changes
+4. ✅ Poop cleanup works by clicking
 
-**Milestone:** ⭐ Resume [SPRINT-2025-11-17.md](../docs/SPRINT-2025-11-17.md) after this phase
+**Milestone:** ⭐ **COMPLETED** - Ready to resume [SPRINT-2025-11-17.md](../docs/SPRINT-2025-11-17.md)
 
-**Files to Create (Optional):**
-- `src/components/debug/environment/Habitat3DControls.vue` (wrapper for multiple FloatingActionButton instances)
+**Files Modified:**
+- ✅ `src/components/debug/environment/Habitat3DDebug.vue` - Added FloatingActionButton instances
+- ✅ Raycasting for guinea pig and poop selection
+- ✅ Selection ring with pulsing animation
 
-**Files to Modify:**
-- `src/components/debug/environment/Habitat3DDebug.vue` (add FloatingActionButton instances or import Habitat3DControls)
-
-**Existing Components to Use:**
-- `src/components/basic/FloatingActionButton.vue` (already exists - use for all action buttons)
+**Components Used:**
+- ✅ `src/components/basic/FloatingActionButton.vue` - Used for all action buttons
 
 **Documentation:**
-- [ui-overlay.md](phase3/ui-overlay.md)
-- [playability.md](phase3/playability.md)
+- [3D Item Models Refactoring Plan](phase3/3D-ITEM-MODELS-REFACTORING.md) - Scalability for 100+ items
 
 ---
 
@@ -508,4 +517,4 @@ export function updateGuineaPigAnimations(deltaTime: number) {
 
 ---
 
-**Last Updated:** November 29, 2025
+**Last Updated:** November 30, 2025 (Phase 3 Complete - Sprint Resume Milestone Achieved!)

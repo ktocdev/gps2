@@ -1,8 +1,8 @@
 # GPS2 3D Environment System - Project Plan
 
-> **Status:** 🚧 In Development - Phase 2
+> **Status:** ⭐ Phase 3 Complete - Sprint Resume Milestone Achieved!
 > **Started:** November 29, 2025
-> **Current Phase:** Phase 2 - Items & Interactions
+> **Current Phase:** Phase 4 - Movement Polish & Animation (Next)
 
 ---
 
@@ -47,11 +47,12 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
   - [guinea-pig-model.md](phase1/guinea-pig-model.md) - 3D model construction
   - [camera-system.md](phase1/camera-system.md) - Camera controls (orbit, pan, zoom)
 - **Phase 2: Enhanced Objects** - [phase2/](phase2/)
-  - [item-models.md](phase2/item-models.md) - 3D habitat item models
-  - [interactions.md](phase2/interactions.md) - Click and raycasting system
+  - `item-models.md` (planned) - 3D habitat item models
+  - `interactions.md` (planned) - Click and raycasting system
 - **Phase 3: Full Playability** - [phase3/](phase3/)
-  - [ui-overlay.md](phase3/ui-overlay.md) - Floating action buttons and UI
-  - [playability.md](phase3/playability.md) - Complete gameplay features
+  - [3D-ITEM-MODELS-REFACTORING.md](phase3/3D-ITEM-MODELS-REFACTORING.md) - Scalability plan for 100+ items
+  - `ui-overlay.md` (planned) - Floating action buttons and UI
+  - `playability.md` (planned) - Complete gameplay features
 
 ---
 
@@ -74,33 +75,40 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 ---
 
-### **Phase 2: Items & Interactions** 🚧
-**Status:** In Progress
+### **Phase 2: Items & Interactions** ✅
+**Status:** Complete
+**Completed:** November 30, 2025
 **Goal:** All habitat items rendered in 3D with interactions
 
-**Key Features:**
-- 3D models for all items (using demo models: bowl, igloo, water bottle, stick, ball)
-- Item positioning from `habitatConditions.itemPositions`
-- Poop visualization and click-to-cleanup
-- Basic raycasting for interactions
+**Completed Features:**
+- ✅ 3D models for all items (bowl, igloo, water bottle, stick, ball, bed, tunnel)
+- ✅ Enhanced models with hay, food, and wood textures
+- ✅ Smart water bottle rotation based on wall position (corners + edges)
+- ✅ Item positioning from `habitatConditions.itemPositions`
+- ✅ Poop visualization and click-to-cleanup (raycasting)
+- ✅ Bowl contents rendering (hay and food items)
 
-**Milestone:** Full 3D habitat environment with all items visible
+**Milestone:** ✅ Full 3D habitat environment with all items visible
+
+**Refactoring Plan:** [3D Item Models Refactoring](phase3/3D-ITEM-MODELS-REFACTORING.md) - For scalability to 100+ items
 
 ---
 
-### **Phase 3: Full Playability** 📋 ⭐ Sprint Resume Milestone
-**Status:** Not Started
+### **Phase 3: Full Playability** ✅ ⭐ Sprint Resume Milestone
+**Status:** Complete
+**Completed:** November 30, 2025
 **Goal:** Complete playable 3D game with minimal guinea pig care
 
-**Key Features:**
-- Guinea pig selection (click to select)
-- Floating action buttons (feed, water, play, pet, clean)
-- Button triggers call existing autonomy functions
-- Item interactions
-- Debug panel integration
-- All starter objects working
+**Completed Features:**
+- ✅ Guinea pig selection (click to select with raycasting)
+- ✅ Selection indicator (pulsing green ring)
+- ✅ Floating action buttons (feed, water, play, pet, deselect)
+- ✅ Button triggers call existing autonomy functions
+- ✅ Poop cleanup interaction (click to remove)
+- ✅ All buttons disabled when no guinea pig selected
+- ✅ Selected guinea pig name displayed in UI
 
-**Milestone:** Fully playable 3D mode with guinea pig care → Resume SPRINT-2025-11-17.md
+**Milestone:** ⭐ **COMPLETED** - Fully playable 3D mode → Ready to resume SPRINT-2025-11-17.md
 
 ---
 
@@ -174,24 +182,37 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 ### **Current Status**
 - ✅ Project plan created
 - ✅ Phase 1 complete (MVP with camera controls)
-- 🚧 Phase 2 in progress (Items & Interactions)
-- 📋 Phases 3-5 planned
+- ✅ Phase 2 complete (Items & Interactions)
+- ✅ Phase 3 complete (Full Playability) ⭐ **Sprint Resume Milestone**
+- 📋 Phase 4 ready to start (Movement Polish & Animation)
+- 📋 Phase 5 planned
 
 ### **Completed**
 - ✅ Three.js installed and integrated
 - ✅ Phase 1 composables implemented (`use3DScene`, `use3DCamera`, `use3DSync`, `use3DGuineaPig`)
+- ✅ Phase 2 composables implemented (`use3DItems`, `use3DPoop`, `use3DTextures`)
 - ✅ 3D habitat debug page created
 - ✅ Guinea pig movement synchronization working
-- ✅ Camera controls fixed (drag, scroll, keyboard)
+- ✅ Camera controls fixed (drag, scroll, keyboard, touch)
 - ✅ Guinea pigs face movement direction
 - ✅ Floor scaled to match guinea pig proportions
+- ✅ All habitat items rendered with enhanced models
+- ✅ Smart water bottle rotation (corners + edges)
+- ✅ Bowl contents rendering (hay, food)
+- ✅ Poop pellet visualization and click-to-cleanup
+- ✅ Raycasting system for interactions
+- ✅ Guinea pig selection with click (raycasting)
+- ✅ Selection indicator (pulsing green ring)
+- ✅ Floating action buttons (Feed, Water, Play, Pet, Deselect)
+- ✅ Action buttons wired to existing autonomy functions
+- ✅ Selected guinea pig name displayed in UI
 
-### **Next Steps (Phase 2)**
-1. Create `use3DItems.ts` composable
-2. Extract 3D models from demo (bowl, igloo, water bottle, stick, ball)
-3. Create flat mat model for beds
-4. Implement poop pellet visualization
-5. Add raycasting for click-to-cleanup poop
+### **Next Steps (Phase 4 - Optional)**
+1. Smooth position interpolation (lerping)
+2. Smooth rotation interpolation
+3. Walking animation (feet, body bobbing, nose wiggle)
+4. Movement quality matching demo
+5. Optional: Refactor item models for scalability (see [refactoring plan](phase3/3D-ITEM-MODELS-REFACTORING.md))
 
 ---
 
@@ -203,4 +224,4 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 ---
 
-**Last Updated:** November 29, 2025 (Phase 4 Movement Polish added)
+**Last Updated:** November 30, 2025 (Phase 3 Complete - Sprint Resume Milestone Achieved!)
