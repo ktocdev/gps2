@@ -1048,4 +1048,4 @@ const isPanelOpen = defineModel<boolean>('open')
 
 **Documentation:**
 - [DEVELOPMENT_PHASES.md](../DEVELOPMENT_PHASES.md) - Overall project phases
-- [3D-ITEM-MODELS-REFACTORING.md](./3D-ITEM-MODELS-REFACTORING.md) - Item system refactoring
+- [item-models-refactoring.md](./item-models-refactoring.md) - Item system refactoring

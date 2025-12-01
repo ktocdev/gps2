@@ -11,11 +11,12 @@
 |-------|--------|------|-----------|
 | **Phase 1** | ✅ Complete | Basic 3D scene with guinea pig movement | Guinea pigs move in 3D in real-time |
 | **Phase 2** | ✅ Complete | Items & interactions | Full 3D habitat with all items visible |
-| **Phase 3** | ✅ Complete ⭐ | Full playability | Complete guinea pig care in 3D |
-| **Phase 4** | 📋 Ready to Start | Movement polish & animation | Movement quality matches demo |
+| **Phase 3** | ⚠️ Partially Complete | Full playability + pathfinding | Complete guinea pig care in 3D |
+| **Phase 4** | 🚫 Blocked | Movement polish & animation | Movement quality matches demo |
 | **Phase 5** | 📋 Planned | Polish & parity | Full 2D feature parity + polish |
 
-⭐ **Sprint Resume Milestone COMPLETE:** Phase 3 finished! Ready to resume [SPRINT-2025-11-17.md](../docs/SPRINT-2025-11-17.md)
+⚠️ **IMPORTANT:** Phase 3 interactions are complete, but **pathfinding & collision** must be finished before Phase 4.
+Without fixing fundamental movement issues (clipping through items/walls), adding animations will look broken.
 
 ---
 
@@ -241,15 +242,13 @@ Make the 3D view fully playable:
 - [x] Buttons disabled when no selection
 - [x] Click on poop removes it from scene and store
 
-### Success Criteria
+### Phase 3A: Interactions ✅ COMPLETE
 
-✅ **Phase 3 Complete** - All criteria met:
+**Success Criteria Met:**
 1. ✅ Can select guinea pig and trigger basic care actions
 2. ✅ All floating action buttons work (Feed, Water, Play, Pet, Deselect)
 3. ✅ 3D view remains fully synced with 2D state changes
 4. ✅ Poop cleanup works by clicking
-
-**Milestone:** ⭐ **COMPLETED** - Ready to resume [SPRINT-2025-11-17.md](../docs/SPRINT-2025-11-17.md)
 
 **Files Modified:**
 - ✅ `src/components/debug/environment/Habitat3DDebug.vue` - Added FloatingActionButton instances
@@ -260,14 +259,55 @@ Make the 3D view fully playable:
 - ✅ `src/components/basic/FloatingActionButton.vue` - Used for all action buttons
 
 **Documentation:**
-- [3D Item Models Refactoring Plan](phase3/3D-ITEM-MODELS-REFACTORING.md) - Scalability for 100+ items
+- [3D Item Models Refactoring](phase3/item-models-refactoring.md) - Scalability for 100+ items
+- [UI Controls Plan](phase3/ui-controls-plan.md) - Floating action button UI system
 
 ---
 
-## Phase 4: Movement Polish & Animation 📋
+### Phase 3B: Pathfinding & Collision 🚨 HIGH PRIORITY
 
 **Status:** Not Started
-**Goal:** Smooth guinea pig movement like demo (guinea-pig-sim-demo-backup.html)
+**Priority:** HIGH - Blocks Phase 4
+**Goal:** Fix fundamental movement and positioning issues
+
+**Critical Issues:**
+- ❌ Guinea pigs walk through items (bowls, igloos, etc.)
+- ❌ Guinea pigs enter shelters through walls instead of openings
+- ❌ Guinea pigs don't align with bowls/water bottles during interactions
+- ❌ Guinea pigs appear outside habitat walls when near edges
+- ❌ Poop can spawn outside habitat boundaries
+
+**Why This Blocks Phase 4:**
+Adding smooth animations to guinea pigs that walk through walls will make the problems MORE visible and jarring. These fundamental issues must be fixed first.
+
+**Detailed Documentation:** [Pathfinding & Collision System](phase3/pathfinding-and-collision.md)
+
+**Success Criteria:**
+1. ✅ Guinea pigs navigate around all items (no clipping)
+2. ✅ Shelters only entered through designated openings
+3. ✅ Guinea pigs face bowls while eating
+4. ✅ Guinea pigs align with water bottle spout while drinking
+5. ✅ Guinea pigs always stay within habitat walls
+6. ✅ Poop only spawns within valid interior area
+7. ✅ Item placement validates boundaries
+
+**Files to Modify:**
+- `src/composables/usePathfinding.ts` - Enhanced obstacle avoidance
+- `src/composables/use3DSync.ts` - Position clamping, interaction alignment
+- `src/composables/use3DPoop.ts` - Poop boundary validation
+- `src/constants/3d.ts` - Habitat bounds and item sizes
+- Model files - Add entrance metadata to shelters
+
+---
+
+## Phase 4: Movement Polish & Animation 🚫
+
+**Status:** Blocked by Phase 3B (Pathfinding & Collision)
+**Goal:** Smooth guinea pig movement like demo + visual enhancements
+
+**Detailed Documentation:**
+- [Movement & Visual Polish](phase4/movement-and-visual-polish.md) - Smooth movement + environment
+- [Interaction Animations](phase4/interaction-animations.md) - Reactive animations for actions/conditions
 
 ### Current Issue
 
@@ -302,6 +342,30 @@ export function updateGuineaPigPositions(deltaTime: number) {
   })
 }
 ```
+
+### Visual Enhancements
+
+In addition to movement polish, Phase 4 includes visual improvements:
+
+1. **Sky with Clouds** - Gradient sky shader with animated cloud puffs
+2. **Water Bottle Bubbles** - Rising bubbles when guinea pigs drink
+3. **Hay Rack Model** - Proper 3D model based on reference image
+4. **Wooden Tunnel Verification** - Ensure archway tunnel displays correctly
+
+### Interaction & Condition Animations
+
+Phase 4 also includes reactive animations for player actions and environmental changes:
+
+1. **Guinea Pig Popcorn** - Jumping animation when excited
+2. **Water Level Decrease** - Visible consumption as guinea pigs drink
+3. **Hay Particle Effects** - Floating hay strands when eating
+4. **Bedding Fluff Animation** - Puff effect when refreshing bedding
+5. **Bedding Visual Quality** - Appearance changes based on freshness
+6. **Cleaning Sparkles** - Visual feedback for cleaning actions
+
+**See full details:**
+- [Movement & Visual Polish](phase4/movement-and-visual-polish.md)
+- [Interaction Animations](phase4/interaction-animations.md)
 
 ---
 
