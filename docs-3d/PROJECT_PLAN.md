@@ -1,8 +1,9 @@
 # GPS2 3D Environment System - Project Plan
 
-> **Status:** ⭐ Phase 3 Complete - Sprint Resume Milestone Achieved!
+> **Status:** ⭐ Phase 3 Complete - Sprint Deferred (Refining 3D First)
 > **Started:** November 29, 2025
-> **Current Phase:** Phase 4 - Movement Polish & Animation (Next)
+> **Current Phase:** Phase 4 - Movement Polish & Visual Enhancements (Ready to Start)
+> **Last Updated:** November 30, 2025
 
 ---
 
@@ -25,14 +26,11 @@ This project implements a fully playable 3D version of the Guinea Pig Simulator 
 ### **Primary Goal**
 Create a 3D habitat view that allows players to fully interact with their guinea pigs using camera controls similar to the demo (drag to rotate, scroll to zoom, arrow keys to pan).
 
-### **Milestone for Sprint Resume**
-Complete **Phase 3** (Full Playability) with:
-- Starter objects from 2D game working in 3D
-- Minimal guinea pig care (feed, water, clean)
-- Floating action buttons for interactions
-- All basic behaviors and animations
+### **Sprint Status Update**
 
-Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SPRINT-2025-11-17.md).
+**Phase 3 Milestone Achieved** ✅ - Originally planned as sprint resume point
+
+However, the sprint ([SPRINT-2025-11-17.md](../docs/SPRINT-2025-11-17.md)) has been **deferred indefinitely** to focus on refining the 3D experience before adding new game features. Current priority is polishing movement and visual quality in **Phase 4**.
 
 ---
 
@@ -48,10 +46,13 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
   - [camera-system.md](phase1/camera-system.md) - Camera controls (orbit, pan, zoom)
 - **Phase 2: Enhanced Objects** - [phase2/](phase2/)
   - `item-models.md` (planned) - 3D habitat item models
-  - `interactions.md` (planned) - Click and raycasting system
 - **Phase 3: Full Playability** - [phase3/](phase3/)
-  - [3D-ITEM-MODELS-REFACTORING.md](phase3/3D-ITEM-MODELS-REFACTORING.md) - Scalability plan for 100+ items
-  - `ui-overlay.md` (planned) - Floating action buttons and UI
+  - [item-models-refactoring.md](phase3/item-models-refactoring.md) - Model organization refactoring ✅
+  - [ui-controls-plan.md](phase3/ui-controls-plan.md) - Floating action button UI system (planned)
+  - [pathfinding-and-collision.md](phase3/pathfinding-and-collision.md) - 🚨 **HIGH PRIORITY** - Blocks Phase 4
+- **Phase 4: Movement & Visual Polish** - [phase4/](phase4/)
+  - [movement-and-visual-polish.md](phase4/movement-and-visual-polish.md) - Movement smoothing + visual effects
+  - [interaction-animations.md](phase4/interaction-animations.md) - Reactive animations for actions/conditions
   - `playability.md` (planned) - Complete gameplay features
 
 ---
@@ -90,16 +91,16 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 
 **Milestone:** ✅ Full 3D habitat environment with all items visible
 
-**Refactoring Plan:** [3D Item Models Refactoring](phase3/3D-ITEM-MODELS-REFACTORING.md) - For scalability to 100+ items
+**Refactoring Plan:** [3D Item Models Refactoring](phase3/item-models-refactoring.md) - For scalability to 100+ items
 
 ---
 
-### **Phase 3: Full Playability** ✅ ⭐ Sprint Resume Milestone
-**Status:** Complete
-**Completed:** November 30, 2025
-**Goal:** Complete playable 3D game with minimal guinea pig care
+### **Phase 3: Full Playability** ⚠️ Partially Complete
+**Status:** Interactions ✅ | Pathfinding ❌ **← BLOCKS PHASE 4**
+**Started:** November 29, 2025
+**Goal:** Complete playable 3D game with realistic movement
 
-**Completed Features:**
+**Phase 3A - Interactions ✅ COMPLETE:**
 - ✅ Guinea pig selection (click to select with raycasting)
 - ✅ Selection indicator (pulsing green ring)
 - ✅ Floating action buttons (feed, water, play, pet, deselect)
@@ -108,15 +109,24 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 - ✅ All buttons disabled when no guinea pig selected
 - ✅ Selected guinea pig name displayed in UI
 
-**Milestone:** ⭐ **COMPLETED** - Fully playable 3D mode → Ready to resume SPRINT-2025-11-17.md
+**Phase 3B - Pathfinding & Collision 🚨 HIGH PRIORITY - NOT STARTED:**
+- ❌ Guinea pigs walk through items → must navigate around them
+- ❌ Shelters entered through walls → must use designated openings
+- ❌ No alignment during eating/drinking → must face bowls/spouts
+- ❌ Guinea pigs appear outside walls → must stay within boundaries
+- ❌ Poop spawns outside boundaries → must validate spawn positions
+
+**Milestone:** ⚠️ **Phase 3B BLOCKS Phase 4** - Cannot add animations until movement is realistic
 
 ---
 
-### **Phase 4: Movement Polish & Animation** 📋
-**Status:** Not Started
-**Goal:** Smooth movement like demo (guinea-pig-sim-demo-backup.html)
+### **Phase 4: Movement Polish & Visual Enhancements** 🚫
+**Status:** Blocked by Phase 3B (Pathfinding & Collision)
+**Goal:** Smooth movement + visual polish (sky, clouds, bubbles, models)
 
-**Key Features:**
+**Documentation:** [Movement & Visual Polish](phase4/movement-and-visual-polish.md)
+
+**Movement Features:**
 - Position interpolation (lerping between grid updates)
 - Rotation interpolation (smooth turning)
 - Walking animation (feet alternating up/down)
@@ -124,9 +134,23 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 - Nose wiggle animation
 - Idle vs. moving state detection
 
-**Milestone:** Movement quality matches demo smoothness
+**Visual Features:**
+- Sky gradient with animated clouds
+- Water bottle drinking bubbles
+- Hay rack 3D model (based on reference image)
+- Wooden archway tunnel verification
 
-**Reference:** See [DEVELOPMENT_PHASES.md](DEVELOPMENT_PHASES.md#phase-4-movement-polish--animation) for detailed implementation plan
+**Interaction & Condition Animations:**
+- Guinea pig popcorn animation (excitement)
+- Water level decrease (consumption visualization)
+- Hay consumption particle effects
+- Bedding refresh fluff animation
+- Bedding appearance reflects freshness
+- Cleaning action sparkle effects
+
+**See Also:** [Interaction Animations](phase4/interaction-animations.md)
+
+**Milestone:** Movement quality matches demo + immersive visual environment + reactive feedback
 
 ---
 
@@ -212,7 +236,7 @@ Once this milestone is reached, resume work on [SPRINT-2025-11-17.md](../docs/SP
 2. Smooth rotation interpolation
 3. Walking animation (feet, body bobbing, nose wiggle)
 4. Movement quality matching demo
-5. Optional: Refactor item models for scalability (see [refactoring plan](phase3/3D-ITEM-MODELS-REFACTORING.md))
+5. Optional: Refactor item models for scalability (see [refactoring plan](phase3/item-models-refactoring.md))
 
 ---
 
