@@ -188,6 +188,10 @@ export interface GuineaPig {
   // Pet Adoption organization
   habitat: number | null          // Habitat assignment in pet adoption (null if not in adoption center)
 
+  // Manual control state
+  isManuallyControlled?: boolean     // True when player has manual control
+  manualControlTarget?: { x: number; y: number } | null  // Current movement target
+
   // Tracking data
   totalInteractions: number
   lifetimeHappiness: number   // Average happiness over lifetime
@@ -2039,6 +2043,41 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     settings.value.needsDecayRate = Math.max(0, Math.min(2, multiplier))
   }
 
+  /**
+   * Manual Control System Methods
+   */
+  const setManualControl = (guineaPigId: string, controlled: boolean) => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig) return false
+
+    guineaPig.isManuallyControlled = controlled
+    if (!controlled) {
+      guineaPig.manualControlTarget = null
+    }
+
+    collection.value.lastUpdated = Date.now()
+    return true
+  }
+
+  const setManualControlTarget = (guineaPigId: string, target: { x: number; y: number } | null) => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    if (!guineaPig || !guineaPig.isManuallyControlled) return false
+
+    guineaPig.manualControlTarget = target
+    collection.value.lastUpdated = Date.now()
+    return true
+  }
+
+  const isManuallyControlled = (guineaPigId: string): boolean => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    return guineaPig?.isManuallyControlled || false
+  }
+
+  const getManualControlTarget = (guineaPigId: string): { x: number; y: number } | null => {
+    const guineaPig = collection.value.guineaPigs[guineaPigId]
+    return guineaPig?.manualControlTarget || null
+  }
+
   return {
     // State
     collection,
@@ -2133,6 +2172,12 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     // Phase 0: Interaction cooldowns
     calculateInteractionCooldown,
     checkInteractionCooldown,
+
+    // Manual Control System
+    setManualControl,
+    setManualControlTarget,
+    isManuallyControlled,
+    getManualControlTarget,
 
     // Interaction methods
     feedGuineaPig,

@@ -180,6 +180,7 @@ import { useHabitatContainers } from '../../../composables/useHabitatContainers'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import type { SuppliesItem } from '../../../types/supplies'
+import { useManualControl } from '../../../composables/game/useManualControl'
 import FoodBowl from './FoodBowl.vue'
 import HayRack from './HayRack.vue'
 import WaterBottle from './WaterBottle.vue'
@@ -231,6 +232,7 @@ const habitatConditions = useHabitatConditions()
 const habitatContainers = useHabitatContainers()
 const suppliesStore = useSuppliesStore()
 const guineaPigStore = useGuineaPigStore()
+const manualControl = useManualControl()
 
 // Responsive cell sizing
 const windowWidth = ref(window.innerWidth)
@@ -1177,6 +1179,23 @@ function exitPlacementMode() {
 }
 
 function handleCellClick(cell: GridCell) {
+  // Check for manual control mode first
+  const controlledGuineaPigId = manualControl.controlledGuineaPigId.value
+  if (controlledGuineaPigId && manualControl.isControlActive.value) {
+    // In manual control mode - set movement target
+    const cellCenterX = (cell.x + 0.5) * responsiveCellSize.value
+    const cellCenterY = (cell.y + 0.5) * responsiveCellSize.value
+
+    manualControl.setTarget(cellCenterX, cellCenterY)
+    guineaPigStore.setManualControlTarget(controlledGuineaPigId, {
+      x: cellCenterX,
+      y: cellCenterY
+    })
+
+    console.log(`🎯 Manual control: Moving ${controlledGuineaPigId} to (${cell.x}, ${cell.y})`)
+    return
+  }
+
   console.log(`🖱️ Cell clicked: (${cell.x}, ${cell.y})`, {
     placementModeActive: placementModeActive.value,
     hasSelectedItem: !!selectedItemForPlacement.value,

@@ -1786,6 +1786,26 @@ export function useGuineaPigBehavior(guineaPigId: string) {
     // Check for autonomous pooping (environmental behavior)
     checkAutonomousPooping()
 
+    // Skip if guinea pig is manually controlled
+    if (guineaPigStore.isManuallyControlled(guineaPigId)) {
+      // Check for manual control target
+      const target = guineaPigStore.getManualControlTarget(guineaPigId)
+      if (target) {
+        // Convert pixel coordinates to grid position
+        const cellSize = 60 // TODO: Get this from habitat configuration
+        const gridX = Math.floor(target.x / cellSize)
+        const gridY = Math.floor(target.y / cellSize)
+
+        // Move to target
+        const success = movement.moveTo({ row: gridY, col: gridX }, { avoidOccupiedCells: false })
+        if (success) {
+          // Clear target after initiating movement
+          guineaPigStore.setManualControlTarget(guineaPigId, null)
+        }
+      }
+      return
+    }
+
     // Skip if already executing a behavior
     if (behaviorState.value.currentGoal) return
 

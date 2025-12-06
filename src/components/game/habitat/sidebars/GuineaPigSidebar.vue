@@ -184,6 +184,41 @@
 
       </div>
 
+      <!-- Manual Control Section -->
+      <div class="interaction-section">
+        <h4 class="interaction-section__title">🎮 Movement Control</h4>
+        <div class="panel panel--compact">
+          <div class="control-status">
+            <span class="control-status__label">Status:</span>
+            <span v-if="isManuallyControlled" class="control-status__active">🟢 Manual Control Active</span>
+            <span v-else class="control-status__inactive">⚪ Autonomous</span>
+          </div>
+          <div class="control-actions">
+            <Button
+              v-if="!isManuallyControlled"
+              @click="takeControl"
+              variant="primary"
+              size="md"
+              :disabled="!displayGuineaPig || isGameInactive"
+            >
+              🎯 Take Control
+            </Button>
+            <Button
+              v-else
+              @click="releaseControl"
+              variant="secondary"
+              size="md"
+            >
+              🔄 Release Control
+            </Button>
+          </div>
+          <div v-if="isManuallyControlled" class="control-info">
+            <p class="control-info__text">Click anywhere in the habitat to move {{ displayGuineaPig?.name }}</p>
+            <p v-if="timeRemaining > 0" class="control-info__timer">Auto-release in: {{ timeRemaining }}s</p>
+          </div>
+        </div>
+      </div>
+
       <!-- Food Selection Dialog -->
       <FoodSelectionDialog
         v-model="showFoodSelectionDialog"
@@ -203,6 +238,7 @@ import { useGuineaPigStore } from '../../../../stores/guineaPigStore'
 import { useGameController } from '../../../../stores/gameController'
 import type { GuineaPig } from '../../../../stores/guineaPigStore'
 import { getBondStrengthMessage, getPlayerFriendshipMessage } from '../../../../utils/friendshipMessages'
+import { useManualControl } from '../../../../composables/game/useManualControl'
 
 interface Props {
   selectedGuineaPig?: GuineaPig | null
@@ -422,6 +458,36 @@ function getGuineaPigEmoji(guineaPig: typeof displayGuineaPig.value): string {
   if (!guineaPig) return '🐹'
   return guineaPig.gender === 'male' ? '🐹' : '🐭'
 }
+
+// Manual Control System
+const manualControl = useManualControl()
+
+const isManuallyControlled = computed(() => {
+  if (!displayGuineaPig.value) return false
+  return manualControl.isControlled(displayGuineaPig.value.id)
+})
+
+const timeRemaining = computed(() => manualControl.timeRemaining.value)
+
+const isGameInactive = computed(() => !gameController.isGameActive)
+
+function takeControl() {
+  if (!displayGuineaPig.value) return
+  manualControl.takeControl(displayGuineaPig.value.id)
+
+  // Update store state
+  guineaPigStore.setManualControl(displayGuineaPig.value.id, true)
+}
+
+function releaseControl() {
+  if (!displayGuineaPig.value) return
+
+  // Update store state first
+  guineaPigStore.setManualControl(displayGuineaPig.value.id, false)
+
+  // Then release control
+  manualControl.releaseControl()
+}
 </script>
 
 <style>
@@ -570,5 +636,51 @@ function getGuineaPigEmoji(guineaPig: typeof displayGuineaPig.value): string {
     border-inline-start: none;
     border-block-start: 1px solid var(--color-border);
   }
+}
+
+/* Manual Control Styles */
+.control-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block-end: var(--space-3);
+}
+
+.control-status__label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.control-status__active {
+  color: var(--color-success);
+  font-weight: var(--font-weight-semibold);
+}
+
+.control-status__inactive {
+  color: var(--color-text-tertiary);
+}
+
+.control-actions {
+  display: flex;
+  justify-content: center;
+  margin-block: var(--space-3);
+}
+
+.control-info {
+  margin-block-start: var(--space-3);
+  padding-block-start: var(--space-3);
+  border-block-start: 1px solid var(--color-border-subtle);
+}
+
+.control-info__text {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-block-end: var(--space-2);
+}
+
+.control-info__timer {
+  font-size: var(--font-size-sm);
+  color: var(--color-warning);
+  font-weight: var(--font-weight-medium);
 }
 </style>

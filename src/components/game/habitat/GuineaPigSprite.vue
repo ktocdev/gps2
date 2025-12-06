@@ -8,7 +8,8 @@
       'guinea-pig-sprite--chewing': isChewing,
       'guinea-pig-sprite--interacting': isInteracting,
       'guinea-pig-sprite--facing-left': facingLeft,
-      'guinea-pig-sprite--paused': !gameController.isGameActive
+      'guinea-pig-sprite--paused': !gameController.isGameActive,
+      'guinea-pig-sprite--manual-control': isManuallyControlled
     }"
     :style="spriteStyle"
     :title="tooltipText"
@@ -16,6 +17,11 @@
   >
     <div class="guinea-pig-sprite__emoji no-select">
       {{ guineaPigEmoji }}
+    </div>
+
+    <!-- Manual control indicator -->
+    <div v-if="isManuallyControlled" class="guinea-pig-sprite__control-indicator">
+      🎯
     </div>
 
     <!-- Chat bubble for reactions -->
@@ -35,6 +41,7 @@ import type { GuineaPig } from '../../../stores/guineaPigStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useNeedsController } from '../../../stores/needsController'
 import { useGameController } from '../../../stores/gameController'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import GuineaPigChatBubble from './GuineaPigChatBubble.vue'
 import type { ReactionMessage } from '../../../data/guineaPigMessages'
 
@@ -59,6 +66,7 @@ const emit = defineEmits<Emits>()
 
 const needsController = useNeedsController()
 const gameController = useGameController()
+const guineaPigStore = useGuineaPigStore()
 
 // Get centralized behavior state for this guinea pig
 const behaviorStateStore = useBehaviorStateStore()
@@ -108,6 +116,11 @@ const isChewing = computed(() => {
 const isInteracting = computed(() => {
   const behaviorState = behaviorStateStore.getBehaviorState(props.guineaPig.id)
   return behaviorState?.currentActivity === 'interacting'
+})
+
+// Manual control state
+const isManuallyControlled = computed(() => {
+  return guineaPigStore.isManuallyControlled(props.guineaPig.id)
 })
 
 // Tooltip showing guinea pig metadata
@@ -353,5 +366,24 @@ function handleClick() {
   50% {
     transform: translateY(-4px) scaleX(-1) scaleY(0.95);
   }
+}
+
+/* Manual control indicator */
+.guinea-pig-sprite__control-indicator {
+  position: absolute;
+  inset-block-start: -12px;
+  inset-inline-end: -8px;
+  font-size: var(--font-size-lg);
+  z-index: 11;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.guinea-pig-sprite--manual-control .guinea-pig-sprite__emoji {
+  filter: drop-shadow(0 0 8px var(--color-primary));
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.8; }
 }
 </style>

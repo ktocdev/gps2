@@ -33,6 +33,7 @@
       <LoggingSystemView v-if="activeTab === 'logging'" />
       <FreeMovement2DDebug v-if="activeTab === 'free-movement-2d'" />
       <HtmlDemoDebug v-if="activeTab === 'html-demo'" />
+      <ManualControlDebug v-if="activeTab === 'manual-control'" />
     </div>
   </div>
 </template>
@@ -54,6 +55,7 @@ import Habitat3DDebug from '../components/debug/environment/Habitat3DDebug.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
 import FreeMovement2DDebug from '../components/debug/prototypes/FreeMovement2DDebug.vue'
 import HtmlDemoDebug from '../components/debug/prototypes/HtmlDemoDebug.vue'
+import ManualControlDebug from '../components/debug/prototypes/ManualControlDebug.vue'
 import { useGameController } from '../stores/gameController'
 
 const gameController = useGameController()
@@ -162,6 +164,12 @@ const tabCategories: TabCategory[] = [
         id: 'html-demo',
         label: 'HTML Demo (Original)',
         icon: '🌐',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'manual-control',
+        label: 'Manual Control',
+        icon: '🎮',
         panelClass: 'tab-container__panel--constrained'
       }
     ]
