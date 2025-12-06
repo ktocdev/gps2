@@ -1,9 +1,15 @@
-# Phase 3: Pathfinding & Collision System
+# Phase 3: Pathfinding & Collision System [DEFERRED]
 
-**Status:** 🚧 Not Started
-**Priority:** HIGH - Blocks Phase 4
+> ⚠️ **This approach has been DEFERRED in favor of the Hybrid Pathfinding System**
+>
+> The pure grid-based approach doesn't translate well to 3D collision detection.
+> See [hybrid-pathfinding-system.md](./hybrid-pathfinding-system.md) for the new approach.
+
+**Status:** ❌ DEFERRED
+**Priority:** N/A - Replaced by Hybrid System
 **Created:** November 30, 2025
-**Goal:** Fix fundamental movement and positioning issues that break realism
+**Deferred:** December 6, 2025
+**Original Goal:** Fix fundamental movement and positioning issues that break realism
 
 ---
 
@@ -581,6 +587,68 @@ function itemsOverlap(
 
 ---
 
+## 🔍 Additional Complexity Discovered
+
+### Issue 3: Eating & Drinking Alignment - Deferred
+
+**Problem:** Guinea pigs need precise positioning and rotation to align nose with bowls and water bottle nozzles.
+
+**Attempted Solution:**
+- Added rotation field to `GuineaPigPosition` interface
+- Created alignment calculation functions (`calculateEatingAlignment`, `calculateDrinkingAlignment`)
+- Applied pixel offsets and rotation during eating/drinking behaviors
+- Updated 3D rendering to use custom rotation when set
+
+**Why It Didn't Work:**
+The alignment system is more complex than anticipated and requires fundamental changes to how guinea pigs move and animate during interactions:
+
+1. **Animation System Missing:** Guinea pigs need smooth animation transitions when:
+   - Approaching items (walking animation)
+   - Entering interaction stance (position/rotation adjustment)
+   - Performing interaction (eating/drinking animation)
+   - Exiting interaction (return to idle)
+
+2. **State Machine Required:** Need distinct animation states:
+   - `walking` → `approaching` → `interacting` → `idle`
+   - Each state needs entry/exit transitions
+   - Rotation changes must be gradual, not instant
+
+3. **Coordinate System Complexity:**
+   - Mixing grid positions, pixel offsets, and world coordinates
+   - `PIXELS_PER_UNIT` scaling factor was approximate (10 pixels/unit)
+   - Need precise mapping between 2D grid alignment and 3D world positions
+   - Water bottle rotation based on wall position adds extra complexity
+
+4. **Multiple Shelter Types/Sizes:**
+   - Current implementation only handles one igloo size (2×2) and one tunnel size (3×1)
+   - Different shelter types will have different entrance positions and orientations
+   - Entrance detection logic (`isShelterEntrance`) is too simplistic for variety
+   - Need flexible entrance definition system that scales to multiple shelter models
+
+5. **Directional Movement Blocking:**
+   - Shelters currently allow walking through them (temporary workaround)
+   - Proper entrance-only access requires tracking movement direction, not just position
+   - Guinea pig approaching from wrong side should be blocked
+   - Requires pathfinding to understand directional constraints
+
+**Recommendation:**
+Defer this issue to **Phase 4: Animation & Polish** where it can be implemented alongside:
+- Walking/idle animation system
+- Smooth rotation transitions
+- Interaction animation states
+- Proper animation state machine
+
+For now, guinea pigs will simply position themselves on the same grid cell as bowls/bottles, which is functional but not visually perfect.
+
+**Files That Would Need Changes:**
+- `src/composables/use3DGuineaPig.ts` - Add animation state machine
+- `src/composables/use3DSync.ts` - Smooth rotation interpolation
+- `src/composables/game/useGuineaPigBehavior.ts` - Interaction state management
+- `src/stores/habitatConditions.ts` - Precise coordinate mapping
+- Phase 4 animation system integration
+
+---
+
 ## 📚 References
 
 - [usePathfinding.ts](../../src/composables/usePathfinding.ts) - Current A* implementation
@@ -589,4 +657,4 @@ function itemsOverlap(
 
 ---
 
-**Last Updated:** November 30, 2025
+**Last Updated:** December 6, 2025
