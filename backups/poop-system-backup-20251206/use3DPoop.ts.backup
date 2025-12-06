@@ -5,21 +5,11 @@ import { GRID_CONFIG } from '../constants/3d'
 import { disposeObject3D } from '../utils/three-cleanup'
 
 /**
- * Convert subgrid position to 3D world coordinates
- * Poop positions are stored in subgrid coordinates (4x finer than grid)
- * Grid: 14 cols × 10 rows | Subgrid: 56 cols × 40 rows
+ * Convert grid position to 3D world coordinates (same as use3DSync)
  */
-function subgridToWorld(subgridX: number, subgridY: number): THREE.Vector3 {
-  const SUBGRID_TO_GRID_SCALE = 4
-
-  // Convert subgrid to grid coordinates
-  const gridX = subgridX / SUBGRID_TO_GRID_SCALE
-  const gridY = subgridY / SUBGRID_TO_GRID_SCALE
-
-  // Convert grid to world coordinates
-  const worldX = (gridX - GRID_CONFIG.COLS / 2) * GRID_CONFIG.CELL_SIZE
-  const worldZ = (gridY - GRID_CONFIG.ROWS / 2) * GRID_CONFIG.CELL_SIZE
-
+function gridToWorld(x: number, y: number): THREE.Vector3 {
+  const worldX = (x - GRID_CONFIG.COLS / 2) * GRID_CONFIG.CELL_SIZE
+  const worldZ = (y - GRID_CONFIG.ROWS / 2) * GRID_CONFIG.CELL_SIZE
   return new THREE.Vector3(worldX, 0, worldZ)
 }
 
@@ -74,7 +64,7 @@ export function use3DPoop(worldGroup: THREE.Group) {
       poops.forEach((poop) => {
         if (!poopModels.has(poop.id)) {
           const model = createPoopModel()
-          const worldPos = subgridToWorld(poop.x, poop.y)
+          const worldPos = gridToWorld(poop.x, poop.y)
           model.position.copy(worldPos)
 
           // Store poop ID in userData for click detection
