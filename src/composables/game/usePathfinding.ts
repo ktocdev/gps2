@@ -4,7 +4,6 @@
  */
 
 import { useHabitatConditions } from '../../stores/habitatConditions'
-import { useSuppliesStore } from '../../stores/suppliesStore'
 
 export interface GridPosition {
   row: number
@@ -34,11 +33,101 @@ interface PathNode {
 
 export function usePathfinding() {
   const habitatConditions = useHabitatConditions()
-  const suppliesStore = useSuppliesStore()
 
   // Grid dimensions (medium habitat default)
   const GRID_WIDTH = 14
   const GRID_HEIGHT = 10
+
+  /**
+   * Get item size in grid cells based on item ID
+   * More reliable than using stats which might not be set correctly
+   */
+  function getItemSize(itemId: string): { width: number; height: number } {
+    const idLower = itemId.toLowerCase()
+
+    // Large items (2x2)
+    if (idLower.includes('igloo') || idLower.includes('shelter')) {
+      return { width: 2, height: 2 }
+    }
+
+    // Medium items (3x1 for tunnel)
+    if (idLower.includes('tunnel')) {
+      return { width: 3, height: 1 }
+    }
+
+    // Medium items (2x1)
+    if (idLower.includes('bed') || idLower.includes('hideout')) {
+      return { width: 2, height: 1 }
+    }
+
+    // Small items (1x1) - bowls, water bottles, toys, etc.
+    return { width: 1, height: 1 }
+  }
+
+  /**
+   * Check if item blocks movement based on item ID
+   * Most items block movement except water bottles (wall-mounted) and shelters
+   */
+  function itemBlocksMovement(itemId: string): boolean {
+    const idLower = itemId.toLowerCase()
+
+    // Water bottles are wall-mounted and don't block movement
+    if (idLower.includes('water') && idLower.includes('bottle')) {
+      return false
+    }
+
+    // Shelters don't block movement - guinea pigs can be inside them
+    // NOTE: This allows walking through shelters for now
+    // TODO: Implement proper entrance-only access in Phase 3.2
+    if (idLower.includes('igloo') || idLower.includes('shelter') || idLower.includes('tunnel')) {
+      return false
+    }
+
+    // Everything else blocks movement by default
+    return true
+  }
+
+  /**
+   * Check if a position is a shelter entrance/exit cell
+   * Shelters have designated openings guinea pigs can use
+   */
+  function isShelterEntrance(pos: GridPosition, itemId: string, itemPosition: { x: number; y: number }): boolean {
+    const idLower = itemId.toLowerCase()
+
+    if (idLower.includes('igloo') || idLower.includes('shelter')) {
+      // Igloos: 2x2 item with front entrance (south side, middle column)
+      // Entrance is the cell directly in front (south) of the igloo
+      const entranceRow = itemPosition.y + 2
+      const entranceCol = itemPosition.x
+      return pos.row === entranceRow && pos.col === entranceCol
+    }
+
+    if (idLower.includes('tunnel')) {
+      // Tunnels: 3x1 item with two openings (west and east sides)
+      const tunnelRow = itemPosition.y
+      // West entrance (one cell before tunnel starts)
+      const westEntranceCol = itemPosition.x - 1
+      // East entrance (one cell after tunnel ends)
+      const eastEntranceCol = itemPosition.x + 3
+
+      return pos.row === tunnelRow && (pos.col === westEntranceCol || pos.col === eastEntranceCol)
+    }
+
+    return false
+  }
+
+  /**
+   * Check if a position is inside a shelter
+   * Guinea pigs can be inside shelters, they just can't walk through the walls
+   */
+  function isInsideShelter(pos: GridPosition, itemId: string, itemPosition: { x: number; y: number }): boolean {
+    const { width, height } = getItemSize(itemId)
+
+    const isWithinX = pos.col >= itemPosition.x && pos.col < itemPosition.x + width
+    const isWithinY = pos.row >= itemPosition.y && pos.row < itemPosition.y + height
+
+    return isWithinX && isWithinY
+  }
 
   /**
    * Calculate Manhattan distance heuristic
@@ -66,23 +155,30 @@ export function usePathfinding() {
       const itemPosition = itemPositions.get(itemId)
       if (!itemPosition) continue
 
-      const item = suppliesStore.getItemById(itemId)
-      if (!item) continue
+      // Check if this item blocks movement
+      if (!itemBlocksMovement(itemId)) continue
 
-      // Get item size
-      const size = item.stats?.size || 'small'
-      let width = 1, height = 1
-      if (size === 'medium') { width = 2; height = 1 }
-      if (size === 'large') { width = 2; height = 2 }
+      const idLower = itemId.toLowerCase()
+      const isShelter = idLower.includes('igloo') || idLower.includes('shelter') || idLower.includes('tunnel')
 
-      // Check if position overlaps with item
-      const isWithinX = pos.col >= itemPosition.x && pos.col < itemPosition.x + width
-      const isWithinY = pos.row >= itemPosition.y && pos.row < itemPosition.y + height
+      // For shelters: check if position is an entrance or inside
+      if (isShelter) {
+        // If position is a designated entrance/exit, it's NOT blocked
+        if (isShelterEntrance(pos, itemId, itemPosition)) {
+          continue // Not blocked, can enter/exit here
+        }
 
-      if (isWithinX && isWithinY) {
-        // Check if item blocks movement (default to true for safety)
-        const blocksMovement = item.stats?.blocksMovement ?? true
-        if (blocksMovement) {
+        // If position is inside the shelter footprint, it IS blocked (can't walk through walls)
+        if (isInsideShelter(pos, itemId, itemPosition)) {
+          return true // Blocked - can't walk through shelter walls
+        }
+      } else {
+        // For non-shelter items: block if position overlaps
+        const { width, height } = getItemSize(itemId)
+        const isWithinX = pos.col >= itemPosition.x && pos.col < itemPosition.x + width
+        const isWithinY = pos.row >= itemPosition.y && pos.row < itemPosition.y + height
+
+        if (isWithinX && isWithinY) {
           return true
         }
       }
@@ -276,18 +372,11 @@ export function usePathfinding() {
       const itemPosition = itemPositions.get(itemId)
       if (!itemPosition) continue
 
-      const item = suppliesStore.getItemById(itemId)
-      if (!item) continue
+      // Check if this item blocks movement
+      if (!itemBlocksMovement(itemId)) continue
 
-      // Check if item blocks movement
-      const blocksMovement = item.stats?.blocksMovement ?? true
-      if (!blocksMovement) continue
-
-      // Get item size
-      const size = item.stats?.size || 'small'
-      let width = 1, height = 1
-      if (size === 'medium') { width = 2; height = 1 }
-      if (size === 'large') { width = 2; height = 2 }
+      // Get item size based on ID
+      const { width, height } = getItemSize(itemId)
 
       // Add all cells occupied by this item
       for (let dy = 0; dy < height; dy++) {

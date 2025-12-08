@@ -163,6 +163,8 @@
           :cell-size="cellSize"
           :offset-x="getGuineaPigOffset(guineaPig.id).x"
           :offset-y="getGuineaPigOffset(guineaPig.id).y"
+          :is-walking="isGuineaPigWalking(guineaPig.id)"
+          :facing-direction="getGuineaPigFacingDirection(guineaPig.id)"
           :is-interacting-with-depth-item="isInteractingWithDepthItem(guineaPig.id)"
           :is-selected="selectedGuineaPigId === guineaPig.id"
           @select="handleGuineaPigSelect"
@@ -180,6 +182,7 @@ import { useHabitatContainers } from '../../../composables/useHabitatContainers'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import type { SuppliesItem } from '../../../types/supplies'
+import { useManualControl } from '../../../composables/game/useManualControl'
 import FoodBowl from './FoodBowl.vue'
 import HayRack from './HayRack.vue'
 import WaterBottle from './WaterBottle.vue'
@@ -231,6 +234,7 @@ const habitatConditions = useHabitatConditions()
 const habitatContainers = useHabitatContainers()
 const suppliesStore = useSuppliesStore()
 const guineaPigStore = useGuineaPigStore()
+const manualControl = useManualControl()
 
 // Responsive cell sizing
 const windowWidth = ref(window.innerWidth)
@@ -337,8 +341,14 @@ function handleShowChatBubble(event: any) {
 }
 
 function handleGuineaPigSelect(guineaPigId: string) {
-  // Toggle selection: if clicking same guinea pig, deselect it
+  // Toggle selection: if clicking same guinea pig, deselect it and release control
   if (selectedGuineaPigId.value === guineaPigId) {
+    // Release manual control if active
+    if (guineaPigStore.isManuallyControlled(guineaPigId)) {
+      guineaPigStore.setManualControl(guineaPigId, false)
+      manualControl.releaseControl()
+      console.log(`🎯 Released manual control of ${guineaPigId}`)
+    }
     guineaPigStore.clearSelection()
   } else {
     // Select guinea pig for interaction
@@ -376,6 +386,16 @@ function getGuineaPigOffset(guineaPigId: string): { x: number; y: number } {
     x: position.offsetX || 0,
     y: position.offsetY || 0
   }
+}
+
+function isGuineaPigWalking(guineaPigId: string): boolean {
+  const position = guineaPigPositions.value.get(guineaPigId)
+  return position?.isMoving ?? false
+}
+
+function getGuineaPigFacingDirection(guineaPigId: string): 'left' | 'right' {
+  const position = guineaPigPositions.value.get(guineaPigId)
+  return position?.facingDirection ?? 'right'
 }
 
 function isInteractingWithDepthItem(guineaPigId: string): boolean {
@@ -1177,11 +1197,40 @@ function exitPlacementMode() {
 }
 
 function handleCellClick(cell: GridCell) {
+  // Check for manual control mode first
+  const controlledGuineaPigId = manualControl.controlledGuineaPigId.value
+  if (controlledGuineaPigId && manualControl.isControlActive.value) {
+    // In manual control mode - set movement target
+    const cellCenterX = (cell.x + 0.5) * responsiveCellSize.value
+    const cellCenterY = (cell.y + 0.5) * responsiveCellSize.value
+
+    manualControl.setTarget(cellCenterX, cellCenterY)
+    guineaPigStore.setManualControlTarget(controlledGuineaPigId, {
+      x: cellCenterX,
+      y: cellCenterY
+    })
+
+    console.log(`🎯 Manual control: Moving ${controlledGuineaPigId} to (${cell.x}, ${cell.y})`)
+    return
+  }
+
   console.log(`🖱️ Cell clicked: (${cell.x}, ${cell.y})`, {
     placementModeActive: placementModeActive.value,
     hasSelectedItem: !!selectedItemForPlacement.value,
     selectedItem: selectedItemForPlacement.value?.name
   })
+
+  // If not in placement mode and there's a selected guinea pig with manual control, release it
+  if (!placementModeActive.value && selectedGuineaPigId.value) {
+    const selectedId = selectedGuineaPigId.value
+    if (guineaPigStore.isManuallyControlled(selectedId)) {
+      guineaPigStore.setManualControl(selectedId, false)
+      manualControl.releaseControl()
+      guineaPigStore.clearSelection()
+      console.log(`🎯 Released manual control of ${selectedId} by clicking empty cell`)
+      return
+    }
+  }
 
   if (!placementModeActive.value || !selectedItemForPlacement.value) {
     console.log('❌ Not in placement mode or no item selected')

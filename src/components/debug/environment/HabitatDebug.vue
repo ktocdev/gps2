@@ -76,6 +76,10 @@
               v-else-if="activeSidebar === 'autonomy'"
               :selected-guinea-pig="selectedGuineaPig"
             />
+            <MovementSidebar
+              v-else-if="activeSidebar === 'movement'"
+              :selected-guinea-pig="selectedGuineaPig"
+            />
           </div>
         </div>
         </div>
@@ -252,6 +256,7 @@ import ActivityFeedSidebar from '../../game/habitat/sidebars/ActivityFeedSidebar
 import GuineaPigSidebar from '../../game/habitat/sidebars/GuineaPigSidebar.vue'
 import BondingSidebar from '../../game/habitat/sidebars/BondingSidebar.vue'
 import AutonomySidebar from '../../game/habitat/sidebars/AutonomySidebar.vue'
+import MovementSidebar from '../../game/habitat/sidebars/MovementSidebar.vue'
 import ChatBubbleDebug from './ChatBubbleDebug.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import PoopDebug from './PoopDebug.vue'
@@ -272,7 +277,7 @@ const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
 const inventorySidebarRef = ref<any>(null)
 
 // Active sidebar state
-const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize' | 'bonding' | 'chatbubble' | 'autonomy'>('care')
+const activeSidebar = ref<'inventory' | 'care' | 'activity' | 'socialize' | 'bonding' | 'chatbubble' | 'autonomy' | 'movement'>('care')
 
 // Sidebar tabs for SubTabContainer
 const sidebarTabs = [
@@ -280,6 +285,7 @@ const sidebarTabs = [
   { id: 'inventory', label: 'Inventory', icon: '🎒' },
   { id: 'socialize', label: 'Guinea Pigs', icon: '🐹' },
   { id: 'bonding', label: 'Bonding', icon: '💕' },
+  { id: 'movement', label: 'Movement', icon: '🎯' },
   { id: 'activity', label: 'Activity Feed', icon: '📜' },
   { id: 'autonomy', label: 'Autonomy', icon: '🎮' },
   { id: 'chatbubble', label: 'Chat Bubble', icon: '💬' }
@@ -406,9 +412,9 @@ const selectedGuineaPig = computed(() => {
   return guineaPigStore.getGuineaPig(guineaPigStore.selectedGuineaPigId)
 })
 
-// Auto-select first guinea pig when switching to Guinea Pigs or Autonomy sidebar
+// Auto-select first guinea pig when switching to Guinea Pigs, Autonomy, or Movement sidebar
 watch(activeSidebar, (newSidebar) => {
-  if (newSidebar === 'socialize' || newSidebar === 'autonomy') {
+  if (newSidebar === 'socialize' || newSidebar === 'autonomy' || newSidebar === 'movement') {
     // If no guinea pig is selected and there are active guinea pigs, select the first one
     if (!guineaPigStore.selectedGuineaPigId && guineaPigStore.activeGuineaPigs.length > 0) {
       guineaPigStore.selectGuineaPig(guineaPigStore.activeGuineaPigs[0].id)
@@ -442,10 +448,10 @@ function handleCancelPlacement() {
   }
 }
 
-// Handle guinea pig click - switch to socialize sidebar unless on autonomy or bonding
+// Handle guinea pig click - switch to socialize sidebar unless on autonomy, bonding, or movement
 function handleGuineaPigSelected(_guineaPigId: string) {
-  // If on autonomy or bonding sidebar, stay on current sidebar and just update selection (already handled by store)
-  if (activeSidebar.value === 'autonomy' || activeSidebar.value === 'bonding') {
+  // If on autonomy, bonding, or movement sidebar, stay on current sidebar and just update selection (already handled by store)
+  if (activeSidebar.value === 'autonomy' || activeSidebar.value === 'bonding' || activeSidebar.value === 'movement') {
     return
   }
 

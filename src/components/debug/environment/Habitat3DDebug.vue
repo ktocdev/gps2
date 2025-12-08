@@ -305,7 +305,12 @@ onUnmounted(() => {
     beddingTexture = null
   }
 
-  // Clear behavior composables
+  // Clear behavior composables (call cleanup to stop watchers and animation frames)
+  behaviorComposables.forEach((behavior) => {
+    if (behavior.cleanup) {
+      behavior.cleanup()
+    }
+  })
   behaviorComposables.clear()
 
   // Cleanup scene and renderer

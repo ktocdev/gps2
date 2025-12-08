@@ -31,6 +31,8 @@
       <Habitat3DDebug v-if="activeTab === 'habitat-3d'" />
       <SuppliesStoreDebug v-if="activeTab === 'supplies-store'" />
       <LoggingSystemView v-if="activeTab === 'logging'" />
+      <FreeMovement2DDebug v-if="activeTab === 'free-movement-2d'" />
+      <HtmlDemoDebug v-if="activeTab === 'html-demo'" />
     </div>
   </div>
 </template>
@@ -50,6 +52,8 @@ import HabitatDebugView from './HabitatDebugView.vue'
 import SuppliesStoreDebug from '../components/debug/environment/SuppliesStoreDebug.vue'
 import Habitat3DDebug from '../components/debug/environment/Habitat3DDebug.vue'
 import LoggingSystemView from './LoggingSystemView.vue'
+import FreeMovement2DDebug from '../components/debug/prototypes/FreeMovement2DDebug.vue'
+import HtmlDemoDebug from '../components/debug/prototypes/HtmlDemoDebug.vue'
 import { useGameController } from '../stores/gameController'
 
 const gameController = useGameController()
@@ -140,6 +144,24 @@ const tabCategories: TabCategory[] = [
         id: 'inventory',
         label: 'Inventory',
         icon: '🎒',
+        panelClass: 'tab-container__panel--constrained'
+      }
+    ]
+  },
+  {
+    id: 'prototypes',
+    label: 'Prototypes',
+    tabs: [
+      {
+        id: 'free-movement-2d',
+        label: '2D Free Movement',
+        icon: '🎯',
+        panelClass: 'tab-container__panel--constrained'
+      },
+      {
+        id: 'html-demo',
+        label: 'HTML Demo (Original)',
+        icon: '🌐',
         panelClass: 'tab-container__panel--constrained'
       }
     ]

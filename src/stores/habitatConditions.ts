@@ -72,6 +72,7 @@ interface GuineaPigPosition {
   lastMoved: number
   targetPosition?: { x: number; y: number }
   isMoving: boolean
+  facingDirection?: 'left' | 'right' // Direction the guinea pig is facing
   offsetX?: number // Pixel offset for visual separation when multiple guinea pigs share same cell
   offsetY?: number // Pixel offset for visual separation when multiple guinea pigs share same cell
 }

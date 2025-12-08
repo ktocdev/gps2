@@ -5,33 +5,48 @@ import { GRID_CONFIG } from '../constants/3d'
 import { disposeObject3D } from '../utils/three-cleanup'
 
 /**
- * Convert grid position to 3D world coordinates (same as use3DSync)
+ * Convert subgrid position to 3D world coordinates
+ * Poop positions are stored in subgrid coordinates (4x finer than grid)
+ * Grid: 14 cols × 10 rows | Subgrid: 56 cols × 40 rows
  */
-function gridToWorld(x: number, y: number): THREE.Vector3 {
-  const worldX = (x - GRID_CONFIG.COLS / 2) * GRID_CONFIG.CELL_SIZE
-  const worldZ = (y - GRID_CONFIG.ROWS / 2) * GRID_CONFIG.CELL_SIZE
+function subgridToWorld(subgridX: number, subgridY: number): THREE.Vector3 {
+  const SUBGRID_TO_GRID_SCALE = 4
+
+  // Convert subgrid to grid coordinates
+  const gridX = subgridX / SUBGRID_TO_GRID_SCALE
+  const gridY = subgridY / SUBGRID_TO_GRID_SCALE
+
+  // Convert grid to world coordinates
+  const worldX = (gridX - GRID_CONFIG.COLS / 2) * GRID_CONFIG.CELL_SIZE
+  const worldZ = (gridY - GRID_CONFIG.ROWS / 2) * GRID_CONFIG.CELL_SIZE
+
   return new THREE.Vector3(worldX, 0, worldZ)
 }
 
 /**
- * Create a poop pellet model
+ * Create a poop pellet model (realistic guinea pig poop pellet)
  */
 function createPoopModel(): THREE.Mesh {
-  // Scaled up 2x for better visibility
-  const poopGeo = new THREE.SphereGeometry(0.3, 16, 16)
-  // Slightly squash it
-  poopGeo.scale(1, 0.7, 1)
+  // Create an elongated pellet shape (capsule/oval)
+  // Guinea pig poop is oval-shaped, dark brown pellets
+  const poopGeo = new THREE.CapsuleGeometry(0.1, 0.25, 8, 16)
 
+  // Dark brown color for realistic poop
   const poopMat = new THREE.MeshStandardMaterial({
-    color: 0x4a3428,
-    roughness: 0.9,
+    color: 0x3d2817, // Darker brown for realism
+    roughness: 0.95,
     metalness: 0.0
   })
 
   const poop = new THREE.Mesh(poopGeo, poopMat)
-  poop.position.y = 0.15 // Slightly above ground
+  poop.position.y = 0.1 // Slightly above ground
   poop.castShadow = true
   poop.receiveShadow = true
+
+  // Rotate to lay horizontally (capsule is vertical by default)
+  poop.rotation.z = Math.PI / 2
+  // Add slight random rotation for natural look
+  poop.rotation.y = Math.random() * Math.PI * 2
 
   return poop
 }
@@ -59,7 +74,7 @@ export function use3DPoop(worldGroup: THREE.Group) {
       poops.forEach((poop) => {
         if (!poopModels.has(poop.id)) {
           const model = createPoopModel()
-          const worldPos = gridToWorld(poop.x, poop.y)
+          const worldPos = subgridToWorld(poop.x, poop.y)
           model.position.copy(worldPos)
 
           // Store poop ID in userData for click detection
