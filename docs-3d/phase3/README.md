@@ -29,7 +29,7 @@ The working prototype that demonstrates:
 - Smooth rotation and momentum
 
 #### [2. Manual Control System](./2-manual-control-system.md)
-**Status:** 📋 Planning
+**Status:** ✅ Complete
 **Priority:** HIGH
 
 Player control system that enables:
@@ -37,6 +37,7 @@ Player control system that enables:
 - Click-to-move when controlling
 - Seamless switch between autonomous/controlled
 - Visual feedback for control mode
+- Movement mode toggle (Grid vs Free)
 
 #### [3. Item Models Refactoring](./3-item-models-refactoring.md)
 **Status:** 📋 Planning
@@ -59,7 +60,7 @@ Documents moved to `archived/` folder:
 ## 🎯 Current Goals
 
 1. **Complete free movement prototype** ✅
-2. **Implement manual control system** 📋
+2. **Implement manual control system** ✅
 3. **Create movement adapter for main game** ⏳
 4. **Add physics interactions (pushable objects)** ⏳
 5. **Integrate with both 2D and 3D views** ⏳
@@ -73,14 +74,17 @@ Documents moved to `archived/` folder:
 - ✅ Radius-based collision detection
 - ✅ Dynamic speed/friction controls
 - ✅ Debug visualization options
+- ✅ Manual control system with UI
+- ✅ Movement mode toggle (Grid/Free)
+- ✅ Auto-release and stress checks
+- ✅ Dedicated Movement sidebar
 
 ### In Progress
-- 🚧 Manual control system planning
-- 🚧 Integration strategy with main game
+- 🚧 Free movement integration with main game
+- 🚧 Movement adapter for compatibility
 
 ### Next Steps
-- ⏳ Feature toggle for grid vs free movement
-- ⏳ Movement adapter for compatibility
+- ⏳ Connect free movement to manual control
 - ⏳ Physics system for object interactions
 - ⏳ 3D view integration
 

@@ -163,6 +163,8 @@
           :cell-size="cellSize"
           :offset-x="getGuineaPigOffset(guineaPig.id).x"
           :offset-y="getGuineaPigOffset(guineaPig.id).y"
+          :is-walking="isGuineaPigWalking(guineaPig.id)"
+          :facing-direction="getGuineaPigFacingDirection(guineaPig.id)"
           :is-interacting-with-depth-item="isInteractingWithDepthItem(guineaPig.id)"
           :is-selected="selectedGuineaPigId === guineaPig.id"
           @select="handleGuineaPigSelect"
@@ -339,8 +341,14 @@ function handleShowChatBubble(event: any) {
 }
 
 function handleGuineaPigSelect(guineaPigId: string) {
-  // Toggle selection: if clicking same guinea pig, deselect it
+  // Toggle selection: if clicking same guinea pig, deselect it and release control
   if (selectedGuineaPigId.value === guineaPigId) {
+    // Release manual control if active
+    if (guineaPigStore.isManuallyControlled(guineaPigId)) {
+      guineaPigStore.setManualControl(guineaPigId, false)
+      manualControl.releaseControl()
+      console.log(`🎯 Released manual control of ${guineaPigId}`)
+    }
     guineaPigStore.clearSelection()
   } else {
     // Select guinea pig for interaction
@@ -378,6 +386,16 @@ function getGuineaPigOffset(guineaPigId: string): { x: number; y: number } {
     x: position.offsetX || 0,
     y: position.offsetY || 0
   }
+}
+
+function isGuineaPigWalking(guineaPigId: string): boolean {
+  const position = guineaPigPositions.value.get(guineaPigId)
+  return position?.isMoving ?? false
+}
+
+function getGuineaPigFacingDirection(guineaPigId: string): 'left' | 'right' {
+  const position = guineaPigPositions.value.get(guineaPigId)
+  return position?.facingDirection ?? 'right'
 }
 
 function isInteractingWithDepthItem(guineaPigId: string): boolean {
@@ -1201,6 +1219,18 @@ function handleCellClick(cell: GridCell) {
     hasSelectedItem: !!selectedItemForPlacement.value,
     selectedItem: selectedItemForPlacement.value?.name
   })
+
+  // If not in placement mode and there's a selected guinea pig with manual control, release it
+  if (!placementModeActive.value && selectedGuineaPigId.value) {
+    const selectedId = selectedGuineaPigId.value
+    if (guineaPigStore.isManuallyControlled(selectedId)) {
+      guineaPigStore.setManualControl(selectedId, false)
+      manualControl.releaseControl()
+      guineaPigStore.clearSelection()
+      console.log(`🎯 Released manual control of ${selectedId} by clicking empty cell`)
+      return
+    }
+  }
 
   if (!placementModeActive.value || !selectedItemForPlacement.value) {
     console.log('❌ Not in placement mode or no item selected')

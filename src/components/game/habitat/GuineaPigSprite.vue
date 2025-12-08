@@ -9,7 +9,8 @@
       'guinea-pig-sprite--interacting': isInteracting,
       'guinea-pig-sprite--facing-left': facingLeft,
       'guinea-pig-sprite--paused': !gameController.isGameActive,
-      'guinea-pig-sprite--manual-control': isManuallyControlled
+      'guinea-pig-sprite--manual-control': isManuallyControlled,
+      'guinea-pig-sprite--free-movement': isFreeMovementMode
     }"
     :style="spriteStyle"
     :title="tooltipText"
@@ -42,6 +43,7 @@ import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useNeedsController } from '../../../stores/needsController'
 import { useGameController } from '../../../stores/gameController'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import { useMovementModeStore } from '../../../stores/movementModeStore'
 import GuineaPigChatBubble from './GuineaPigChatBubble.vue'
 import type { ReactionMessage } from '../../../data/guineaPigMessages'
 
@@ -67,6 +69,7 @@ const emit = defineEmits<Emits>()
 const needsController = useNeedsController()
 const gameController = useGameController()
 const guineaPigStore = useGuineaPigStore()
+const movementModeStore = useMovementModeStore()
 
 // Get centralized behavior state for this guinea pig
 const behaviorStateStore = useBehaviorStateStore()
@@ -123,6 +126,11 @@ const isManuallyControlled = computed(() => {
   return guineaPigStore.isManuallyControlled(props.guineaPig.id)
 })
 
+// Free movement mode - disables CSS transitions for smoother requestAnimationFrame-based animation
+const isFreeMovementMode = computed(() => {
+  return movementModeStore.mode === 'free'
+})
+
 // Tooltip showing guinea pig metadata
 const tooltipText = computed(() => {
   const gp = props.guineaPig
@@ -171,8 +179,14 @@ function handleClick() {
   justify-content: center;
   cursor: pointer; /* Indicates guinea pig is clickable for selection */
   /* z-index set dynamically via inline style: 3 or 10 */
+  /* Default: smooth transition for grid-based movement */
   transition: transform 0.3s ease-in-out, z-index 0s;
   pointer-events: all; /* Enable clicks on guinea pig sprites */
+}
+
+/* Free movement mode: disable CSS transition since animation is handled by requestAnimationFrame */
+.guinea-pig-sprite--free-movement {
+  transition: transform 0s, z-index 0s;
 }
 
 .guinea-pig-sprite__emoji {

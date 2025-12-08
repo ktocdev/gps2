@@ -129,12 +129,13 @@ export function useMovement(guineaPigId: string) {
       }
     }
 
-    // Update position in store with offset
+    // Update position in store with offset and facing direction
     habitatConditions.guineaPigPositions.set(guineaPigId, {
       x: nextPos.col,
       y: nextPos.row,
       lastMoved: Date.now(),
       isMoving: true,
+      facingDirection: controller.value.facingDirection,
       offsetX,
       offsetY
     })

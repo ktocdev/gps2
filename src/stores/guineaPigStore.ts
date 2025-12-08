@@ -1607,6 +1607,17 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
 
+    // If we're selecting a different guinea pig, release control of the currently controlled one
+    const previousSelection = selectedGuineaPigId.value
+    if (previousSelection && previousSelection !== guineaPigId) {
+      // Release manual control of the previously selected guinea pig
+      const previousGP = collection.value.guineaPigs[previousSelection]
+      if (previousGP?.isManuallyControlled) {
+        previousGP.isManuallyControlled = false
+        previousGP.manualControlTarget = null
+      }
+    }
+
     selectedGuineaPigId.value = guineaPigId
     return true
   }
