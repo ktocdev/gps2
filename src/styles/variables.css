@@ -52,6 +52,7 @@
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f8fafc;
   --color-bg-tertiary: #f1f5f9;
+  --color-bg-canvas: #000000; /* 3D/WebGL canvas background */
 
   --color-text-primary: #1e293b;
   --color-text-secondary: #475569;

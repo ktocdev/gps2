@@ -2,8 +2,21 @@ import { watch } from 'vue'
 import * as THREE from 'three'
 import { useHabitatConditions } from '../stores/habitatConditions'
 import { useGuineaPigStore } from '../stores/guineaPigStore'
+import { useMovement3DStore } from '../stores/movement3DStore'
 import { createGuineaPigModel, disposeGuineaPigModel } from './use3DGuineaPig'
 import { GRID_CONFIG, ANIMATION_CONFIG } from '../constants/3d'
+
+/**
+ * Options for 3D sync behavior
+ */
+export interface Use3DSyncOptions {
+  /**
+   * If true, use world-coordinate positions from movement3DStore
+   * for autonomous 3D movement. If false (default), use grid positions
+   * from habitatConditions.
+   */
+  use3DMovement?: boolean
+}
 
 /**
  * Convert 2D grid position to 3D world coordinates
@@ -39,10 +52,15 @@ export function gridToWorldWithOffset(pos: {
 
 /**
  * Sync guinea pig positions and create/remove models as needed
+ * @param worldGroup - The THREE.Group to add models to
+ * @param options - Configuration options for sync behavior
  */
-export function use3DSync(worldGroup: THREE.Group) {
+export function use3DSync(worldGroup: THREE.Group, options: Use3DSyncOptions = {}) {
   const habitatConditions = useHabitatConditions()
   const guineaPigStore = useGuineaPigStore()
+  const movement3DStore = useMovement3DStore()
+
+  const { use3DMovement = false } = options
 
   // Registry of guinea pig 3D models and their previous positions
   const guineaPigModels = new Map<string, THREE.Group>()
@@ -82,43 +100,75 @@ export function use3DSync(worldGroup: THREE.Group) {
   ))
 
   // Watch guinea pig positions and update 3D models
-  stopWatchers.push(watch(
-    () => habitatConditions.guineaPigPositions,
-    (positions) => {
-      positions.forEach((pos: { x: number; y: number; offsetX?: number; offsetY?: number }, guineaPigId: string) => {
-        const worldPos = gridToWorldWithOffset(pos)
+  if (use3DMovement) {
+    // Use world-coordinate positions from movement3DStore
+    stopWatchers.push(watch(
+      () => {
+        // Create a snapshot of current states to trigger reactivity
+        const states: Array<[string, { x: number; z: number; rotation: number }]> = []
+        movement3DStore.guineaPigStates.forEach((state, id) => {
+          states.push([id, {
+            x: state.worldPosition.x,
+            z: state.worldPosition.z,
+            rotation: state.rotation
+          }])
+        })
+        return states
+      },
+      (stateSnapshots) => {
+        for (const [guineaPigId, snapshot] of stateSnapshots) {
+          const model = guineaPigModels.get(guineaPigId)
+          if (model) {
+            // Update position directly from world coordinates
+            model.position.set(snapshot.x, 0, snapshot.z)
 
-        // Update 3D model position and rotation
-        const model = guineaPigModels.get(guineaPigId)
-        if (model) {
-          // Get previous position to calculate movement direction
-          const prevPos = previousPositions.get(guineaPigId)
-
-          if (prevPos) {
-            // Calculate movement direction
-            const deltaX = worldPos.x - prevPos.x
-            const deltaZ = worldPos.z - prevPos.z
-            const distanceMoved = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ)
-
-            // Only update rotation if guinea pig actually moved
-            if (distanceMoved > ANIMATION_CONFIG.MOVEMENT_THRESHOLD) {
-              // Calculate angle to face movement direction
-              // atan2 gives angle from positive X axis, rotating counter-clockwise
-              const angle = Math.atan2(deltaX, deltaZ)
-              model.rotation.y = angle
-            }
+            // Update rotation from stored rotation
+            model.rotation.y = snapshot.rotation
           }
-
-          // Update position
-          model.position.copy(worldPos)
-
-          // Store current position as previous for next update
-          previousPositions.set(guineaPigId, worldPos.clone())
         }
-      })
-    },
-    { deep: true },
-  ))
+      },
+      { deep: true }
+    ))
+  } else {
+    // Use grid-based positions from habitatConditions (default)
+    stopWatchers.push(watch(
+      () => habitatConditions.guineaPigPositions,
+      (positions) => {
+        positions.forEach((pos: { x: number; y: number; offsetX?: number; offsetY?: number }, guineaPigId: string) => {
+          const worldPos = gridToWorldWithOffset(pos)
+
+          // Update 3D model position and rotation
+          const model = guineaPigModels.get(guineaPigId)
+          if (model) {
+            // Get previous position to calculate movement direction
+            const prevPos = previousPositions.get(guineaPigId)
+
+            if (prevPos) {
+              // Calculate movement direction
+              const deltaX = worldPos.x - prevPos.x
+              const deltaZ = worldPos.z - prevPos.z
+              const distanceMoved = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ)
+
+              // Only update rotation if guinea pig actually moved
+              if (distanceMoved > ANIMATION_CONFIG.MOVEMENT_THRESHOLD) {
+                // Calculate angle to face movement direction
+                // atan2 gives angle from positive X axis, rotating counter-clockwise
+                const angle = Math.atan2(deltaX, deltaZ)
+                model.rotation.y = angle
+              }
+            }
+
+            // Update position
+            model.position.copy(worldPos)
+
+            // Store current position as previous for next update
+            previousPositions.set(guineaPigId, worldPos.clone())
+          }
+        })
+      },
+      { deep: true },
+    ))
+  }
 
   /**
    * Cleanup function - stops watchers and disposes models

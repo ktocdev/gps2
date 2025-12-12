@@ -1,8 +1,18 @@
 import * as THREE from 'three'
 import { displaceVertices } from '../shared/geometry'
+import { seededRandom } from '../shared/utils'
 
-export function createToyModel(type: 'stick' | 'ball' | 'other'): THREE.Group {
+/**
+ * Create a toy model (twig ball or chew stick)
+ * @param type - Type of toy to create
+ * @param itemId - Item ID used for seeded random (prevents jitter on re-render)
+ */
+export function createToyModel(type: 'stick' | 'ball' | 'other', itemId: string = 'default_toy'): THREE.Group {
   const group = new THREE.Group()
+
+  // Generate consistent seed from itemId
+  const seed = itemId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const random = seededRandom(seed)
 
   if (type === 'ball') {
     // Twig Ball - 12 interlocking torus rings (scaled 2x: 0.8 → 1.6 major, 0.06 → 0.12 tube)
@@ -14,11 +24,11 @@ export function createToyModel(type: 'stick' | 'ball' | 'other'): THREE.Group {
       })
       const ring = new THREE.Mesh(ringGeo, ringMat)
 
-      // Random rotation for woven appearance
+      // Seeded random rotation for woven appearance (deterministic)
       ring.rotation.set(
-        Math.random() * Math.PI,
-        Math.random() * Math.PI,
-        Math.random() * Math.PI
+        random() * Math.PI,
+        random() * Math.PI,
+        random() * Math.PI
       )
 
       ring.castShadow = true
@@ -62,7 +72,7 @@ export function createToyModel(type: 'stick' | 'ball' | 'other'): THREE.Group {
     const knob = new THREE.Mesh(knobGeo, [stickSideMat, stickEndMat, stickEndMat])
     knob.position.set(0.36, 0, 0) // Position to intersect through stick center
     knob.rotation.z = Math.PI / 2 - 0.3
-    knob.rotation.y = Math.random() * Math.PI
+    knob.rotation.y = random() * Math.PI
     knob.castShadow = true
     knob.receiveShadow = true
     group.add(knob)
@@ -70,7 +80,7 @@ export function createToyModel(type: 'stick' | 'ball' | 'other'): THREE.Group {
     // Position the stick group
     // Radius 0.375 + displacement ~0.06 + buffer = 0.5
     group.position.y = 0.5
-    group.rotation.y = Math.random() * Math.PI
+    group.rotation.y = random() * Math.PI
   } else {
     // Placeholder cube (scaled up 2x)
     const cubeGeo = new THREE.BoxGeometry(1.0, 1.0, 1.0)

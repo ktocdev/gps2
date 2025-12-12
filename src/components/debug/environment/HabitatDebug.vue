@@ -4,7 +4,23 @@
       Habitat Conditions
     </h2>
 
-    <div v-if="hasActiveGuineaPigs" class="habitat-debug__content">
+    <!-- No Active Guinea Pigs -->
+    <div v-if="!hasActiveGuineaPigs" class="panel panel--compact panel--warning mb-6">
+      <div class="panel__content text-center">
+        <p class="text-label text-label--muted mb-2">No guinea pigs in game</p>
+        <p class="text-label--small">Start a game in the Game Controller view to see habitat data.</p>
+      </div>
+    </div>
+
+    <!-- Wrong View Mode Message -->
+    <div v-else-if="is3DMode" class="panel panel--compact panel--info mb-6">
+      <div class="panel__content text-center">
+        <p class="text-label text-label--muted mb-2">This game was started in 3D mode</p>
+        <p class="text-label--small">Visit the 3D Habitat view to see this game session.</p>
+      </div>
+    </div>
+
+    <div v-else class="habitat-debug__content">
     <!-- Visual Habitat with Sidebar -->
     <div class="panel panel--full-width">
       <div class="panel__content">
@@ -216,14 +232,6 @@
 
     </div>
 
-    <!-- No Active Guinea Pigs -->
-    <div v-else class="panel panel--compact panel--warning mb-6">
-      <div class="panel__content text-center">
-        <p class="text-label text-label--muted mb-2">No guinea pigs in game</p>
-        <p class="text-label--small">Start a game in the Game Controller view to see habitat data.</p>
-      </div>
-    </div>
-
     <!-- Clean Cage Dialog -->
     <CleanCageDialog
       v-model="showCleanCageDialog"
@@ -245,6 +253,7 @@ import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useLoggingStore } from '../../../stores/loggingStore'
 import { useBehaviorStateStore } from '../../../stores/behaviorStateStore'
 import { useNeedsController } from '../../../stores/needsController'
+import { useGameViewStore } from '../../../stores/gameViewStore'
 import { getInteractionEffect, getInteractionName, getInteractionEmoji } from '../../../utils/interactionEffects'
 import Button from '../../basic/Button.vue'
 import SliderField from '../../basic/SliderField.vue'
@@ -270,6 +279,7 @@ const suppliesStore = useSuppliesStore()
 const loggingStore = useLoggingStore()
 const behaviorStateStore = useBehaviorStateStore()
 const needsController = useNeedsController()
+const gameViewStore = useGameViewStore()
 
 // Ref to HabitatVisual component
 const habitatVisualRef = ref<InstanceType<typeof HabitatVisual> | null>(null)
@@ -405,6 +415,8 @@ const fillHayRacksTooltip = computed(() => {
 const hasActiveGuineaPigs = computed(() => {
   return guineaPigStore.activeGuineaPigs.length > 0
 })
+
+const is3DMode = computed(() => gameViewStore.mode === '3d')
 
 // Selected guinea pig for interactions (based on user click in habitat)
 const selectedGuineaPig = computed(() => {
