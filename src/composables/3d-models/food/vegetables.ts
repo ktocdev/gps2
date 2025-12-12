@@ -31,6 +31,7 @@ export function createCucumberSlice(): THREE.Group {
 
   const slice = new THREE.Mesh(sliceGeo, [skinMat, fleshMat, fleshMat])
   slice.castShadow = true
+  slice.receiveShadow = true
   group.add(slice)
 
   // Cut surface (flat face)

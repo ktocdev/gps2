@@ -58,8 +58,8 @@ import { useGameController } from '../stores/gameController'
 
 const gameController = useGameController()
 
-// State
-const activeTab = ref('controller')
+// State - Default to 3D Habitat view
+const activeTab = ref('habitat-3d')
 
 // Category interface
 interface TabCategory {

@@ -102,6 +102,42 @@ export function use3DItems(worldGroup: THREE.Group) {
     { deep: true }
   ))
 
+  // Watch for hay rack contents changes and re-render affected hay racks
+  stopWatchers.push(watch(
+    () => habitatConditions.hayRackContents,
+    () => {
+      // Re-render all hay rack models when contents change
+      itemModels.forEach((model, itemId) => {
+        if (itemId.includes('hay') && itemId.includes('rack')) {
+          // Get current position
+          const position = habitatConditions.itemPositions.get(itemId)
+          if (position) {
+            // Remove old model
+            disposeObject3D(model)
+            worldGroup.remove(model)
+
+            // Create new model with updated contents
+            const newModel = createItemModel(itemId)
+            const worldPos = gridToWorld(position.x, position.y)
+            // Preserve the model's X, Y, and Z offsets (set in creation function)
+            const modelX = newModel.position.x
+            const modelY = newModel.position.y
+            const modelZ = newModel.position.z
+            newModel.position.copy(worldPos)
+            newModel.position.x += modelX // Add X offset to grid position
+            newModel.position.y = modelY
+            newModel.position.z += modelZ // Add Z offset to grid position
+
+            // Update registry and add to scene
+            itemModels.set(itemId, newModel)
+            worldGroup.add(newModel)
+          }
+        }
+      })
+    },
+    { deep: true }
+  ))
+
   /**
    * Cleanup function - stops watchers and disposes models
    */

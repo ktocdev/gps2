@@ -10,6 +10,17 @@
             <h3>Session Controls</h3>
           </div>
           <div class="panel__content">
+            <!-- Game View Select -->
+            <div class="game-view-select mb-5">
+              <span class="select__label">Game View</span>
+              <ToggleGroup
+                :model-value="gameViewStore.mode"
+                @update:model-value="(val: string) => gameViewStore.setMode(val as '2d' | '3d')"
+                :options="gameViewOptions"
+                size="md"
+              />
+            </div>
+
             <div class="controls-grid">
               <Button
                 @click="handleStartSession"
@@ -19,43 +30,6 @@
               >
                 {{ petStoreManager.activeGameSession ? 'Game in Session' : 'Adopt Guinea Pig(s)' }}
               </Button>
-            </div>
-
-            <!-- Needs Processing Control -->
-            <div class="stats-grid mt-4">
-              <div class="stat-item">
-                <span class="stat-label">Needs Processing:</span>
-                <span v-if="needsController.isPausedManually" class="stat-value text--warning">
-                  Paused (Manual) ⚠️
-                </span>
-                <span v-else-if="!needsController.processingEnabled" class="stat-value text--muted">
-                  Paused (Auto)
-                </span>
-                <span v-else class="stat-value text--success">
-                  Active ✓
-                </span>
-              </div>
-            </div>
-
-            <Button
-              @click="toggleNeedsProcessing"
-              :variant="needsController.processingEnabled ? 'secondary' : 'primary'"
-              :disabled="!petStoreManager.activeGameSession || gameController.isPaused"
-              :title="!petStoreManager.activeGameSession ? 'No active session' : (gameController.isPaused ? 'Game is paused - needs processing controlled by game state' : '')"
-              size="sm"
-              full-width
-              class="needs-processing-button mt-3"
-            >
-              {{ needsController.processingEnabled ? 'Pause Needs Processing' : 'Resume Needs Processing' }}
-            </Button>
-
-            <!-- Warning: Needs Manually Paused -->
-            <div v-if="needsController.isPausedManually" class="panel__subpanel panel__subpanel--warning mt-3">
-              <div class="panel__subpanel-content">
-                <p class="panel__subpanel-text panel__subpanel-text--warning">
-                  ⚠️ Needs manually paused in Needs System
-                </p>
-              </div>
             </div>
           </div>
         </div>
@@ -242,16 +216,23 @@ import { useGameController } from '../../../stores/gameController'
 import { usePetStoreManager } from '../../../stores/petStoreManager'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { usePlayerProgression } from '../../../stores/playerProgression'
-import { useNeedsController } from '../../../stores/needsController'
 import Button from '../../basic/Button.vue'
 import Select from '../../basic/Select.vue'
+import ToggleGroup from '../../basic/ToggleGroup.vue'
+import { useGameViewStore } from '../../../stores/gameViewStore'
 
 // Stores
 const gameController = useGameController()
 const petStoreManager = usePetStoreManager()
 const guineaPigStore = useGuineaPigStore()
 const playerProgression = usePlayerProgression()
-const needsController = useNeedsController()
+const gameViewStore = useGameViewStore()
+
+// Game View options
+const gameViewOptions = [
+  { value: '2d', label: '📐 2D' },
+  { value: '3d', label: '🎮 3D' }
+]
 
 // Pet Store Session State
 const selectedGuineaPig1 = ref<string | number>('')
@@ -377,15 +358,6 @@ const canResumeGame = computed(() => {
   return gameController.gameState.currentState === 'paused' && hasActiveSession && hasActiveGuineaPigs
 })
 
-// System Controls
-const toggleNeedsProcessing = () => {
-  if (needsController.processingEnabled) {
-    needsController.pauseProcessing(true) // Manual pause
-  } else {
-    needsController.resumeProcessing()
-  }
-}
-
 // Settings Management
 const tutorialOptions = [
   { value: 'auto', label: 'Auto' },
@@ -438,5 +410,12 @@ const resetFirstTimeUser = () => {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+.game-view-select {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 </style>

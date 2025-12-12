@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { createBowlModel } from './containers/bowls'
 import { createWaterBottleModel } from './containers/water-bottles'
+import { createHayRackModel } from './containers/hay-racks'
 import { createShelterModel } from './shelters/igloos'
 import { createWoodenTunnelModel } from './shelters/tunnels'
 import { createBedModel } from './bedding/beds'
@@ -14,6 +15,7 @@ export function createItemModel(itemId: string): THREE.Group {
   // Containers
   if (itemId.includes('bowl')) return createBowlModel(itemId)
   if (itemId.includes('water') && itemId.includes('bottle')) return createWaterBottleModel()
+  if (itemId.includes('hay') && itemId.includes('rack')) return createHayRackModel(itemId)
 
   // Shelters
   if (itemId.includes('shelter') || itemId.includes('igloo') || itemId.includes('hideout')) {
@@ -27,16 +29,17 @@ export function createItemModel(itemId: string): THREE.Group {
   if (itemId.includes('bed') || itemId.includes('mat')) return createBedModel()
 
   // Toys
-  if (itemId.includes('ball')) return createToyModel('ball')
-  if (itemId.includes('stick') || itemId.includes('chew')) return createToyModel('stick')
+  if (itemId.includes('ball')) return createToyModel('ball', itemId)
+  if (itemId.includes('stick') || itemId.includes('chew')) return createToyModel('stick', itemId)
 
   // Default fallback
-  return createToyModel('other')
+  return createToyModel('other', itemId)
 }
 
 // Re-export all model creators for direct access if needed
 export { createBowlModel } from './containers/bowls'
 export { createWaterBottleModel, getWaterBottleRotation } from './containers/water-bottles'
+export { createHayRackModel } from './containers/hay-racks'
 export { createShelterModel } from './shelters/igloos'
 export { createWoodenTunnelModel } from './shelters/tunnels'
 export { createBedModel } from './bedding/beds'
