@@ -21,65 +21,24 @@
     <div v-else class="panel panel--full-width">
       <div class="panel__content">
         <div class="habitat-3d-debug__info">
-          Drag or &lt; &gt; to rotate | Scroll/Z/X for Up/Down | Arrows to pan | Click guinea pig to select
+          <template v-if="controlledGuineaPigId">
+            <span class="habitat-3d-debug__control-badge">CONTROLLING</span>
+            Click habitat to move | Escape to release | Auto-release in 30s
+          </template>
+          <template v-else>
+            Drag or &lt; &gt; to rotate | Scroll/Z/X for Up/Down | Arrows to pan | Click guinea pig to select
+          </template>
         </div>
         <div class="habitat-3d-debug__canvas-wrapper">
           <canvas ref="canvasRef" @click="handleCanvasClick"></canvas>
 
-          <!-- Floating Action Buttons -->
-          <FloatingActionButton
-            v-if="selectedGuineaPigId"
-            icon="🥕"
-            label="Feed"
-            variant="primary"
-            position="bottom-right"
-            :disabled="!selectedGuineaPigId"
-            ariaLabel="Feed guinea pig"
-            @click="handleFeed"
-            style="bottom: 240px;"
-          />
-          <FloatingActionButton
-            v-if="selectedGuineaPigId"
-            icon="💧"
-            label="Water"
-            variant="info"
-            position="bottom-right"
-            :disabled="!selectedGuineaPigId"
-            ariaLabel="Give water to guinea pig"
-            @click="handleWater"
-            style="bottom: 180px;"
-          />
-          <FloatingActionButton
-            v-if="selectedGuineaPigId"
-            icon="🎾"
-            label="Play"
-            variant="secondary"
-            position="bottom-right"
-            :disabled="!selectedGuineaPigId"
-            ariaLabel="Play with guinea pig"
-            @click="handlePlay"
-            style="bottom: 120px;"
-          />
-          <FloatingActionButton
-            v-if="selectedGuineaPigId"
-            icon="💚"
-            label="Pet"
-            variant="secondary"
-            position="bottom-right"
-            :disabled="!selectedGuineaPigId"
-            ariaLabel="Pet guinea pig"
-            @click="handlePet"
-            style="bottom: 60px;"
-          />
-          <FloatingActionButton
-            v-if="selectedGuineaPigId"
-            icon="❌"
-            label="Deselect"
-            variant="danger"
-            position="bottom-right"
-            :disabled="!selectedGuineaPigId"
-            ariaLabel="Deselect guinea pig"
-            @click="handleDeselect"
+          <!-- Guinea Pig Info Menu (replaces floating action buttons) -->
+          <GuineaPigInfoMenu
+            v-if="selectedGuineaPigId && selectedGuineaPig"
+            :guinea-pig="selectedGuineaPig"
+            :position="guineaPigMenuPosition"
+            @close="handleDeselect"
+            @take-control="handleTakeControl"
           />
 
           <!-- Floating Inventory Menu (for bowls and hay racks) -->
@@ -92,62 +51,23 @@
             @close="closeInventoryMenu"
             @select="handleAddItemToContainer"
           />
+
+          <!-- Water Bottle Menu -->
+          <WaterBottleMenu
+            v-if="showWaterBottleMenu"
+            :water-level="habitatConditions.waterLevel"
+            :position="waterBottleMenuPosition"
+            @close="closeWaterBottleMenu"
+            @refill="handleRefillWater"
+          />
         </div>
 
-        <!-- Selected Guinea Pig Info -->
-        <div v-if="selectedGuineaPig" class="habitat-3d-debug__selection-info">
-          <strong>Selected:</strong> {{ selectedGuineaPig.name }}
-        </div>
       </div>
     </div>
 
-    <!-- Water Bottle Rotation Debug Row -->
-    <div v-if="hasActiveSession" class="habitat-3d-debug__debug-row">
-      <div class="panel panel--compact">
-        <div class="panel__header">
-          <h3>Water Bottle Rotation Debug</h3>
-        </div>
-        <div class="panel__content">
-          <div class="rotation-debug">
-            <SliderField
-              v-model="debugRotation"
-              label="Rotation (radians)"
-              :min="-Math.PI"
-              :max="Math.PI"
-              :step="0.01"
-              :show-value="true"
-              :show-min-max="true"
-              @change="applyDebugRotation"
-            />
-            <div class="rotation-debug__input-group">
-              <label for="rotation-input" class="rotation-debug__label">Precise Value:</label>
-              <input
-                id="rotation-input"
-                v-model.number="debugRotation"
-                type="number"
-                class="rotation-debug__input"
-                :min="-Math.PI"
-                :max="Math.PI"
-                :step="0.01"
-                @input="applyDebugRotation"
-              />
-            </div>
-            <div class="rotation-debug__presets">
-              <button @click="setRotation(0)" class="rotation-debug__preset">0° (Right)</button>
-              <button @click="setRotation(Math.PI / 4)" class="rotation-debug__preset">45°</button>
-              <button @click="setRotation(Math.PI / 2)" class="rotation-debug__preset">90° (Up)</button>
-              <button @click="setRotation(3 * Math.PI / 4)" class="rotation-debug__preset">135°</button>
-              <button @click="setRotation(Math.PI)" class="rotation-debug__preset">180° (Left)</button>
-              <button @click="setRotation(-Math.PI / 4)" class="rotation-debug__preset">-45°</button>
-              <button @click="setRotation(-Math.PI / 2)" class="rotation-debug__preset">-90° (Down)</button>
-              <button @click="setRotation(-3 * Math.PI / 4)" class="rotation-debug__preset">-135°</button>
-            </div>
-            <div class="rotation-debug__info">
-              Current rotation: {{ debugRotation.toFixed(3) }} rad ({{ (debugRotation * 180 / Math.PI).toFixed(1) }}°)
-            </div>
-          </div>
-        </div>
-      </div>
+    <!-- Needs Panel (below 3D canvas) -->
+    <div v-if="hasActiveSession && !is2DMode" class="habitat-3d-debug__needs-row">
+      <NeedsPanel />
     </div>
   </div>
 </template>
@@ -157,39 +77,52 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { use3DScene } from '../../../composables/use3DScene'
 import { use3DCamera } from '../../../composables/use3DCamera'
 import { use3DSync } from '../../../composables/use3DSync'
+import { updateGuineaPigAnimation } from '../../../composables/use3DGuineaPig'
 import { use3DItems } from '../../../composables/use3DItems'
 import { use3DPoop } from '../../../composables/use3DPoop'
-import { use3DHungerBehavior } from '../../../composables/3d/use3DHungerBehavior'
-import FloatingActionButton from '../../basic/FloatingActionButton.vue'
-import SliderField from '../../basic/SliderField.vue'
+import { use3DBehavior } from '../../../composables/3d/use3DBehavior'
+import { use3DMovement } from '../../../composables/3d/use3DMovement'
+import {
+  updateWaterBottleLevel,
+  startWaterBottleBubbles,
+  stopWaterBottleBubbles,
+  updateWaterBottleBubbles
+} from '../../../composables/3d-models/containers/water-bottles'
+import GuineaPigInfoMenu from '../../game/GuineaPigInfoMenu.vue'
+import WaterBottleMenu from '../../game/WaterBottleMenu.vue'
 import InventoryItemMenu from '../../basic/InventoryItemMenu.vue'
+import NeedsPanel from './NeedsPanel.vue'
 import type { InventoryMenuItem } from '../../basic/InventoryItemMenu.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
-import { useGameController } from '../../../stores/gameController'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { usePetStoreManager } from '../../../stores/petStoreManager'
 import { useGameViewStore } from '../../../stores/gameViewStore'
 import { useMovement3DStore } from '../../../stores/movement3DStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
-import { useGuineaPigBehavior, type BehaviorType } from '../../../composables/game/useGuineaPigBehavior'
-import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG } from '../../../constants/3d'
+import { useGameController } from '../../../stores/gameController'
+import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from '../../../constants/3d'
 import { disposeObject3D } from '../../../utils/three-cleanup'
 import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const selectedGuineaPigId = ref<string | null>(null)
-const debugRotation = ref<number>(0)
+const guineaPigMenuPosition = ref({ x: 0, y: 0 })
+
+// Take Control mode state
+const controlledGuineaPigId = ref<string | null>(null)
+const CONTROL_AUTO_RELEASE_MS = 30000 // 30 seconds
+let controlReleaseTimer: number | null = null
 
 // Stores
 const guineaPigStore = useGuineaPigStore()
-const gameController = useGameController()
 const habitatConditions = useHabitatConditions()
 const petStoreManager = usePetStoreManager()
 const gameViewStore = useGameViewStore()
 const movement3DStore = useMovement3DStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const gameController = useGameController()
 
 // Inventory menu state (for bowls and hay racks)
 const selectedContainerId = ref<string | null>(null)
@@ -198,7 +131,6 @@ const showInventoryMenu = ref(false)
 const menuPosition = ref({ x: 0, y: 0 })
 
 // Computed
-const isGameActive = computed(() => gameController.isGameActive)
 const hasActiveSession = computed(() => !!petStoreManager.activeGameSession && guineaPigStore.activeGuineaPigs.length > 0)
 const is2DMode = computed(() => gameViewStore.mode === '2d')
 const selectedGuineaPig = computed(() => {
@@ -284,23 +216,12 @@ const menuEmptyMessage = computed(() => {
   return 'No items available'
 })
 
-// Behavior composables registry (for manual user interactions)
-const behaviorComposables = new Map<string, ReturnType<typeof useGuineaPigBehavior>>()
+// Unified 3D behavior composables registry (for autonomous behavior)
+const behaviors = new Map<string, ReturnType<typeof use3DBehavior>>()
 
-// 3D Hunger behavior composables registry (for autonomous behavior)
-const hungerBehaviors = new Map<string, ReturnType<typeof use3DHungerBehavior>>()
-
-/**
- * Get or create behavior composable for a guinea pig
- */
-function getBehaviorComposable(guineaPigId: string) {
-  let behavior = behaviorComposables.get(guineaPigId)
-  if (!behavior) {
-    behavior = useGuineaPigBehavior(guineaPigId)
-    behaviorComposables.set(guineaPigId, behavior)
-  }
-  return behavior
-}
+// Water bottle menu state
+const showWaterBottleMenu = ref(false)
+const waterBottleMenuPosition = ref({ x: 0, y: 0 })
 
 /**
  * Initialize guinea pigs in movement3DStore and start hunger behaviors
@@ -331,12 +252,27 @@ function initializeGuineaPigBehaviors() {
 
           movement3DStore.initializeGuineaPig(gp.id, validPos)
 
-          // Create and start hunger behavior
-          const hungerBehavior = use3DHungerBehavior(gp.id)
-          hungerBehaviors.set(gp.id, hungerBehavior)
-          hungerBehavior.start()
+          // Create and start unified behavior
+          const behavior = use3DBehavior(gp.id)
+          behaviors.set(gp.id, behavior)
 
-          console.log(`[Habitat3D] Initialized guinea pig ${gp.id} with hunger behavior`)
+          // Hook up bubble animation to drinking events
+          behavior.onDrinkingStart(() => {
+            const waterBottleModel = findWaterBottleModel()
+            if (waterBottleModel) {
+              startWaterBottleBubbles(waterBottleModel)
+            }
+          })
+          behavior.onDrinkingEnd(() => {
+            const waterBottleModel = findWaterBottleModel()
+            if (waterBottleModel) {
+              stopWaterBottleBubbles(waterBottleModel)
+            }
+          })
+
+          behavior.start()
+
+          console.log(`[Habitat3D] Initialized guinea pig ${gp.id} with unified behavior`)
         }
       }
 
@@ -346,11 +282,11 @@ function initializeGuineaPigBehaviors() {
 
       for (const oldId of oldIds) {
         if (!newIds.includes(oldId)) {
-          // Stop and remove hunger behavior
-          const behavior = hungerBehaviors.get(oldId)
+          // Stop and remove behavior
+          const behavior = behaviors.get(oldId)
           if (behavior) {
             behavior.stop()
-            hungerBehaviors.delete(oldId)
+            behaviors.delete(oldId)
           }
 
           // Remove from movement store
@@ -371,6 +307,7 @@ const { scene, camera, worldGroup, initRenderer, handleResize, cleanup: cleanupS
 let cleanupCamera: (() => void) | null = null
 let updateCameraPosition: (() => void) | null = null
 let animationId: number | null = null
+let lastAnimationTime: number = 0
 
 // Guinea pig models registry (from use3DSync)
 let guineaPigModels: Map<string, THREE.Group> | null = null
@@ -383,34 +320,21 @@ let handlePoopClick: ((clickedObject: THREE.Object3D) => string | null) | null =
 
 // Selection ring
 let selectionRing: THREE.Mesh | null = null
+const SELECTION_RING_COLOR_DEFAULT = 0x00ff00 // Green
+const SELECTION_RING_COLOR_CONTROLLED = 0x0088ff // Blue
+
+// Control mode movement controller
+let controlMovement: ReturnType<typeof use3DMovement> | null = null
 
 // Environment objects that need disposal
 let environmentObjects: THREE.Object3D[] = []
 let beddingTexture: THREE.CanvasTexture | null = null
 
-// Water bottle rotation debug functions
+// Cloud objects (added to scene, not worldGroup, so they don't rotate)
+let cloudObjects: THREE.Group[] = []
+
+// Item models registry
 let itemModels: Map<string, THREE.Group> | null = null
-
-/**
- * Apply debug rotation to all water bottles in the scene
- */
-function applyDebugRotation() {
-  if (!itemModels) return
-
-  itemModels.forEach((model, itemId) => {
-    if (itemId.includes('water') && itemId.includes('bottle')) {
-      model.rotation.y = debugRotation.value
-    }
-  })
-}
-
-/**
- * Set rotation to a specific value and apply it
- */
-function setRotation(radians: number) {
-  debugRotation.value = radians
-  applyDebugRotation()
-}
 
 onMounted(() => {
   if (!canvasRef.value) return
@@ -445,11 +369,17 @@ onMounted(() => {
   // Add basic environment
   addEnvironment()
 
+  // Create clouds in the sky
+  createClouds()
+
   // Create selection ring
   createSelectionRing()
 
   // Add window resize listener
   window.addEventListener('resize', handleResize)
+
+  // Add keyboard listener for escape to release control
+  window.addEventListener('keydown', handleKeyDown)
 
   // Start animation loop
   animate()
@@ -499,12 +429,27 @@ onUnmounted(() => {
     beddingTexture = null
   }
 
-  // Clear behavior composables
-  behaviorComposables.clear()
+  // Dispose cloud objects
+  cloudObjects.forEach(cloud => {
+    worldGroup.remove(cloud)
+    disposeObject3D(cloud)
+  })
+  cloudObjects = []
 
-  // Stop and clear all hunger behaviors
-  hungerBehaviors.forEach(behavior => behavior.stop())
-  hungerBehaviors.clear()
+  // Stop and clear all behaviors
+  behaviors.forEach(behavior => behavior.stop())
+  behaviors.clear()
+
+  // Cleanup control mode
+  if (controlMovement) {
+    controlMovement.cleanup()
+    controlMovement = null
+  }
+  if (controlReleaseTimer !== null) {
+    clearTimeout(controlReleaseTimer)
+    controlReleaseTimer = null
+  }
+  controlledGuineaPigId.value = null
 
   // Clear movement3D store
   movement3DStore.clearAllGuineaPigs()
@@ -512,17 +457,58 @@ onUnmounted(() => {
   // Cleanup scene and renderer
   cleanupScene()
 
-  // Remove resize listener
+  // Remove event listeners
   window.removeEventListener('resize', handleResize)
+  window.removeEventListener('keydown', handleKeyDown)
 })
 
+/**
+ * Find the water bottle model in the scene
+ */
+function findWaterBottleModel(): THREE.Group | null {
+  if (!itemModels) return null
+
+  for (const [itemId, model] of itemModels.entries()) {
+    const item = suppliesStore.getItemById(itemId)
+    if (item?.stats?.itemType === 'water_bottle') {
+      return model
+    }
+  }
+  return null
+}
+
 // Animation loop
-function animate() {
+function animate(currentTime: number = 0) {
   animationId = requestAnimationFrame(animate)
+
+  // Calculate delta time in seconds
+  const deltaTime = lastAnimationTime ? (currentTime - lastAnimationTime) / 1000 : 0.016
+  lastAnimationTime = currentTime
 
   // Update camera position based on keyboard input
   if (updateCameraPosition) {
     updateCameraPosition()
+  }
+
+  // Update guinea pig animations (blinking, walking, breathing)
+  if (guineaPigModels) {
+    guineaPigModels.forEach((model, guineaPigId) => {
+      // Get movement state from store to determine if walking
+      const state = movement3DStore.getGuineaPigState(guineaPigId)
+      const isMoving = state?.isMoving ?? false
+
+      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused)
+    })
+  }
+
+  // Update cloud positions (drift slowly)
+  updateClouds(deltaTime)
+
+  // Update water bottle water level and bubbles
+  const waterBottleModel = findWaterBottleModel()
+  if (waterBottleModel) {
+    updateWaterBottleLevel(waterBottleModel, habitatConditions.waterLevel)
+    updateWaterBottleBubbles(waterBottleModel, deltaTime)
   }
 
   // Update selection ring position
@@ -557,12 +543,19 @@ function createSelectionRing() {
 
 // Update selection ring position
 function updateSelectionRing() {
-  if (!selectionRing || !selectedGuineaPigId.value || !guineaPigModels) return
+  if (!selectionRing || !guineaPigModels) return
 
-  const selectedModel = guineaPigModels.get(selectedGuineaPigId.value)
-  if (selectedModel) {
-    selectionRing.position.x = selectedModel.position.x
-    selectionRing.position.z = selectedModel.position.z
+  // Show ring on selected guinea pig, or controlled guinea pig if none selected
+  const targetId = selectedGuineaPigId.value || controlledGuineaPigId.value
+  if (!targetId) {
+    selectionRing.visible = false
+    return
+  }
+
+  const targetModel = guineaPigModels.get(targetId)
+  if (targetModel) {
+    selectionRing.position.x = targetModel.position.x
+    selectionRing.position.z = targetModel.position.z
     selectionRing.visible = true
 
     // Pulse animation
@@ -594,17 +587,19 @@ function handleCanvasClick(event: MouseEvent) {
   const intersects = raycaster.intersectObjects(worldGroup.children, true)
 
   if (intersects.length > 0) {
-    const clickedObject = intersects[0].object
-
-    // Priority 1: Check if poop was clicked
+    // Priority 1: Check ALL intersections for poop (allows clicking poop inside shelters)
     if (handlePoopClick) {
-      const poopId = handlePoopClick(clickedObject)
-      if (poopId) {
-        habitatConditions.removePoop(poopId)
-        console.log('Removed poop:', poopId)
-        return
+      for (const intersection of intersects) {
+        const poopId = handlePoopClick(intersection.object)
+        if (poopId) {
+          habitatConditions.removePoop(poopId)
+          console.log('Removed poop:', poopId)
+          return
+        }
       }
     }
+
+    const clickedObject = intersects[0].object
 
     // Priority 2: Check if food bowl or hay rack was clicked
     if (itemModels) {
@@ -645,6 +640,32 @@ function handleCanvasClick(event: MouseEvent) {
         console.log(`Clicked ${clickedContainerType}:`, clickedContainerId)
         return
       }
+
+      // Check if water bottle was clicked
+      let clickedWaterBottle = false
+      itemModels.forEach((model, itemId) => {
+        let current: THREE.Object3D | null = clickedObject
+        while (current) {
+          if (current === model) {
+            const item = suppliesStore.getItemById(itemId)
+            if (item?.stats?.itemType === 'water_bottle') {
+              clickedWaterBottle = true
+              showWaterBottleMenu.value = true
+              waterBottleMenuPosition.value = {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+              }
+              console.log('Clicked water bottle:', itemId)
+            }
+            break
+          }
+          current = current.parent
+        }
+      })
+
+      if (clickedWaterBottle) {
+        return
+      }
     }
 
     // Priority 3: Check if guinea pig was clicked
@@ -654,17 +675,57 @@ function handleCanvasClick(event: MouseEvent) {
       if (clickedObject.parent === model || clickedObject.parent?.parent === model) {
         clickedModel = model
         selectedGuineaPigId.value = id
+        // Set menu position near the click
+        guineaPigMenuPosition.value = {
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+        }
       }
     })
 
     if (clickedModel) {
+      // If we clicked a different guinea pig while controlling one, release control
+      if (controlledGuineaPigId.value && selectedGuineaPigId.value !== controlledGuineaPigId.value) {
+        releaseControl()
+      }
       console.log('Selected guinea pig:', selectedGuineaPigId.value)
+      return
+    }
+
+    // If in control mode, check if we clicked on the floor
+    if (controlledGuineaPigId.value && controlMovement) {
+      // Find intersection with floor (y = 0 plane)
+      const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+      const worldIntersection = new THREE.Vector3()
+      raycaster.ray.intersectPlane(floorPlane, worldIntersection)
+
+      if (worldIntersection) {
+        // Convert from worldGroup local space - need to account for worldGroup position
+        const targetPos = {
+          x: worldIntersection.x,
+          y: 0,
+          z: worldIntersection.z
+        }
+
+        // Check if target is within bounds
+        if (movement3DStore.isInBounds(targetPos)) {
+          console.log(`[Habitat3D] Control mode: Moving to (${targetPos.x.toFixed(1)}, ${targetPos.z.toFixed(1)})`)
+          controlMovement.moveTo(targetPos)
+          return
+        } else {
+          console.log('[Habitat3D] Control mode: Target out of bounds')
+        }
+      }
     }
   }
 
-  // Close inventory menu if clicked elsewhere and menu is open
-  if (showInventoryMenu.value && !selectedContainerId.value) {
+  // Clicked on empty space - deselect guinea pig and close menus
+  selectedGuineaPigId.value = null
+  if (showInventoryMenu.value) {
     closeInventoryMenu()
+  }
+  if (showWaterBottleMenu.value) {
+    closeWaterBottleMenu()
   }
 }
 
@@ -701,116 +762,107 @@ function handleAddItemToContainer(itemId: string) {
   closeInventoryMenu()
 }
 
-// Action button handlers
-async function handleFeed() {
-  if (!selectedGuineaPigId.value || !isGameActive.value) return
-  await triggerBehavior(selectedGuineaPigId.value, 'eat')
+// Water bottle menu handlers
+function closeWaterBottleMenu() {
+  showWaterBottleMenu.value = false
 }
 
-async function handleWater() {
-  if (!selectedGuineaPigId.value || !isGameActive.value) return
-  await triggerBehavior(selectedGuineaPigId.value, 'drink')
+function handleRefillWater() {
+  habitatConditions.refillWater()
+  console.log('[Habitat3D] Water bottle refilled')
+  closeWaterBottleMenu()
 }
 
-async function handlePlay() {
-  if (!selectedGuineaPigId.value || !isGameActive.value) return
-  await triggerBehavior(selectedGuineaPigId.value, 'play')
-}
-
-async function handlePet() {
-  if (!selectedGuineaPigId.value || !isGameActive.value) return
-  await triggerBehavior(selectedGuineaPigId.value, 'groom')
-}
-
+// Guinea pig menu handlers
 function handleDeselect() {
   selectedGuineaPigId.value = null
 }
 
-/**
- * Trigger a specific behavior for a guinea pig (adapted from AutonomyDebug)
- */
-async function triggerBehavior(guineaPigId: string, behaviorType: BehaviorType) {
-  const behavior = getBehaviorComposable(guineaPigId)
-  const guineaPig = guineaPigStore.activeGuineaPigs.find(gp => gp.id === guineaPigId)
+function handleTakeControl() {
+  if (!selectedGuineaPigId.value) return
 
-  if (!guineaPig) {
-    console.warn(`Guinea pig ${guineaPigId} not found`)
-    return
+  const gpId = selectedGuineaPigId.value
+
+  // If already controlling a different guinea pig, release it first
+  if (controlledGuineaPigId.value && controlledGuineaPigId.value !== gpId) {
+    releaseControl()
   }
 
-  // Store original need values
-  const originalNeeds = { ...guineaPig.needs }
+  // Enter control mode
+  controlledGuineaPigId.value = gpId
 
-  try {
-    // Set the appropriate need to 0 to force this behavior
-    const needMap: Partial<Record<BehaviorType, keyof typeof guineaPig.needs>> = {
-      eat: 'hunger',
-      eat_hay: 'hunger',
-      drink: 'thirst',
-      sleep: 'energy',
-      seek_shelter: 'shelter',
-      groom: 'hygiene',
-      chew: 'nails',
-      play: 'play',
-      socialize: 'social',
-    }
+  // Pause the autonomous behavior
+  const behavior = behaviors.get(gpId)
+  if (behavior) {
+    behavior.pause()
+    console.log(`[Habitat3D] Paused behavior for ${gpId}`)
+  }
 
-    const needKey = needMap[behaviorType]
-    if (needKey) {
-      guineaPig.needs[needKey] = 0
-    }
+  // Create movement controller for manual control
+  controlMovement = use3DMovement(gpId)
 
-    // Get behavior thresholds (use defaults for now)
-    const thresholds = {
-      hunger: 40,
-      thirst: 40,
-      energy: 40,
-      shelter: 30,
-      hygiene: 30,
-      chew: 30,
-      play: 30,
-      social: 30,
-    }
+  // Update selection ring color to blue
+  updateSelectionRingColor(SELECTION_RING_COLOR_CONTROLLED)
 
-    // Let the AI select the appropriate goal (now that need is low)
-    const goal = behavior.selectBehaviorGoal(thresholds)
+  // Start auto-release timer
+  if (controlReleaseTimer !== null) {
+    clearTimeout(controlReleaseTimer)
+  }
+  controlReleaseTimer = window.setTimeout(() => {
+    console.log('[Habitat3D] Auto-releasing control after 30 seconds')
+    releaseControl()
+  }, CONTROL_AUTO_RELEASE_MS)
 
-    // Check if goal matches requested behavior type
-    const isMatchingGoal = goal && (
-      goal.type === behaviorType ||
-      (behaviorType === 'eat' && goal.type === 'eat_hay')
-    )
+  // Close the guinea pig menu
+  selectedGuineaPigId.value = null
 
-    if (isMatchingGoal && goal) {
-      // Execute the behavior
-      const success = await behavior.executeBehavior(goal)
+  console.log(`[Habitat3D] Took control of guinea pig: ${gpId}`)
+}
 
-      if (success) {
-        console.log(`✅ Triggered ${goal.type} behavior`)
-      }
+function releaseControl() {
+  if (!controlledGuineaPigId.value) return
 
-      // Restore needs to 100% after behavior completes
-      Object.keys(originalNeeds).forEach((key) => {
-        const needKey = key as keyof typeof originalNeeds
-        guineaPig.needs[needKey] = 100
-      })
-    } else {
-      console.warn(`❌ Could not trigger ${behaviorType} - goal not selected`)
+  const gpId = controlledGuineaPigId.value
 
-      // Restore original needs
-      Object.keys(originalNeeds).forEach((key) => {
-        const needKey = key as keyof typeof originalNeeds
-        guineaPig.needs[needKey] = originalNeeds[needKey]
-      })
-    }
-  } catch (error) {
-    console.error(`Error executing behavior ${behaviorType}:`, error)
+  // Cleanup movement controller
+  if (controlMovement) {
+    controlMovement.cleanup()
+    controlMovement = null
+  }
 
-    // Restore original needs on error
-    Object.keys(originalNeeds).forEach((key) => {
-      const needKey = key as keyof typeof originalNeeds
-      guineaPig.needs[needKey] = originalNeeds[needKey]
-    })
+  // Resume autonomous behavior
+  const behavior = behaviors.get(gpId)
+  if (behavior) {
+    behavior.resume()
+    console.log(`[Habitat3D] Resumed behavior for ${gpId}`)
+  }
+
+  // Clear control state
+  controlledGuineaPigId.value = null
+
+  // Clear auto-release timer
+  if (controlReleaseTimer !== null) {
+    clearTimeout(controlReleaseTimer)
+    controlReleaseTimer = null
+  }
+
+  // Reset selection ring color to green
+  updateSelectionRingColor(SELECTION_RING_COLOR_DEFAULT)
+
+  console.log(`[Habitat3D] Released control of guinea pig: ${gpId}`)
+}
+
+function updateSelectionRingColor(color: number) {
+  if (selectionRing) {
+    const material = selectionRing.material as THREE.MeshBasicMaterial
+    material.color.setHex(color)
+  }
+}
+
+function handleKeyDown(event: KeyboardEvent) {
+  // Escape releases control
+  if (event.key === 'Escape' && controlledGuineaPigId.value) {
+    releaseControl()
   }
 }
 
@@ -910,6 +962,135 @@ function createBeddingTexture(): THREE.CanvasTexture {
   texture.repeat.set(6, 6)
   return texture
 }
+
+// Create a single cloud from multiple sphere "puffs" (matching demo style)
+function createCloud(): THREE.Group {
+  const cloud = new THREE.Group()
+
+  // Cloud material - MeshBasicMaterial like the demo (no lighting effects)
+  const cloudMaterial = new THREE.MeshBasicMaterial({
+    color: CLOUD_CONFIG.COLOR,
+    transparent: true,
+    opacity: CLOUD_CONFIG.OPACITY,
+  })
+
+  // Random number of puffs for fluffy variety
+  const puffCount = CLOUD_CONFIG.PUFF_COUNT_MIN +
+    Math.floor(Math.random() * (CLOUD_CONFIG.PUFF_COUNT_MAX - CLOUD_CONFIG.PUFF_COUNT_MIN))
+
+  // Puff geometry - low poly spheres for soft cloud appearance
+  const puffGeo = new THREE.SphereGeometry(CLOUD_CONFIG.PUFF_RADIUS, 12, 10)
+
+  // Create the puffs in a fluffy cluster
+  for (let i = 0; i < puffCount; i++) {
+    const puff = new THREE.Mesh(puffGeo, cloudMaterial)
+
+    // Position puffs spread out for fluffiness
+    puff.position.set(
+      (Math.random() - 0.5) * CLOUD_CONFIG.CLUSTER_SPREAD_X,
+      (Math.random() - 0.5) * CLOUD_CONFIG.CLUSTER_SPREAD_Y,
+      (Math.random() - 0.5) * CLOUD_CONFIG.CLUSTER_SPREAD_Z
+    )
+
+    // Random scale for variety
+    const scale = CLOUD_CONFIG.PUFF_SCALE_MIN +
+      Math.random() * (CLOUD_CONFIG.PUFF_SCALE_MAX - CLOUD_CONFIG.PUFF_SCALE_MIN)
+    // Squash vertically slightly for natural cloud shape
+    puff.scale.set(scale, scale * 0.7, scale)
+
+    cloud.add(puff)
+  }
+
+  return cloud
+}
+
+// Create all clouds and position them in the sky (two layers like demo)
+function createClouds() {
+  const highLayer = CLOUD_CONFIG.HIGH_LAYER
+  const lowLayer = CLOUD_CONFIG.LOW_LAYER
+  const totalClouds = highLayer.COUNT + lowLayer.COUNT
+
+  console.log(`[Habitat3D] Creating ${totalClouds} clouds (${highLayer.COUNT} high, ${lowLayer.COUNT} low)...`)
+
+  // High layer clouds - further out and higher up
+  for (let i = 0; i < highLayer.COUNT; i++) {
+    const cloud = createCloud()
+
+    const angle = Math.random() * Math.PI * 2
+    const distance = highLayer.MIN_DISTANCE +
+      Math.random() * (highLayer.MAX_DISTANCE - highLayer.MIN_DISTANCE)
+    const height = highLayer.MIN_HEIGHT +
+      Math.random() * (highLayer.MAX_HEIGHT - highLayer.MIN_HEIGHT)
+
+    cloud.position.set(
+      Math.cos(angle) * distance,
+      height,
+      Math.sin(angle) * distance
+    )
+
+    // Face the center (like demo)
+    cloud.lookAt(0, height, 0)
+
+    // Store for animation
+    cloud.userData.angle = angle
+    cloud.userData.distance = distance
+    cloud.userData.height = height
+    cloud.userData.driftOffset = Math.random() * Math.PI * 2
+
+    worldGroup.add(cloud)
+    cloudObjects.push(cloud)
+  }
+
+  // Low layer clouds - closer and lower (more visible)
+  for (let i = 0; i < lowLayer.COUNT; i++) {
+    const cloud = createCloud()
+
+    const angle = Math.random() * Math.PI * 2
+    const distance = lowLayer.MIN_DISTANCE +
+      Math.random() * (lowLayer.MAX_DISTANCE - lowLayer.MIN_DISTANCE)
+    const height = lowLayer.MIN_HEIGHT +
+      Math.random() * (lowLayer.MAX_HEIGHT - lowLayer.MIN_HEIGHT)
+
+    cloud.position.set(
+      Math.cos(angle) * distance,
+      height,
+      Math.sin(angle) * distance
+    )
+
+    // Scale down low layer clouds (like demo)
+    cloud.scale.setScalar(lowLayer.SCALE)
+
+    // Face the center (like demo)
+    cloud.lookAt(0, height, 0)
+
+    // Store for animation
+    cloud.userData.angle = angle
+    cloud.userData.distance = distance
+    cloud.userData.height = height
+    cloud.userData.driftOffset = Math.random() * Math.PI * 2
+
+    worldGroup.add(cloud)
+    cloudObjects.push(cloud)
+  }
+
+  console.log(`[Habitat3D] ${cloudObjects.length} clouds created and added to worldGroup`)
+}
+
+// Update cloud positions - drift slowly around the sky
+function updateClouds(deltaTime: number) {
+  cloudObjects.forEach(cloud => {
+    // Slowly rotate around the scene
+    cloud.userData.angle += deltaTime * CLOUD_CONFIG.DRIFT_SPEED * 0.02
+
+    // Add gentle bobbing motion
+    const bob = Math.sin(cloud.userData.angle * 2 + cloud.userData.driftOffset) * 0.5
+
+    // Update position
+    cloud.position.x = Math.cos(cloud.userData.angle) * cloud.userData.distance
+    cloud.position.z = Math.sin(cloud.userData.angle) * cloud.userData.distance
+    cloud.position.y = cloud.userData.height + bob
+  })
+}
 </script>
 
 <style>
@@ -944,97 +1125,22 @@ function createBeddingTexture(): THREE.CanvasTexture {
   color: var(--color-text-primary);
 }
 
-/* Mobile-first: Debug row - default 1 column */
-.habitat-3d-debug__debug-row {
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: 1fr;
-  margin-block-start: var(--space-4);
-}
-
-/* Tablet and up: 2 columns */
-@media (min-width: 768px) {
-  .habitat-3d-debug__debug-row {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-/* Desktop and up: 3 columns */
-@media (min-width: 1200px) {
-  .habitat-3d-debug__debug-row {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
-}
-
-.rotation-debug {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
-}
-
-.rotation-debug__input-group {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm);
-}
-
-.rotation-debug__label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  font-weight: var(--font-weight-medium);
-}
-
-.rotation-debug__input {
-  flex: 1;
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-sm);
-  background-color: var(--color-bg-primary);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-sm);
-  font-family: var(--font-family-mono);
-}
-
-.rotation-debug__input:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.1);
-}
-
-.rotation-debug__presets {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: var(--spacing-xs);
-}
-
-.rotation-debug__preset {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  background-color: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-primary);
-  font-size: var(--font-size-xs);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.rotation-debug__preset:hover {
-  background-color: var(--color-primary);
+.habitat-3d-debug__control-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  margin-inline-end: var(--spacing-sm);
+  background-color: #0088ff;
   color: white;
-  border-color: var(--color-primary);
-}
-
-.rotation-debug__preset:active {
-  transform: scale(0.98);
-}
-
-.rotation-debug__info {
-  padding: var(--spacing-sm);
-  background-color: var(--color-bg-tertiary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
   border-radius: var(--radius-sm);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  text-align: center;
-  font-family: var(--font-family-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
+
+.habitat-3d-debug__needs-row {
+  margin-block-start: var(--spacing-md);
+  max-inline-size: 400px;
+}
+
 </style>

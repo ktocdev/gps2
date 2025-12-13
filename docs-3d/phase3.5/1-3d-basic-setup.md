@@ -490,12 +490,12 @@ function gridToWorld(col: number, row: number): Vector3D {
 
 ## Testing Checklist
 
-1. [ ] Guinea pig appears in 3D habitat on game start
-2. [ ] Guinea pig wanders randomly when not hungry
+1. [X] Guinea pig appears in 3D habitat on game start
+2. [X] Guinea pig wanders randomly when not hungry
 3. [ ] Hunger decreases over time (existing decay)
 4. [ ] When hunger < 70, guinea pig navigates to food bowl
 5. [ ] Path goes around obstacles, not through them
 6. [ ] Guinea pig eats at food bowl (3 seconds)
 7. [ ] After eating, hunger resets to 100
-8. [ ] Game pause stops movement, resume continues
-9. [ ] Multiple guinea pigs move independently
+8. [X] Game pause stops movement, resume continues
+9. [X] Multiple guinea pigs move independently
