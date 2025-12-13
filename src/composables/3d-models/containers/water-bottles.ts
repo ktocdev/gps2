@@ -35,6 +35,10 @@ export function getWaterBottleRotation(gridX: number, gridY: number): number {
   return 0
 }
 
+// Water bottle constants
+const WATER_FULL_HEIGHT = 3.2
+const WATER_BASE_Y = 1.7 // Y position when water is at bottom of bottle
+
 export function createWaterBottleModel(): THREE.Group {
   const group = new THREE.Group()
 
@@ -55,7 +59,7 @@ export function createWaterBottleModel(): THREE.Group {
   group.add(bottle)
 
   // Water inside (slightly smaller, with glow)
-  const waterGeo = new THREE.CylinderGeometry(0.55, 0.55, 3.2, 32)
+  const waterGeo = new THREE.CylinderGeometry(0.55, 0.55, WATER_FULL_HEIGHT, 32)
   const waterMat = new THREE.MeshStandardMaterial({
     color: 0xC3E7FD,
     opacity: 0.8,
@@ -68,6 +72,11 @@ export function createWaterBottleModel(): THREE.Group {
   const water = new THREE.Mesh(waterGeo, waterMat)
   water.position.y = 3.3 // Slightly lower than bottle
   group.add(water)
+
+  // Store reference to water mesh for dynamic updates
+  group.userData.waterMesh = water
+  group.userData.waterFullHeight = WATER_FULL_HEIGHT
+  group.userData.waterBaseY = WATER_BASE_Y
 
   // Green bracket at base
   const bracketGeo = new THREE.CylinderGeometry(0.6, 0.6, 0.5, 32)
@@ -103,3 +112,156 @@ export function createWaterBottleModel(): THREE.Group {
 
   return group
 }
+
+// Bubble configuration
+const BUBBLE_CONFIG = {
+  COUNT: 8,
+  MIN_RADIUS: 0.03,
+  MAX_RADIUS: 0.08,
+  RISE_SPEED: 2.0,
+  SPAWN_RADIUS: 0.4,
+  MIN_Y: 1.8,
+  MAX_Y: 4.8,
+}
+
+/**
+ * Create bubble particles for water bottle drinking animation
+ * @param waterBottleGroup - The water bottle THREE.Group to add bubbles to
+ */
+export function createWaterBottleBubbles(waterBottleGroup: THREE.Group): void {
+  // Check if bubbles already exist
+  if (waterBottleGroup.userData.bubbles) {
+    return
+  }
+
+  const bubbleMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    opacity: 0.6,
+    transparent: true,
+    emissive: 0x88ccff,
+    emissiveIntensity: 0.3,
+  })
+
+  const bubbles: THREE.Mesh[] = []
+  const bubbleGeo = new THREE.SphereGeometry(1, 8, 8)
+
+  for (let i = 0; i < BUBBLE_CONFIG.COUNT; i++) {
+    const bubble = new THREE.Mesh(bubbleGeo, bubbleMat)
+
+    // Random size
+    const scale = BUBBLE_CONFIG.MIN_RADIUS + Math.random() * (BUBBLE_CONFIG.MAX_RADIUS - BUBBLE_CONFIG.MIN_RADIUS)
+    bubble.scale.setScalar(scale)
+
+    // Random starting position within bottle
+    const angle = Math.random() * Math.PI * 2
+    const radius = Math.random() * BUBBLE_CONFIG.SPAWN_RADIUS
+    bubble.position.x = Math.cos(angle) * radius
+    bubble.position.z = Math.sin(angle) * radius
+    bubble.position.y = BUBBLE_CONFIG.MIN_Y + Math.random() * (BUBBLE_CONFIG.MAX_Y - BUBBLE_CONFIG.MIN_Y)
+
+    // Store initial Y for reset
+    bubble.userData.startY = bubble.position.y
+    bubble.userData.speed = 0.5 + Math.random() * 0.5 // Variable speed
+
+    bubble.visible = false
+    waterBottleGroup.add(bubble)
+    bubbles.push(bubble)
+  }
+
+  waterBottleGroup.userData.bubbles = bubbles
+  waterBottleGroup.userData.bubblesActive = false
+}
+
+/**
+ * Start bubble animation
+ */
+export function startWaterBottleBubbles(waterBottleGroup: THREE.Group): void {
+  const bubbles = waterBottleGroup.userData.bubbles as THREE.Mesh[] | undefined
+  if (!bubbles) {
+    createWaterBottleBubbles(waterBottleGroup)
+  }
+
+  const activeBubbles = waterBottleGroup.userData.bubbles as THREE.Mesh[]
+  activeBubbles.forEach(bubble => {
+    bubble.visible = true
+  })
+
+  waterBottleGroup.userData.bubblesActive = true
+}
+
+/**
+ * Stop bubble animation
+ */
+export function stopWaterBottleBubbles(waterBottleGroup: THREE.Group): void {
+  const bubbles = waterBottleGroup.userData.bubbles as THREE.Mesh[] | undefined
+  if (!bubbles) return
+
+  bubbles.forEach(bubble => {
+    bubble.visible = false
+  })
+
+  waterBottleGroup.userData.bubblesActive = false
+}
+
+/**
+ * Update bubble positions (call in render loop)
+ * @param waterBottleGroup - The water bottle THREE.Group
+ * @param deltaTime - Time since last frame in seconds
+ */
+export function updateWaterBottleBubbles(waterBottleGroup: THREE.Group, deltaTime: number): void {
+  if (!waterBottleGroup.userData.bubblesActive) return
+
+  const bubbles = waterBottleGroup.userData.bubbles as THREE.Mesh[] | undefined
+  if (!bubbles) return
+
+  bubbles.forEach(bubble => {
+    // Move bubble up
+    bubble.position.y += BUBBLE_CONFIG.RISE_SPEED * deltaTime * bubble.userData.speed
+
+    // Add slight wobble
+    bubble.position.x += Math.sin(Date.now() * 0.005 + bubble.userData.startY) * 0.002
+    bubble.position.z += Math.cos(Date.now() * 0.004 + bubble.userData.startY) * 0.002
+
+    // Reset when reaching top
+    if (bubble.position.y > BUBBLE_CONFIG.MAX_Y) {
+      bubble.position.y = BUBBLE_CONFIG.MIN_Y
+
+      // Randomize position for variety
+      const angle = Math.random() * Math.PI * 2
+      const radius = Math.random() * BUBBLE_CONFIG.SPAWN_RADIUS
+      bubble.position.x = Math.cos(angle) * radius
+      bubble.position.z = Math.sin(angle) * radius
+    }
+  })
+}
+
+/**
+ * Update water level display in a water bottle model
+ * @param waterBottleGroup - The water bottle THREE.Group
+ * @param level - Water level 0-100 (percentage)
+ */
+export function updateWaterBottleLevel(waterBottleGroup: THREE.Group, level: number): void {
+  const waterMesh = waterBottleGroup.userData.waterMesh as THREE.Mesh | undefined
+  if (!waterMesh) {
+    console.warn('Water bottle does not have waterMesh in userData')
+    return
+  }
+
+  // Clamp level to 0-100
+  const clampedLevel = Math.max(0, Math.min(100, level))
+
+  // Scale water mesh height based on level
+  const scaleY = clampedLevel / 100
+  waterMesh.scale.y = Math.max(0.01, scaleY) // Never fully zero to avoid rendering issues
+
+  // Adjust position so water stays at bottom of bottle
+  // When full (scaleY = 1), water is at original position
+  // When empty (scaleY = 0.01), water should be at bottom
+  const fullHeight = waterBottleGroup.userData.waterFullHeight as number || WATER_FULL_HEIGHT
+  const baseY = waterBottleGroup.userData.waterBaseY as number || WATER_BASE_Y
+
+  // Calculate new Y position: base + half of current height
+  const currentHeight = fullHeight * scaleY
+  waterMesh.position.y = baseY + currentHeight / 2
+}
+

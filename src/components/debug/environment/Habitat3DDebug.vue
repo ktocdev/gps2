@@ -51,6 +51,15 @@
             @close="closeInventoryMenu"
             @select="handleAddItemToContainer"
           />
+
+          <!-- Water Bottle Menu -->
+          <WaterBottleMenu
+            v-if="showWaterBottleMenu"
+            :water-level="habitatConditions.waterLevel"
+            :position="waterBottleMenuPosition"
+            @close="closeWaterBottleMenu"
+            @refill="handleRefillWater"
+          />
         </div>
 
       </div>
@@ -66,9 +75,16 @@ import { use3DSync } from '../../../composables/use3DSync'
 import { updateGuineaPigAnimation } from '../../../composables/use3DGuineaPig'
 import { use3DItems } from '../../../composables/use3DItems'
 import { use3DPoop } from '../../../composables/use3DPoop'
-import { use3DHungerBehavior } from '../../../composables/3d/use3DHungerBehavior'
+import { use3DBehavior } from '../../../composables/3d/use3DBehavior'
 import { use3DMovement } from '../../../composables/3d/use3DMovement'
+import {
+  updateWaterBottleLevel,
+  startWaterBottleBubbles,
+  stopWaterBottleBubbles,
+  updateWaterBottleBubbles
+} from '../../../composables/3d-models/containers/water-bottles'
 import GuineaPigInfoMenu from '../../game/GuineaPigInfoMenu.vue'
+import WaterBottleMenu from '../../game/WaterBottleMenu.vue'
 import InventoryItemMenu from '../../basic/InventoryItemMenu.vue'
 import type { InventoryMenuItem } from '../../basic/InventoryItemMenu.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
@@ -192,8 +208,12 @@ const menuEmptyMessage = computed(() => {
   return 'No items available'
 })
 
-// 3D Hunger behavior composables registry (for autonomous behavior)
-const hungerBehaviors = new Map<string, ReturnType<typeof use3DHungerBehavior>>()
+// Unified 3D behavior composables registry (for autonomous behavior)
+const behaviors = new Map<string, ReturnType<typeof use3DBehavior>>()
+
+// Water bottle menu state
+const showWaterBottleMenu = ref(false)
+const waterBottleMenuPosition = ref({ x: 0, y: 0 })
 
 /**
  * Initialize guinea pigs in movement3DStore and start hunger behaviors
@@ -224,12 +244,27 @@ function initializeGuineaPigBehaviors() {
 
           movement3DStore.initializeGuineaPig(gp.id, validPos)
 
-          // Create and start hunger behavior
-          const hungerBehavior = use3DHungerBehavior(gp.id)
-          hungerBehaviors.set(gp.id, hungerBehavior)
-          hungerBehavior.start()
+          // Create and start unified behavior
+          const behavior = use3DBehavior(gp.id)
+          behaviors.set(gp.id, behavior)
 
-          console.log(`[Habitat3D] Initialized guinea pig ${gp.id} with hunger behavior`)
+          // Hook up bubble animation to drinking events
+          behavior.onDrinkingStart(() => {
+            const waterBottleModel = findWaterBottleModel()
+            if (waterBottleModel) {
+              startWaterBottleBubbles(waterBottleModel)
+            }
+          })
+          behavior.onDrinkingEnd(() => {
+            const waterBottleModel = findWaterBottleModel()
+            if (waterBottleModel) {
+              stopWaterBottleBubbles(waterBottleModel)
+            }
+          })
+
+          behavior.start()
+
+          console.log(`[Habitat3D] Initialized guinea pig ${gp.id} with unified behavior`)
         }
       }
 
@@ -239,11 +274,11 @@ function initializeGuineaPigBehaviors() {
 
       for (const oldId of oldIds) {
         if (!newIds.includes(oldId)) {
-          // Stop and remove hunger behavior
-          const behavior = hungerBehaviors.get(oldId)
+          // Stop and remove behavior
+          const behavior = behaviors.get(oldId)
           if (behavior) {
             behavior.stop()
-            hungerBehaviors.delete(oldId)
+            behaviors.delete(oldId)
           }
 
           // Remove from movement store
@@ -393,9 +428,9 @@ onUnmounted(() => {
   })
   cloudObjects = []
 
-  // Stop and clear all hunger behaviors
-  hungerBehaviors.forEach(behavior => behavior.stop())
-  hungerBehaviors.clear()
+  // Stop and clear all behaviors
+  behaviors.forEach(behavior => behavior.stop())
+  behaviors.clear()
 
   // Cleanup control mode
   if (controlMovement) {
@@ -418,6 +453,21 @@ onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
   window.removeEventListener('keydown', handleKeyDown)
 })
+
+/**
+ * Find the water bottle model in the scene
+ */
+function findWaterBottleModel(): THREE.Group | null {
+  if (!itemModels) return null
+
+  for (const [itemId, model] of itemModels.entries()) {
+    const item = suppliesStore.getItemById(itemId)
+    if (item?.stats?.itemType === 'water_bottle') {
+      return model
+    }
+  }
+  return null
+}
 
 // Animation loop
 function animate(currentTime: number = 0) {
@@ -445,6 +495,13 @@ function animate(currentTime: number = 0) {
 
   // Update cloud positions (drift slowly)
   updateClouds(deltaTime)
+
+  // Update water bottle water level and bubbles
+  const waterBottleModel = findWaterBottleModel()
+  if (waterBottleModel) {
+    updateWaterBottleLevel(waterBottleModel, habitatConditions.waterLevel)
+    updateWaterBottleBubbles(waterBottleModel, deltaTime)
+  }
 
   // Update selection ring position
   updateSelectionRing()
@@ -575,6 +632,32 @@ function handleCanvasClick(event: MouseEvent) {
         console.log(`Clicked ${clickedContainerType}:`, clickedContainerId)
         return
       }
+
+      // Check if water bottle was clicked
+      let clickedWaterBottle = false
+      itemModels.forEach((model, itemId) => {
+        let current: THREE.Object3D | null = clickedObject
+        while (current) {
+          if (current === model) {
+            const item = suppliesStore.getItemById(itemId)
+            if (item?.stats?.itemType === 'water_bottle') {
+              clickedWaterBottle = true
+              showWaterBottleMenu.value = true
+              waterBottleMenuPosition.value = {
+                x: event.clientX - rect.left,
+                y: event.clientY - rect.top
+              }
+              console.log('Clicked water bottle:', itemId)
+            }
+            break
+          }
+          current = current.parent
+        }
+      })
+
+      if (clickedWaterBottle) {
+        return
+      }
     }
 
     // Priority 3: Check if guinea pig was clicked
@@ -633,6 +716,9 @@ function handleCanvasClick(event: MouseEvent) {
   if (showInventoryMenu.value) {
     closeInventoryMenu()
   }
+  if (showWaterBottleMenu.value) {
+    closeWaterBottleMenu()
+  }
 }
 
 // Close the inventory menu
@@ -668,6 +754,17 @@ function handleAddItemToContainer(itemId: string) {
   closeInventoryMenu()
 }
 
+// Water bottle menu handlers
+function closeWaterBottleMenu() {
+  showWaterBottleMenu.value = false
+}
+
+function handleRefillWater() {
+  habitatConditions.refillWater()
+  console.log('[Habitat3D] Water bottle refilled')
+  closeWaterBottleMenu()
+}
+
 // Guinea pig menu handlers
 function handleDeselect() {
   selectedGuineaPigId.value = null
@@ -686,11 +783,11 @@ function handleTakeControl() {
   // Enter control mode
   controlledGuineaPigId.value = gpId
 
-  // Pause the autonomous hunger behavior
-  const behavior = hungerBehaviors.get(gpId)
+  // Pause the autonomous behavior
+  const behavior = behaviors.get(gpId)
   if (behavior) {
     behavior.pause()
-    console.log(`[Habitat3D] Paused hunger behavior for ${gpId}`)
+    console.log(`[Habitat3D] Paused behavior for ${gpId}`)
   }
 
   // Create movement controller for manual control
@@ -725,11 +822,11 @@ function releaseControl() {
     controlMovement = null
   }
 
-  // Resume autonomous hunger behavior
-  const behavior = hungerBehaviors.get(gpId)
+  // Resume autonomous behavior
+  const behavior = behaviors.get(gpId)
   if (behavior) {
     behavior.resume()
-    console.log(`[Habitat3D] Resumed hunger behavior for ${gpId}`)
+    console.log(`[Habitat3D] Resumed behavior for ${gpId}`)
   }
 
   // Clear control state
