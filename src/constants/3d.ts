@@ -93,6 +93,42 @@ export const ANIMATION_CONFIG = {
   } as const,
 } as const
 
+// Cloud Configuration - Two layers like the demo
+export const CLOUD_CONFIG = {
+  // High layer - further out and higher up
+  HIGH_LAYER: {
+    COUNT: 20,
+    MIN_HEIGHT: 8,
+    MAX_HEIGHT: 16,
+    MIN_DISTANCE: 35,
+    MAX_DISTANCE: 55,
+    SCALE: 1.0,
+  } as const,
+  // Low layer - closer and lower (more visible)
+  LOW_LAYER: {
+    COUNT: 15,
+    MIN_HEIGHT: 3,
+    MAX_HEIGHT: 6,
+    MIN_DISTANCE: 25,
+    MAX_DISTANCE: 40,
+    SCALE: 0.8,
+  } as const,
+  // Shared settings
+  DRIFT_SPEED: 0.3,
+  COLOR: 0xffffff,
+  OPACITY: 0.8,
+  // Cloud puff sizes (fluffier clouds)
+  PUFF_COUNT_MIN: 6,
+  PUFF_COUNT_MAX: 10,
+  PUFF_RADIUS: 1.5,
+  PUFF_SCALE_MIN: 1.0,
+  PUFF_SCALE_MAX: 2.0,
+  // Cluster spread for fluffiness
+  CLUSTER_SPREAD_X: 5,
+  CLUSTER_SPREAD_Y: 2,
+  CLUSTER_SPREAD_Z: 3,
+} as const
+
 // Item Model Configuration
 export const ITEM_CONFIG = {
   // Hay Configuration (Simplified for performance)

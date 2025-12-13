@@ -5,6 +5,7 @@ import { useGuineaPigStore } from '../stores/guineaPigStore'
 import { useMovement3DStore } from '../stores/movement3DStore'
 import { createGuineaPigModel, disposeGuineaPigModel } from './use3DGuineaPig'
 import { GRID_CONFIG, ANIMATION_CONFIG } from '../constants/3d'
+import { getGuineaPig3DColors } from '../constants/guineaPigColors'
 
 /**
  * Options for 3D sync behavior
@@ -76,13 +77,17 @@ export function use3DSync(worldGroup: THREE.Group, options: Use3DSyncOptions = {
       // Add models for active guinea pigs
       activeIds.forEach((guineaPigId) => {
         if (!guineaPigModels.has(guineaPigId)) {
-          // TODO: Get guinea pig and map appearance colors
-          // const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
-          const model = createGuineaPigModel({
-            // TODO: Map appearance colors from guineaPig.appearance
-          })
+          // Get guinea pig appearance data and map to 3D colors
+          const guineaPig = guineaPigStore.getGuineaPig(guineaPigId)
+          const colors = guineaPig
+            ? getGuineaPig3DColors(guineaPig.appearance.furColor, guineaPig.appearance.eyeColor)
+            : undefined
+
+          const model = createGuineaPigModel(colors)
           guineaPigModels.set(guineaPigId, model)
           worldGroup.add(model)
+
+          console.log(`[3DSync] Created model for ${guineaPig?.name || guineaPigId} with fur color: ${guineaPig?.appearance.furColor}`)
         }
       })
 

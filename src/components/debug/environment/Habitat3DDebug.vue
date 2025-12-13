@@ -63,6 +63,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { use3DScene } from '../../../composables/use3DScene'
 import { use3DCamera } from '../../../composables/use3DCamera'
 import { use3DSync } from '../../../composables/use3DSync'
+import { updateGuineaPigAnimation } from '../../../composables/use3DGuineaPig'
 import { use3DItems } from '../../../composables/use3DItems'
 import { use3DPoop } from '../../../composables/use3DPoop'
 import { use3DHungerBehavior } from '../../../composables/3d/use3DHungerBehavior'
@@ -77,7 +78,7 @@ import { useGameViewStore } from '../../../stores/gameViewStore'
 import { useMovement3DStore } from '../../../stores/movement3DStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
-import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG } from '../../../constants/3d'
+import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from '../../../constants/3d'
 import { disposeObject3D } from '../../../utils/three-cleanup'
 import * as THREE from 'three'
 
@@ -263,6 +264,7 @@ const { scene, camera, worldGroup, initRenderer, handleResize, cleanup: cleanupS
 let cleanupCamera: (() => void) | null = null
 let updateCameraPosition: (() => void) | null = null
 let animationId: number | null = null
+let lastAnimationTime: number = 0
 
 // Guinea pig models registry (from use3DSync)
 let guineaPigModels: Map<string, THREE.Group> | null = null
@@ -284,6 +286,9 @@ let controlMovement: ReturnType<typeof use3DMovement> | null = null
 // Environment objects that need disposal
 let environmentObjects: THREE.Object3D[] = []
 let beddingTexture: THREE.CanvasTexture | null = null
+
+// Cloud objects (added to scene, not worldGroup, so they don't rotate)
+let cloudObjects: THREE.Group[] = []
 
 // Item models registry
 let itemModels: Map<string, THREE.Group> | null = null
@@ -320,6 +325,9 @@ onMounted(() => {
 
   // Add basic environment
   addEnvironment()
+
+  // Create clouds in the sky
+  createClouds()
 
   // Create selection ring
   createSelectionRing()
@@ -378,6 +386,13 @@ onUnmounted(() => {
     beddingTexture = null
   }
 
+  // Dispose cloud objects
+  cloudObjects.forEach(cloud => {
+    worldGroup.remove(cloud)
+    disposeObject3D(cloud)
+  })
+  cloudObjects = []
+
   // Stop and clear all hunger behaviors
   hungerBehaviors.forEach(behavior => behavior.stop())
   hungerBehaviors.clear()
@@ -405,13 +420,31 @@ onUnmounted(() => {
 })
 
 // Animation loop
-function animate() {
+function animate(currentTime: number = 0) {
   animationId = requestAnimationFrame(animate)
+
+  // Calculate delta time in seconds
+  const deltaTime = lastAnimationTime ? (currentTime - lastAnimationTime) / 1000 : 0.016
+  lastAnimationTime = currentTime
 
   // Update camera position based on keyboard input
   if (updateCameraPosition) {
     updateCameraPosition()
   }
+
+  // Update guinea pig animations (blinking, walking)
+  if (guineaPigModels) {
+    guineaPigModels.forEach((model, guineaPigId) => {
+      // Get movement state from store to determine if walking
+      const state = movement3DStore.getGuineaPigState(guineaPigId)
+      const isMoving = state?.isMoving ?? false
+
+      updateGuineaPigAnimation(model, isMoving, deltaTime)
+    })
+  }
+
+  // Update cloud positions (drift slowly)
+  updateClouds(deltaTime)
 
   // Update selection ring position
   updateSelectionRing()
@@ -823,6 +856,135 @@ function createBeddingTexture(): THREE.CanvasTexture {
   texture.wrapT = THREE.RepeatWrapping
   texture.repeat.set(6, 6)
   return texture
+}
+
+// Create a single cloud from multiple sphere "puffs" (matching demo style)
+function createCloud(): THREE.Group {
+  const cloud = new THREE.Group()
+
+  // Cloud material - MeshBasicMaterial like the demo (no lighting effects)
+  const cloudMaterial = new THREE.MeshBasicMaterial({
+    color: CLOUD_CONFIG.COLOR,
+    transparent: true,
+    opacity: CLOUD_CONFIG.OPACITY,
+  })
+
+  // Random number of puffs for fluffy variety
+  const puffCount = CLOUD_CONFIG.PUFF_COUNT_MIN +
+    Math.floor(Math.random() * (CLOUD_CONFIG.PUFF_COUNT_MAX - CLOUD_CONFIG.PUFF_COUNT_MIN))
+
+  // Puff geometry - low poly spheres for soft cloud appearance
+  const puffGeo = new THREE.SphereGeometry(CLOUD_CONFIG.PUFF_RADIUS, 12, 10)
+
+  // Create the puffs in a fluffy cluster
+  for (let i = 0; i < puffCount; i++) {
+    const puff = new THREE.Mesh(puffGeo, cloudMaterial)
+
+    // Position puffs spread out for fluffiness
+    puff.position.set(
+      (Math.random() - 0.5) * CLOUD_CONFIG.CLUSTER_SPREAD_X,
+      (Math.random() - 0.5) * CLOUD_CONFIG.CLUSTER_SPREAD_Y,
+      (Math.random() - 0.5) * CLOUD_CONFIG.CLUSTER_SPREAD_Z
+    )
+
+    // Random scale for variety
+    const scale = CLOUD_CONFIG.PUFF_SCALE_MIN +
+      Math.random() * (CLOUD_CONFIG.PUFF_SCALE_MAX - CLOUD_CONFIG.PUFF_SCALE_MIN)
+    // Squash vertically slightly for natural cloud shape
+    puff.scale.set(scale, scale * 0.7, scale)
+
+    cloud.add(puff)
+  }
+
+  return cloud
+}
+
+// Create all clouds and position them in the sky (two layers like demo)
+function createClouds() {
+  const highLayer = CLOUD_CONFIG.HIGH_LAYER
+  const lowLayer = CLOUD_CONFIG.LOW_LAYER
+  const totalClouds = highLayer.COUNT + lowLayer.COUNT
+
+  console.log(`[Habitat3D] Creating ${totalClouds} clouds (${highLayer.COUNT} high, ${lowLayer.COUNT} low)...`)
+
+  // High layer clouds - further out and higher up
+  for (let i = 0; i < highLayer.COUNT; i++) {
+    const cloud = createCloud()
+
+    const angle = Math.random() * Math.PI * 2
+    const distance = highLayer.MIN_DISTANCE +
+      Math.random() * (highLayer.MAX_DISTANCE - highLayer.MIN_DISTANCE)
+    const height = highLayer.MIN_HEIGHT +
+      Math.random() * (highLayer.MAX_HEIGHT - highLayer.MIN_HEIGHT)
+
+    cloud.position.set(
+      Math.cos(angle) * distance,
+      height,
+      Math.sin(angle) * distance
+    )
+
+    // Face the center (like demo)
+    cloud.lookAt(0, height, 0)
+
+    // Store for animation
+    cloud.userData.angle = angle
+    cloud.userData.distance = distance
+    cloud.userData.height = height
+    cloud.userData.driftOffset = Math.random() * Math.PI * 2
+
+    worldGroup.add(cloud)
+    cloudObjects.push(cloud)
+  }
+
+  // Low layer clouds - closer and lower (more visible)
+  for (let i = 0; i < lowLayer.COUNT; i++) {
+    const cloud = createCloud()
+
+    const angle = Math.random() * Math.PI * 2
+    const distance = lowLayer.MIN_DISTANCE +
+      Math.random() * (lowLayer.MAX_DISTANCE - lowLayer.MIN_DISTANCE)
+    const height = lowLayer.MIN_HEIGHT +
+      Math.random() * (lowLayer.MAX_HEIGHT - lowLayer.MIN_HEIGHT)
+
+    cloud.position.set(
+      Math.cos(angle) * distance,
+      height,
+      Math.sin(angle) * distance
+    )
+
+    // Scale down low layer clouds (like demo)
+    cloud.scale.setScalar(lowLayer.SCALE)
+
+    // Face the center (like demo)
+    cloud.lookAt(0, height, 0)
+
+    // Store for animation
+    cloud.userData.angle = angle
+    cloud.userData.distance = distance
+    cloud.userData.height = height
+    cloud.userData.driftOffset = Math.random() * Math.PI * 2
+
+    worldGroup.add(cloud)
+    cloudObjects.push(cloud)
+  }
+
+  console.log(`[Habitat3D] ${cloudObjects.length} clouds created and added to worldGroup`)
+}
+
+// Update cloud positions - drift slowly around the sky
+function updateClouds(deltaTime: number) {
+  cloudObjects.forEach(cloud => {
+    // Slowly rotate around the scene
+    cloud.userData.angle += deltaTime * CLOUD_CONFIG.DRIFT_SPEED * 0.02
+
+    // Add gentle bobbing motion
+    const bob = Math.sin(cloud.userData.angle * 2 + cloud.userData.driftOffset) * 0.5
+
+    // Update position
+    cloud.position.x = Math.cos(cloud.userData.angle) * cloud.userData.distance
+    cloud.position.z = Math.sin(cloud.userData.angle) * cloud.userData.distance
+    cloud.position.y = cloud.userData.height + bob
+  })
 }
 </script>
 

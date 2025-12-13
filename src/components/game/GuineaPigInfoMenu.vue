@@ -11,6 +11,8 @@
     <div class="guinea-pig-info-menu__info">
       <Badge size="sm">{{ guineaPig.breed }}</Badge>
       <Badge size="sm">{{ genderDisplay }}</Badge>
+      <Badge size="sm">{{ furColorDisplay }}</Badge>
+      <Badge size="sm">{{ furPatternDisplay }}</Badge>
     </div>
 
     <div class="guinea-pig-info-menu__needs">
@@ -59,6 +61,18 @@ defineEmits<{
 
 const genderDisplay = computed(() => {
   return props.guineaPig.gender === 'male' ? 'Male' : 'Female'
+})
+
+const furColorDisplay = computed(() => {
+  const color = props.guineaPig.appearance.furColor
+  // Capitalize first letter of each word
+  return color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+})
+
+const furPatternDisplay = computed(() => {
+  const pattern = props.guineaPig.appearance.furPattern
+  // Capitalize first letter of each word
+  return pattern.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
 })
 
 // Define which needs to display and their labels
