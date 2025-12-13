@@ -64,6 +64,11 @@
 
       </div>
     </div>
+
+    <!-- Needs Panel (below 3D canvas) -->
+    <div v-if="hasActiveSession && !is2DMode" class="habitat-3d-debug__needs-row">
+      <NeedsPanel />
+    </div>
   </div>
 </template>
 
@@ -86,6 +91,7 @@ import {
 import GuineaPigInfoMenu from '../../game/GuineaPigInfoMenu.vue'
 import WaterBottleMenu from '../../game/WaterBottleMenu.vue'
 import InventoryItemMenu from '../../basic/InventoryItemMenu.vue'
+import NeedsPanel from './NeedsPanel.vue'
 import type { InventoryMenuItem } from '../../basic/InventoryItemMenu.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
@@ -94,6 +100,7 @@ import { useGameViewStore } from '../../../stores/gameViewStore'
 import { useMovement3DStore } from '../../../stores/movement3DStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useGameController } from '../../../stores/gameController'
 import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from '../../../constants/3d'
 import { disposeObject3D } from '../../../utils/three-cleanup'
 import * as THREE from 'three'
@@ -115,6 +122,7 @@ const gameViewStore = useGameViewStore()
 const movement3DStore = useMovement3DStore()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const gameController = useGameController()
 
 // Inventory menu state (for bowls and hay racks)
 const selectedContainerId = ref<string | null>(null)
@@ -482,14 +490,14 @@ function animate(currentTime: number = 0) {
     updateCameraPosition()
   }
 
-  // Update guinea pig animations (blinking, walking)
+  // Update guinea pig animations (blinking, walking, breathing)
   if (guineaPigModels) {
     guineaPigModels.forEach((model, guineaPigId) => {
       // Get movement state from store to determine if walking
       const state = movement3DStore.getGuineaPigState(guineaPigId)
       const isMoving = state?.isMoving ?? false
 
-      updateGuineaPigAnimation(model, isMoving, deltaTime)
+      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused)
     })
   }
 
@@ -1128,6 +1136,11 @@ function updateClouds(deltaTime: number) {
   border-radius: var(--radius-sm);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.habitat-3d-debug__needs-row {
+  margin-block-start: var(--spacing-md);
+  max-inline-size: 400px;
 }
 
 </style>

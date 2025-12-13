@@ -94,10 +94,15 @@ const needsList = computed(() => [
   { key: 'chew', label: 'Chew', value: props.guineaPig.needs.chew },
 ])
 
+/**
+ * Get color class based on need value
+ * Matches NeedRow thresholds: Green (60-100) → Grey (40-59) → Yellow (30-39) → Red (0-29)
+ */
 function getNeedColorClass(value: number): string {
-  if (value >= 70) return 'guinea-pig-info-menu__need-fill--high'
-  if (value >= 40) return 'guinea-pig-info-menu__need-fill--medium'
-  return 'guinea-pig-info-menu__need-fill--low'
+  if (value >= 60) return 'guinea-pig-info-menu__need-fill--satisfied'
+  if (value >= 40) return 'guinea-pig-info-menu__need-fill--good'
+  if (value >= 30) return 'guinea-pig-info-menu__need-fill--medium'
+  return 'guinea-pig-info-menu__need-fill--critical'
 }
 </script>
 
@@ -193,15 +198,19 @@ function getNeedColorClass(value: number): string {
   transition: width var(--transition-normal);
 }
 
-.guinea-pig-info-menu__need-fill--high {
+.guinea-pig-info-menu__need-fill--satisfied {
   background-color: var(--color-success);
+}
+
+.guinea-pig-info-menu__need-fill--good {
+  background-color: var(--color-text-muted);
 }
 
 .guinea-pig-info-menu__need-fill--medium {
   background-color: var(--color-warning);
 }
 
-.guinea-pig-info-menu__need-fill--low {
+.guinea-pig-info-menu__need-fill--critical {
   background-color: var(--color-danger);
 }
 

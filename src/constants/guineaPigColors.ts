@@ -69,8 +69,8 @@ export const FUR_COLOR_PALETTES: Record<string, GuineaPigColorPalette> = {
     skin: 0xa9a9a9,   // Light gray skin
   },
   red: {
-    fur: 0xb22222,
-    ear: 0x8b0000,    // Dark red
+    fur: 0xdb3a00,    // Bright rust/ginger
+    ear: 0x9a2900,    // Darker rust
     skin: 0xcd853f,   // Peru/tan skin
   },
   gold: {

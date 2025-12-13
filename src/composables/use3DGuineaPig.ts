@@ -141,6 +141,7 @@ export function createGuineaPigModel(colors?: Partial<GuineaPig3DColors>): THREE
       nextBlinkTime: Date.now() + Math.random() * 3000 + 2000, // 2-5 seconds
       walkPhase: 0,
       isWalking: false,
+      breathPhase: Math.random() * Math.PI * 2, // Random start phase for variety
       // Store original foot positions for animation
       footRestPositions: {
         fl: { y: flFoot.position.y, z: flFoot.position.z },
@@ -168,22 +169,40 @@ const BLINK_MAX_INTERVAL = 6000 // ms
 const WALK_SPEED = 12 // Animation speed multiplier
 const FOOT_LIFT_HEIGHT = 0.08
 const FOOT_STRIDE_LENGTH = 0.1
+// Breathing animation
+const BREATH_SPEED = 1.5 // Slow breathing cycle
+const BREATH_SCALE_AMOUNT = 0.005 // Very subtle 0.5% scale variation (matches demo)
 
 /**
  * Update guinea pig animations (call every frame)
  * @param model - The guinea pig THREE.Group
  * @param isMoving - Whether the guinea pig is currently walking
  * @param deltaTime - Time since last frame in seconds
+ * @param isPaused - Whether animations should be frozen (game paused)
  */
 export function updateGuineaPigAnimation(
   model: THREE.Group,
   isMoving: boolean,
-  deltaTime: number
+  deltaTime: number,
+  isPaused: boolean = false
 ): void {
-  const { leftEye, rightEye, feet, animation } = model.userData
+  const { body, leftEye, rightEye, feet, animation } = model.userData
   if (!animation) return
 
+  // When paused, freeze all animations completely
+  if (isPaused) {
+    return
+  }
+
   const now = Date.now()
+
+  // === BREATHING ANIMATION ===
+  // Subtle body scale oscillation for lifelike appearance
+  animation.breathPhase += deltaTime * BREATH_SPEED
+  const breathScale = 1 + Math.sin(animation.breathPhase) * BREATH_SCALE_AMOUNT
+  if (body) {
+    body.scale.set(1, breathScale, 1) // Y-axis only (matches demo)
+  }
 
   // === BLINKING ANIMATION ===
   if (animation.isBlinking) {
