@@ -20,6 +20,8 @@ const HUNGER_THRESHOLD = 70 // Seek food when hunger drops below this
 const EATING_DURATION = 3000 // Time to eat in milliseconds
 const BEHAVIOR_TICK_INTERVAL = 2000 // Check behavior every 2 seconds
 const HUNGER_RESTORE_AMOUNT = 50 // Amount to restore hunger when eating
+const POOP_INTERVAL_MS = 30000 // 30 seconds between poops
+const SUBGRID_SCALE = 4 // Subgrid is 4x finer than main grid
 
 export function use3DHungerBehavior(guineaPigId: string) {
   const movement3DStore = useMovement3DStore()
@@ -110,6 +112,39 @@ export function use3DHungerBehavior(guineaPigId: string) {
   }
 
   /**
+   * Check and handle autonomous poop dropping
+   * Guinea pigs poop naturally every 30 seconds
+   */
+  function checkAutonomousPooping(): void {
+    const gp = getGuineaPig()
+    if (!gp) return
+
+    const timeSinceLastPoop = Date.now() - gp.lastPoopTime
+
+    if (timeSinceLastPoop > POOP_INTERVAL_MS) {
+      // Get guinea pig's current world position
+      const state = movement3DStore.getGuineaPigState(guineaPigId)
+      if (!state) return
+
+      // Convert world position to grid coordinates
+      const gridPos = movement3DStore.worldToGrid(state.worldPosition.x, state.worldPosition.z)
+
+      // Convert grid to subgrid with random offset (for visual variety)
+      const subgridX = gridPos.col * SUBGRID_SCALE + Math.floor(Math.random() * SUBGRID_SCALE)
+      const subgridY = gridPos.row * SUBGRID_SCALE + Math.floor(Math.random() * SUBGRID_SCALE)
+
+      // Add poop at guinea pig's current position
+      habitatConditions.addPoop(subgridX, subgridY)
+
+      // Update last poop time with random offset to desync multiple guinea pigs
+      const randomOffset = -Math.random() * 10000 // -0s to -10s
+      gp.lastPoopTime = Date.now() + randomOffset
+
+      console.log(`[Hunger3D] Guinea pig ${guineaPigId} pooped at grid (${gridPos.col}, ${gridPos.row}) -> subgrid (${subgridX}, ${subgridY})`)
+    }
+  }
+
+  /**
    * Main behavior tick - decides what the guinea pig should do
    */
   function tick(): void {
@@ -117,6 +152,9 @@ export function use3DHungerBehavior(guineaPigId: string) {
     if (!gameController.isGameActive) {
       return
     }
+
+    // Check for autonomous pooping (environmental behavior)
+    checkAutonomousPooping()
 
     // Don't interrupt eating
     if (isEating.value) {
