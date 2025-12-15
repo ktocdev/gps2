@@ -84,6 +84,30 @@
   --color-accent-green-800: #166534;
   --color-accent-green-900: #14532d;
 
+  /* Accent Colors - Violet Theme */
+  --color-accent-violet-50: #f5f3ff;
+  --color-accent-violet-100: #ede9fe;
+  --color-accent-violet-200: #ddd6fe;
+  --color-accent-violet-300: #c4b5fd;
+  --color-accent-violet-400: #a78bfa;
+  --color-accent-violet-500: #8b5cf6;
+  --color-accent-violet-600: #7c3aed;
+  --color-accent-violet-700: #6d28d9;
+  --color-accent-violet-800: #5b21b6;
+  --color-accent-violet-900: #4c1d95;
+
+  /* Accent Colors - Yellow Theme */
+  --color-accent-yellow-50: #fefce8;
+  --color-accent-yellow-100: #fef9c3;
+  --color-accent-yellow-200: #fef08a;
+  --color-accent-yellow-300: #fde047;
+  --color-accent-yellow-400: #facc15;
+  --color-accent-yellow-500: #eab308;
+  --color-accent-yellow-600: #ca8a04;
+  --color-accent-yellow-700: #a16207;
+  --color-accent-yellow-800: #854d0e;
+  --color-accent-yellow-900: #713f12;
+
   /* Primary Action Colors (Pink) - Updated for contrast */
   --color-primary: var(--color-accent-pink-600);    /* Now #db2777 for better small text contrast */
   --color-primary-hover: var(--color-accent-pink-700);

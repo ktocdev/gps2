@@ -19,7 +19,7 @@ import { use3DMovement } from './use3DMovement'
 import type { Vector3D } from '../../types/movement3d'
 
 // Behavior types (extensible for future needs)
-export type Behavior3DType = 'eat' | 'drink' | 'wander'
+export type Behavior3DType = 'eat' | 'drink' | 'seek_shelter' | 'sleep' | 'groom' | 'wander'
 
 // Goal structure matching 2D pattern
 export interface Behavior3DGoal {
@@ -27,36 +27,54 @@ export interface Behavior3DGoal {
   target: Vector3D | null
   priority: number
   estimatedDuration: number
-  needSatisfied?: 'hunger' | 'thirst'
+  needSatisfied?: 'hunger' | 'thirst' | 'shelter' | 'energy' | 'hygiene'
   targetItemId?: string
 }
 
 // Activity states for UI/animation
-export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking'
+export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking' | 'sheltering' | 'sleeping' | 'grooming'
 
 // Configuration
 const BEHAVIOR_TICK_INTERVAL = 2000 // Check behavior every 2 seconds
 
 const THRESHOLDS = {
-  hunger: 70,  // Seek food when hunger < 70
-  thirst: 65   // Seek water when thirst < 65
+  hunger: 70,   // Seek food when hunger < 70
+  thirst: 65,   // Seek water when thirst < 65
+  shelter: 50,  // Seek shelter when shelter < 50
+  energy: 40,   // Seek sleep when energy < 40
+  hygiene: 60   // Groom when hygiene < 60
 }
 
 const COOLDOWNS = {
-  eat: 10000,    // 10 seconds after eating
-  drink: 8000,   // 8 seconds after drinking
-  wander: 3000   // 3 seconds between wanders
+  eat: 10000,         // 10 seconds after eating
+  drink: 8000,        // 8 seconds after drinking
+  seek_shelter: 60000, // 1 minute after sheltering
+  sleep: 120000,      // 2 minutes after sleeping
+  groom: 30000,       // 30 seconds after grooming
+  wander: 3000        // 3 seconds between wanders
 }
 
 const DURATIONS = {
-  eat: 3000,     // 3 seconds to eat
-  drink: 3000    // 3 seconds to drink
+  eat: 3000,          // 3 seconds to eat
+  drink: 3000,        // 3 seconds to drink
+  seek_shelter: 8000, // 8 seconds in shelter
+  sleep: 5000,        // Base 5 seconds to sleep (multiplied by tiredness)
+  groom: 4000         // Base 4 seconds to groom (modified by cleanliness)
 }
 
 const RESTORE_AMOUNTS = {
   hunger: 50,    // Restore 50 hunger when eating
-  thirst: 35     // Restore 35 thirst when drinking
+  thirst: 35,    // Restore 35 thirst when drinking
+  shelter: 30,   // Restore 30 shelter when sheltering
+  energy: 25,    // Base 25 energy when sleeping (multiplied by quality)
+  hygiene: 15    // Base 15 hygiene when grooming (modified by cleanliness)
 }
+
+// Shelter entrance offset (igloo entrance faces +Z direction)
+const SHELTER_ENTRANCE_OFFSET = 5.0
+
+// Shelter side offset (left/right positioning for two guinea pigs)
+const SHELTER_SIDE_OFFSET = 1.2 // Distance from center to left/right side
 
 // Poop configuration
 const POOP_INTERVAL_MS = 30000 // 30 seconds between poops
@@ -86,6 +104,8 @@ export function use3DBehavior(guineaPigId: string) {
   let onDrinkingEndCallback: (() => void) | null = null
   let onEatingStartCallback: (() => void) | null = null
   let onEatingEndCallback: (() => void) | null = null
+  let onShelteringStartCallback: ((shelterPosition: Vector3D) => void) | null = null
+  let onShelteringEndCallback: (() => void) | null = null
 
   /**
    * Get the guinea pig data
@@ -177,6 +197,141 @@ export function use3DBehavior(guineaPigId: string) {
   }
 
   /**
+   * Find the position of a shelter (igloo) in world coordinates
+   * Returns the entrance position (in front of the shelter)
+   */
+  function findShelterPosition(): { entrancePosition: Vector3D; shelterCenter: Vector3D; itemId: string } | null {
+    const itemPositions = habitatConditions.itemPositions
+
+    // Find shelter items (igloo, hideout, shelter)
+    for (const [itemId, gridPos] of itemPositions.entries()) {
+      const item = suppliesStore.getItemById(itemId)
+      const itemType = item?.stats?.itemType || ''
+      const itemIdLower = itemId.toLowerCase()
+
+      const isShelter =
+        itemType === 'shelter' ||
+        itemIdLower.includes('igloo') ||
+        itemIdLower.includes('shelter') ||
+        itemIdLower.includes('hideout')
+
+      if (isShelter) {
+        const shelterCenter = movement3DStore.gridToWorld(gridPos.x, gridPos.y)
+
+        // Entrance is in front of the shelter (+Z direction)
+        const entrancePosition: Vector3D = {
+          x: shelterCenter.x,
+          y: 0,
+          z: shelterCenter.z + SHELTER_ENTRANCE_OFFSET
+        }
+
+        return {
+          entrancePosition,
+          shelterCenter,
+          itemId
+        }
+      }
+    }
+
+    return null
+  }
+
+  /**
+   * Find the position to sleep in world coordinates
+   * Priority: Bed > Shelter > null (sleep in place)
+   * Returns sleep location info with flags for quality calculation
+   */
+  function findSleepPosition(): {
+    position: Vector3D
+    entrancePosition?: Vector3D
+    itemId: string | null
+    isBed: boolean
+    isShelter: boolean
+  } | null {
+    const itemPositions = habitatConditions.itemPositions
+
+    // First priority: Find a bed
+    for (const [itemId, gridPos] of itemPositions.entries()) {
+      const item = suppliesStore.getItemById(itemId)
+      const itemType = item?.stats?.itemType || ''
+      const itemIdLower = itemId.toLowerCase()
+
+      const isBed =
+        itemType === 'bed' ||
+        itemIdLower.includes('bed') ||
+        itemIdLower.includes('sleeping')
+
+      if (isBed) {
+        return {
+          position: movement3DStore.gridToWorld(gridPos.x, gridPos.y),
+          itemId,
+          isBed: true,
+          isShelter: false
+        }
+      }
+    }
+
+    // Second priority: Find a shelter (igloo, hideout)
+    const shelter = findShelterPosition()
+    if (shelter) {
+      return {
+        position: shelter.entrancePosition,
+        entrancePosition: shelter.entrancePosition,
+        itemId: shelter.itemId,
+        isBed: false,
+        isShelter: true
+      }
+    }
+
+    // No bed or shelter found - will sleep in place
+    return null
+  }
+
+  /**
+   * Calculate sleep quality multiplier based on sleep location
+   */
+  function calculateSleepQuality(itemId: string | null): number {
+    if (!itemId) return 1.0 // Floor sleeping
+
+    let quality = 1.35 // Base item bonus
+
+    const itemIdLower = itemId.toLowerCase()
+
+    // Shelter synergy bonus
+    if (
+      itemIdLower.includes('shelter') ||
+      itemIdLower.includes('igloo') ||
+      itemIdLower.includes('hideout') ||
+      itemIdLower.includes('tunnel')
+    ) {
+      quality += 0.30
+    }
+
+    // Bed preference bonus (beds are optimal for sleep)
+    if (itemIdLower.includes('bed') || itemIdLower.includes('sleeping')) {
+      quality += 0.20
+    }
+
+    return quality // Max: 1.85x
+  }
+
+  /**
+   * Calculate sleep duration based on energy level
+   */
+  function calculateSleepDuration(energyLevel: number): number {
+    const baseDuration = DURATIONS.sleep
+
+    let multiplier = 1.2
+    if (energyLevel < 20) {
+      multiplier = 2.0 // Very tired = longer sleep
+    } else if (energyLevel < 40) {
+      multiplier = 1.5
+    }
+
+    return Math.min(baseDuration * multiplier, 15000) // Max 15 seconds
+  }
+
+  /**
    * Select the highest priority behavior goal (2D pattern)
    */
   function selectBehaviorGoal(): Behavior3DGoal | null {
@@ -216,6 +371,47 @@ export function use3DBehavior(guineaPigId: string) {
           needSatisfied: 'thirst'
         })
       }
+    }
+
+    // MODERATE NEEDS (Priority 40-70)
+
+    // Shelter < threshold
+    if (needs.shelter < THRESHOLDS.shelter && !isOnCooldown('seek_shelter')) {
+      const shelter = findShelterPosition()
+      if (shelter) {
+        goals.push({
+          type: 'seek_shelter',
+          target: shelter.entrancePosition,
+          targetItemId: shelter.itemId,
+          priority: calculateNeedPriority(needs.shelter, THRESHOLDS.shelter, 70),
+          estimatedDuration: DURATIONS.seek_shelter,
+          needSatisfied: 'shelter'
+        })
+      }
+    }
+
+    // Energy < threshold (sleep)
+    if (needs.energy < THRESHOLDS.energy && !isOnCooldown('sleep')) {
+      const sleepLocation = findSleepPosition()
+      goals.push({
+        type: 'sleep',
+        target: sleepLocation?.position ?? null,
+        targetItemId: sleepLocation?.itemId ?? undefined,
+        priority: calculateNeedPriority(needs.energy, THRESHOLDS.energy, 80),
+        estimatedDuration: calculateSleepDuration(needs.energy),
+        needSatisfied: 'energy'
+      })
+    }
+
+    // Hygiene < threshold (groom in place)
+    if (needs.hygiene < THRESHOLDS.hygiene && !isOnCooldown('groom')) {
+      goals.push({
+        type: 'groom',
+        target: null, // Groom in place, no movement needed
+        priority: calculateNeedPriority(needs.hygiene, THRESHOLDS.hygiene, 50),
+        estimatedDuration: DURATIONS.groom,
+        needSatisfied: 'hygiene'
+      })
     }
 
     // LOW PRIORITY (Priority 20-30)
@@ -260,6 +456,15 @@ export function use3DBehavior(guineaPigId: string) {
         break
       case 'drink':
         executeDrinkBehavior(goal)
+        break
+      case 'seek_shelter':
+        executeShelterBehavior(goal)
+        break
+      case 'sleep':
+        executeSleepBehavior(goal)
+        break
+      case 'groom':
+        executeGroomBehavior()
         break
       case 'wander':
         executeWanderBehavior()
@@ -390,6 +595,368 @@ export function use3DBehavior(guineaPigId: string) {
     }
   }
 
+  // Groom callbacks
+  let onGroomingStartCallback: (() => void) | null = null
+  let onGroomingEndCallback: (() => void) | null = null
+
+  /**
+   * Execute groom behavior - guinea pig grooms itself in place
+   * Personality cleanliness trait affects duration and restoration
+   */
+  function executeGroomBehavior(): void {
+    currentActivity.value = 'grooming'
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} started grooming`)
+
+    // Get personality cleanliness trait for duration/restoration modifiers
+    const gp = getGuineaPig()
+    const cleanliness = gp?.personality?.cleanliness ?? 5 // Default to 5 if not set
+
+    // Cleanliness 1-10 affects:
+    // - Higher cleanliness = more thorough grooming = more hygiene restored
+    // - Higher cleanliness = longer grooming sessions
+    const cleanlinessMultiplier = 0.5 + (cleanliness / 20) // Range: 0.55 to 1.0
+    const durationMultiplier = 0.7 + (cleanliness / 20) // Range: 0.75 to 1.2
+
+    const adjustedDuration = Math.floor(DURATIONS.groom * durationMultiplier)
+
+    if (onGroomingStartCallback) {
+      onGroomingStartCallback()
+    }
+
+    actionTimeout = window.setTimeout(() => {
+      finishGrooming(cleanlinessMultiplier)
+    }, adjustedDuration)
+  }
+
+  /**
+   * Finish grooming and restore hygiene
+   */
+  function finishGrooming(cleanlinessMultiplier: number): void {
+    currentActivity.value = 'idle'
+    currentGoal.value = null
+
+    // Calculate hygiene restoration based on cleanliness personality
+    // Base restoration: 15, personality range: ~8 to 15
+    const hygieneRestored = Math.floor(RESTORE_AMOUNTS.hygiene * cleanlinessMultiplier)
+    guineaPigStore.satisfyNeed(guineaPigId, 'hygiene', hygieneRestored)
+    setCooldown('groom', COOLDOWNS.groom)
+
+    if (onGroomingEndCallback) {
+      onGroomingEndCallback()
+    }
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished grooming (restored ${hygieneRestored} hygiene)`)
+
+    // Trigger next behavior tick
+    tick()
+  }
+
+  // Store shelter positions for exit animation
+  let currentShelterCenter: Vector3D | null = null
+  let currentShelterEntrance: Vector3D | null = null
+  let shelterSide: 'left' | 'right' = 'left' // Which side of shelter this guinea pig uses
+
+  /**
+   * Check if another guinea pig is already inside the shelter
+   * Returns true if another guinea pig is within shelter radius of center
+   */
+  function isAnotherGuineaPigInShelter(shelterCenter: Vector3D): boolean {
+    const SHELTER_RADIUS = 3.5 // Igloo radius
+
+    // Check all guinea pig positions
+    for (const gp of guineaPigStore.activeGuineaPigs) {
+      if (gp.id === guineaPigId) continue // Skip self
+
+      const otherState = movement3DStore.getGuineaPigState(gp.id)
+      if (!otherState) continue
+
+      // Calculate distance from shelter center
+      const dx = otherState.worldPosition.x - shelterCenter.x
+      const dz = otherState.worldPosition.z - shelterCenter.z
+      const distance = Math.sqrt(dx * dx + dz * dz)
+
+      if (distance < SHELTER_RADIUS) {
+        return true
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * Get the position inside shelter with left/right offset
+   */
+  function getShelterSlotPosition(shelterCenter: Vector3D, side: 'left' | 'right'): Vector3D {
+    const xOffset = side === 'left' ? -SHELTER_SIDE_OFFSET : SHELTER_SIDE_OFFSET
+    return {
+      x: shelterCenter.x + xOffset,
+      y: 0,
+      z: shelterCenter.z
+    }
+  }
+
+  /**
+   * Execute shelter behavior - guinea pig seeks shelter when shelter need is low
+   */
+  function executeShelterBehavior(goal: Behavior3DGoal): void {
+    if (!goal.target) return
+
+    currentActivity.value = 'walking'
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} seeking shelter`)
+
+    // Find and store shelter positions for the full animation sequence
+    const shelter = findShelterPosition()
+    if (shelter) {
+      currentShelterCenter = shelter.shelterCenter
+      currentShelterEntrance = shelter.entrancePosition
+    }
+
+    // Walk to entrance using pathfinding (avoids obstacles on the way)
+    movement.moveTo(goal.target)
+    movement.onArrival(() => {
+      // Now at entrance, begin enter sequence
+      enterShelter()
+    })
+  }
+
+  /**
+   * Enter the shelter - walk from entrance to center, then rotate to face entrance
+   */
+  async function enterShelter(): Promise<void> {
+    if (!currentShelterCenter) {
+      finishSheltering()
+      return
+    }
+
+    currentActivity.value = 'sheltering'
+
+    // Determine which side to use (left if first, right if another is already inside)
+    shelterSide = isAnotherGuineaPigInShelter(currentShelterCenter) ? 'right' : 'left'
+    const slotPosition = getShelterSlotPosition(currentShelterCenter, shelterSide)
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} entering shelter (${shelterSide} side)`)
+
+    // Walk directly into shelter slot position (bypass pathfinding - we're intentionally entering)
+    movement.moveDirectTo(slotPosition)
+
+    // Wait for arrival at center
+    await new Promise<void>(resolve => {
+      movement.onArrival(() => resolve())
+    })
+
+    // Rotate to face the entrance (+Z direction, which is rotation 0)
+    // The guinea pig is facing -Z (toward center) so needs to turn around
+    await movement.rotateTo(0, 600) // 0 radians = facing +Z
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} settled in shelter`)
+
+    // Notify external components
+    if (onShelteringStartCallback) {
+      onShelteringStartCallback(currentShelterCenter)
+    }
+
+    // Stay in shelter for duration, then exit
+    actionTimeout = window.setTimeout(() => {
+      exitShelter()
+    }, DURATIONS.seek_shelter)
+  }
+
+  /**
+   * Exit the shelter - walk from center to entrance
+   */
+  async function exitShelter(): Promise<void> {
+    if (!currentShelterEntrance) {
+      finishSheltering()
+      return
+    }
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} exiting shelter`)
+
+    // Walk directly out to entrance
+    movement.moveDirectTo(currentShelterEntrance)
+
+    // Wait for arrival at entrance
+    await new Promise<void>(resolve => {
+      movement.onArrival(() => resolve())
+    })
+
+    // Notify external components
+    if (onShelteringEndCallback) {
+      onShelteringEndCallback()
+    }
+
+    finishSheltering()
+  }
+
+  /**
+   * Finish sheltering and restore shelter need
+   */
+  function finishSheltering(): void {
+    currentActivity.value = 'idle'
+    currentGoal.value = null
+
+    guineaPigStore.satisfyNeed(guineaPigId, 'shelter', RESTORE_AMOUNTS.shelter)
+    setCooldown('seek_shelter', COOLDOWNS.seek_shelter)
+
+    // Also restore comfort slightly when sheltering
+    guineaPigStore.satisfyNeed(guineaPigId, 'comfort', 15)
+
+    // Clear shelter positions
+    currentShelterCenter = null
+    currentShelterEntrance = null
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished sheltering`)
+
+    // Trigger next behavior tick
+    tick()
+  }
+
+  // Store sleep location info for the sleep sequence
+  let currentSleepLocation: {
+    position: Vector3D
+    entrancePosition?: Vector3D
+    itemId: string | null
+    isBed: boolean
+    isShelter: boolean
+  } | null = null
+  let sleepQuality = 1.0
+
+  // Callbacks for sleep
+  let onSleepingStartCallback: ((position: Vector3D) => void) | null = null
+  let onSleepingEndCallback: (() => void) | null = null
+
+  /**
+   * Execute sleep behavior - guinea pig seeks sleep when energy is low
+   */
+  function executeSleepBehavior(goal: Behavior3DGoal): void {
+    currentActivity.value = 'walking'
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} tired, seeking sleep`)
+
+    // Find sleep location
+    currentSleepLocation = findSleepPosition()
+    sleepQuality = calculateSleepQuality(goal.targetItemId ?? null)
+
+    if (!currentSleepLocation) {
+      // Sleep in place (on the floor)
+      console.log(`[Behavior3D] Guinea pig ${guineaPigId} will sleep on the floor`)
+      startSleeping()
+      return
+    }
+
+    if (currentSleepLocation.isShelter) {
+      // Sleeping in shelter - use shelter entry animation
+      const shelter = findShelterPosition()
+      if (shelter) {
+        currentShelterCenter = shelter.shelterCenter
+        currentShelterEntrance = shelter.entrancePosition
+      }
+      movement.moveTo(currentSleepLocation.position)
+      movement.onArrival(() => {
+        enterShelterForSleep()
+      })
+    } else {
+      // Sleeping in bed - just walk to it
+      movement.moveTo(currentSleepLocation.position)
+      movement.onArrival(() => {
+        startSleeping()
+      })
+    }
+  }
+
+  /**
+   * Enter shelter for sleeping - reuses shelter animation sequence
+   */
+  async function enterShelterForSleep(): Promise<void> {
+    if (!currentShelterCenter) {
+      startSleeping()
+      return
+    }
+
+    // Determine which side to use (left if first, right if another is already inside)
+    shelterSide = isAnotherGuineaPigInShelter(currentShelterCenter) ? 'right' : 'left'
+    const slotPosition = getShelterSlotPosition(currentShelterCenter, shelterSide)
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} entering shelter to sleep (${shelterSide} side)`)
+
+    // Walk directly into shelter slot position (bypass pathfinding)
+    movement.moveDirectTo(slotPosition)
+
+    // Wait for arrival at center
+    await new Promise<void>(resolve => {
+      movement.onArrival(() => resolve())
+    })
+
+    // Rotate to face the entrance
+    await movement.rotateTo(0, 600)
+
+    // Now start sleeping
+    startSleeping()
+  }
+
+  /**
+   * Start sleeping at current location
+   */
+  function startSleeping(): void {
+    currentActivity.value = 'sleeping'
+    const gp = getGuineaPig()
+    const sleepDuration = gp ? calculateSleepDuration(gp.needs.energy) : DURATIONS.sleep
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} started sleeping for ${sleepDuration}ms`)
+
+    // Get current position for callback
+    const state = movement3DStore.getGuineaPigState(guineaPigId)
+    const sleepPosition = state?.worldPosition ?? { x: 0, y: 0, z: 0 }
+
+    if (onSleepingStartCallback) {
+      onSleepingStartCallback(sleepPosition)
+    }
+
+    actionTimeout = window.setTimeout(() => {
+      finishSleeping()
+    }, sleepDuration)
+  }
+
+  /**
+   * Finish sleeping and restore energy
+   */
+  async function finishSleeping(): Promise<void> {
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} waking up`)
+
+    // If sleeping in shelter, exit first
+    if (currentSleepLocation?.isShelter && currentShelterEntrance) {
+      // Walk directly out to entrance
+      movement.moveDirectTo(currentShelterEntrance)
+
+      // Wait for arrival at entrance
+      await new Promise<void>(resolve => {
+        movement.onArrival(() => resolve())
+      })
+    }
+
+    currentActivity.value = 'idle'
+    currentGoal.value = null
+
+    // Restore energy with quality multiplier
+    const energyRestored = Math.floor(RESTORE_AMOUNTS.energy * sleepQuality)
+    guineaPigStore.satisfyNeed(guineaPigId, 'energy', energyRestored)
+    setCooldown('sleep', COOLDOWNS.sleep)
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished sleeping (restored ${energyRestored} energy)`)
+
+    if (onSleepingEndCallback) {
+      onSleepingEndCallback()
+    }
+
+    // Clear sleep state
+    currentSleepLocation = null
+    currentShelterCenter = null
+    currentShelterEntrance = null
+    sleepQuality = 1.0
+
+    // Trigger next behavior tick
+    tick()
+  }
+
   /**
    * Check and handle autonomous poop dropping
    */
@@ -430,8 +997,8 @@ export function use3DBehavior(guineaPigId: string) {
     // Check for autonomous pooping
     checkAutonomousPooping()
 
-    // Don't interrupt active behaviors (eating, drinking)
-    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking') {
+    // Don't interrupt active behaviors (eating, drinking, sheltering, sleeping, grooming)
+    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking' || currentActivity.value === 'sheltering' || currentActivity.value === 'sleeping' || currentActivity.value === 'grooming') {
       return
     }
 
@@ -536,6 +1103,48 @@ export function use3DBehavior(guineaPigId: string) {
     onEatingEndCallback = callback
   }
 
+  /**
+   * Set callback for when sheltering starts (to hide guinea pig in igloo)
+   */
+  function onShelteringStart(callback: (shelterPosition: Vector3D) => void): void {
+    onShelteringStartCallback = callback
+  }
+
+  /**
+   * Set callback for when sheltering ends (to show guinea pig again)
+   */
+  function onShelteringEnd(callback: () => void): void {
+    onShelteringEndCallback = callback
+  }
+
+  /**
+   * Set callback for when sleeping starts (for sleep pose animation)
+   */
+  function onSleepingStart(callback: (position: Vector3D) => void): void {
+    onSleepingStartCallback = callback
+  }
+
+  /**
+   * Set callback for when sleeping ends (to resume normal pose)
+   */
+  function onSleepingEnd(callback: () => void): void {
+    onSleepingEndCallback = callback
+  }
+
+  /**
+   * Set callback for when grooming starts (for groom animation)
+   */
+  function onGroomingStart(callback: () => void): void {
+    onGroomingStartCallback = callback
+  }
+
+  /**
+   * Set callback for when grooming ends (to resume normal pose)
+   */
+  function onGroomingEnd(callback: () => void): void {
+    onGroomingEndCallback = callback
+  }
+
   // Auto-cleanup on unmount
   onUnmounted(() => {
     stop()
@@ -552,6 +1161,12 @@ export function use3DBehavior(guineaPigId: string) {
     onDrinkingStart,
     onDrinkingEnd,
     onEatingStart,
-    onEatingEnd
+    onEatingEnd,
+    onShelteringStart,
+    onShelteringEnd,
+    onSleepingStart,
+    onSleepingEnd,
+    onGroomingStart,
+    onGroomingEnd
   }
 }

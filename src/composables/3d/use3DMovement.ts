@@ -21,7 +21,7 @@ export function use3DMovement(guineaPigId: string) {
   // Animation state
   let animationFrameId: number | null = null
   let lastTime: number = 0
-  let isAnimating = ref(false)
+  const isAnimating = ref(false)
 
   // Callbacks
   let arrivalCallback: (() => void) | null = null
@@ -59,6 +59,78 @@ export function use3DMovement(guineaPigId: string) {
 
     console.log(`[Movement3D] Guinea pig ${guineaPigId} moving to (${validDestination.x.toFixed(1)}, ${validDestination.z.toFixed(1)}) via ${path.length} waypoints`)
     return true
+  }
+
+  /**
+   * Move directly to a destination WITHOUT pathfinding
+   * Used for special movements like entering/exiting shelters
+   */
+  function moveDirectTo(destination: Vector3D): boolean {
+    const state = movement3DStore.getGuineaPigState(guineaPigId)
+    if (!state) {
+      console.warn(`[Movement3D] Guinea pig ${guineaPigId} not found`)
+      return false
+    }
+
+    // Set path directly to destination (no pathfinding)
+    state.currentPath = [destination]
+    state.targetPosition = destination
+    state.isMoving = true
+
+    // Start animation if not already running
+    if (!isAnimating.value) {
+      startAnimationLoop()
+    }
+
+    return true
+  }
+
+  /**
+   * Smoothly rotate to face a target direction (radians)
+   * Returns a promise that resolves when rotation is complete
+   */
+  function rotateTo(targetRotation: number, duration: number = 500): Promise<void> {
+    return new Promise((resolve) => {
+      const initialState = movement3DStore.getGuineaPigState(guineaPigId)
+      if (!initialState) {
+        resolve()
+        return
+      }
+
+      const startRotation = initialState.rotation
+      const startTime = performance.now()
+
+      // Normalize angle difference to -PI to PI
+      let diff = targetRotation - startRotation
+      while (diff > Math.PI) diff -= Math.PI * 2
+      while (diff < -Math.PI) diff += Math.PI * 2
+
+      function animateRotation(currentTime: number): void {
+        // Re-fetch state each frame (it's reactive)
+        const state = movement3DStore.getGuineaPigState(guineaPigId)
+        if (!state) {
+          resolve()
+          return
+        }
+
+        const elapsed = currentTime - startTime
+        const progress = Math.min(elapsed / duration, 1)
+
+        // Smooth easing
+        const eased = 1 - Math.pow(1 - progress, 3)
+
+        state.rotation = startRotation + diff * eased
+
+        if (progress < 1) {
+          requestAnimationFrame(animateRotation)
+        } else {
+          state.rotation = targetRotation
+          resolve()
+        }
+      }
+
+      requestAnimationFrame(animateRotation)
+    })
   }
 
   /**
@@ -257,6 +329,8 @@ export function use3DMovement(guineaPigId: string) {
 
   return {
     moveTo,
+    moveDirectTo,
+    rotateTo,
     wander,
     onArrival,
     stopMovement,

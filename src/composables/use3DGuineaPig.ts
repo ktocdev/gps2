@@ -173,18 +173,31 @@ const FOOT_STRIDE_LENGTH = 0.1
 const BREATH_SPEED = 1.5 // Slow breathing cycle
 const BREATH_SCALE_AMOUNT = 0.005 // Very subtle 0.5% scale variation (matches demo)
 
+// Sleep pose constants
+const SLEEP_BODY_SCALE_Y = 0.85 // Squished/curled up look
+
+// Grooming animation constants
+const GROOM_SPEED = 8 // Speed of paw movement
+const GROOM_LIFT_HEIGHT = 0.15 // How high front legs lift
+const GROOM_PAW_RANGE = 0.12 // Range of pawing motion
+const GROOM_SIT_UP_ANGLE = -0.25 // Tilt back to sit up on haunches (radians)
+
 /**
  * Update guinea pig animations (call every frame)
  * @param model - The guinea pig THREE.Group
  * @param isMoving - Whether the guinea pig is currently walking
  * @param deltaTime - Time since last frame in seconds
  * @param isPaused - Whether animations should be frozen (game paused)
+ * @param isSleeping - Whether the guinea pig is sleeping (closed eyes, laying pose)
+ * @param isGrooming - Whether the guinea pig is grooming (front leg pawing motion)
  */
 export function updateGuineaPigAnimation(
   model: THREE.Group,
   isMoving: boolean,
   deltaTime: number,
-  isPaused: boolean = false
+  isPaused: boolean = false,
+  isSleeping: boolean = false,
+  isGrooming: boolean = false
 ): void {
   const { body, leftEye, rightEye, feet, animation } = model.userData
   if (!animation) return
@@ -196,12 +209,93 @@ export function updateGuineaPigAnimation(
 
   const now = Date.now()
 
+  // === SLEEPING STATE ===
+  if (isSleeping) {
+    // Eyes closed (no blinking)
+    leftEye.scale.y = 0.1
+    rightEye.scale.y = 0.1
+
+    // Laying pose - squished body
+    if (body) {
+      // Continue breathing but with laying scale
+      animation.breathPhase += deltaTime * BREATH_SPEED
+      const breathScale = SLEEP_BODY_SCALE_Y + Math.sin(animation.breathPhase) * BREATH_SCALE_AMOUNT
+      body.scale.set(1, breathScale, 1)
+    }
+
+    // Return feet to rest position (no walking)
+    const { flFoot, frFoot, blFoot, brFoot } = feet
+    const rest = animation.footRestPositions
+    const returnSpeed = 5 * deltaTime
+
+    flFoot.position.y += (rest.fl.y - flFoot.position.y) * returnSpeed
+    flFoot.position.z += (rest.fl.z - flFoot.position.z) * returnSpeed
+    frFoot.position.y += (rest.fr.y - frFoot.position.y) * returnSpeed
+    frFoot.position.z += (rest.fr.z - frFoot.position.z) * returnSpeed
+    blFoot.position.y += (rest.bl.y - blFoot.position.y) * returnSpeed
+    blFoot.position.z += (rest.bl.z - blFoot.position.z) * returnSpeed
+    brFoot.position.y += (rest.br.y - brFoot.position.y) * returnSpeed
+    brFoot.position.z += (rest.br.z - brFoot.position.z) * returnSpeed
+
+    return // Skip normal animations
+  }
+
+  // === GROOMING STATE ===
+  if (isGrooming) {
+    const { flFoot, frFoot, blFoot, brFoot } = feet
+    const rest = animation.footRestPositions
+
+    // Advance groom phase
+    animation.groomPhase = (animation.groomPhase || 0) + deltaTime * GROOM_SPEED
+
+    // Sit up on haunches - tilt body back
+    if (body) {
+      // Smoothly transition to sit-up pose
+      const targetRotation = GROOM_SIT_UP_ANGLE
+      body.rotation.x += (targetRotation - body.rotation.x) * 5 * deltaTime
+
+      // Continue breathing animation while sitting up
+      animation.breathPhase += deltaTime * BREATH_SPEED
+      const breathScale = 1 + Math.sin(animation.breathPhase) * BREATH_SCALE_AMOUNT
+      body.scale.set(1, breathScale, 1)
+    }
+
+    // Front legs lift and paw at face (alternating motion)
+    const pawMotion = Math.sin(animation.groomPhase)
+    const pawMotion2 = Math.sin(animation.groomPhase + Math.PI * 0.5) // Offset for alternating
+
+    // Front-left foot: lift up higher and move forward/back (paws at face)
+    flFoot.position.y = rest.fl.y + GROOM_LIFT_HEIGHT * 1.5 + Math.abs(pawMotion) * 0.08
+    flFoot.position.z = rest.fl.z + GROOM_PAW_RANGE + pawMotion * GROOM_PAW_RANGE
+
+    // Front-right foot: slightly offset timing for natural look
+    frFoot.position.y = rest.fr.y + GROOM_LIFT_HEIGHT * 1.5 + Math.abs(pawMotion2) * 0.08
+    frFoot.position.z = rest.fr.z + GROOM_PAW_RANGE + pawMotion2 * GROOM_PAW_RANGE
+
+    // Back legs stay planted (supporting the sit-up)
+    const returnSpeed = 5 * deltaTime
+    blFoot.position.y += (rest.bl.y - blFoot.position.y) * returnSpeed
+    blFoot.position.z += (rest.bl.z - blFoot.position.z) * returnSpeed
+    brFoot.position.y += (rest.br.y - brFoot.position.y) * returnSpeed
+    brFoot.position.z += (rest.br.z - brFoot.position.z) * returnSpeed
+
+    // Eyes slightly squinted during grooming (concentrating)
+    leftEye.scale.y = 0.7
+    rightEye.scale.y = 0.7
+
+    return // Skip normal animations
+  }
+
   // === BREATHING ANIMATION ===
   // Subtle body scale oscillation for lifelike appearance
   animation.breathPhase += deltaTime * BREATH_SPEED
   const breathScale = 1 + Math.sin(animation.breathPhase) * BREATH_SCALE_AMOUNT
   if (body) {
     body.scale.set(1, breathScale, 1) // Y-axis only (matches demo)
+    // Reset body rotation if it was tilted (from grooming sit-up)
+    if (Math.abs(body.rotation.x) > 0.001) {
+      body.rotation.x += (0 - body.rotation.x) * 5 * deltaTime
+    }
   }
 
   // === BLINKING ANIMATION ===
