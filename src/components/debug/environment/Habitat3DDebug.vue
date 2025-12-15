@@ -1,6 +1,35 @@
 <template>
-  <div class="habitat-3d-debug debug-view__constrained">
-    <h2>3D Habitat View</h2>
+  <div class="habitat-3d-debug debug-view__constrained" :class="{ 'habitat-3d-debug--fullscreen': isFullscreen }">
+    <!-- Fullscreen header (only visible in fullscreen mode) -->
+    <div v-if="isFullscreen" class="habitat-3d-debug__fullscreen-header">
+      <h2 class="habitat-3d-debug__title">3D Habitat</h2>
+      <div class="habitat-3d-debug__header-actions">
+        <button
+          class="utility-nav__button utility-nav__button--primary"
+          @click="togglePause"
+        >
+          {{ gameController.isPaused ? '▶️ Resume Game' : '⏸️ Pause Game' }}
+        </button>
+        <button
+          class="utility-nav__button utility-nav__button--primary"
+          @click="toggleFullscreen"
+        >
+          Exit Fullscreen
+        </button>
+      </div>
+    </div>
+
+    <!-- Normal header (hidden in fullscreen mode) -->
+    <div v-if="!isFullscreen" class="habitat-3d-debug__normal-header">
+      <h2>3D Habitat View</h2>
+      <button
+        v-if="hasActiveSession && !is2DMode"
+        class="utility-nav__button utility-nav__button--primary"
+        @click="toggleFullscreen"
+      >
+        ⛶ Enter Fullscreen
+      </button>
+    </div>
 
     <!-- No Active Session Message -->
     <div v-if="!hasActiveSession" class="panel panel--compact panel--warning mb-6">
@@ -60,6 +89,98 @@
             @close="closeWaterBottleMenu"
             @refill="handleRefillWater"
           />
+
+          <!-- Left FAB - Activity Log -->
+          <div class="game-fab-container game-fab-container--left">
+            <button
+              class="game-fab game-fab--yellow"
+              :class="{ 'game-fab--active': showActivityFeed }"
+              @click="toggleActivityFeed"
+              title="Activity Log"
+            >
+              📜
+            </button>
+          </div>
+
+          <!-- Activity Feed Panel (draggable) -->
+          <div
+            v-if="showActivityFeed"
+            class="activity-feed-panel"
+            :style="activityPanelStyle"
+            @mousedown="startDragPanel"
+          >
+            <div class="activity-feed-panel__header" @mousedown.stop="startDragPanel">
+              <span class="activity-feed-panel__title">📜 Activity Log</span>
+              <button class="activity-feed-panel__close" @click="toggleActivityFeed" title="Close">×</button>
+            </div>
+            <div class="activity-feed-panel__content">
+              <div v-if="activityMessages.length === 0" class="activity-feed-panel__empty">
+                💭 No activity yet...
+              </div>
+              <div v-else class="activity-feed-panel__messages">
+                <div
+                  v-for="msg in activityMessages.slice(0, 50)"
+                  :key="msg.id"
+                  class="activity-feed-panel__message"
+                  :class="`activity-feed-panel__message--${msg.category}`"
+                >
+                  <span class="activity-feed-panel__emoji">{{ msg.emoji || '📝' }}</span>
+                  <span class="activity-feed-panel__text">{{ msg.message }}</span>
+                  <span class="activity-feed-panel__time">{{ formatTime(msg.timestamp) }}</span>
+                </div>
+              </div>
+            </div>
+            <!-- Resize handle -->
+            <div class="activity-feed-panel__resize" @mousedown.stop="startResizePanel"></div>
+          </div>
+
+          <!-- Right FABs - Actions -->
+          <div class="game-fab-container">
+            <!-- Guinea Pigs FAB -->
+            <div class="game-fab-row">
+              <button
+                class="game-fab game-fab--pink"
+                :class="{ 'game-fab--active': activePanel === 'guinea-pigs' }"
+                @click="togglePanel('guinea-pigs')"
+                title="Guinea Pigs"
+              >
+                🐹
+              </button>
+            </div>
+
+            <!-- Inventory FAB -->
+            <div class="game-fab-row">
+              <button
+                class="game-fab game-fab--violet"
+                :class="{ 'game-fab--active': activePanel === 'inventory' }"
+                @click="togglePanel('inventory')"
+                title="Inventory"
+              >
+                🎒
+              </button>
+            </div>
+
+            <!-- Habitat Care FAB with subactions -->
+            <div class="game-fab-row">
+              <div
+                v-if="activePanel === 'habitat-care'"
+                class="game-fab-subactions"
+              >
+                <button class="game-fab-sub game-fab-sub--green" @click="fabFillHay" title="Fill All Hay Racks">🌾</button>
+                <button class="game-fab-sub game-fab-sub--green" @click="fabRefillWater" title="Refill Water">💧</button>
+                <button class="game-fab-sub game-fab-sub--green" @click="fabQuickClean" title="Quick Clean">🧹</button>
+                <button class="game-fab-sub game-fab-sub--green" @click="fabCleanHabitat" title="Clean Habitat">🧽</button>
+              </div>
+              <button
+                class="game-fab game-fab--green"
+                :class="{ 'game-fab--active': activePanel === 'habitat-care' }"
+                @click="togglePanel('habitat-care')"
+                title="Habitat Care"
+              >
+                🏠
+              </button>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -101,6 +222,7 @@ import { useMovement3DStore } from '../../../stores/movement3DStore'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useGameController } from '../../../stores/gameController'
+import { useLoggingStore } from '../../../stores/loggingStore'
 import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from '../../../constants/3d'
 import { disposeObject3D } from '../../../utils/three-cleanup'
 import * as THREE from 'three'
@@ -108,6 +230,20 @@ import * as THREE from 'three'
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const selectedGuineaPigId = ref<string | null>(null)
 const guineaPigMenuPosition = ref({ x: 0, y: 0 })
+
+// Fullscreen mode state
+const isFullscreen = ref(false)
+
+// Floating Action Button panel state
+const activePanel = ref<string | null>(null)
+
+// Activity Feed panel state
+const showActivityFeed = ref(false)
+const activityPanelPosition = ref({ x: 70, y: 50 })
+const activityPanelSize = ref({ width: 320, height: 400 })
+let isDraggingPanel = false
+let isResizingPanel = false
+let dragOffset = { x: 0, y: 0 }
 
 // Take Control mode state
 const controlledGuineaPigId = ref<string | null>(null)
@@ -118,6 +254,7 @@ let controlReleaseTimer: number | null = null
 const guineaPigStore = useGuineaPigStore()
 const habitatConditions = useHabitatConditions()
 const petStoreManager = usePetStoreManager()
+const loggingStore = useLoggingStore()
 const gameViewStore = useGameViewStore()
 const movement3DStore = useMovement3DStore()
 const inventoryStore = useInventoryStore()
@@ -137,6 +274,15 @@ const selectedGuineaPig = computed(() => {
   if (!selectedGuineaPigId.value) return null
   return guineaPigStore.activeGuineaPigs.find(gp => gp.id === selectedGuineaPigId.value)
 })
+
+// Activity Feed computed properties
+const activityMessages = computed(() => loggingStore.activityMessages)
+const activityPanelStyle = computed(() => ({
+  left: `${activityPanelPosition.value.x}px`,
+  top: `${activityPanelPosition.value.y}px`,
+  width: `${activityPanelSize.value.width}px`,
+  height: `${activityPanelSize.value.height}px`
+}))
 
 // Available food items from inventory for adding to bowl
 const availableFoodItems = computed((): InventoryMenuItem[] => {
@@ -474,6 +620,11 @@ onUnmounted(() => {
     controlReleaseTimer = null
   }
   controlledGuineaPigId.value = null
+
+  // Cleanup fullscreen mode
+  if (isFullscreen.value) {
+    document.body.classList.remove('habitat-fullscreen')
+  }
 
   // Clear movement3D store
   movement3DStore.clearAllGuineaPigs()
@@ -889,9 +1040,143 @@ function updateSelectionRingColor(color: number) {
 }
 
 function handleKeyDown(event: KeyboardEvent) {
-  // Escape releases control
-  if (event.key === 'Escape' && controlledGuineaPigId.value) {
-    releaseControl()
+  // Escape releases control or exits fullscreen
+  if (event.key === 'Escape') {
+    if (controlledGuineaPigId.value) {
+      releaseControl()
+    } else if (isFullscreen.value) {
+      toggleFullscreen()
+    }
+  }
+}
+
+/**
+ * Toggle fullscreen mode - hides debug header/nav for immersive view
+ */
+function toggleFullscreen() {
+  isFullscreen.value = !isFullscreen.value
+
+  // Add/remove body class to hide debug-view header and nav
+  if (isFullscreen.value) {
+    document.body.classList.add('habitat-fullscreen')
+  } else {
+    document.body.classList.remove('habitat-fullscreen')
+  }
+}
+
+/**
+ * Toggle floating action button panel
+ */
+function togglePanel(panelId: string) {
+  if (activePanel.value === panelId) {
+    activePanel.value = null
+    console.log(`[Habitat3D] Closed panel: ${panelId}`)
+  } else {
+    activePanel.value = panelId
+    console.log(`[Habitat3D] Opened panel: ${panelId}`)
+  }
+}
+
+/**
+ * Habitat Care FAB subaction handlers
+ * Note: Subactions stay open after clicking - user closes by clicking main FAB again
+ */
+function fabCleanHabitat() {
+  const result = habitatConditions.cleanCage()
+  console.log(`[Habitat3D] Clean habitat: ${result.message}`)
+}
+
+function fabQuickClean() {
+  const result = habitatConditions.quickClean()
+  console.log(`[Habitat3D] Quick clean: ${result.message}`)
+}
+
+function fabRefillWater() {
+  habitatConditions.refillWater()
+  console.log('[Habitat3D] Water refilled')
+}
+
+function fabFillHay() {
+  const hayRackIds = Array.from(habitatConditions.hayRackContents.keys())
+  if (hayRackIds.length > 0) {
+    const result = habitatConditions.fillAllHayRacks(hayRackIds)
+    console.log(`[Habitat3D] Hay racks filled: ${result.racksFilled} racks, ${result.totalAdded} servings added`)
+  } else {
+    console.log('[Habitat3D] No hay racks to fill')
+  }
+}
+
+/**
+ * Activity Feed panel handlers
+ */
+function toggleActivityFeed() {
+  showActivityFeed.value = !showActivityFeed.value
+}
+
+function formatTime(timestamp: number): string {
+  const date = new Date(timestamp)
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+}
+
+function startDragPanel(event: MouseEvent) {
+  // Only drag from header
+  if (!(event.target as HTMLElement).closest('.activity-feed-panel__header')) return
+
+  isDraggingPanel = true
+  dragOffset = {
+    x: event.clientX - activityPanelPosition.value.x,
+    y: event.clientY - activityPanelPosition.value.y
+  }
+
+  document.addEventListener('mousemove', onDragPanel)
+  document.addEventListener('mouseup', stopDragPanel)
+}
+
+function onDragPanel(event: MouseEvent) {
+  if (!isDraggingPanel) return
+
+  activityPanelPosition.value = {
+    x: Math.max(0, event.clientX - dragOffset.x),
+    y: Math.max(0, event.clientY - dragOffset.y)
+  }
+}
+
+function stopDragPanel() {
+  isDraggingPanel = false
+  document.removeEventListener('mousemove', onDragPanel)
+  document.removeEventListener('mouseup', stopDragPanel)
+}
+
+function startResizePanel(_event: MouseEvent) {
+  isResizingPanel = true
+
+  document.addEventListener('mousemove', onResizePanel)
+  document.addEventListener('mouseup', stopResizePanel)
+}
+
+function onResizePanel(event: MouseEvent) {
+  if (!isResizingPanel) return
+
+  const newWidth = Math.max(200, event.clientX - activityPanelPosition.value.x)
+  const newHeight = Math.max(150, event.clientY - activityPanelPosition.value.y)
+
+  activityPanelSize.value = { width: newWidth, height: newHeight }
+}
+
+function stopResizePanel() {
+  isResizingPanel = false
+  document.removeEventListener('mousemove', onResizePanel)
+  document.removeEventListener('mouseup', stopResizePanel)
+}
+
+/**
+ * Toggle game pause state
+ */
+function togglePause() {
+  if (gameController.isPaused) {
+    gameController.resumeGame()
+  } else {
+    gameController.pauseGame('manual')
   }
 }
 
@@ -1170,6 +1455,316 @@ function updateClouds(deltaTime: number) {
 .habitat-3d-debug__needs-row {
   margin-block-start: var(--spacing-md);
   max-inline-size: 400px;
+}
+
+/* Normal header row (title + enter fullscreen button) */
+.habitat-3d-debug__normal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-block-end: var(--spacing-md);
+}
+
+.habitat-3d-debug__normal-header h2 {
+  margin: 0;
+}
+
+/* Fullscreen mode header */
+.habitat-3d-debug__fullscreen-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-block: var(--spacing-sm);
+  padding-inline: var(--spacing-md);
+  background-color: var(--color-bg-secondary);
+  border-block-end: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+.habitat-3d-debug__title {
+  margin: 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.habitat-3d-debug__header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+/* Fullscreen mode adjustments */
+.habitat-3d-debug--fullscreen {
+  max-inline-size: none;
+}
+
+.habitat-3d-debug--fullscreen .habitat-3d-debug__canvas-wrapper {
+  block-size: calc(100vh - 80px); /* Account for header */
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+}
+
+.habitat-3d-debug--fullscreen .habitat-3d-debug__needs-row {
+  display: none;
+}
+
+/* Floating Action Buttons container */
+.game-fab-container {
+  position: absolute;
+  inset-inline-end: var(--spacing-md);
+  inset-block-end: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  z-index: 10;
+}
+
+/* Individual FAB button */
+.game-fab {
+  inline-size: 48px;
+  block-size: 48px;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+
+.game-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.game-fab--active {
+  transform: scale(1.05);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.5);
+  filter: brightness(1.1);
+}
+
+/* Candy color palette - using CSS variables */
+.game-fab--pink {
+  background-color: var(--color-accent-pink-500);
+}
+
+.game-fab--violet {
+  background-color: var(--color-accent-violet-500);
+}
+
+.game-fab--green {
+  background-color: var(--color-accent-green-500);
+}
+
+.game-fab--orange {
+  background-color: var(--color-warning-400);
+}
+
+.game-fab--yellow {
+  background-color: var(--color-accent-yellow-500);
+}
+
+.game-fab--cyan {
+  background-color: var(--color-need-thirst);
+}
+
+/* FAB row - contains main FAB + subactions */
+.game-fab-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-xs);
+}
+
+/* Subactions container */
+.game-fab-subactions {
+  display: flex;
+  flex-direction: row;
+  gap: var(--spacing-xs);
+  animation: fab-slide-in 0.2s ease-out;
+}
+
+/* Subaction button (smaller) */
+.game-fab-sub {
+  inline-size: 40px;
+  block-size: 40px;
+  border-radius: 50%;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.game-fab-sub:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+
+/* Subaction colors (lighter shades) */
+.game-fab-sub--green {
+  background-color: var(--color-accent-green-400);
+}
+
+.game-fab-sub--pink {
+  background-color: var(--color-accent-pink-400);
+}
+
+.game-fab-sub--violet {
+  background-color: var(--color-accent-violet-400);
+}
+
+@keyframes fab-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Left FAB container (Activity Log) */
+.game-fab-container--left {
+  inset-inline-start: var(--spacing-md);
+  inset-inline-end: auto;
+}
+
+/* Activity Feed Panel */
+.activity-feed-panel {
+  position: absolute;
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-inline-size: 200px;
+  min-block-size: 150px;
+}
+
+.activity-feed-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-accent-yellow-500);
+  color: var(--color-neutral-900);
+  cursor: move;
+  user-select: none;
+}
+
+.activity-feed-panel__title {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+}
+
+.activity-feed-panel__close {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--color-neutral-900);
+  padding: 0;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.15s ease;
+}
+
+.activity-feed-panel__close:hover {
+  opacity: 1;
+}
+
+.activity-feed-panel__content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-sm);
+}
+
+.activity-feed-panel__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 100%;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.activity-feed-panel__messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.activity-feed-panel__message {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-secondary);
+  font-size: var(--font-size-xs);
+  border-inline-start: 3px solid var(--color-neutral-400);
+}
+
+.activity-feed-panel__message--player_action {
+  border-inline-start-color: var(--color-primary);
+}
+
+.activity-feed-panel__message--guinea_pig_reaction {
+  border-inline-start-color: var(--color-secondary);
+}
+
+.activity-feed-panel__message--autonomous_behavior {
+  border-inline-start-color: var(--color-info);
+}
+
+.activity-feed-panel__message--environmental {
+  border-inline-start-color: var(--color-warning);
+}
+
+.activity-feed-panel__message--achievement {
+  border-inline-start-color: var(--color-accent-pink-500);
+  background-color: var(--color-accent-pink-50);
+}
+
+.activity-feed-panel__emoji {
+  flex-shrink: 0;
+}
+
+.activity-feed-panel__text {
+  flex: 1;
+  color: var(--color-text-primary);
+}
+
+.activity-feed-panel__time {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.activity-feed-panel__resize {
+  position: absolute;
+  inset-inline-end: 0;
+  inset-block-end: 0;
+  inline-size: 16px;
+  block-size: 16px;
+  cursor: se-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--color-neutral-400) 50%);
+  border-radius: 0 0 var(--radius-lg) 0;
+}
+
+.activity-feed-panel__resize:hover {
+  background: linear-gradient(135deg, transparent 50%, var(--color-neutral-500) 50%);
 }
 
 </style>

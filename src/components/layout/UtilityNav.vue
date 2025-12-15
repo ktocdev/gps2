@@ -2,7 +2,7 @@
   <nav class="utility-nav">
     <button
       @click="toggleGamePause"
-      class="utility-nav__button"
+      class="utility-nav__button utility-nav__button--primary"
       :disabled="!canTogglePause"
       :title="pauseButtonTitle"
     >
@@ -100,7 +100,7 @@ const clearAllStorage = () => {
 }
 </script>
 
-<style scoped>
+<style>
 /* Mobile-first: Default mobile layout - stacked vertically */
 .utility-nav {
   display: flex;
@@ -110,60 +110,45 @@ const clearAllStorage = () => {
   justify-content: flex-end;
 }
 
-.utility-nav__button {
-  padding-block: var(--space-1);
-  padding-inline: var(--space-2);
-  background-color: var(--color-primary);
-  color: var(--color-text-inverse);
-  border: 1px solid var(--color-primary);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-medium);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  white-space: nowrap;
-}
-
-/* Tablet and up: Horizontal layout with larger buttons */
+/* Tablet and up: Horizontal layout */
 @media (min-width: 769px) {
   .utility-nav {
     flex-direction: row;
     align-items: center;
   }
-
-  .utility-nav__button {
-    padding-block: var(--space-2);
-    padding-inline: var(--space-3);
-    font-size: var(--font-size-sm);
-  }
 }
 
-.utility-nav__button:hover {
-  background-color: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+/* Utility nav buttons - global styles for reuse */
+.utility-nav__button {
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: background-color 0.2s ease, opacity 0.2s ease;
 }
 
 .utility-nav__button:disabled {
-  background-color: var(--color-neutral-300);
-  color: var(--color-text-muted);
-  border-color: var(--color-border-medium);
+  opacity: 0.5;
   cursor: not-allowed;
-  opacity: 0.6;
+}
+
+.utility-nav__button--primary {
+  background-color: var(--color-primary);
+  color: var(--color-text-on-primary);
+}
+
+.utility-nav__button--primary:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
 }
 
 .utility-nav__button--danger {
-  background-color: var(--color-error);
-  color: var(--color-text-inverse);
-  border-color: var(--color-error);
+  background-color: var(--color-danger);
+  color: var(--color-text-on-danger, white);
 }
 
-.utility-nav__button--danger:hover {
-  background-color: var(--color-error-hover);
-  border-color: var(--color-error-hover);
-}
-
-.utility-nav__button--danger:active {
-  background-color: var(--color-error-active);
-  border-color: var(--color-error-active);
+.utility-nav__button--danger:hover:not(:disabled) {
+  background-color: var(--color-danger-hover);
 }
 </style>
