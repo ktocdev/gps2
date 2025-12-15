@@ -270,6 +270,30 @@ function initializeGuineaPigBehaviors() {
             }
           })
 
+          // Shelter event logging (movement handled by behavior system)
+          behavior.onShelteringStart(() => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} settled in shelter`)
+          })
+          behavior.onShelteringEnd(() => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} exited shelter`)
+          })
+
+          // Sleep event logging
+          behavior.onSleepingStart(() => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} fell asleep`)
+          })
+          behavior.onSleepingEnd(() => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} woke up`)
+          })
+
+          // Groom event logging
+          behavior.onGroomingStart(() => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} started grooming`)
+          })
+          behavior.onGroomingEnd(() => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} finished grooming`)
+          })
+
           behavior.start()
 
           console.log(`[Habitat3D] Initialized guinea pig ${gp.id} with unified behavior`)
@@ -490,14 +514,19 @@ function animate(currentTime: number = 0) {
     updateCameraPosition()
   }
 
-  // Update guinea pig animations (blinking, walking, breathing)
+  // Update guinea pig animations (blinking, walking, breathing, sleeping, grooming)
   if (guineaPigModels) {
     guineaPigModels.forEach((model, guineaPigId) => {
       // Get movement state from store to determine if walking
       const state = movement3DStore.getGuineaPigState(guineaPigId)
       const isMoving = state?.isMoving ?? false
 
-      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused)
+      // Check activity state from behavior
+      const behavior = behaviors.get(guineaPigId)
+      const isSleeping = behavior?.currentActivity.value === 'sleeping'
+      const isGrooming = behavior?.currentActivity.value === 'grooming'
+
+      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming)
     })
   }
 

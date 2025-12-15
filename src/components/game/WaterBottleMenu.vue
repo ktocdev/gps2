@@ -170,12 +170,12 @@ function getLevelColorClass(level: number): string {
 }
 
 .water-bottle-menu__action--primary {
-  background-color: #0088ff;
+  background-color: var(--color-info);
   color: white;
 }
 
 .water-bottle-menu__action--primary:hover:not(:disabled) {
-  background-color: #0066cc;
+  background-color: var(--color-info-hover);
 }
 
 .water-bottle-menu__action--primary:active:not(:disabled) {
