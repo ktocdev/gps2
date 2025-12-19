@@ -60,46 +60,38 @@
         </div>
         <div class="habitat-3d-debug__canvas-wrapper">
           <!-- Activity Feed Panel (overlay with integrated tab) -->
-          <div
-            class="activity-feed-panel"
-            :class="{ 'activity-feed-panel--collapsed': !showActivityFeed }"
+          <SidePanel3D
+            :is-open="showActivityFeed"
+            side="left"
+            color="yellow"
+            title="Activity Log"
+            icon="📜"
+            @toggle="toggleActivityFeed"
           >
-            <!-- Tab button - outside body so not clipped by overflow:hidden -->
-            <button
-              class="activity-feed-panel__tab"
-              @click="toggleActivityFeed"
-              title="Open Activity Log"
-            >
-              📜
-            </button>
-
-            <!-- Panel Body - slides in/out -->
-            <div class="activity-feed-panel__body">
-              <div class="activity-feed-panel__header">
-                <span class="activity-feed-panel__title">📜 Activity Log</span>
-                <button class="activity-feed-panel__close" @click="toggleActivityFeed" title="Collapse">
-                  ◀
-                </button>
-              </div>
-              <div class="activity-feed-panel__content">
-                <div v-if="activityMessages.length === 0" class="activity-feed-panel__empty">
-                  💭 No activity yet...
-                </div>
-                <div v-else class="activity-feed-panel__messages">
-                  <div
-                    v-for="msg in activityMessages.slice(0, 50)"
-                    :key="msg.id"
-                    class="activity-feed-panel__message"
-                    :class="`activity-feed-panel__message--${msg.category}`"
-                  >
-                    <span class="activity-feed-panel__emoji">{{ msg.emoji || '📝' }}</span>
-                    <span class="activity-feed-panel__text">{{ msg.message }}</span>
-                    <span class="activity-feed-panel__time">{{ formatTime(msg.timestamp) }}</span>
-                  </div>
-                </div>
+            <div v-if="activityMessages.length === 0" class="activity-feed-panel__empty">
+              💭 No activity yet...
+            </div>
+            <div v-else class="activity-feed-panel__messages">
+              <div
+                v-for="msg in activityMessages.slice(0, 50)"
+                :key="msg.id"
+                class="activity-feed-panel__message"
+                :class="`activity-feed-panel__message--${msg.category}`"
+              >
+                <span class="activity-feed-panel__emoji">{{ msg.emoji || '📝' }}</span>
+                <span class="activity-feed-panel__text">{{ msg.message }}</span>
+                <span class="activity-feed-panel__time">{{ formatTime(msg.timestamp) }}</span>
               </div>
             </div>
-          </div>
+          </SidePanel3D>
+
+          <!-- Inventory Panel (overlay on right side) -->
+          <Inventory3DPanel
+            :is-open="showInventory"
+            @toggle="toggleInventory"
+            @select-item="handleInventorySelect"
+          />
+
             <canvas ref="canvasRef" @click="handleCanvasClick"></canvas>
 
             <!-- Guinea Pig Info Menu (replaces floating action buttons) -->
@@ -142,18 +134,6 @@
                 title="Guinea Pigs"
               >
                 🐹
-              </button>
-            </div>
-
-            <!-- Inventory FAB -->
-            <div class="game-fab-row">
-              <button
-                class="game-fab game-fab--violet"
-                :class="{ 'game-fab--active': activePanel === 'inventory' }"
-                @click="togglePanel('inventory')"
-                title="Inventory"
-              >
-                🎒
               </button>
             </div>
 
@@ -210,6 +190,8 @@ import GuineaPigInfoMenu from '../../game/GuineaPigInfoMenu.vue'
 import WaterBottleMenu from '../../game/WaterBottleMenu.vue'
 import InventoryItemMenu from '../../basic/InventoryItemMenu.vue'
 import NeedsPanel from './NeedsPanel.vue'
+import Inventory3DPanel from '../../game/Inventory3DPanel.vue'
+import SidePanel3D from '../../game/SidePanel3D.vue'
 import type { InventoryMenuItem } from '../../basic/InventoryItemMenu.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
@@ -236,6 +218,9 @@ const activePanel = ref<string | null>(null)
 
 // Activity Feed panel state
 const showActivityFeed = ref(false)
+
+// Inventory panel state
+const showInventory = ref(false)
 // Take Control mode state
 const controlledGuineaPigId = ref<string | null>(null)
 const CONTROL_AUTO_RELEASE_MS = 30000 // 30 seconds
@@ -1098,6 +1083,18 @@ function toggleActivityFeed() {
   showActivityFeed.value = !showActivityFeed.value
 }
 
+/**
+ * Inventory panel handlers
+ */
+function toggleInventory() {
+  showInventory.value = !showInventory.value
+}
+
+function handleInventorySelect(itemId: string) {
+  console.log(`[Habitat3D] Selected inventory item: ${itemId}`)
+  // Future: Could trigger placement mode or item interaction
+}
+
 function formatTime(timestamp: number): string {
   const date = new Date(timestamp)
   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
@@ -1566,114 +1563,7 @@ function updateClouds(deltaTime: number) {
   }
 }
 
-/* Activity Feed Panel - Overlay with Integrated Tab */
-.activity-feed-panel {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  block-size: 100%;
-  z-index: 20;
-  pointer-events: none;
-}
-
-/* Panel Body - Contains header and content, slides in/out */
-.activity-feed-panel__body {
-  position: relative;
-  inline-size: 320px;
-  block-size: 100%;
-  background-color: var(--color-bg-primary);
-  border-inline-end: 1px solid var(--color-border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transform: translateX(0);
-  transition: transform 0.3s ease;
-  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
-  pointer-events: auto;
-}
-
-.activity-feed-panel--collapsed .activity-feed-panel__body {
-  transform: translateX(-100%);
-  box-shadow: none;
-}
-
-/* Header */
-.activity-feed-panel__header {
-  position: relative;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: var(--color-accent-yellow-500);
-  color: var(--color-neutral-900);
-  flex-shrink: 0;
-}
-
-/* Tab button - fixed at left edge of canvas, visible when collapsed */
-.activity-feed-panel__tab {
-  position: absolute;
-  inset-block-start: 0;
-  inset-inline-start: 0;
-  block-size: 40px; /* Match header height */
-  padding: 0 var(--spacing-sm);
-  background-color: var(--color-accent-yellow-500);
-  color: var(--color-neutral-900);
-  border: none;
-  border-radius: 0;
-  font-size: 1.25rem;
-  cursor: pointer;
-  transition: background-color 0.15s ease, opacity 0.3s ease;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
-  pointer-events: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 5;
-}
-
-.activity-feed-panel__tab:hover {
-  background-color: var(--color-accent-yellow-600);
-}
-
-/* Hide tab when panel is expanded */
-.activity-feed-panel:not(.activity-feed-panel--collapsed) .activity-feed-panel__tab {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Hide close button when collapsed */
-.activity-feed-panel--collapsed .activity-feed-panel__close {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.activity-feed-panel__title {
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-sm);
-}
-
-.activity-feed-panel__close {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  color: var(--color-neutral-900);
-  padding: 0;
-  line-height: 1;
-  opacity: 0.7;
-  transition: opacity 0.15s ease;
-}
-
-.activity-feed-panel__close:hover {
-  opacity: 1;
-}
-
-.activity-feed-panel__content {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-sm);
-}
-
+/* Activity Feed Panel - Content styles only (structure from SidePanel3D) */
 .activity-feed-panel__empty {
   display: flex;
   align-items: center;
