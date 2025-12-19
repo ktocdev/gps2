@@ -59,82 +59,79 @@
           </template>
         </div>
         <div class="habitat-3d-debug__canvas-wrapper">
-          <canvas ref="canvasRef" @click="handleCanvasClick"></canvas>
-
-          <!-- Guinea Pig Info Menu (replaces floating action buttons) -->
-          <GuineaPigInfoMenu
-            v-if="selectedGuineaPigId && selectedGuineaPig"
-            :guinea-pig="selectedGuineaPig"
-            :position="guineaPigMenuPosition"
-            @close="handleDeselect"
-            @take-control="handleTakeControl"
-          />
-
-          <!-- Floating Inventory Menu (for bowls and hay racks) -->
-          <InventoryItemMenu
-            :show="showInventoryMenu"
-            :position="menuPosition"
-            :title="menuTitle"
-            :items="currentMenuItems"
-            :empty-message="menuEmptyMessage"
-            @close="closeInventoryMenu"
-            @select="handleAddItemToContainer"
-          />
-
-          <!-- Water Bottle Menu -->
-          <WaterBottleMenu
-            v-if="showWaterBottleMenu"
-            :water-level="habitatConditions.waterLevel"
-            :position="waterBottleMenuPosition"
-            @close="closeWaterBottleMenu"
-            @refill="handleRefillWater"
-          />
-
-          <!-- Left FAB - Activity Log -->
-          <div class="game-fab-container game-fab-container--left">
+          <!-- Activity Feed Panel (overlay with integrated tab) -->
+          <div
+            class="activity-feed-panel"
+            :class="{ 'activity-feed-panel--collapsed': !showActivityFeed }"
+          >
+            <!-- Tab button - outside body so not clipped by overflow:hidden -->
             <button
-              class="game-fab game-fab--yellow"
-              :class="{ 'game-fab--active': showActivityFeed }"
+              class="activity-feed-panel__tab"
               @click="toggleActivityFeed"
-              title="Activity Log"
+              title="Open Activity Log"
             >
               📜
             </button>
-          </div>
 
-          <!-- Activity Feed Panel (draggable) -->
-          <div
-            v-if="showActivityFeed"
-            class="activity-feed-panel"
-            :style="activityPanelStyle"
-            @mousedown="startDragPanel"
-          >
-            <div class="activity-feed-panel__header" @mousedown.stop="startDragPanel">
-              <span class="activity-feed-panel__title">📜 Activity Log</span>
-              <button class="activity-feed-panel__close" @click="toggleActivityFeed" title="Close">×</button>
-            </div>
-            <div class="activity-feed-panel__content">
-              <div v-if="activityMessages.length === 0" class="activity-feed-panel__empty">
-                💭 No activity yet...
+            <!-- Panel Body - slides in/out -->
+            <div class="activity-feed-panel__body">
+              <div class="activity-feed-panel__header">
+                <span class="activity-feed-panel__title">📜 Activity Log</span>
+                <button class="activity-feed-panel__close" @click="toggleActivityFeed" title="Collapse">
+                  ◀
+                </button>
               </div>
-              <div v-else class="activity-feed-panel__messages">
-                <div
-                  v-for="msg in activityMessages.slice(0, 50)"
-                  :key="msg.id"
-                  class="activity-feed-panel__message"
-                  :class="`activity-feed-panel__message--${msg.category}`"
-                >
-                  <span class="activity-feed-panel__emoji">{{ msg.emoji || '📝' }}</span>
-                  <span class="activity-feed-panel__text">{{ msg.message }}</span>
-                  <span class="activity-feed-panel__time">{{ formatTime(msg.timestamp) }}</span>
+              <div class="activity-feed-panel__content">
+                <div v-if="activityMessages.length === 0" class="activity-feed-panel__empty">
+                  💭 No activity yet...
+                </div>
+                <div v-else class="activity-feed-panel__messages">
+                  <div
+                    v-for="msg in activityMessages.slice(0, 50)"
+                    :key="msg.id"
+                    class="activity-feed-panel__message"
+                    :class="`activity-feed-panel__message--${msg.category}`"
+                  >
+                    <span class="activity-feed-panel__emoji">{{ msg.emoji || '📝' }}</span>
+                    <span class="activity-feed-panel__text">{{ msg.message }}</span>
+                    <span class="activity-feed-panel__time">{{ formatTime(msg.timestamp) }}</span>
+                  </div>
                 </div>
               </div>
             </div>
-            <!-- Resize handle -->
-            <div class="activity-feed-panel__resize" @mousedown.stop="startResizePanel"></div>
           </div>
+            <canvas ref="canvasRef" @click="handleCanvasClick"></canvas>
 
-          <!-- Right FABs - Actions -->
+            <!-- Guinea Pig Info Menu (replaces floating action buttons) -->
+            <GuineaPigInfoMenu
+              v-if="selectedGuineaPigId && selectedGuineaPig"
+              :guinea-pig="selectedGuineaPig"
+              :position="guineaPigMenuPosition"
+              @close="handleDeselect"
+              @take-control="handleTakeControl"
+            />
+
+            <!-- Floating Inventory Menu (for bowls and hay racks) -->
+            <InventoryItemMenu
+              :show="showInventoryMenu"
+              :position="menuPosition"
+              :title="menuTitle"
+              :items="currentMenuItems"
+              :empty-message="menuEmptyMessage"
+              @close="closeInventoryMenu"
+              @select="handleAddItemToContainer"
+            />
+
+            <!-- Water Bottle Menu -->
+            <WaterBottleMenu
+              v-if="showWaterBottleMenu"
+              :water-level="habitatConditions.waterLevel"
+              :position="waterBottleMenuPosition"
+              @close="closeWaterBottleMenu"
+              @refill="handleRefillWater"
+            />
+
+            <!-- Right FABs - Actions -->
           <div class="game-fab-container">
             <!-- Guinea Pigs FAB -->
             <div class="game-fab-row">
@@ -239,12 +236,6 @@ const activePanel = ref<string | null>(null)
 
 // Activity Feed panel state
 const showActivityFeed = ref(false)
-const activityPanelPosition = ref({ x: 70, y: 50 })
-const activityPanelSize = ref({ width: 320, height: 400 })
-let isDraggingPanel = false
-let isResizingPanel = false
-let dragOffset = { x: 0, y: 0 }
-
 // Take Control mode state
 const controlledGuineaPigId = ref<string | null>(null)
 const CONTROL_AUTO_RELEASE_MS = 30000 // 30 seconds
@@ -277,12 +268,6 @@ const selectedGuineaPig = computed(() => {
 
 // Activity Feed computed properties
 const activityMessages = computed(() => loggingStore.activityMessages)
-const activityPanelStyle = computed(() => ({
-  left: `${activityPanelPosition.value.x}px`,
-  top: `${activityPanelPosition.value.y}px`,
-  width: `${activityPanelSize.value.width}px`,
-  height: `${activityPanelSize.value.height}px`
-}))
 
 // Available food items from inventory for adding to bowl
 const availableFoodItems = computed((): InventoryMenuItem[] => {
@@ -1118,57 +1103,6 @@ function formatTime(timestamp: number): string {
   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
 }
 
-function startDragPanel(event: MouseEvent) {
-  // Only drag from header
-  if (!(event.target as HTMLElement).closest('.activity-feed-panel__header')) return
-
-  isDraggingPanel = true
-  dragOffset = {
-    x: event.clientX - activityPanelPosition.value.x,
-    y: event.clientY - activityPanelPosition.value.y
-  }
-
-  document.addEventListener('mousemove', onDragPanel)
-  document.addEventListener('mouseup', stopDragPanel)
-}
-
-function onDragPanel(event: MouseEvent) {
-  if (!isDraggingPanel) return
-
-  activityPanelPosition.value = {
-    x: Math.max(0, event.clientX - dragOffset.x),
-    y: Math.max(0, event.clientY - dragOffset.y)
-  }
-}
-
-function stopDragPanel() {
-  isDraggingPanel = false
-  document.removeEventListener('mousemove', onDragPanel)
-  document.removeEventListener('mouseup', stopDragPanel)
-}
-
-function startResizePanel(_event: MouseEvent) {
-  isResizingPanel = true
-
-  document.addEventListener('mousemove', onResizePanel)
-  document.addEventListener('mouseup', stopResizePanel)
-}
-
-function onResizePanel(event: MouseEvent) {
-  if (!isResizingPanel) return
-
-  const newWidth = Math.max(200, event.clientX - activityPanelPosition.value.x)
-  const newHeight = Math.max(150, event.clientY - activityPanelPosition.value.y)
-
-  activityPanelSize.value = { width: newWidth, height: newHeight }
-}
-
-function stopResizePanel() {
-  isResizingPanel = false
-  document.removeEventListener('mousemove', onResizePanel)
-  document.removeEventListener('mouseup', stopResizePanel)
-}
-
 /**
  * Toggle game pause state
  */
@@ -1632,35 +1566,85 @@ function updateClouds(deltaTime: number) {
   }
 }
 
-/* Left FAB container (Activity Log) */
-.game-fab-container--left {
-  inset-inline-start: var(--spacing-md);
-  inset-inline-end: auto;
-}
-
-/* Activity Feed Panel */
+/* Activity Feed Panel - Overlay with Integrated Tab */
 .activity-feed-panel {
   position: absolute;
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  block-size: 100%;
   z-index: 20;
+  pointer-events: none;
+}
+
+/* Panel Body - Contains header and content, slides in/out */
+.activity-feed-panel__body {
+  position: relative;
+  inline-size: 320px;
+  block-size: 100%;
+  background-color: var(--color-bg-primary);
+  border-inline-end: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-inline-size: 200px;
-  min-block-size: 150px;
+  transform: translateX(0);
+  transition: transform 0.3s ease;
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
 }
 
+.activity-feed-panel--collapsed .activity-feed-panel__body {
+  transform: translateX(-100%);
+  box-shadow: none;
+}
+
+/* Header */
 .activity-feed-panel__header {
+  position: relative;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: var(--spacing-sm) var(--spacing-md);
   background-color: var(--color-accent-yellow-500);
   color: var(--color-neutral-900);
-  cursor: move;
-  user-select: none;
+  flex-shrink: 0;
+}
+
+/* Tab button - fixed at left edge of canvas, visible when collapsed */
+.activity-feed-panel__tab {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  block-size: 40px; /* Match header height */
+  padding: 0 var(--spacing-sm);
+  background-color: var(--color-accent-yellow-500);
+  color: var(--color-neutral-900);
+  border: none;
+  border-radius: 0;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, opacity 0.3s ease;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.activity-feed-panel__tab:hover {
+  background-color: var(--color-accent-yellow-600);
+}
+
+/* Hide tab when panel is expanded */
+.activity-feed-panel:not(.activity-feed-panel--collapsed) .activity-feed-panel__tab {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Hide close button when collapsed */
+.activity-feed-panel--collapsed .activity-feed-panel__close {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .activity-feed-panel__title {
@@ -1752,19 +1736,5 @@ function updateClouds(deltaTime: number) {
   font-size: var(--font-size-xs);
 }
 
-.activity-feed-panel__resize {
-  position: absolute;
-  inset-inline-end: 0;
-  inset-block-end: 0;
-  inline-size: 16px;
-  block-size: 16px;
-  cursor: se-resize;
-  background: linear-gradient(135deg, transparent 50%, var(--color-neutral-400) 50%);
-  border-radius: 0 0 var(--radius-lg) 0;
-}
-
-.activity-feed-panel__resize:hover {
-  background: linear-gradient(135deg, transparent 50%, var(--color-neutral-500) 50%);
-}
 
 </style>
