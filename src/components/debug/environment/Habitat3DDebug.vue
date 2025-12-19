@@ -50,7 +50,11 @@
     <div v-else class="panel panel--full-width">
       <div class="panel__content">
         <div class="habitat-3d-debug__info">
-          <template v-if="controlledGuineaPigId">
+          <template v-if="placementMode">
+            <span class="habitat-3d-debug__placement-badge">PLACING</span>
+            Click to place {{ placementMode.itemName }} | ESC to cancel
+          </template>
+          <template v-else-if="controlledGuineaPigId">
             <span class="habitat-3d-debug__control-badge">CONTROLLING</span>
             Click habitat to move | Escape to release | Auto-release in 30s
           </template>
@@ -92,7 +96,12 @@
             @select-item="handleInventorySelect"
           />
 
-            <canvas ref="canvasRef" @click="handleCanvasClick"></canvas>
+            <canvas
+              ref="canvasRef"
+              :class="{ 'habitat-3d-debug__canvas--placing': placementMode }"
+              @click="handleCanvasClick"
+              @mousemove="handleCanvasMouseMove"
+            ></canvas>
 
             <!-- Guinea Pig Info Menu (replaces floating action buttons) -->
             <GuineaPigInfoMenu
@@ -204,6 +213,7 @@ import { useGameController } from '../../../stores/gameController'
 import { useLoggingStore } from '../../../stores/loggingStore'
 import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from '../../../constants/3d'
 import { disposeObject3D } from '../../../utils/three-cleanup'
+import { worldToGrid } from '../../../composables/3d-models/shared/utils'
 import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -221,6 +231,16 @@ const showActivityFeed = ref(false)
 
 // Inventory panel state
 const showInventory = ref(false)
+
+// Placement mode state
+const placementMode = ref<{
+  itemId: string
+  itemName: string
+  isWaterBottle: boolean
+} | null>(null)
+let placementPreview: THREE.Group | null = null
+let isPlacementValid = false
+
 // Take Control mode state
 const controlledGuineaPigId = ref<string | null>(null)
 const CONTROL_AUTO_RELEASE_MS = 30000 // 30 seconds
@@ -591,6 +611,14 @@ onUnmounted(() => {
   }
   controlledGuineaPigId.value = null
 
+  // Cleanup placement mode
+  if (placementPreview) {
+    worldGroup.remove(placementPreview)
+    disposeObject3D(placementPreview)
+    placementPreview = null
+  }
+  placementMode.value = null
+
   // Cleanup fullscreen mode
   if (isFullscreen.value) {
     document.body.classList.remove('habitat-fullscreen')
@@ -720,6 +748,15 @@ function updateSelectionRing() {
 // Handle canvas click for guinea pig selection, poop removal, and food bowl interaction
 function handleCanvasClick(event: MouseEvent) {
   if (!canvasRef.value || !guineaPigModels) return
+
+  // Priority 0: Placement mode - place item
+  if (placementMode.value) {
+    if (isPlacementValid) {
+      placeItem()
+    }
+    // If invalid, just ignore the click (stay in placement mode)
+    return
+  }
 
   const canvas = canvasRef.value
   const rect = canvas.getBoundingClientRect()
@@ -1010,9 +1047,17 @@ function updateSelectionRingColor(color: number) {
 }
 
 function handleKeyDown(event: KeyboardEvent) {
-  // Escape releases control or exits fullscreen
+  // Escape priority order:
+  // 1. Close inventory if open (but keep placement active)
+  // 2. Cancel placement mode if active
+  // 3. Release control mode
+  // 4. Exit fullscreen
   if (event.key === 'Escape') {
-    if (controlledGuineaPigId.value) {
+    if (showInventory.value) {
+      showInventory.value = false
+    } else if (placementMode.value) {
+      exitPlacementMode()
+    } else if (controlledGuineaPigId.value) {
       releaseControl()
     } else if (isFullscreen.value) {
       toggleFullscreen()
@@ -1092,7 +1137,191 @@ function toggleInventory() {
 
 function handleInventorySelect(itemId: string) {
   console.log(`[Habitat3D] Selected inventory item: ${itemId}`)
-  // Future: Could trigger placement mode or item interaction
+  const supplyItem = suppliesStore.getItemById(itemId)
+  if (supplyItem && isPlaceableItem(supplyItem)) {
+    enterPlacementMode(itemId)
+  }
+}
+
+/**
+ * Check if an item can be placed in the habitat
+ */
+function isPlaceableItem(item: { category: string; stats?: { servings?: number } }): boolean {
+  // habitat_item category is always placeable
+  if (item.category === 'habitat_item') return true
+  // food without servings is placeable
+  if (item.category === 'food' && !item.stats?.servings) return true
+  return false
+}
+
+/**
+ * Enter placement mode for an item
+ */
+function enterPlacementMode(itemId: string) {
+  const supplyItem = suppliesStore.getItemById(itemId)
+  if (!supplyItem) return
+
+  // Exit any existing placement mode
+  if (placementMode.value) {
+    exitPlacementMode()
+  }
+
+  const isWaterBottle = itemId.includes('water') && itemId.includes('bottle')
+  placementMode.value = {
+    itemId,
+    itemName: supplyItem.name,
+    isWaterBottle
+  }
+
+  // Create ghost preview - simple box placeholder for now
+  const previewGeometry = new THREE.BoxGeometry(2, 1.5, 2)
+  const previewMaterial = new THREE.MeshStandardMaterial({
+    color: 0x888888,
+    transparent: true,
+    opacity: 0.5,
+    emissive: 0x00ff00,
+    emissiveIntensity: 0.3
+  })
+  const previewMesh = new THREE.Mesh(previewGeometry, previewMaterial)
+  previewMesh.position.y = 0.75 // Half height above ground
+
+  placementPreview = new THREE.Group()
+  placementPreview.add(previewMesh)
+  placementPreview.visible = false
+  worldGroup.add(placementPreview)
+
+  console.log(`[Habitat3D] Entered placement mode for: ${supplyItem.name}`)
+}
+
+/**
+ * Exit placement mode and clean up preview
+ */
+function exitPlacementMode() {
+  if (placementPreview) {
+    worldGroup.remove(placementPreview)
+    disposeObject3D(placementPreview)
+    placementPreview = null
+  }
+  placementMode.value = null
+  isPlacementValid = false
+  console.log('[Habitat3D] Exited placement mode')
+}
+
+/**
+ * Validate if a position is valid for placement
+ */
+function isValidPlacement(
+  worldX: number,
+  worldZ: number,
+  mode: { itemId: string; isWaterBottle: boolean }
+): boolean {
+  const halfWidth = GRID_CONFIG.WIDTH / 2
+  const halfDepth = GRID_CONFIG.DEPTH / 2
+  const margin = 2.0 // Keep items away from edge (except water bottles)
+
+  // Check if within bounds
+  const inBoundsX = worldX >= -halfWidth + margin && worldX <= halfWidth - margin
+  const inBoundsZ = worldZ >= -halfDepth + margin && worldZ <= halfDepth - margin
+
+  // Water bottles: must be on edge
+  if (mode.isWaterBottle) {
+    const onLeftRight = Math.abs(worldX) > halfWidth - margin
+    const onTopBottom = Math.abs(worldZ) > halfDepth - margin
+    if (!onLeftRight && !onTopBottom) {
+      return false // Water bottles must be on edges
+    }
+    // Water bottles can be outside normal bounds (on edges)
+  } else {
+    // Regular items must be within bounds
+    if (!inBoundsX || !inBoundsZ) {
+      return false
+    }
+  }
+
+  // Check overlap with existing items (grid cell level)
+  const gridPos = worldToGrid(worldX, worldZ)
+  for (const [, pos] of habitatConditions.itemPositions) {
+    if (pos.x === gridPos.x && pos.y === gridPos.y) {
+      return false // Cell occupied
+    }
+  }
+
+  return true
+}
+
+/**
+ * Update the preview mesh color based on validity
+ */
+function updatePreviewColor(valid: boolean) {
+  if (!placementPreview) return
+
+  const color = valid ? 0x00ff00 : 0xff0000 // Green or red
+  placementPreview.traverse((child) => {
+    if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+      child.material.emissive.setHex(color)
+    }
+  })
+}
+
+/**
+ * Handle mouse move for placement preview
+ */
+function handleCanvasMouseMove(event: MouseEvent) {
+  if (!placementMode.value || !placementPreview || !canvasRef.value) return
+
+  const canvas = canvasRef.value
+  const rect = canvas.getBoundingClientRect()
+
+  // Normalize mouse position
+  const mouse = new THREE.Vector2()
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+  // Raycast to floor
+  const raycaster = new THREE.Raycaster()
+  raycaster.setFromCamera(mouse, camera)
+  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+  const intersection = new THREE.Vector3()
+  raycaster.ray.intersectPlane(floorPlane, intersection)
+
+  if (intersection) {
+    // Free placement - use exact world coordinates
+    placementPreview.position.set(intersection.x, 0, intersection.z)
+    placementPreview.visible = true
+
+    // Validate and update preview color
+    isPlacementValid = isValidPlacement(intersection.x, intersection.z, placementMode.value)
+    updatePreviewColor(isPlacementValid)
+  }
+}
+
+/**
+ * Place the current item at the preview position
+ */
+function placeItem() {
+  if (!placementMode.value || !placementPreview || !isPlacementValid) return
+
+  const position = {
+    x: placementPreview.position.x,
+    z: placementPreview.position.z
+  }
+
+  // Convert to grid coords for storage
+  const gridPos = worldToGrid(position.x, position.z)
+
+  // Add item to habitat
+  habitatConditions.addItemToHabitat(placementMode.value.itemId, gridPos)
+  console.log(`[Habitat3D] Placed ${placementMode.value.itemName} at grid (${gridPos.x}, ${gridPos.y})`)
+
+  // Check if more of this item available
+  const placedCount = inventoryStore.getPlacedCount(placementMode.value.itemId) + 1
+  const totalQuantity = inventoryStore.getItemQuantity(placementMode.value.itemId)
+  const remaining = totalQuantity - placedCount
+
+  if (remaining <= 0) {
+    exitPlacementMode()
+  }
+  // Otherwise stay in placement mode for more placements
 }
 
 function formatTime(timestamp: number): string {
@@ -1626,5 +1855,21 @@ function updateClouds(deltaTime: number) {
   font-size: var(--font-size-xs);
 }
 
+/* Placement mode styles */
+.habitat-3d-debug__placement-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  margin-inline-end: var(--spacing-sm);
+  background-color: var(--color-accent-green-500);
+  color: white;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
 
+.habitat-3d-debug__canvas--placing {
+  cursor: crosshair !important;
+}
 </style>
