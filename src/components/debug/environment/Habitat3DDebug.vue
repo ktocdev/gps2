@@ -94,6 +94,7 @@
             :is-open="showInventory"
             @toggle="toggleInventory"
             @select-item="handleInventorySelect"
+            @deselect-item="handleInventoryDeselect"
           />
 
             <canvas
@@ -112,7 +113,23 @@
               @take-control="handleTakeControl"
             />
 
-            <!-- Floating Inventory Menu (for bowls and hay racks) -->
+            <!-- Container Contents Menu (shows what's in bowl/rack) -->
+            <ContainerContentsMenu
+              :show="showContainerMenu"
+              :position="menuPosition"
+              :container-type="selectedContainerType || 'bowl'"
+              :foods="currentBowlContents"
+              :bowl-capacity="currentBowlCapacity"
+              :hay-servings="currentHayServings"
+              :hay-capacity="4"
+              :freshness="currentHayFreshness"
+              @close="closeContainerMenu"
+              @fill="handleContainerFill"
+              @clear="handleContainerClear"
+              @remove-food="handleRemoveFood"
+            />
+
+            <!-- Floating Inventory Menu (for adding items to containers) -->
             <InventoryItemMenu
               :show="showInventoryMenu"
               :position="menuPosition"
@@ -198,6 +215,7 @@ import {
 import GuineaPigInfoMenu from '../../game/GuineaPigInfoMenu.vue'
 import WaterBottleMenu from '../../game/WaterBottleMenu.vue'
 import InventoryItemMenu from '../../basic/InventoryItemMenu.vue'
+import ContainerContentsMenu from '../../basic/ContainerContentsMenu.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import Inventory3DPanel from '../../game/Inventory3DPanel.vue'
 import SidePanel3D from '../../game/SidePanel3D.vue'
@@ -257,9 +275,10 @@ const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 const gameController = useGameController()
 
-// Inventory menu state (for bowls and hay racks)
+// Container menu state (for bowls and hay racks)
 const selectedContainerId = ref<string | null>(null)
 const selectedContainerType = ref<'bowl' | 'hay_rack' | null>(null)
+const showContainerMenu = ref(false)
 const showInventoryMenu = ref(false)
 const menuPosition = ref({ x: 0, y: 0 })
 
@@ -350,6 +369,34 @@ const menuEmptyMessage = computed(() => {
     return 'No hay in inventory'
   }
   return 'No items available'
+})
+
+// Container contents computed properties
+const currentBowlContents = computed(() => {
+  if (!selectedContainerId.value || selectedContainerType.value !== 'bowl') {
+    return []
+  }
+  return habitatConditions.getBowlContents(selectedContainerId.value)
+})
+
+const currentBowlCapacity = computed(() => {
+  if (!selectedContainerId.value) return 3
+  const bowlItem = suppliesStore.getItemById(selectedContainerId.value)
+  return bowlItem?.stats?.foodCapacity || 3
+})
+
+const currentHayServings = computed(() => {
+  if (!selectedContainerId.value || selectedContainerType.value !== 'hay_rack') {
+    return 0
+  }
+  return habitatConditions.getHayRackContents(selectedContainerId.value).length
+})
+
+const currentHayFreshness = computed(() => {
+  if (!selectedContainerId.value || selectedContainerType.value !== 'hay_rack') {
+    return 100
+  }
+  return habitatConditions.getHayRackFreshness(selectedContainerId.value)
 })
 
 // Unified 3D behavior composables registry (for autonomous behavior)
@@ -816,10 +863,35 @@ function handleCanvasClick(event: MouseEvent) {
       })
 
       if (clickedContainerId && clickedContainerType) {
-        // Show inventory menu for this container
+        // If in container fill mode, try to add the selected item to the container
+        if (containerFillMode.value) {
+          const { itemId, category } = containerFillMode.value
+          let success = false
+
+          // Validate container type matches item category
+          if (clickedContainerType === 'bowl') {
+            // Bowls accept both food and hay
+            success = habitatConditions.addFoodToBowl(clickedContainerId, itemId)
+          } else if (clickedContainerType === 'hay_rack' && category === 'hay') {
+            // Hay racks only accept hay
+            success = habitatConditions.addHayToRack(clickedContainerId, itemId)
+          }
+
+          // Exit container fill mode regardless of success
+          exitContainerFillMode()
+
+          if (success) {
+            console.log(`Added ${itemId} to ${clickedContainerType} ${clickedContainerId}`)
+            return
+          }
+          // If add failed, fall through to show the popover
+          console.log(`Could not add ${itemId} to ${clickedContainerType}, showing popover instead`)
+        }
+
+        // Show container contents menu (shows what's in the container)
         selectedContainerId.value = clickedContainerId
         selectedContainerType.value = clickedContainerType
-        showInventoryMenu.value = true
+        showContainerMenu.value = true
         menuPosition.value = {
           x: event.clientX - rect.left,
           y: event.clientY - rect.top
@@ -908,6 +980,9 @@ function handleCanvasClick(event: MouseEvent) {
 
   // Clicked on empty space - deselect guinea pig and close menus
   selectedGuineaPigId.value = null
+  if (showContainerMenu.value) {
+    closeContainerMenu()
+  }
   if (showInventoryMenu.value) {
     closeInventoryMenu()
   }
@@ -916,7 +991,44 @@ function handleCanvasClick(event: MouseEvent) {
   }
 }
 
-// Close the inventory menu
+// Close the container contents menu
+function closeContainerMenu() {
+  showContainerMenu.value = false
+  selectedContainerId.value = null
+  selectedContainerType.value = null
+}
+
+// Handle fill button - switch to inventory menu to add items
+function handleContainerFill() {
+  showContainerMenu.value = false
+  showInventoryMenu.value = true
+}
+
+// Handle clear button - empty the container
+function handleContainerClear() {
+  if (!selectedContainerId.value || !selectedContainerType.value) return
+
+  if (selectedContainerType.value === 'bowl') {
+    habitatConditions.clearBowl(selectedContainerId.value)
+    console.log(`[Habitat3D] Cleared bowl ${selectedContainerId.value}`)
+  } else if (selectedContainerType.value === 'hay_rack') {
+    habitatConditions.clearHayRack(selectedContainerId.value)
+    console.log(`[Habitat3D] Cleared hay rack ${selectedContainerId.value}`)
+  }
+
+  closeContainerMenu()
+}
+
+// Handle removing individual food item from bowl
+function handleRemoveFood(foodIndex: number) {
+  if (!selectedContainerId.value || selectedContainerType.value !== 'bowl') return
+
+  const success = habitatConditions.removeFoodFromBowl(selectedContainerId.value, foodIndex)
+  if (success) {
+    console.log(`[Habitat3D] Removed food at index ${foodIndex} from bowl ${selectedContainerId.value}`)
+  }
+}
+
 function closeInventoryMenu() {
   showInventoryMenu.value = false
   selectedContainerId.value = null
@@ -1048,15 +1160,18 @@ function updateSelectionRingColor(color: number) {
 
 function handleKeyDown(event: KeyboardEvent) {
   // Escape priority order:
-  // 1. Close inventory if open (but keep placement active)
+  // 1. Close inventory if open (but keep placement/container mode active)
   // 2. Cancel placement mode if active
-  // 3. Release control mode
-  // 4. Exit fullscreen
+  // 3. Cancel container fill mode if active
+  // 4. Release control mode
+  // 5. Exit fullscreen
   if (event.key === 'Escape') {
     if (showInventory.value) {
       showInventory.value = false
     } else if (placementMode.value) {
       exitPlacementMode()
+    } else if (containerFillMode.value) {
+      exitContainerFillMode()
     } else if (controlledGuineaPigId.value) {
       releaseControl()
     } else if (isFullscreen.value) {
@@ -1138,20 +1253,43 @@ function toggleInventory() {
 function handleInventorySelect(itemId: string) {
   console.log(`[Habitat3D] Selected inventory item: ${itemId}`)
   const supplyItem = suppliesStore.getItemById(itemId)
-  if (supplyItem && isPlaceableItem(supplyItem)) {
+  if (!supplyItem) return
+
+  if (supplyItem.category === 'habitat_item') {
+    // Habitat items are placed directly in the habitat
     enterPlacementMode(itemId)
+  } else if (supplyItem.category === 'food' || supplyItem.category === 'hay') {
+    // Food/hay items enter container fill mode - user clicks on bowl/rack to add
+    enterContainerFillMode(itemId, supplyItem.category)
   }
 }
 
-/**
- * Check if an item can be placed in the habitat
- */
-function isPlaceableItem(item: { category: string; stats?: { servings?: number } }): boolean {
-  // habitat_item category is always placeable
-  if (item.category === 'habitat_item') return true
-  // food without servings is placeable
-  if (item.category === 'food' && !item.stats?.servings) return true
-  return false
+function handleInventoryDeselect() {
+  // Exit container fill mode when item is deselected in inventory
+  if (containerFillMode.value) {
+    exitContainerFillMode()
+  }
+  // Also exit placement mode if active
+  if (placementMode.value) {
+    exitPlacementMode()
+  }
+}
+
+// Container fill mode state
+const containerFillMode = ref<{ itemId: string; category: string } | null>(null)
+
+function enterContainerFillMode(itemId: string, category: string) {
+  // Exit any existing modes
+  if (placementMode.value) {
+    exitPlacementMode()
+  }
+  containerFillMode.value = { itemId, category }
+  console.log(`[Habitat3D] Entered container fill mode for ${category}: ${itemId}`)
+}
+
+function exitContainerFillMode() {
+  containerFillMode.value = null
+  console.log('[Habitat3D] Exited container fill mode')
 }
 
 /**

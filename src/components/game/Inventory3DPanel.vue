@@ -28,18 +28,16 @@
           class="inventory-3d-panel__item"
           :class="{
             'inventory-3d-panel__item--selected': selectedItemId === item.itemId,
-            'inventory-3d-panel__item--has-servings': item.hasServings
+            'inventory-3d-panel__item--hay': item.category === 'hay',
+            'inventory-3d-panel__item--food': item.category === 'food'
           }"
           @click="handleItemClick(item)"
           :title="item.name"
         >
           <span class="inventory-3d-panel__item-emoji">{{ item.emoji }}</span>
           <span class="inventory-3d-panel__item-name">{{ item.name }}</span>
-          <span v-if="item.hasServings" class="inventory-3d-panel__item-servings">
+          <span class="inventory-3d-panel__item-servings">
             {{ item.servingsRemaining }}/{{ item.maxServings }}
-          </span>
-          <span v-else-if="item.quantity > 1" class="inventory-3d-panel__item-quantity">
-            ×{{ item.quantity }}
           </span>
         </button>
       </div>
@@ -104,6 +102,7 @@ defineProps<Props>()
 const emit = defineEmits<{
   toggle: []
   selectItem: [itemId: string]
+  deselectItem: []
 }>()
 
 const inventoryStore = useInventoryStore()
@@ -116,49 +115,42 @@ const totalItemCount = computed(() => {
   return inventoryStore.allItems.reduce((sum, item) => sum + item.quantity, 0)
 })
 
-// Computed: Food & Consumables (hay, food items with servings)
+// Check if an item needs to be placed into a container (bowl/rack)
+function isContainerItem(category: string): boolean {
+  return category === 'hay' || category === 'food'
+}
+
+// Computed: Food & Consumables (hay, food items - all have servings)
 const consumableItems = computed(() => {
   const items: Array<{
     itemId: string
     name: string
     emoji: string
     quantity: number
-    hasServings: boolean
-    servingsRemaining?: number
-    maxServings?: number
+    servingsRemaining: number
+    maxServings: number
+    category: string
   }> = []
 
   for (const invItem of inventoryStore.allItems) {
     const supplyItem = suppliesStore.getItemById(invItem.itemId)
     if (!supplyItem) continue
 
-    // Include hay and food categories
-    if (supplyItem.category === 'hay' || supplyItem.category === 'food') {
-      const hasServings = supplyItem.stats?.servings !== undefined
+    // Include hay and food categories (all have servings)
+    if (isContainerItem(supplyItem.category)) {
+      // Get total servings across all instances
+      const totalServings = inventoryStore.getTotalServings(invItem.itemId)
+      const maxServingsPerItem = supplyItem.stats?.servings || 1
 
-      if (hasServings) {
-        // Get total servings across all instances
-        const totalServings = inventoryStore.getTotalServings(invItem.itemId)
-        const maxServingsPerItem = supplyItem.stats?.servings || 1
-
-        items.push({
-          itemId: invItem.itemId,
-          name: supplyItem.name,
-          emoji: supplyItem.emoji || '🍽️',
-          quantity: invItem.quantity,
-          hasServings: true,
-          servingsRemaining: totalServings,
-          maxServings: maxServingsPerItem * invItem.quantity
-        })
-      } else {
-        items.push({
-          itemId: invItem.itemId,
-          name: supplyItem.name,
-          emoji: supplyItem.emoji || '🍽️',
-          quantity: invItem.quantity,
-          hasServings: false
-        })
-      }
+      items.push({
+        itemId: invItem.itemId,
+        name: supplyItem.name,
+        emoji: supplyItem.emoji || '🍽️',
+        quantity: invItem.quantity,
+        servingsRemaining: totalServings,
+        maxServings: maxServingsPerItem * invItem.quantity,
+        category: supplyItem.category
+      })
     }
   }
 
@@ -229,10 +221,11 @@ const beddingItems = computed(() => {
   return items
 })
 
-// Handle item click
+// Handle habitat item click - for direct placement in habitat
 function handleItemClick(item: { itemId: string }) {
   if (selectedItemId.value === item.itemId) {
     selectedItemId.value = null
+    emit('deselectItem')
   } else {
     selectedItemId.value = item.itemId
     emit('selectItem', item.itemId)
@@ -300,16 +293,29 @@ function handleItemClick(item: { itemId: string }) {
 
 .inventory-3d-panel__item--selected {
   border-color: var(--color-accent-violet-500);
-  background-color: var(--color-accent-violet-50);
+  background-color: var(--color-accent-violet-100);
 }
 
-.inventory-3d-panel__item--readonly {
-  cursor: default;
-  opacity: 0.7;
+.inventory-3d-panel__item--selected .inventory-3d-panel__item-name {
+  color: var(--color-accent-violet-800);
 }
 
-.inventory-3d-panel__item--readonly:hover {
-  background-color: var(--color-bg-secondary);
+.inventory-3d-panel__item--selected .inventory-3d-panel__item-servings {
+  color: var(--color-accent-violet-700);
+}
+
+.inventory-3d-panel__item--selected:hover {
+  background-color: var(--color-accent-violet-200);
+}
+
+/* Food items - green left border */
+.inventory-3d-panel__item--food {
+  border-inline-start: 3px solid var(--color-accent-green-500);
+}
+
+/* Hay items - yellow left border */
+.inventory-3d-panel__item--hay {
+  border-inline-start: 3px solid var(--color-accent-yellow-500);
 }
 
 .inventory-3d-panel__item-emoji {
@@ -340,8 +346,4 @@ function handleItemClick(item: { itemId: string }) {
   flex-shrink: 0;
 }
 
-/* Serving-based item styling */
-.inventory-3d-panel__item--has-servings {
-  border-inline-start: 3px solid var(--color-accent-green-500);
-}
 </style>
