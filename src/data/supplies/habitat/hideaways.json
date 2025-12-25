@@ -142,6 +142,31 @@
     "tags": []
   },
   {
+    "id": "habitat_wooden_archway_tunnel",
+    "name": "Wooden Archway Tunnel",
+    "description": "Natural wooden arch tunnel with chewable edges, great for running through",
+    "category": "habitat_item",
+    "subCategory": "hideaways",
+    "basePrice": 24.99,
+    "currency": "dollars",
+    "stats": {
+      "itemType": "tunnel",
+      "needSatisfied": "play",
+      "satisfactionAmount": 30,
+      "usageDuration": 45,
+      "durability": 6,
+      "comfortBoost": 10,
+      "playBoost": 15,
+      "chewBoost": 5,
+      "size": "large",
+      "blocksMovement": false
+    },
+    "availability": "always",
+    "emoji": "🪵",
+    "tier": "premium",
+    "tags": ["natural", "chewable"]
+  },
+  {
     "id": "habitat_castle_hideout",
     "name": "Castle Hideout",
     "description": "Multi-level hideaway with turrets",
