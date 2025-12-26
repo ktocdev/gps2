@@ -55,9 +55,12 @@ interface HabitatAlert {
 
 interface Poop {
   id: string
-  x: number
-  y: number
+  x: number           // subgrid X (for 2D compatibility)
+  y: number           // subgrid Y (for 2D compatibility)
   timestamp: number
+  // Optional 3D world coordinates - if present, use these for rendering
+  worldX?: number
+  worldZ?: number
 }
 
 interface AlertPreferences {
@@ -454,12 +457,14 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     }
   }
 
-  function addPoop(x: number, y: number) {
+  function addPoop(x: number, y: number, worldX?: number, worldZ?: number) {
     const poop: Poop = {
       id: `poop_${crypto.randomUUID()}`,
       x,
       y,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      ...(worldX !== undefined && { worldX }),
+      ...(worldZ !== undefined && { worldZ })
     }
     poops.value.push(poop)
 

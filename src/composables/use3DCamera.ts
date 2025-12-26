@@ -13,6 +13,7 @@ export function use3DCamera(
   camera: THREE.PerspectiveCamera,
   worldGroup: THREE.Group,
   canvasElement: HTMLCanvasElement,
+  options?: { disableArrowKeys?: () => boolean }
 ) {
   const controls = ref<CameraControls>({
     isDragging: false,
@@ -71,7 +72,7 @@ export function use3DCamera(
   function handleKeyDown(e: KeyboardEvent) {
     // Prevent page scroll when hovering over canvas
     if (controls.value.isHovering) {
-      const scrollKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'z', 'x', 'Z', 'X']
+      const scrollKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'z', 'x', 'Z', 'X', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D']
       if (scrollKeys.includes(e.key) || scrollKeys.includes(e.code)) {
         e.preventDefault()
       }
@@ -113,17 +114,26 @@ export function use3DCamera(
 
   // Update camera position based on keyboard input
   function updateCameraPosition() {
-    // Left/right arrows work all the time
-    if (controls.value.keysPressed['arrowleft']) camera.position.x -= CAMERA_CONFIG.PAN_SPEED
-    if (controls.value.keysPressed['arrowright']) camera.position.x += CAMERA_CONFIG.PAN_SPEED
+    // Check if arrow keys should be disabled (e.g., during Take Control mode)
+    const arrowsDisabled = options?.disableArrowKeys?.() ?? false
 
-    // Up/down arrows and Z/X only work when hovering over canvas
-    if (controls.value.isHovering) {
+    // WASD always controls camera (A/D = left/right, W/S = forward/back)
+    if (controls.value.keysPressed['a']) camera.position.x -= CAMERA_CONFIG.PAN_SPEED
+    if (controls.value.keysPressed['d']) camera.position.x += CAMERA_CONFIG.PAN_SPEED
+    if (controls.value.keysPressed['w']) camera.position.z -= CAMERA_CONFIG.PAN_SPEED
+    if (controls.value.keysPressed['s']) camera.position.z += CAMERA_CONFIG.PAN_SPEED
+
+    // Arrow keys control camera only when not disabled
+    if (!arrowsDisabled) {
+      if (controls.value.keysPressed['arrowleft']) camera.position.x -= CAMERA_CONFIG.PAN_SPEED
+      if (controls.value.keysPressed['arrowright']) camera.position.x += CAMERA_CONFIG.PAN_SPEED
       if (controls.value.keysPressed['arrowup']) camera.position.z -= CAMERA_CONFIG.PAN_SPEED
       if (controls.value.keysPressed['arrowdown']) camera.position.z += CAMERA_CONFIG.PAN_SPEED
-      if (controls.value.keysPressed['z']) camera.position.y += CAMERA_CONFIG.VERTICAL_SPEED
-      if (controls.value.keysPressed['x']) camera.position.y -= CAMERA_CONFIG.VERTICAL_SPEED
     }
+
+    // Z/X for vertical movement (always available)
+    if (controls.value.keysPressed['z']) camera.position.y += CAMERA_CONFIG.VERTICAL_SPEED
+    if (controls.value.keysPressed['x']) camera.position.y -= CAMERA_CONFIG.VERTICAL_SPEED
 
     // Alternate rotation keys
     if (controls.value.keysPressed[','] || controls.value.keysPressed['<']) {
@@ -133,10 +143,18 @@ export function use3DCamera(
       worldGroup.rotation.y += CAMERA_CONFIG.KEYBOARD_ROTATION_SPEED
     }
 
-    // Clamp camera height
+    // Clamp camera position to world boundaries
+    camera.position.x = Math.max(
+      CAMERA_CONFIG.BOUND_X_MIN,
+      Math.min(CAMERA_CONFIG.BOUND_X_MAX, camera.position.x)
+    )
     camera.position.y = Math.max(
       CAMERA_CONFIG.HEIGHT_MIN,
       Math.min(CAMERA_CONFIG.HEIGHT_MAX, camera.position.y)
+    )
+    camera.position.z = Math.max(
+      CAMERA_CONFIG.BOUND_Z_MIN,
+      Math.min(CAMERA_CONFIG.BOUND_Z_MAX, camera.position.z)
     )
 
     // Update camera look-at with tilt

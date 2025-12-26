@@ -11,6 +11,7 @@ import { ref, computed } from 'vue'
 import { useLoggingStore } from './loggingStore'
 import { useNeedsController } from './needsController'
 import { useGameController } from './gameController'
+import { useGameViewStore } from './gameViewStore'
 import { useHabitatConditions } from './habitatConditions'
 import { useGuineaPigStore } from './guineaPigStore'
 import { useAutonomySettingsStore } from './autonomySettingsStore'
@@ -183,24 +184,29 @@ export const useGameTimingStore = defineStore('gameTiming', () => {
         needsController.processBatchUpdate()
 
         // System 19: Process autonomous AI behaviors for each guinea pig
+        // Skip 2D behavior in 3D mode - use3DBehavior handles everything there
+        const gameViewStore = useGameViewStore()
         const guineaPigStore = useGuineaPigStore()
-        const autonomySettings = useAutonomySettingsStore()
 
-        for (const guineaPig of guineaPigStore.activeGuineaPigs) {
-          // Get or create cached behavior composable for this guinea pig
-          let behavior = behaviorComposables.get(guineaPig.id)
-          if (!behavior) {
-            behavior = useGuineaPigBehavior(guineaPig.id)
-            behaviorComposables.set(guineaPig.id, behavior)
+        if (gameViewStore.mode !== '3d') {
+          const autonomySettings = useAutonomySettingsStore()
+
+          for (const guineaPig of guineaPigStore.activeGuineaPigs) {
+            // Get or create cached behavior composable for this guinea pig
+            let behavior = behaviorComposables.get(guineaPig.id)
+            if (!behavior) {
+              behavior = useGuineaPigBehavior(guineaPig.id)
+              behaviorComposables.set(guineaPig.id, behavior)
+            }
+
+            // Get custom thresholds for this guinea pig (or defaults if not set)
+            const thresholds = autonomySettings.getThresholds(guineaPig.id)
+
+            // Call tick with custom thresholds from debug panel
+            behavior.tick(thresholds).catch(error => {
+              getLoggingStore().logWarn(`AI tick error for ${guineaPig.name}: ${error}`)
+            })
           }
-
-          // Get custom thresholds for this guinea pig (or defaults if not set)
-          const thresholds = autonomySettings.getThresholds(guineaPig.id)
-
-          // Call tick with custom thresholds from debug panel
-          behavior.tick(thresholds).catch(error => {
-            getLoggingStore().logWarn(`AI tick error for ${guineaPig.name}: ${error}`)
-          })
         }
 
         // Clean up behavior composables for guinea pigs that are no longer active

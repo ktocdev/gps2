@@ -341,7 +341,15 @@ export function useHabitatContainers() {
   }
 
   function clearHayRack(hayRackItemId: string): void {
-    hayRackContents.value.delete(hayRackItemId)
+    // Keep the rack entry but clear its servings and reset freshness
+    // This ensures the rack is still tracked in the system
+    const newMap = new Map(hayRackContents.value)
+    newMap.set(hayRackItemId, {
+      servings: [],
+      freshness: 100,
+      lastDecayUpdate: Date.now()
+    })
+    hayRackContents.value = newMap
   }
 
   function clearAllHayRacks(): void {

@@ -970,18 +970,23 @@ export function use3DBehavior(guineaPigId: string) {
       const state = movement3DStore.getGuineaPigState(guineaPigId)
       if (!state) return
 
-      const gridPos = movement3DStore.worldToGrid(state.worldPosition.x, state.worldPosition.z)
+      // Get world position directly for accurate 3D placement
+      const worldX = state.worldPosition.x
+      const worldZ = state.worldPosition.z
 
-      const subgridX = gridPos.col * SUBGRID_SCALE + Math.floor(Math.random() * SUBGRID_SCALE)
-      const subgridY = gridPos.row * SUBGRID_SCALE + Math.floor(Math.random() * SUBGRID_SCALE)
+      // Calculate subgrid for 2D backward compatibility
+      const gridPos = movement3DStore.worldToGrid(worldX, worldZ)
+      const subgridX = gridPos.col * SUBGRID_SCALE
+      const subgridY = gridPos.row * SUBGRID_SCALE
 
-      habitatConditions.addPoop(subgridX, subgridY)
+      // Pass both subgrid AND world coordinates
+      habitatConditions.addPoop(subgridX, subgridY, worldX, worldZ)
 
       // Random offset to desync multiple guinea pigs
       const randomOffset = -Math.random() * 10000
       gp.lastPoopTime = Date.now() + randomOffset
 
-      console.log(`[Behavior3D] Guinea pig ${guineaPigId} pooped at subgrid (${subgridX}, ${subgridY})`)
+      console.log(`[Behavior3D] Guinea pig ${guineaPigId} pooped at world (${worldX.toFixed(2)}, ${worldZ.toFixed(2)})`)
     }
   }
 

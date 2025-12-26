@@ -1,12 +1,28 @@
 TO DOs
+ 
+- add physics to habitat items like in 3d demo
+- clicking stick, ball will make them roll naturally
+- guinea pig can push the stick and ball, and other appropriate items
 
-- take control mode is not working 
-- check Habitat3DDebug for code that should be in it's own composable/store/component   
-- chew animation
-- enhance groom animation
-- allow more zooming out to view entire habitat
-- create boundaries around habitat world so we don't drift endlessly
-- clean cage action needs bedding dialog flow like 2d habitat
-- the hay popover when clicking on hay rack should be like the one in the 2d habitat
-- full screen is distorted on large monitors, need to constrain proportations
+- when click on the habitat floor, if empty floor, use it to drag the camera view around
+
+- create 3d models for other food items
+- enhance hay 3d model
+
+- create 3d models for some other habitat items
+
+- add guinea pig chat bubbles for reactions, etc - parity from 2d game
+- would 3d chat bubbles look cute? flat 3d?
+
+- finish out rest of need fulfillment methods
+    - play, chew, socialize autonomous actions - parity with 2d game
+
+- user to guinea pig actions - parity with 2d game 
+
+- guinea pig to guinea pig actions (social, play, groom, greet, check out) - parity with 2d game
+
+- replace comfort need with stimulation
+    - this is documented in the docs folder somewhere
+
+- guinea pigs walk through the arch tunnel, igloo walls, water bottle
 

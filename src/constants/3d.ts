@@ -26,14 +26,19 @@ export const CAMERA_CONFIG = {
   FAR: 1000,
   INITIAL_POSITION: { x: 10, y: 15, z: 30 } as const,
   HEIGHT_MIN: 0.5,
-  HEIGHT_MAX: 20,
+  HEIGHT_MAX: 50, // Increased from 20 to allow viewing entire habitat
+  // Camera X/Z boundaries - margin beyond habitat for viewing angles
+  BOUND_X_MIN: -35,
+  BOUND_X_MAX: 35,
+  BOUND_Z_MIN: -30,
+  BOUND_Z_MAX: 40, // Extra room in +Z since camera looks inward
   MOUSE_ROTATION_SPEED: 0.01,
   WHEEL_ZOOM_SPEED: 0.01,
   PAN_SPEED: 0.15,
   VERTICAL_SPEED: 0.1,
   KEYBOARD_ROTATION_SPEED: 0.03,
   TILT_OFFSET_BASE: 5,
-  TILT_OFFSET_MULTIPLIER: 0.5,
+  TILT_OFFSET_MULTIPLIER: 0.4, // Reduced slightly for better centering when zoomed out
 } as const
 
 // Scene Colors

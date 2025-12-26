@@ -56,10 +56,10 @@
           </template>
           <template v-else-if="controlledGuineaPigId">
             <span class="habitat-3d-debug__control-badge">CONTROLLING</span>
-            Click habitat to move | Escape to release | Auto-release in 30s
+            Arrows or click to move guinea pig | WASD for camera | Escape to release
           </template>
           <template v-else>
-            Drag or &lt; &gt; to rotate | Scroll/Z/X for Up/Down | Arrows to pan | Click guinea pig to select
+            Drag or &lt; &gt; to rotate | Scroll/Z/X for Up/Down | WASD/Arrows to pan | Click guinea pig to select
           </template>
         </div>
         <div class="habitat-3d-debug__canvas-wrapper">
@@ -149,6 +149,18 @@
               @refill="handleRefillWater"
             />
 
+            <!-- Clean Cage Dialog -->
+            <CleanCageDialog
+              v-model="showCleanCageDialog"
+              :dirtiness="habitatDirtiness"
+              :bedding-needed="beddingNeeded"
+              :bedding-available="beddingAvailable"
+              @confirm="handleCleanCageConfirm"
+            />
+
+            <!-- Hay Management Dialog -->
+            <HayManagementDialog v-model="showHayManagementDialog" />
+
             <!-- Right FABs - Actions -->
           <div class="game-fab-container">
             <!-- Guinea Pigs FAB -->
@@ -216,6 +228,8 @@ import GuineaPigInfoMenu from '../../game/GuineaPigInfoMenu.vue'
 import WaterBottleMenu from '../../game/WaterBottleMenu.vue'
 import InventoryItemMenu from '../../basic/InventoryItemMenu.vue'
 import ContainerContentsMenu from '../../basic/ContainerContentsMenu.vue'
+import CleanCageDialog from '../../game/dialogs/CleanCageDialog.vue'
+import HayManagementDialog from '../../game/dialogs/HayManagementDialog.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import Inventory3DPanel from '../../game/Inventory3DPanel.vue'
 import SidePanel3D from '../../game/SidePanel3D.vue'
@@ -230,6 +244,7 @@ import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useGameController } from '../../../stores/gameController'
 import { useLoggingStore } from '../../../stores/loggingStore'
 import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from '../../../constants/3d'
+import { CONSUMPTION } from '../../../constants/supplies'
 import { disposeObject3D } from '../../../utils/three-cleanup'
 import { worldToGrid } from '../../../composables/3d-models/shared/utils'
 import * as THREE from 'three'
@@ -406,6 +421,17 @@ const behaviors = new Map<string, ReturnType<typeof use3DBehavior>>()
 const showWaterBottleMenu = ref(false)
 const waterBottleMenuPosition = ref({ x: 0, y: 0 })
 
+// Clean cage dialog state
+const showCleanCageDialog = ref(false)
+
+// Hay management dialog state
+const showHayManagementDialog = ref(false)
+
+// Computed properties for clean cage dialog
+const habitatDirtiness = computed(() => habitatConditions.dirtiness)
+const beddingNeeded = computed(() => habitatConditions.calculateBeddingNeeded())
+const beddingAvailable = computed(() => habitatConditions.getTotalBeddingAvailable())
+
 /**
  * Initialize guinea pigs in movement3DStore and start hunger behaviors
  */
@@ -551,7 +577,10 @@ onMounted(() => {
   if (!renderer) return
 
   // Setup camera controls
-  const cameraControls = use3DCamera(camera, worldGroup, canvasRef.value)
+  // Disable arrow keys for camera when in Take Control mode (arrows control guinea pig instead)
+  const cameraControls = use3DCamera(camera, worldGroup, canvasRef.value, {
+    disableArrowKeys: () => !!controlledGuineaPigId.value
+  })
   updateCameraPosition = cameraControls.updateCameraPosition
   cleanupCamera = cameraControls.cleanup
 
@@ -998,10 +1027,57 @@ function closeContainerMenu() {
   selectedContainerType.value = null
 }
 
-// Handle fill button - switch to inventory menu to add items
+// Handle fill button - for hay racks, fill directly; for bowls, show inventory menu
 function handleContainerFill() {
-  showContainerMenu.value = false
-  showInventoryMenu.value = true
+  if (!selectedContainerId.value || !selectedContainerType.value) return
+
+  if (selectedContainerType.value === 'hay_rack') {
+    // Fill hay rack directly to capacity (or as much as available)
+    const rackId = selectedContainerId.value
+    const hayItemId = getFirstAvailableHayItemId()
+
+    if (!hayItemId) {
+      console.log('[Habitat3D] No hay available in inventory')
+      return
+    }
+
+    // Fill until rack is full or we run out of hay
+    let added = 0
+    const maxCapacity = CONSUMPTION.HAY_RACK_MAX_CAPACITY
+    const currentServings = habitatConditions.getHayRackContents(rackId).length
+    const slotsToFill = maxCapacity - currentServings
+
+    for (let i = 0; i < slotsToFill; i++) {
+      if (habitatConditions.addHayToRack(rackId, hayItemId)) {
+        added++
+      } else {
+        break // No more hay available
+      }
+    }
+
+    if (added > 0) {
+      console.log(`[Habitat3D] Filled hay rack with ${added} servings`)
+    }
+    // Don't close the menu - let user see the updated state
+  } else {
+    // For food bowls, show inventory menu to select food type
+    showContainerMenu.value = false
+    showInventoryMenu.value = true
+  }
+}
+
+// Get first available hay item ID from inventory
+function getFirstAvailableHayItemId(): string | null {
+  for (const invItem of inventoryStore.allItems) {
+    const supplyItem = suppliesStore.getItemById(invItem.itemId)
+    if (supplyItem?.category === 'hay') {
+      const servings = inventoryStore.getTotalServings(invItem.itemId)
+      if (servings > 0) {
+        return invItem.itemId
+      }
+    }
+  }
+  return null
 }
 
 // Handle clear button - empty the container
@@ -1158,6 +1234,9 @@ function updateSelectionRingColor(color: number) {
   }
 }
 
+// Movement distance for keyboard-controlled guinea pig
+const KEYBOARD_MOVE_DISTANCE = 3.0
+
 function handleKeyDown(event: KeyboardEvent) {
   // Escape priority order:
   // 1. Close inventory if open (but keep placement/container mode active)
@@ -1176,6 +1255,45 @@ function handleKeyDown(event: KeyboardEvent) {
       releaseControl()
     } else if (isFullscreen.value) {
       toggleFullscreen()
+    }
+    return
+  }
+
+  // Arrow keys control guinea pig when in Take Control mode
+  if (controlledGuineaPigId.value && controlMovement) {
+    const arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
+    if (arrowKeys.includes(event.key)) {
+      event.preventDefault()
+
+      // Get current guinea pig position
+      const state = movement3DStore.getGuineaPigState(controlledGuineaPigId.value)
+      if (!state) return
+
+      // Calculate target position based on arrow key
+      let targetX = state.worldPosition.x
+      let targetZ = state.worldPosition.z
+
+      switch (event.key) {
+        case 'ArrowUp':
+          targetZ -= KEYBOARD_MOVE_DISTANCE
+          break
+        case 'ArrowDown':
+          targetZ += KEYBOARD_MOVE_DISTANCE
+          break
+        case 'ArrowLeft':
+          targetX -= KEYBOARD_MOVE_DISTANCE
+          break
+        case 'ArrowRight':
+          targetX += KEYBOARD_MOVE_DISTANCE
+          break
+      }
+
+      const targetPos = { x: targetX, y: 0, z: targetZ }
+
+      // Check bounds and move
+      if (movement3DStore.isInBounds(targetPos)) {
+        controlMovement.moveTo(targetPos)
+      }
     }
   }
 }
@@ -1212,8 +1330,18 @@ function togglePanel(panelId: string) {
  * Note: Subactions stay open after clicking - user closes by clicking main FAB again
  */
 function fabCleanHabitat() {
-  const result = habitatConditions.cleanCage()
-  console.log(`[Habitat3D] Clean habitat: ${result.message}`)
+  // Show clean cage dialog with bedding selection
+  showCleanCageDialog.value = true
+}
+
+function handleCleanCageConfirm(beddingType: string) {
+  const result = habitatConditions.cleanCage(beddingType)
+  if (result.success) {
+    console.log(`[Habitat3D] Clean habitat: ${result.message}`)
+    loggingStore.addPlayerAction(result.message, '🧹')
+  } else {
+    console.warn(`[Habitat3D] Clean habitat failed: ${result.message}`)
+  }
 }
 
 function fabQuickClean() {
@@ -1227,13 +1355,8 @@ function fabRefillWater() {
 }
 
 function fabFillHay() {
-  const hayRackIds = Array.from(habitatConditions.hayRackContents.keys())
-  if (hayRackIds.length > 0) {
-    const result = habitatConditions.fillAllHayRacks(hayRackIds)
-    console.log(`[Habitat3D] Hay racks filled: ${result.racksFilled} racks, ${result.totalAdded} servings added`)
-  } else {
-    console.log('[Habitat3D] No hay racks to fill')
-  }
+  // Show hay management dialog instead of directly filling
+  showHayManagementDialog.value = true
 }
 
 /**
@@ -1794,10 +1917,17 @@ function updateClouds(deltaTime: number) {
 /* Fullscreen mode adjustments */
 .habitat-3d-debug--fullscreen {
   max-inline-size: none;
+  background-color: #111; /* Dark background for letterboxing */
 }
 
 .habitat-3d-debug--fullscreen .habitat-3d-debug__canvas-wrapper {
-  block-size: calc(100vh - 80px); /* Account for header */
+  /* Constrain aspect ratio to prevent distortion on wide monitors */
+  /* Using 16:10 aspect ratio (similar to habitat grid 14:10) */
+  --fullscreen-height: calc(100vh - 80px);
+  --aspect-ratio: calc(16 / 10);
+  block-size: var(--fullscreen-height);
+  max-inline-size: calc(var(--fullscreen-height) * var(--aspect-ratio));
+  margin-inline: auto; /* Center horizontally */
   border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
