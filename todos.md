@@ -4,7 +4,7 @@ TO DOs
 - clicking stick, ball will make them roll naturally
 - guinea pig can push the stick and ball, and other appropriate items
 
-- when click on the habitat floor, if empty floor, use it to drag the camera view around
+- can you suggest ways to optimize the keyboard shortcuts
 
 - create 3d models for other food items
 - enhance hay 3d model

@@ -49,19 +49,6 @@
 
     <div v-else class="panel panel--full-width">
       <div class="panel__content">
-        <div class="habitat-3d-debug__info">
-          <template v-if="placementMode">
-            <span class="habitat-3d-debug__placement-badge">PLACING</span>
-            Click to place {{ placementMode.itemName }} | ESC to cancel
-          </template>
-          <template v-else-if="controlledGuineaPigId">
-            <span class="habitat-3d-debug__control-badge">CONTROLLING</span>
-            Arrows or click to move guinea pig | WASD for camera | Escape to release
-          </template>
-          <template v-else>
-            Drag or &lt; &gt; to rotate | Scroll/Z/X for Up/Down | WASD/Arrows to pan | Click guinea pig to select
-          </template>
-        </div>
         <div class="habitat-3d-debug__canvas-wrapper">
           <!-- Activity Feed Panel (overlay with integrated tab) -->
           <SidePanel3D
@@ -69,7 +56,7 @@
             side="left"
             color="yellow"
             title="Activity Log"
-            icon="📜"
+            icon="📝"
             @toggle="toggleActivityFeed"
           >
             <div v-if="activityMessages.length === 0" class="activity-feed-panel__empty">
@@ -195,6 +182,66 @@
                 🏠
               </button>
             </div>
+
+            <!-- Help FAB -->
+            <div class="game-fab-row">
+              <button
+                class="game-fab game-fab--cyan"
+                :class="{ 'game-fab--active': showHelp }"
+                @click="showHelp = !showHelp"
+                title="Help & Controls"
+              >
+                ❓
+              </button>
+            </div>
+          </div>
+
+          <!-- Help Overlay -->
+          <div v-if="showHelp" class="help-overlay" @click.self="showHelp = false">
+            <div class="help-overlay__panel">
+              <div class="help-overlay__header">
+                <span class="help-overlay__title">❓ Help & Controls</span>
+                <button class="help-overlay__close" @click="showHelp = false">✕</button>
+              </div>
+              <div class="help-overlay__content">
+                <section class="help-overlay__section">
+                  <h4 class="help-overlay__section-title">🎮 Camera Controls</h4>
+                  <div class="help-overlay__shortcuts">
+                    <div class="help-overlay__shortcut"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>Pan camera</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Arrows</kbd> <span>Pan camera (when not controlling)</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Drag</kbd> <span>Rotate view</span></div>
+                    <div class="help-overlay__shortcut"><kbd>&lt;</kbd><kbd>&gt;</kbd> <span>Rotate view</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Scroll</kbd> <span>Zoom in/out</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Z</kbd><kbd>X</kbd> <span>Zoom in/out</span></div>
+                  </div>
+                </section>
+                <section class="help-overlay__section">
+                  <h4 class="help-overlay__section-title">🐹 Guinea Pig Control</h4>
+                  <div class="help-overlay__shortcuts">
+                    <div class="help-overlay__shortcut"><kbd>Click</kbd> guinea pig <span>Select & show menu</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Take Control</kbd> button <span>Control movement</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Arrows</kbd> <span>Move guinea pig (when controlling)</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Click</kbd> ground <span>Walk to location</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Esc</kbd> <span>Release control</span></div>
+                  </div>
+                </section>
+                <section class="help-overlay__section">
+                  <h4 class="help-overlay__section-title">📦 Items & Inventory</h4>
+                  <div class="help-overlay__shortcuts">
+                    <div class="help-overlay__shortcut"><kbd>Click</kbd> container <span>View contents</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Inventory</kbd> panel <span>Place items in habitat</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Esc</kbd> <span>Cancel placement</span></div>
+                  </div>
+                </section>
+                <section class="help-overlay__section">
+                  <h4 class="help-overlay__section-title">🖥️ View</h4>
+                  <div class="help-overlay__shortcuts">
+                    <div class="help-overlay__shortcut"><kbd>⛶ Fullscreen</kbd> button <span>Immersive view</span></div>
+                    <div class="help-overlay__shortcut"><kbd>Esc</kbd> <span>Exit fullscreen</span></div>
+                  </div>
+                </section>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -264,6 +311,9 @@ const showActivityFeed = ref(false)
 
 // Inventory panel state
 const showInventory = ref(false)
+
+// Help panel state
+const showHelp = ref(false)
 
 // Placement mode state
 const placementMode = ref<{
@@ -1829,12 +1879,6 @@ function updateClouds(deltaTime: number) {
 </script>
 
 <style>
-.habitat-3d-debug__info {
-  text-align: center;
-  padding-block-end: var(--spacing-sm);
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-}
 
 .habitat-3d-debug__canvas-wrapper {
   position: relative;
@@ -1858,19 +1902,6 @@ function updateClouds(deltaTime: number) {
   border-radius: var(--radius-md);
   text-align: center;
   color: var(--color-text-primary);
-}
-
-.habitat-3d-debug__control-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  margin-inline-end: var(--spacing-sm);
-  background-color: #0088ff;
-  color: white;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  border-radius: var(--radius-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
 .habitat-3d-debug__needs-row {
@@ -2124,20 +2155,127 @@ function updateClouds(deltaTime: number) {
 }
 
 /* Placement mode styles */
-.habitat-3d-debug__placement-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  margin-inline-end: var(--spacing-sm);
-  background-color: var(--color-accent-green-500);
-  color: white;
-  font-size: var(--font-size-xs);
-  font-weight: var(--font-weight-bold);
-  border-radius: var(--radius-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
 .habitat-3d-debug__canvas--placing {
   cursor: crosshair !important;
+}
+
+/* Help Overlay */
+.help-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  animation: help-overlay-fade-in 0.15s ease-out;
+}
+
+@keyframes help-overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.help-overlay__panel {
+  background-color: var(--color-bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-inline-size: 420px;
+  max-block-size: 80%;
+  overflow: hidden;
+  animation: help-panel-slide-up 0.2s ease-out;
+}
+
+@keyframes help-panel-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.help-overlay__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--color-need-thirst);
+  color: white;
+}
+
+.help-overlay__title {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-md);
+}
+
+.help-overlay__close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  opacity: 0.8;
+  transition: opacity 0.15s ease;
+}
+
+.help-overlay__close:hover {
+  opacity: 1;
+}
+
+.help-overlay__content {
+  padding: var(--spacing-md);
+  overflow-y: auto;
+  max-block-size: calc(80vh - 60px);
+}
+
+.help-overlay__section {
+  margin-block-end: var(--spacing-md);
+}
+
+.help-overlay__section:last-child {
+  margin-block-end: 0;
+}
+
+.help-overlay__section-title {
+  margin: 0 0 var(--spacing-xs) 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.help-overlay__shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.help-overlay__shortcut {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.help-overlay__shortcut kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.help-overlay__shortcut span {
+  margin-inline-start: auto;
+  color: var(--color-text-muted);
 }
 </style>
