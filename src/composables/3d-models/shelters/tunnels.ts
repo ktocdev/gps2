@@ -8,24 +8,30 @@ export function createWoodenTunnelModel(): THREE.Group {
   const group = new THREE.Group()
   const woodTexture = createWoodTexture()
 
-  // Create arch shape
+  // Create arch shape (hollow, no floor - matches demo pattern)
   const tunnelShape = new THREE.Shape()
-  const legHeight = 3.0 // Scaled 2x from 1.5
+  const legHeight = 2.1 // Reduced 30% from 3.0
+  const outerRadius = 4.0 // Scaled 2x from 2.0
+  const innerRadius = 3.2 // Scaled 2x from 1.6
 
-  // Outer arc
-  tunnelShape.absarc(0, 0, 4.0, 0, Math.PI, false) // Scaled 2x from 2.0
-
-  // Line down left side
-  tunnelShape.lineTo(-4.0, -legHeight)
-
-  // Line across bottom
-  tunnelShape.lineTo(4.0, -legHeight)
-
-  // Line up right side
-  tunnelShape.lineTo(4.0, 0)
-
-  // Inner arc (cut out)
-  tunnelShape.absarc(0, 0, 3.2, Math.PI, 0, true) // Scaled 2x from 1.6
+  // Start at outer bottom right
+  tunnelShape.moveTo(outerRadius, -legHeight)
+  // Up to outer arc start
+  tunnelShape.lineTo(outerRadius, 0)
+  // Outer arc (right to left)
+  tunnelShape.absarc(0, 0, outerRadius, 0, Math.PI, false)
+  // Down outer left leg
+  tunnelShape.lineTo(-outerRadius, -legHeight)
+  // Across to inner left leg (no floor - just the wall thickness)
+  tunnelShape.lineTo(-innerRadius, -legHeight)
+  // Up inner left leg
+  tunnelShape.lineTo(-innerRadius, 0)
+  // Inner arc (left to right, reversed)
+  tunnelShape.absarc(0, 0, innerRadius, Math.PI, 0, true)
+  // Down inner right leg
+  tunnelShape.lineTo(innerRadius, -legHeight)
+  // Close back to start
+  tunnelShape.lineTo(outerRadius, -legHeight)
 
   // Extrude settings
   const extrudeSettings = {
@@ -57,7 +63,7 @@ export function createWoodenTunnelModel(): THREE.Group {
   })
 
   const tunnel = new THREE.Mesh(tunnelGeo, [woodSideMat, woodEndMat])
-  tunnel.position.y = 3.5 // Scaled 2x from 1.75
+  tunnel.position.y = 2.1 // Match legHeight so bottom touches ground
   tunnel.rotation.y = Math.PI / 2
   tunnel.castShadow = true
   tunnel.receiveShadow = true

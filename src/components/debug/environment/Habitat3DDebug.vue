@@ -50,91 +50,118 @@
     <div v-else class="panel panel--full-width">
       <div class="panel__content">
         <div class="habitat-3d-debug__info">
-          <template v-if="controlledGuineaPigId">
+          <template v-if="placementMode">
+            <span class="habitat-3d-debug__placement-badge">PLACING</span>
+            Click to place {{ placementMode.itemName }} | ESC to cancel
+          </template>
+          <template v-else-if="controlledGuineaPigId">
             <span class="habitat-3d-debug__control-badge">CONTROLLING</span>
-            Click habitat to move | Escape to release | Auto-release in 30s
+            Arrows or click to move guinea pig | WASD for camera | Escape to release
           </template>
           <template v-else>
-            Drag or &lt; &gt; to rotate | Scroll/Z/X for Up/Down | Arrows to pan | Click guinea pig to select
+            Drag or &lt; &gt; to rotate | Scroll/Z/X for Up/Down | WASD/Arrows to pan | Click guinea pig to select
           </template>
         </div>
         <div class="habitat-3d-debug__canvas-wrapper">
-          <canvas ref="canvasRef" @click="handleCanvasClick"></canvas>
-
-          <!-- Guinea Pig Info Menu (replaces floating action buttons) -->
-          <GuineaPigInfoMenu
-            v-if="selectedGuineaPigId && selectedGuineaPig"
-            :guinea-pig="selectedGuineaPig"
-            :position="guineaPigMenuPosition"
-            @close="handleDeselect"
-            @take-control="handleTakeControl"
-          />
-
-          <!-- Floating Inventory Menu (for bowls and hay racks) -->
-          <InventoryItemMenu
-            :show="showInventoryMenu"
-            :position="menuPosition"
-            :title="menuTitle"
-            :items="currentMenuItems"
-            :empty-message="menuEmptyMessage"
-            @close="closeInventoryMenu"
-            @select="handleAddItemToContainer"
-          />
-
-          <!-- Water Bottle Menu -->
-          <WaterBottleMenu
-            v-if="showWaterBottleMenu"
-            :water-level="habitatConditions.waterLevel"
-            :position="waterBottleMenuPosition"
-            @close="closeWaterBottleMenu"
-            @refill="handleRefillWater"
-          />
-
-          <!-- Left FAB - Activity Log -->
-          <div class="game-fab-container game-fab-container--left">
-            <button
-              class="game-fab game-fab--yellow"
-              :class="{ 'game-fab--active': showActivityFeed }"
-              @click="toggleActivityFeed"
-              title="Activity Log"
-            >
-              📜
-            </button>
-          </div>
-
-          <!-- Activity Feed Panel (draggable) -->
-          <div
-            v-if="showActivityFeed"
-            class="activity-feed-panel"
-            :style="activityPanelStyle"
-            @mousedown="startDragPanel"
+          <!-- Activity Feed Panel (overlay with integrated tab) -->
+          <SidePanel3D
+            :is-open="showActivityFeed"
+            side="left"
+            color="yellow"
+            title="Activity Log"
+            icon="📜"
+            @toggle="toggleActivityFeed"
           >
-            <div class="activity-feed-panel__header" @mousedown.stop="startDragPanel">
-              <span class="activity-feed-panel__title">📜 Activity Log</span>
-              <button class="activity-feed-panel__close" @click="toggleActivityFeed" title="Close">×</button>
+            <div v-if="activityMessages.length === 0" class="activity-feed-panel__empty">
+              💭 No activity yet...
             </div>
-            <div class="activity-feed-panel__content">
-              <div v-if="activityMessages.length === 0" class="activity-feed-panel__empty">
-                💭 No activity yet...
-              </div>
-              <div v-else class="activity-feed-panel__messages">
-                <div
-                  v-for="msg in activityMessages.slice(0, 50)"
-                  :key="msg.id"
-                  class="activity-feed-panel__message"
-                  :class="`activity-feed-panel__message--${msg.category}`"
-                >
-                  <span class="activity-feed-panel__emoji">{{ msg.emoji || '📝' }}</span>
-                  <span class="activity-feed-panel__text">{{ msg.message }}</span>
-                  <span class="activity-feed-panel__time">{{ formatTime(msg.timestamp) }}</span>
-                </div>
+            <div v-else class="activity-feed-panel__messages">
+              <div
+                v-for="msg in activityMessages.slice(0, 50)"
+                :key="msg.id"
+                class="activity-feed-panel__message"
+                :class="`activity-feed-panel__message--${msg.category}`"
+              >
+                <span class="activity-feed-panel__emoji">{{ msg.emoji || '📝' }}</span>
+                <span class="activity-feed-panel__text">{{ msg.message }}</span>
+                <span class="activity-feed-panel__time">{{ formatTime(msg.timestamp) }}</span>
               </div>
             </div>
-            <!-- Resize handle -->
-            <div class="activity-feed-panel__resize" @mousedown.stop="startResizePanel"></div>
-          </div>
+          </SidePanel3D>
 
-          <!-- Right FABs - Actions -->
+          <!-- Inventory Panel (overlay on right side) -->
+          <Inventory3DPanel
+            :is-open="showInventory"
+            @toggle="toggleInventory"
+            @select-item="handleInventorySelect"
+            @deselect-item="handleInventoryDeselect"
+          />
+
+            <canvas
+              ref="canvasRef"
+              :class="{ 'habitat-3d-debug__canvas--placing': placementMode }"
+              @click="handleCanvasClick"
+              @mousemove="handleCanvasMouseMove"
+            ></canvas>
+
+            <!-- Guinea Pig Info Menu (replaces floating action buttons) -->
+            <GuineaPigInfoMenu
+              v-if="selectedGuineaPigId && selectedGuineaPig"
+              :guinea-pig="selectedGuineaPig"
+              :position="guineaPigMenuPosition"
+              @close="handleDeselect"
+              @take-control="handleTakeControl"
+            />
+
+            <!-- Container Contents Menu (shows what's in bowl/rack) -->
+            <ContainerContentsMenu
+              :show="showContainerMenu"
+              :position="menuPosition"
+              :container-type="selectedContainerType || 'bowl'"
+              :foods="currentBowlContents"
+              :bowl-capacity="currentBowlCapacity"
+              :hay-servings="currentHayServings"
+              :hay-capacity="4"
+              :freshness="currentHayFreshness"
+              @close="closeContainerMenu"
+              @fill="handleContainerFill"
+              @clear="handleContainerClear"
+              @remove-food="handleRemoveFood"
+            />
+
+            <!-- Floating Inventory Menu (for adding items to containers) -->
+            <InventoryItemMenu
+              :show="showInventoryMenu"
+              :position="menuPosition"
+              :title="menuTitle"
+              :items="currentMenuItems"
+              :empty-message="menuEmptyMessage"
+              @close="closeInventoryMenu"
+              @select="handleAddItemToContainer"
+            />
+
+            <!-- Water Bottle Menu -->
+            <WaterBottleMenu
+              v-if="showWaterBottleMenu"
+              :water-level="habitatConditions.waterLevel"
+              :position="waterBottleMenuPosition"
+              @close="closeWaterBottleMenu"
+              @refill="handleRefillWater"
+            />
+
+            <!-- Clean Cage Dialog -->
+            <CleanCageDialog
+              v-model="showCleanCageDialog"
+              :dirtiness="habitatDirtiness"
+              :bedding-needed="beddingNeeded"
+              :bedding-available="beddingAvailable"
+              @confirm="handleCleanCageConfirm"
+            />
+
+            <!-- Hay Management Dialog -->
+            <HayManagementDialog v-model="showHayManagementDialog" />
+
+            <!-- Right FABs - Actions -->
           <div class="game-fab-container">
             <!-- Guinea Pigs FAB -->
             <div class="game-fab-row">
@@ -145,18 +172,6 @@
                 title="Guinea Pigs"
               >
                 🐹
-              </button>
-            </div>
-
-            <!-- Inventory FAB -->
-            <div class="game-fab-row">
-              <button
-                class="game-fab game-fab--violet"
-                :class="{ 'game-fab--active': activePanel === 'inventory' }"
-                @click="togglePanel('inventory')"
-                title="Inventory"
-              >
-                🎒
               </button>
             </div>
 
@@ -212,7 +227,12 @@ import {
 import GuineaPigInfoMenu from '../../game/GuineaPigInfoMenu.vue'
 import WaterBottleMenu from '../../game/WaterBottleMenu.vue'
 import InventoryItemMenu from '../../basic/InventoryItemMenu.vue'
+import ContainerContentsMenu from '../../basic/ContainerContentsMenu.vue'
+import CleanCageDialog from '../../game/dialogs/CleanCageDialog.vue'
+import HayManagementDialog from '../../game/dialogs/HayManagementDialog.vue'
 import NeedsPanel from './NeedsPanel.vue'
+import Inventory3DPanel from '../../game/Inventory3DPanel.vue'
+import SidePanel3D from '../../game/SidePanel3D.vue'
 import type { InventoryMenuItem } from '../../basic/InventoryItemMenu.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
@@ -224,7 +244,9 @@ import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useGameController } from '../../../stores/gameController'
 import { useLoggingStore } from '../../../stores/loggingStore'
 import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from '../../../constants/3d'
+import { CONSUMPTION } from '../../../constants/supplies'
 import { disposeObject3D } from '../../../utils/three-cleanup'
+import { worldToGrid } from '../../../composables/3d-models/shared/utils'
 import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -239,11 +261,18 @@ const activePanel = ref<string | null>(null)
 
 // Activity Feed panel state
 const showActivityFeed = ref(false)
-const activityPanelPosition = ref({ x: 70, y: 50 })
-const activityPanelSize = ref({ width: 320, height: 400 })
-let isDraggingPanel = false
-let isResizingPanel = false
-let dragOffset = { x: 0, y: 0 }
+
+// Inventory panel state
+const showInventory = ref(false)
+
+// Placement mode state
+const placementMode = ref<{
+  itemId: string
+  itemName: string
+  isWaterBottle: boolean
+} | null>(null)
+let placementPreview: THREE.Group | null = null
+let isPlacementValid = false
 
 // Take Control mode state
 const controlledGuineaPigId = ref<string | null>(null)
@@ -261,9 +290,10 @@ const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 const gameController = useGameController()
 
-// Inventory menu state (for bowls and hay racks)
+// Container menu state (for bowls and hay racks)
 const selectedContainerId = ref<string | null>(null)
 const selectedContainerType = ref<'bowl' | 'hay_rack' | null>(null)
+const showContainerMenu = ref(false)
 const showInventoryMenu = ref(false)
 const menuPosition = ref({ x: 0, y: 0 })
 
@@ -277,12 +307,6 @@ const selectedGuineaPig = computed(() => {
 
 // Activity Feed computed properties
 const activityMessages = computed(() => loggingStore.activityMessages)
-const activityPanelStyle = computed(() => ({
-  left: `${activityPanelPosition.value.x}px`,
-  top: `${activityPanelPosition.value.y}px`,
-  width: `${activityPanelSize.value.width}px`,
-  height: `${activityPanelSize.value.height}px`
-}))
 
 // Available food items from inventory for adding to bowl
 const availableFoodItems = computed((): InventoryMenuItem[] => {
@@ -362,12 +386,51 @@ const menuEmptyMessage = computed(() => {
   return 'No items available'
 })
 
+// Container contents computed properties
+const currentBowlContents = computed(() => {
+  if (!selectedContainerId.value || selectedContainerType.value !== 'bowl') {
+    return []
+  }
+  return habitatConditions.getBowlContents(selectedContainerId.value)
+})
+
+const currentBowlCapacity = computed(() => {
+  if (!selectedContainerId.value) return 3
+  const bowlItem = suppliesStore.getItemById(selectedContainerId.value)
+  return bowlItem?.stats?.foodCapacity || 3
+})
+
+const currentHayServings = computed(() => {
+  if (!selectedContainerId.value || selectedContainerType.value !== 'hay_rack') {
+    return 0
+  }
+  return habitatConditions.getHayRackContents(selectedContainerId.value).length
+})
+
+const currentHayFreshness = computed(() => {
+  if (!selectedContainerId.value || selectedContainerType.value !== 'hay_rack') {
+    return 100
+  }
+  return habitatConditions.getHayRackFreshness(selectedContainerId.value)
+})
+
 // Unified 3D behavior composables registry (for autonomous behavior)
 const behaviors = new Map<string, ReturnType<typeof use3DBehavior>>()
 
 // Water bottle menu state
 const showWaterBottleMenu = ref(false)
 const waterBottleMenuPosition = ref({ x: 0, y: 0 })
+
+// Clean cage dialog state
+const showCleanCageDialog = ref(false)
+
+// Hay management dialog state
+const showHayManagementDialog = ref(false)
+
+// Computed properties for clean cage dialog
+const habitatDirtiness = computed(() => habitatConditions.dirtiness)
+const beddingNeeded = computed(() => habitatConditions.calculateBeddingNeeded())
+const beddingAvailable = computed(() => habitatConditions.getTotalBeddingAvailable())
 
 /**
  * Initialize guinea pigs in movement3DStore and start hunger behaviors
@@ -514,7 +577,10 @@ onMounted(() => {
   if (!renderer) return
 
   // Setup camera controls
-  const cameraControls = use3DCamera(camera, worldGroup, canvasRef.value)
+  // Disable arrow keys for camera when in Take Control mode (arrows control guinea pig instead)
+  const cameraControls = use3DCamera(camera, worldGroup, canvasRef.value, {
+    disableArrowKeys: () => !!controlledGuineaPigId.value
+  })
   updateCameraPosition = cameraControls.updateCameraPosition
   cleanupCamera = cameraControls.cleanup
 
@@ -620,6 +686,14 @@ onUnmounted(() => {
     controlReleaseTimer = null
   }
   controlledGuineaPigId.value = null
+
+  // Cleanup placement mode
+  if (placementPreview) {
+    worldGroup.remove(placementPreview)
+    disposeObject3D(placementPreview)
+    placementPreview = null
+  }
+  placementMode.value = null
 
   // Cleanup fullscreen mode
   if (isFullscreen.value) {
@@ -751,6 +825,15 @@ function updateSelectionRing() {
 function handleCanvasClick(event: MouseEvent) {
   if (!canvasRef.value || !guineaPigModels) return
 
+  // Priority 0: Placement mode - place item
+  if (placementMode.value) {
+    if (isPlacementValid) {
+      placeItem()
+    }
+    // If invalid, just ignore the click (stay in placement mode)
+    return
+  }
+
   const canvas = canvasRef.value
   const rect = canvas.getBoundingClientRect()
 
@@ -809,10 +892,35 @@ function handleCanvasClick(event: MouseEvent) {
       })
 
       if (clickedContainerId && clickedContainerType) {
-        // Show inventory menu for this container
+        // If in container fill mode, try to add the selected item to the container
+        if (containerFillMode.value) {
+          const { itemId, category } = containerFillMode.value
+          let success = false
+
+          // Validate container type matches item category
+          if (clickedContainerType === 'bowl') {
+            // Bowls accept both food and hay
+            success = habitatConditions.addFoodToBowl(clickedContainerId, itemId)
+          } else if (clickedContainerType === 'hay_rack' && category === 'hay') {
+            // Hay racks only accept hay
+            success = habitatConditions.addHayToRack(clickedContainerId, itemId)
+          }
+
+          // Exit container fill mode regardless of success
+          exitContainerFillMode()
+
+          if (success) {
+            console.log(`Added ${itemId} to ${clickedContainerType} ${clickedContainerId}`)
+            return
+          }
+          // If add failed, fall through to show the popover
+          console.log(`Could not add ${itemId} to ${clickedContainerType}, showing popover instead`)
+        }
+
+        // Show container contents menu (shows what's in the container)
         selectedContainerId.value = clickedContainerId
         selectedContainerType.value = clickedContainerType
-        showInventoryMenu.value = true
+        showContainerMenu.value = true
         menuPosition.value = {
           x: event.clientX - rect.left,
           y: event.clientY - rect.top
@@ -901,6 +1009,9 @@ function handleCanvasClick(event: MouseEvent) {
 
   // Clicked on empty space - deselect guinea pig and close menus
   selectedGuineaPigId.value = null
+  if (showContainerMenu.value) {
+    closeContainerMenu()
+  }
   if (showInventoryMenu.value) {
     closeInventoryMenu()
   }
@@ -909,7 +1020,91 @@ function handleCanvasClick(event: MouseEvent) {
   }
 }
 
-// Close the inventory menu
+// Close the container contents menu
+function closeContainerMenu() {
+  showContainerMenu.value = false
+  selectedContainerId.value = null
+  selectedContainerType.value = null
+}
+
+// Handle fill button - for hay racks, fill directly; for bowls, show inventory menu
+function handleContainerFill() {
+  if (!selectedContainerId.value || !selectedContainerType.value) return
+
+  if (selectedContainerType.value === 'hay_rack') {
+    // Fill hay rack directly to capacity (or as much as available)
+    const rackId = selectedContainerId.value
+    const hayItemId = getFirstAvailableHayItemId()
+
+    if (!hayItemId) {
+      console.log('[Habitat3D] No hay available in inventory')
+      return
+    }
+
+    // Fill until rack is full or we run out of hay
+    let added = 0
+    const maxCapacity = CONSUMPTION.HAY_RACK_MAX_CAPACITY
+    const currentServings = habitatConditions.getHayRackContents(rackId).length
+    const slotsToFill = maxCapacity - currentServings
+
+    for (let i = 0; i < slotsToFill; i++) {
+      if (habitatConditions.addHayToRack(rackId, hayItemId)) {
+        added++
+      } else {
+        break // No more hay available
+      }
+    }
+
+    if (added > 0) {
+      console.log(`[Habitat3D] Filled hay rack with ${added} servings`)
+    }
+    // Don't close the menu - let user see the updated state
+  } else {
+    // For food bowls, show inventory menu to select food type
+    showContainerMenu.value = false
+    showInventoryMenu.value = true
+  }
+}
+
+// Get first available hay item ID from inventory
+function getFirstAvailableHayItemId(): string | null {
+  for (const invItem of inventoryStore.allItems) {
+    const supplyItem = suppliesStore.getItemById(invItem.itemId)
+    if (supplyItem?.category === 'hay') {
+      const servings = inventoryStore.getTotalServings(invItem.itemId)
+      if (servings > 0) {
+        return invItem.itemId
+      }
+    }
+  }
+  return null
+}
+
+// Handle clear button - empty the container
+function handleContainerClear() {
+  if (!selectedContainerId.value || !selectedContainerType.value) return
+
+  if (selectedContainerType.value === 'bowl') {
+    habitatConditions.clearBowl(selectedContainerId.value)
+    console.log(`[Habitat3D] Cleared bowl ${selectedContainerId.value}`)
+  } else if (selectedContainerType.value === 'hay_rack') {
+    habitatConditions.clearHayRack(selectedContainerId.value)
+    console.log(`[Habitat3D] Cleared hay rack ${selectedContainerId.value}`)
+  }
+
+  closeContainerMenu()
+}
+
+// Handle removing individual food item from bowl
+function handleRemoveFood(foodIndex: number) {
+  if (!selectedContainerId.value || selectedContainerType.value !== 'bowl') return
+
+  const success = habitatConditions.removeFoodFromBowl(selectedContainerId.value, foodIndex)
+  if (success) {
+    console.log(`[Habitat3D] Removed food at index ${foodIndex} from bowl ${selectedContainerId.value}`)
+  }
+}
+
 function closeInventoryMenu() {
   showInventoryMenu.value = false
   selectedContainerId.value = null
@@ -1039,13 +1234,66 @@ function updateSelectionRingColor(color: number) {
   }
 }
 
+// Movement distance for keyboard-controlled guinea pig
+const KEYBOARD_MOVE_DISTANCE = 3.0
+
 function handleKeyDown(event: KeyboardEvent) {
-  // Escape releases control or exits fullscreen
+  // Escape priority order:
+  // 1. Close inventory if open (but keep placement/container mode active)
+  // 2. Cancel placement mode if active
+  // 3. Cancel container fill mode if active
+  // 4. Release control mode
+  // 5. Exit fullscreen
   if (event.key === 'Escape') {
-    if (controlledGuineaPigId.value) {
+    if (showInventory.value) {
+      showInventory.value = false
+    } else if (placementMode.value) {
+      exitPlacementMode()
+    } else if (containerFillMode.value) {
+      exitContainerFillMode()
+    } else if (controlledGuineaPigId.value) {
       releaseControl()
     } else if (isFullscreen.value) {
       toggleFullscreen()
+    }
+    return
+  }
+
+  // Arrow keys control guinea pig when in Take Control mode
+  if (controlledGuineaPigId.value && controlMovement) {
+    const arrowKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']
+    if (arrowKeys.includes(event.key)) {
+      event.preventDefault()
+
+      // Get current guinea pig position
+      const state = movement3DStore.getGuineaPigState(controlledGuineaPigId.value)
+      if (!state) return
+
+      // Calculate target position based on arrow key
+      let targetX = state.worldPosition.x
+      let targetZ = state.worldPosition.z
+
+      switch (event.key) {
+        case 'ArrowUp':
+          targetZ -= KEYBOARD_MOVE_DISTANCE
+          break
+        case 'ArrowDown':
+          targetZ += KEYBOARD_MOVE_DISTANCE
+          break
+        case 'ArrowLeft':
+          targetX -= KEYBOARD_MOVE_DISTANCE
+          break
+        case 'ArrowRight':
+          targetX += KEYBOARD_MOVE_DISTANCE
+          break
+      }
+
+      const targetPos = { x: targetX, y: 0, z: targetZ }
+
+      // Check bounds and move
+      if (movement3DStore.isInBounds(targetPos)) {
+        controlMovement.moveTo(targetPos)
+      }
     }
   }
 }
@@ -1082,8 +1330,18 @@ function togglePanel(panelId: string) {
  * Note: Subactions stay open after clicking - user closes by clicking main FAB again
  */
 function fabCleanHabitat() {
-  const result = habitatConditions.cleanCage()
-  console.log(`[Habitat3D] Clean habitat: ${result.message}`)
+  // Show clean cage dialog with bedding selection
+  showCleanCageDialog.value = true
+}
+
+function handleCleanCageConfirm(beddingType: string) {
+  const result = habitatConditions.cleanCage(beddingType)
+  if (result.success) {
+    console.log(`[Habitat3D] Clean habitat: ${result.message}`)
+    loggingStore.addPlayerAction(result.message, '🧹')
+  } else {
+    console.warn(`[Habitat3D] Clean habitat failed: ${result.message}`)
+  }
 }
 
 function fabQuickClean() {
@@ -1097,13 +1355,8 @@ function fabRefillWater() {
 }
 
 function fabFillHay() {
-  const hayRackIds = Array.from(habitatConditions.hayRackContents.keys())
-  if (hayRackIds.length > 0) {
-    const result = habitatConditions.fillAllHayRacks(hayRackIds)
-    console.log(`[Habitat3D] Hay racks filled: ${result.racksFilled} racks, ${result.totalAdded} servings added`)
-  } else {
-    console.log('[Habitat3D] No hay racks to fill')
-  }
+  // Show hay management dialog instead of directly filling
+  showHayManagementDialog.value = true
 }
 
 /**
@@ -1113,60 +1366,228 @@ function toggleActivityFeed() {
   showActivityFeed.value = !showActivityFeed.value
 }
 
+/**
+ * Inventory panel handlers
+ */
+function toggleInventory() {
+  showInventory.value = !showInventory.value
+}
+
+function handleInventorySelect(itemId: string) {
+  console.log(`[Habitat3D] Selected inventory item: ${itemId}`)
+  const supplyItem = suppliesStore.getItemById(itemId)
+  if (!supplyItem) return
+
+  if (supplyItem.category === 'habitat_item') {
+    // Habitat items are placed directly in the habitat
+    enterPlacementMode(itemId)
+  } else if (supplyItem.category === 'food' || supplyItem.category === 'hay') {
+    // Food/hay items enter container fill mode - user clicks on bowl/rack to add
+    enterContainerFillMode(itemId, supplyItem.category)
+  }
+}
+
+function handleInventoryDeselect() {
+  // Exit container fill mode when item is deselected in inventory
+  if (containerFillMode.value) {
+    exitContainerFillMode()
+  }
+  // Also exit placement mode if active
+  if (placementMode.value) {
+    exitPlacementMode()
+  }
+}
+
+// Container fill mode state
+const containerFillMode = ref<{ itemId: string; category: string } | null>(null)
+
+function enterContainerFillMode(itemId: string, category: string) {
+  // Exit any existing modes
+  if (placementMode.value) {
+    exitPlacementMode()
+  }
+  containerFillMode.value = { itemId, category }
+  console.log(`[Habitat3D] Entered container fill mode for ${category}: ${itemId}`)
+}
+
+function exitContainerFillMode() {
+  containerFillMode.value = null
+  console.log('[Habitat3D] Exited container fill mode')
+}
+
+/**
+ * Enter placement mode for an item
+ */
+function enterPlacementMode(itemId: string) {
+  const supplyItem = suppliesStore.getItemById(itemId)
+  if (!supplyItem) return
+
+  // Exit any existing placement mode
+  if (placementMode.value) {
+    exitPlacementMode()
+  }
+
+  const isWaterBottle = itemId.includes('water') && itemId.includes('bottle')
+  placementMode.value = {
+    itemId,
+    itemName: supplyItem.name,
+    isWaterBottle
+  }
+
+  // Create ghost preview - simple box placeholder for now
+  const previewGeometry = new THREE.BoxGeometry(2, 1.5, 2)
+  const previewMaterial = new THREE.MeshStandardMaterial({
+    color: 0x888888,
+    transparent: true,
+    opacity: 0.5,
+    emissive: 0x00ff00,
+    emissiveIntensity: 0.3
+  })
+  const previewMesh = new THREE.Mesh(previewGeometry, previewMaterial)
+  previewMesh.position.y = 0.75 // Half height above ground
+
+  placementPreview = new THREE.Group()
+  placementPreview.add(previewMesh)
+  placementPreview.visible = false
+  worldGroup.add(placementPreview)
+
+  console.log(`[Habitat3D] Entered placement mode for: ${supplyItem.name}`)
+}
+
+/**
+ * Exit placement mode and clean up preview
+ */
+function exitPlacementMode() {
+  if (placementPreview) {
+    worldGroup.remove(placementPreview)
+    disposeObject3D(placementPreview)
+    placementPreview = null
+  }
+  placementMode.value = null
+  isPlacementValid = false
+  console.log('[Habitat3D] Exited placement mode')
+}
+
+/**
+ * Validate if a position is valid for placement
+ */
+function isValidPlacement(
+  worldX: number,
+  worldZ: number,
+  mode: { itemId: string; isWaterBottle: boolean }
+): boolean {
+  const halfWidth = GRID_CONFIG.WIDTH / 2
+  const halfDepth = GRID_CONFIG.DEPTH / 2
+  const margin = 2.0 // Keep items away from edge (except water bottles)
+
+  // Check if within bounds
+  const inBoundsX = worldX >= -halfWidth + margin && worldX <= halfWidth - margin
+  const inBoundsZ = worldZ >= -halfDepth + margin && worldZ <= halfDepth - margin
+
+  // Water bottles: must be on edge
+  if (mode.isWaterBottle) {
+    const onLeftRight = Math.abs(worldX) > halfWidth - margin
+    const onTopBottom = Math.abs(worldZ) > halfDepth - margin
+    if (!onLeftRight && !onTopBottom) {
+      return false // Water bottles must be on edges
+    }
+    // Water bottles can be outside normal bounds (on edges)
+  } else {
+    // Regular items must be within bounds
+    if (!inBoundsX || !inBoundsZ) {
+      return false
+    }
+  }
+
+  // Check overlap with existing items (grid cell level)
+  const gridPos = worldToGrid(worldX, worldZ)
+  for (const [, pos] of habitatConditions.itemPositions) {
+    if (pos.x === gridPos.x && pos.y === gridPos.y) {
+      return false // Cell occupied
+    }
+  }
+
+  return true
+}
+
+/**
+ * Update the preview mesh color based on validity
+ */
+function updatePreviewColor(valid: boolean) {
+  if (!placementPreview) return
+
+  const color = valid ? 0x00ff00 : 0xff0000 // Green or red
+  placementPreview.traverse((child) => {
+    if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+      child.material.emissive.setHex(color)
+    }
+  })
+}
+
+/**
+ * Handle mouse move for placement preview
+ */
+function handleCanvasMouseMove(event: MouseEvent) {
+  if (!placementMode.value || !placementPreview || !canvasRef.value) return
+
+  const canvas = canvasRef.value
+  const rect = canvas.getBoundingClientRect()
+
+  // Normalize mouse position
+  const mouse = new THREE.Vector2()
+  mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+  mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+  // Raycast to floor
+  const raycaster = new THREE.Raycaster()
+  raycaster.setFromCamera(mouse, camera)
+  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+  const intersection = new THREE.Vector3()
+  raycaster.ray.intersectPlane(floorPlane, intersection)
+
+  if (intersection) {
+    // Free placement - use exact world coordinates
+    placementPreview.position.set(intersection.x, 0, intersection.z)
+    placementPreview.visible = true
+
+    // Validate and update preview color
+    isPlacementValid = isValidPlacement(intersection.x, intersection.z, placementMode.value)
+    updatePreviewColor(isPlacementValid)
+  }
+}
+
+/**
+ * Place the current item at the preview position
+ */
+function placeItem() {
+  if (!placementMode.value || !placementPreview || !isPlacementValid) return
+
+  const position = {
+    x: placementPreview.position.x,
+    z: placementPreview.position.z
+  }
+
+  // Convert to grid coords for storage
+  const gridPos = worldToGrid(position.x, position.z)
+
+  // Add item to habitat
+  habitatConditions.addItemToHabitat(placementMode.value.itemId, gridPos)
+  console.log(`[Habitat3D] Placed ${placementMode.value.itemName} at grid (${gridPos.x}, ${gridPos.y})`)
+
+  // Check if more of this item available
+  const placedCount = inventoryStore.getPlacedCount(placementMode.value.itemId) + 1
+  const totalQuantity = inventoryStore.getItemQuantity(placementMode.value.itemId)
+  const remaining = totalQuantity - placedCount
+
+  if (remaining <= 0) {
+    exitPlacementMode()
+  }
+  // Otherwise stay in placement mode for more placements
+}
+
 function formatTime(timestamp: number): string {
   const date = new Date(timestamp)
   return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
-}
-
-function startDragPanel(event: MouseEvent) {
-  // Only drag from header
-  if (!(event.target as HTMLElement).closest('.activity-feed-panel__header')) return
-
-  isDraggingPanel = true
-  dragOffset = {
-    x: event.clientX - activityPanelPosition.value.x,
-    y: event.clientY - activityPanelPosition.value.y
-  }
-
-  document.addEventListener('mousemove', onDragPanel)
-  document.addEventListener('mouseup', stopDragPanel)
-}
-
-function onDragPanel(event: MouseEvent) {
-  if (!isDraggingPanel) return
-
-  activityPanelPosition.value = {
-    x: Math.max(0, event.clientX - dragOffset.x),
-    y: Math.max(0, event.clientY - dragOffset.y)
-  }
-}
-
-function stopDragPanel() {
-  isDraggingPanel = false
-  document.removeEventListener('mousemove', onDragPanel)
-  document.removeEventListener('mouseup', stopDragPanel)
-}
-
-function startResizePanel(_event: MouseEvent) {
-  isResizingPanel = true
-
-  document.addEventListener('mousemove', onResizePanel)
-  document.addEventListener('mouseup', stopResizePanel)
-}
-
-function onResizePanel(event: MouseEvent) {
-  if (!isResizingPanel) return
-
-  const newWidth = Math.max(200, event.clientX - activityPanelPosition.value.x)
-  const newHeight = Math.max(150, event.clientY - activityPanelPosition.value.y)
-
-  activityPanelSize.value = { width: newWidth, height: newHeight }
-}
-
-function stopResizePanel() {
-  isResizingPanel = false
-  document.removeEventListener('mousemove', onResizePanel)
-  document.removeEventListener('mouseup', stopResizePanel)
 }
 
 /**
@@ -1496,10 +1917,17 @@ function updateClouds(deltaTime: number) {
 /* Fullscreen mode adjustments */
 .habitat-3d-debug--fullscreen {
   max-inline-size: none;
+  background-color: #111; /* Dark background for letterboxing */
 }
 
 .habitat-3d-debug--fullscreen .habitat-3d-debug__canvas-wrapper {
-  block-size: calc(100vh - 80px); /* Account for header */
+  /* Constrain aspect ratio to prevent distortion on wide monitors */
+  /* Using 16:10 aspect ratio (similar to habitat grid 14:10) */
+  --fullscreen-height: calc(100vh - 80px);
+  --aspect-ratio: calc(16 / 10);
+  block-size: var(--fullscreen-height);
+  max-inline-size: calc(var(--fullscreen-height) * var(--aspect-ratio));
+  margin-inline: auto; /* Center horizontally */
   border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
@@ -1632,64 +2060,7 @@ function updateClouds(deltaTime: number) {
   }
 }
 
-/* Left FAB container (Activity Log) */
-.game-fab-container--left {
-  inset-inline-start: var(--spacing-md);
-  inset-inline-end: auto;
-}
-
-/* Activity Feed Panel */
-.activity-feed-panel {
-  position: absolute;
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-inline-size: 200px;
-  min-block-size: 150px;
-}
-
-.activity-feed-panel__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: var(--color-accent-yellow-500);
-  color: var(--color-neutral-900);
-  cursor: move;
-  user-select: none;
-}
-
-.activity-feed-panel__title {
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-sm);
-}
-
-.activity-feed-panel__close {
-  background: none;
-  border: none;
-  font-size: 1.25rem;
-  cursor: pointer;
-  color: var(--color-neutral-900);
-  padding: 0;
-  line-height: 1;
-  opacity: 0.7;
-  transition: opacity 0.15s ease;
-}
-
-.activity-feed-panel__close:hover {
-  opacity: 1;
-}
-
-.activity-feed-panel__content {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--spacing-sm);
-}
-
+/* Activity Feed Panel - Content styles only (structure from SidePanel3D) */
 .activity-feed-panel__empty {
   display: flex;
   align-items: center;
@@ -1752,19 +2123,21 @@ function updateClouds(deltaTime: number) {
   font-size: var(--font-size-xs);
 }
 
-.activity-feed-panel__resize {
-  position: absolute;
-  inset-inline-end: 0;
-  inset-block-end: 0;
-  inline-size: 16px;
-  block-size: 16px;
-  cursor: se-resize;
-  background: linear-gradient(135deg, transparent 50%, var(--color-neutral-400) 50%);
-  border-radius: 0 0 var(--radius-lg) 0;
+/* Placement mode styles */
+.habitat-3d-debug__placement-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  margin-inline-end: var(--spacing-sm);
+  background-color: var(--color-accent-green-500);
+  color: white;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
-.activity-feed-panel__resize:hover {
-  background: linear-gradient(135deg, transparent 50%, var(--color-neutral-500) 50%);
+.habitat-3d-debug__canvas--placing {
+  cursor: crosshair !important;
 }
-
 </style>

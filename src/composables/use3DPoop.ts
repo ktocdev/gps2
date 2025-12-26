@@ -74,8 +74,17 @@ export function use3DPoop(worldGroup: THREE.Group) {
       poops.forEach((poop) => {
         if (!poopModels.has(poop.id)) {
           const model = createPoopModel()
-          const worldPos = subgridToWorld(poop.x, poop.y)
-          model.position.copy(worldPos)
+
+          // Use world coordinates if available (3D), otherwise convert from subgrid (2D fallback)
+          if (poop.worldX !== undefined && poop.worldZ !== undefined) {
+            model.position.x = poop.worldX
+            model.position.z = poop.worldZ
+          } else {
+            const worldPos = subgridToWorld(poop.x, poop.y)
+            model.position.x = worldPos.x
+            model.position.z = worldPos.z
+          }
+          // Keep y at 0.1 (set in createPoopModel)
 
           // Store poop ID in userData for click detection
           model.userData.poopId = poop.id

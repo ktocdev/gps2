@@ -1,8 +1,28 @@
 TO DOs
+ 
+- add physics to habitat items like in 3d demo
+- clicking stick, ball will make them roll naturally
+- guinea pig can push the stick and ball, and other appropriate items
 
-- create hay rack based on image
-- extract wooden archway tunnel from demo (not seeing it with tunnel items)
-- add clouds to sky
-- bubbles to water bottle while drinking
+- when click on the habitat floor, if empty floor, use it to drag the camera view around
 
-- change page structure so that HabitatDebug displays on page load when guinea pigs are active. If no guinea pigs are active, display Game Controller
+- create 3d models for other food items
+- enhance hay 3d model
+
+- create 3d models for some other habitat items
+
+- add guinea pig chat bubbles for reactions, etc - parity from 2d game
+- would 3d chat bubbles look cute? flat 3d?
+
+- finish out rest of need fulfillment methods
+    - play, chew, socialize autonomous actions - parity with 2d game
+
+- user to guinea pig actions - parity with 2d game 
+
+- guinea pig to guinea pig actions (social, play, groom, greet, check out) - parity with 2d game
+
+- replace comfort need with stimulation
+    - this is documented in the docs folder somewhere
+
+- guinea pigs walk through the arch tunnel, igloo walls, water bottle
+
