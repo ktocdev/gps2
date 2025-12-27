@@ -96,8 +96,11 @@
               v-if="selectedGuineaPigId && selectedGuineaPig"
               :guinea-pig="selectedGuineaPig"
               :position="guineaPigMenuPosition"
+              :is-controlled="controlledGuineaPigId === selectedGuineaPigId"
+              :time-remaining="controlTimeRemaining"
               @close="handleDeselect"
               @take-control="handleTakeControl"
+              @release-control="releaseControl"
             />
 
             <!-- Container Contents Menu (shows what's in bowl/rack) -->
@@ -147,6 +150,15 @@
 
             <!-- Hay Management Dialog -->
             <HayManagementDialog v-model="showHayManagementDialog" />
+
+            <!-- Action Result Dialog (water refill, quick clean, etc.) -->
+            <ActionResultDialog
+              v-model="showActionResultDialog"
+              :icon="actionResultIcon"
+              :title="actionResultTitle"
+              :message="actionResultMessage"
+              :stats="actionResultStats"
+            />
 
             <!-- Right FABs - Actions -->
           <div class="game-fab-container">
@@ -277,6 +289,7 @@ import InventoryItemMenu from '../../basic/InventoryItemMenu.vue'
 import ContainerContentsMenu from '../../basic/ContainerContentsMenu.vue'
 import CleanCageDialog from '../../game/dialogs/CleanCageDialog.vue'
 import HayManagementDialog from '../../game/dialogs/HayManagementDialog.vue'
+import ActionResultDialog, { type ActionStat } from '../../game/dialogs/ActionResultDialog.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import Inventory3DPanel from '../../game/Inventory3DPanel.vue'
 import SidePanel3D from '../../game/SidePanel3D.vue'
@@ -328,6 +341,8 @@ let isPlacementValid = false
 const controlledGuineaPigId = ref<string | null>(null)
 const CONTROL_AUTO_RELEASE_MS = 30000 // 30 seconds
 let controlReleaseTimer: number | null = null
+let controlCountdownInterval: number | null = null
+const controlTimeRemaining = ref(0) // seconds remaining
 
 // Stores
 const guineaPigStore = useGuineaPigStore()
@@ -476,6 +491,13 @@ const showCleanCageDialog = ref(false)
 
 // Hay management dialog state
 const showHayManagementDialog = ref(false)
+
+// Action result dialog state (for water refill, quick clean, etc.)
+const showActionResultDialog = ref(false)
+const actionResultIcon = ref('')
+const actionResultTitle = ref('')
+const actionResultMessage = ref('')
+const actionResultStats = ref<ActionStat[]>([])
 
 // Computed properties for clean cage dialog
 const habitatDirtiness = computed(() => habitatConditions.dirtiness)
@@ -735,7 +757,12 @@ onUnmounted(() => {
     clearTimeout(controlReleaseTimer)
     controlReleaseTimer = null
   }
+  if (controlCountdownInterval !== null) {
+    clearInterval(controlCountdownInterval)
+    controlCountdownInterval = null
+  }
   controlledGuineaPigId.value = null
+  controlTimeRemaining.value = 0
 
   // Cleanup placement mode
   if (placementPreview) {
@@ -956,14 +983,21 @@ function handleCanvasClick(event: MouseEvent) {
             success = habitatConditions.addHayToRack(clickedContainerId, itemId)
           }
 
-          // Exit container fill mode regardless of success
-          exitContainerFillMode()
-
           if (success) {
             console.log(`Added ${itemId} to ${clickedContainerType} ${clickedContainerId}`)
+
+            // Check if there are still servings remaining
+            const remainingServings = inventoryStore.getTotalServings(itemId)
+            if (remainingServings <= 0) {
+              // No more servings, exit container fill mode
+              exitContainerFillMode()
+            }
+            // Otherwise stay in container fill mode so user can continue adding
             return
           }
-          // If add failed, fall through to show the popover
+
+          // If add failed, exit container fill mode and show the popover
+          exitContainerFillMode()
           console.log(`Could not add ${itemId} to ${clickedContainerType}, showing popover instead`)
         }
 
@@ -1193,9 +1227,25 @@ function closeWaterBottleMenu() {
 }
 
 function handleRefillWater() {
+  const previousLevel = habitatConditions.waterLevel
   habitatConditions.refillWater()
+  const amountFilled = 100 - previousLevel
   console.log('[Habitat3D] Water bottle refilled')
   closeWaterBottleMenu()
+
+  // Show result dialog
+  actionResultIcon.value = '💧'
+  actionResultTitle.value = 'Water Refilled!'
+  actionResultMessage.value = amountFilled < 1
+    ? 'The water bottle was already full!'
+    : ''
+  actionResultStats.value = amountFilled >= 1
+    ? [
+        { label: 'Water Added', value: `${amountFilled.toFixed(0)}%` },
+        { label: 'Water Level', value: '100%' }
+      ]
+    : [{ label: 'Water Level', value: '100%' }]
+  showActionResultDialog.value = true
 }
 
 // Guinea pig menu handlers
@@ -1229,6 +1279,17 @@ function handleTakeControl() {
   // Update selection ring color to blue
   updateSelectionRingColor(SELECTION_RING_COLOR_CONTROLLED)
 
+  // Start countdown timer display
+  controlTimeRemaining.value = Math.floor(CONTROL_AUTO_RELEASE_MS / 1000)
+
+  // Start countdown interval (updates every second)
+  if (controlCountdownInterval !== null) {
+    clearInterval(controlCountdownInterval)
+  }
+  controlCountdownInterval = window.setInterval(() => {
+    controlTimeRemaining.value = Math.max(0, controlTimeRemaining.value - 1)
+  }, 1000)
+
   // Start auto-release timer
   if (controlReleaseTimer !== null) {
     clearTimeout(controlReleaseTimer)
@@ -1237,9 +1298,6 @@ function handleTakeControl() {
     console.log('[Habitat3D] Auto-releasing control after 30 seconds')
     releaseControl()
   }, CONTROL_AUTO_RELEASE_MS)
-
-  // Close the guinea pig menu
-  selectedGuineaPigId.value = null
 
   console.log(`[Habitat3D] Took control of guinea pig: ${gpId}`)
 }
@@ -1264,11 +1322,18 @@ function releaseControl() {
 
   // Clear control state
   controlledGuineaPigId.value = null
+  controlTimeRemaining.value = 0
 
   // Clear auto-release timer
   if (controlReleaseTimer !== null) {
     clearTimeout(controlReleaseTimer)
     controlReleaseTimer = null
+  }
+
+  // Clear countdown interval
+  if (controlCountdownInterval !== null) {
+    clearInterval(controlCountdownInterval)
+    controlCountdownInterval = null
   }
 
   // Reset selection ring color to green
@@ -1397,11 +1462,41 @@ function handleCleanCageConfirm(beddingType: string) {
 function fabQuickClean() {
   const result = habitatConditions.quickClean()
   console.log(`[Habitat3D] Quick clean: ${result.message}`)
+
+  // Show result dialog
+  actionResultIcon.value = '🧹'
+  actionResultTitle.value = 'Quick Clean Complete!'
+  actionResultMessage.value = result.poopsRemoved === 0
+    ? 'The habitat was already clean!'
+    : ''
+  actionResultStats.value = result.poopsRemoved > 0
+    ? [
+        { label: 'Poops Removed', value: result.poopsRemoved },
+        { label: 'Cleanliness Boost', value: `+${Math.min(20, result.poopsRemoved * 5)}%` }
+      ]
+    : []
+  showActionResultDialog.value = true
 }
 
 function fabRefillWater() {
+  const previousLevel = habitatConditions.waterLevel
   habitatConditions.refillWater()
+  const amountFilled = 100 - previousLevel
   console.log('[Habitat3D] Water refilled')
+
+  // Show result dialog
+  actionResultIcon.value = '💧'
+  actionResultTitle.value = 'Water Refilled!'
+  actionResultMessage.value = amountFilled < 1
+    ? 'The water bottle was already full!'
+    : ''
+  actionResultStats.value = amountFilled >= 1
+    ? [
+        { label: 'Water Added', value: `${amountFilled.toFixed(0)}%` },
+        { label: 'Water Level', value: '100%' }
+      ]
+    : [{ label: 'Water Level', value: '100%' }]
+  showActionResultDialog.value = true
 }
 
 function fabFillHay() {
