@@ -1,9 +1,11 @@
 <template>
-  <div
-    v-if="show"
-    class="container-contents-menu"
-    :style="{ left: position.x + 'px', top: position.y + 'px' }"
-  >
+  <Teleport to="body">
+    <div
+      v-if="show"
+      ref="floatingEl"
+      class="container-contents-menu"
+      :style="floatingStyles"
+    >
     <div class="container-contents-menu__header">
       <span class="container-contents-menu__title">{{ title }}</span>
       <button class="container-contents-menu__close" @click="$emit('close')">×</button>
@@ -79,10 +81,12 @@
       </button>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
+import { usePopover } from '../../composables/ui/usePopover'
 
 interface FoodItem {
   itemId: string
@@ -118,6 +122,22 @@ defineEmits<{
   clear: []
   'remove-food': [index: number]
 }>()
+
+// Use Floating UI for smart positioning
+// floatingEl is used as template ref (ref="floatingEl")
+const { floatingEl, floatingStyles, updatePosition } = usePopover({ offset: 10 })
+void floatingEl // Prevent unused variable warning - used in template
+
+// Update position when props change
+watch(
+  () => props.position,
+  (pos) => {
+    if (pos) {
+      updatePosition(pos.x, pos.y)
+    }
+  },
+  { immediate: true }
+)
 
 const STALE_THRESHOLD = 40
 
@@ -184,8 +204,8 @@ function getFreshnessClass(value: number): string {
 
 <style>
 .container-contents-menu {
-  position: absolute;
-  z-index: 100;
+  /* Floating UI handles position: absolute and top/left */
+  z-index: 1000;
   min-inline-size: 220px;
   max-inline-size: 280px;
   background-color: var(--color-bg-primary);
@@ -193,7 +213,7 @@ function getFreshnessClass(value: number): string {
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  transform: translate(-50%, 10px);
+  /* transform removed - Floating UI handles positioning */
 }
 
 .container-contents-menu__header {

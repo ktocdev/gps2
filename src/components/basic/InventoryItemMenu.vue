@@ -1,32 +1,38 @@
 <template>
-  <div
-    v-if="show"
-    class="inventory-item-menu"
-    :style="{ left: position.x + 'px', top: position.y + 'px' }"
-  >
-    <div class="inventory-item-menu__header">
-      <span class="inventory-item-menu__title">{{ title }}</span>
-      <button class="inventory-item-menu__close" @click="$emit('close')">×</button>
-    </div>
-    <div class="inventory-item-menu__items">
-      <button
-        v-for="item in items"
-        :key="item.itemId"
-        class="inventory-item-menu__item"
-        @click="$emit('select', item.itemId)"
-      >
-        <span class="inventory-item-menu__emoji">{{ item.emoji }}</span>
-        <span class="inventory-item-menu__name">{{ item.name }}</span>
-        <span class="inventory-item-menu__quantity">×{{ item.quantity }}</span>
-      </button>
-      <div v-if="items.length === 0" class="inventory-item-menu__empty">
-        {{ emptyMessage }}
+  <Teleport to="body">
+    <div
+      v-if="show"
+      ref="floatingEl"
+      class="inventory-item-menu"
+      :style="floatingStyles"
+    >
+      <div class="inventory-item-menu__header">
+        <span class="inventory-item-menu__title">{{ title }}</span>
+        <button class="inventory-item-menu__close" @click="$emit('close')">×</button>
+      </div>
+      <div class="inventory-item-menu__items">
+        <button
+          v-for="item in items"
+          :key="item.itemId"
+          class="inventory-item-menu__item"
+          @click="$emit('select', item.itemId)"
+        >
+          <span class="inventory-item-menu__emoji">{{ item.emoji }}</span>
+          <span class="inventory-item-menu__name">{{ item.name }}</span>
+          <span class="inventory-item-menu__quantity">×{{ item.quantity }}</span>
+        </button>
+        <div v-if="items.length === 0" class="inventory-item-menu__empty">
+          {{ emptyMessage }}
+        </div>
       </div>
     </div>
-  </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue'
+import { usePopover } from '../../composables/ui/usePopover'
+
 export interface InventoryMenuItem {
   itemId: string
   name: string
@@ -34,7 +40,7 @@ export interface InventoryMenuItem {
   quantity: number
 }
 
-defineProps<{
+const props = defineProps<{
   show: boolean
   position: { x: number; y: number }
   title: string
@@ -46,19 +52,35 @@ defineEmits<{
   close: []
   select: [itemId: string]
 }>()
+
+// Use Floating UI for smart positioning
+// floatingEl is used as template ref (ref="floatingEl")
+const { floatingEl, floatingStyles, updatePosition } = usePopover({ offset: 10 })
+void floatingEl // Prevent unused variable warning - used in template
+
+// Update position when props change
+watch(
+  () => props.position,
+  (pos) => {
+    if (pos) {
+      updatePosition(pos.x, pos.y)
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style>
 .inventory-item-menu {
-  position: absolute;
-  z-index: 100;
+  /* Floating UI handles position: absolute and top/left */
+  z-index: 1000;
   min-inline-size: 200px;
   background-color: var(--color-bg-primary);
   border: 1px solid var(--color-border-medium);
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  transform: translate(-50%, 10px);
+  /* transform removed - Floating UI handles positioning */
 }
 
 .inventory-item-menu__header {

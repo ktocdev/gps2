@@ -124,7 +124,7 @@ const tabCategories: TabCategory[] = [
     tabs: [
       {
         id: 'habitat',
-        label: 'Habitat Debug',
+        label: '2D Habitat',
         icon: '🏠',
         panelClass: 'tab-container__panel--constrained'
       },

@@ -3,93 +3,118 @@
     :is-open="isOpen"
     side="right"
     color="violet"
-    title="Inventory"
-    icon="🎒"
+    title="Control Panel"
+    icon="☰"
+    :tabs="tabs"
+    :active-tab="activeTab"
     @toggle="$emit('toggle')"
+    @update:active-tab="activeTab = $event"
   >
     <template #header-extra>
-      <span class="inventory-3d-panel__count">{{ totalItemCount }} items</span>
+      <span v-if="activeTab === 'inventory'" class="inventory-3d-panel__count">{{ totalItemCount }} items</span>
     </template>
 
-    <!-- Empty state -->
-    <div v-if="totalItemCount === 0" class="inventory-3d-panel__empty">
-      📦 No items in inventory
-    </div>
+    <!-- Inventory Tab Content -->
+    <template v-if="activeTab === 'inventory'">
+      <!-- Empty state -->
+      <div v-if="totalItemCount === 0" class="inventory-3d-panel__empty">
+        📦 No items in inventory
+      </div>
 
-    <!-- Food & Consumables Section -->
-    <div v-if="consumableItems.length > 0" class="inventory-3d-panel__section">
-      <div class="inventory-3d-panel__section-header">
-        🥬 Food & Consumables
-      </div>
-      <div class="inventory-3d-panel__items">
-        <button
-          v-for="item in consumableItems"
-          :key="item.itemId"
-          class="inventory-3d-panel__item"
-          :class="{
-            'inventory-3d-panel__item--selected': selectedItemId === item.itemId,
-            'inventory-3d-panel__item--hay': item.category === 'hay',
-            'inventory-3d-panel__item--food': item.category === 'food'
-          }"
-          @click="handleItemClick(item)"
-          :title="item.name"
-        >
-          <span class="inventory-3d-panel__item-emoji">{{ item.emoji }}</span>
-          <span class="inventory-3d-panel__item-name">{{ item.name }}</span>
-          <span class="inventory-3d-panel__item-servings">
-            {{ item.servingsRemaining }}/{{ item.maxServings }}
-          </span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Habitat Items Section -->
-    <div v-if="habitatItems.length > 0" class="inventory-3d-panel__section">
-      <div class="inventory-3d-panel__section-header">
-        🏠 Habitat Items
-      </div>
-      <div class="inventory-3d-panel__items">
-        <button
-          v-for="item in habitatItems"
-          :key="item.itemId"
-          class="inventory-3d-panel__item"
-          :class="{ 'inventory-3d-panel__item--selected': selectedItemId === item.itemId }"
-          @click="handleItemClick(item)"
-          :title="item.name"
-        >
-          <span class="inventory-3d-panel__item-emoji">{{ item.emoji }}</span>
-          <span class="inventory-3d-panel__item-name">{{ item.name }}</span>
-          <span v-if="item.quantity > 1" class="inventory-3d-panel__item-quantity">
-            ×{{ item.quantity }}
-          </span>
-        </button>
-      </div>
-    </div>
-
-    <!-- Bedding Section (read-only info) -->
-    <div v-if="beddingItems.length > 0" class="inventory-3d-panel__section">
-      <div class="inventory-3d-panel__section-header">
-        🛏️ Bedding
-      </div>
-      <div class="inventory-3d-panel__items">
-        <div
-          v-for="item in beddingItems"
-          :key="item.itemId"
-          class="inventory-3d-panel__item inventory-3d-panel__item--readonly"
-          :title="'Used automatically during cleaning'"
-        >
-          <span class="inventory-3d-panel__item-emoji">{{ item.emoji }}</span>
-          <span class="inventory-3d-panel__item-name">{{ item.name }}</span>
-          <span class="inventory-3d-panel__item-amount">{{ item.formattedAmount }}</span>
+      <!-- Food & Consumables Section -->
+      <div v-if="consumableItems.length > 0" class="inventory-3d-panel__section">
+        <div class="inventory-3d-panel__section-header">
+          🥬 Food & Consumables
+        </div>
+        <div class="inventory-3d-panel__items">
+          <button
+            v-for="item in consumableItems"
+            :key="item.itemId"
+            class="inventory-3d-panel__item"
+            :class="{
+              'inventory-3d-panel__item--selected': selectedItemId === item.itemId,
+              'inventory-3d-panel__item--hay': item.category === 'hay',
+              'inventory-3d-panel__item--food': item.category === 'food'
+            }"
+            @click="handleItemClick(item)"
+            :title="item.name"
+          >
+            <span class="inventory-3d-panel__item-emoji">{{ item.emoji }}</span>
+            <span class="inventory-3d-panel__item-name">{{ item.name }}</span>
+            <span class="inventory-3d-panel__item-servings">
+              {{ item.servingsRemaining }}/{{ item.maxServings }}
+            </span>
+          </button>
         </div>
       </div>
-    </div>
+
+      <!-- Habitat Items Section -->
+      <div v-if="habitatItems.length > 0" class="inventory-3d-panel__section">
+        <div class="inventory-3d-panel__section-header">
+          🏠 Habitat Items
+        </div>
+        <div class="inventory-3d-panel__items">
+          <button
+            v-for="item in habitatItems"
+            :key="item.itemId"
+            class="inventory-3d-panel__item"
+            :class="{ 'inventory-3d-panel__item--selected': selectedItemId === item.itemId }"
+            @click="handleItemClick(item)"
+            :title="item.name"
+          >
+            <span class="inventory-3d-panel__item-emoji">{{ item.emoji }}</span>
+            <span class="inventory-3d-panel__item-name">{{ item.name }}</span>
+            <span v-if="item.quantity > 1" class="inventory-3d-panel__item-quantity">
+              ×{{ item.quantity }}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bedding Section (read-only info) -->
+      <div v-if="beddingItems.length > 0" class="inventory-3d-panel__section">
+        <div class="inventory-3d-panel__section-header">
+          🛏️ Bedding
+        </div>
+        <div class="inventory-3d-panel__items">
+          <div
+            v-for="item in beddingItems"
+            :key="item.itemId"
+            class="inventory-3d-panel__item inventory-3d-panel__item--readonly"
+            :title="'Used automatically during cleaning'"
+          >
+            <span class="inventory-3d-panel__item-emoji">{{ item.emoji }}</span>
+            <span class="inventory-3d-panel__item-name">{{ item.name }}</span>
+            <span class="inventory-3d-panel__item-amount">{{ item.formattedAmount }}</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Guinea Pig Info Tab Content -->
+    <template v-else-if="activeTab === 'guinea-pigs'">
+      <div class="guinea-pig-info">
+        <div class="guinea-pig-info__header">
+          🐹 Guinea Pig Information
+        </div>
+        <div class="guinea-pig-info__placeholder">
+          <p>Select a guinea pig in the habitat to see detailed information here.</p>
+          <p class="guinea-pig-info__hint">Click on a guinea pig to view:</p>
+          <ul class="guinea-pig-info__list">
+            <li>Current needs & wellness</li>
+            <li>Personality & preferences</li>
+            <li>Friendship levels</li>
+            <li>Activity history</li>
+          </ul>
+        </div>
+      </div>
+    </template>
   </SidePanel3D>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import SidePanel3D from './SidePanel3D.vue'
+import SidePanel3D, { type TabDefinition } from './SidePanel3D.vue'
 import { useInventoryStore } from '../../stores/inventoryStore'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 
@@ -109,6 +134,14 @@ const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 
 const selectedItemId = ref<string | null>(null)
+
+// Tab definitions
+const tabs: TabDefinition[] = [
+  { id: 'inventory', label: 'Inventory', icon: '📦' },
+  { id: 'guinea-pigs', label: 'Guinea Pigs', icon: '🐹' }
+]
+
+const activeTab = ref('inventory')
 
 // Computed: Total item count
 const totalItemCount = computed(() => {
@@ -318,6 +351,15 @@ function handleItemClick(item: { itemId: string }) {
   border-inline-start: 3px solid var(--color-accent-yellow-500);
 }
 
+/* Read-only items (bedding) - no interaction */
+.inventory-3d-panel__item--readonly {
+  cursor: default;
+}
+
+.inventory-3d-panel__item--readonly:hover {
+  background-color: var(--color-bg-secondary);
+}
+
 .inventory-3d-panel__item-emoji {
   font-size: 1.25rem;
   flex-shrink: 0;
@@ -346,4 +388,42 @@ function handleItemClick(item: { itemId: string }) {
   flex-shrink: 0;
 }
 
+/* Guinea Pig Info Tab Styles */
+.guinea-pig-info {
+  padding: var(--spacing-sm);
+}
+
+.guinea-pig-info__header {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin-block-end: var(--spacing-md);
+  padding-block-end: var(--spacing-sm);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.guinea-pig-info__placeholder {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  line-height: 1.5;
+}
+
+.guinea-pig-info__placeholder p {
+  margin-block-end: var(--spacing-sm);
+}
+
+.guinea-pig-info__hint {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.guinea-pig-info__list {
+  margin: var(--spacing-xs) 0 0 var(--spacing-md);
+  padding: 0;
+  list-style: disc;
+}
+
+.guinea-pig-info__list li {
+  margin-block-end: var(--spacing-xs);
+}
 </style>

@@ -25,6 +25,21 @@
           {{ side === 'left' ? '◀' : '▶' }}
         </button>
       </div>
+
+      <!-- Internal tabs navigation (when tabs provided) -->
+      <div v-if="tabs && tabs.length > 0" class="side-panel-3d__tabs">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          class="side-panel-3d__tab-btn"
+          :class="{ 'side-panel-3d__tab-btn--active': activeTab === tab.id }"
+          @click="$emit('update:activeTab', tab.id)"
+        >
+          <span class="side-panel-3d__tab-icon">{{ tab.icon }}</span>
+          <span class="side-panel-3d__tab-label">{{ tab.label }}</span>
+        </button>
+      </div>
+
       <div class="side-panel-3d__content">
         <slot></slot>
       </div>
@@ -33,18 +48,27 @@
 </template>
 
 <script setup lang="ts">
+export interface TabDefinition {
+  id: string
+  label: string
+  icon: string
+}
+
 interface Props {
   isOpen: boolean
   side: 'left' | 'right'
   color: 'yellow' | 'violet' | 'pink' | 'green'
   title: string
   icon: string
+  tabs?: TabDefinition[]
+  activeTab?: string
 }
 
 defineProps<Props>()
 
 defineEmits<{
   toggle: []
+  'update:activeTab': [tabId: string]
 }>()
 </script>
 
@@ -70,30 +94,34 @@ defineEmits<{
 /* Tab button - visible when collapsed */
 .side-panel-3d__tab {
   position: absolute;
-  inset-block-start: 0;
-  block-size: 40px;
-  padding: 0 var(--spacing-sm);
+  inset-block-start: var(--spacing-sm);
+  inline-size: 48px;
+  block-size: 48px;
+  padding: 0;
   border: none;
-  border-radius: 0;
-  font-size: 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 1.5rem;
   cursor: pointer;
-  transition: background-color 0.15s ease, opacity 0.3s ease;
+  transition: background-color 0.15s ease, opacity 0.3s ease, transform 0.15s ease;
   pointer-events: auto;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.side-panel-3d__tab:hover {
+  transform: scale(1.05);
 }
 
 /* Tab positioning by side */
 .side-panel-3d--left .side-panel-3d__tab {
-  inset-inline-start: 0;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  inset-inline-start: var(--spacing-sm);
 }
 
 .side-panel-3d--right .side-panel-3d__tab {
-  inset-inline-end: 0;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  inset-inline-end: var(--spacing-sm);
 }
 
 /* Hide tab when panel is expanded */
@@ -179,6 +207,51 @@ defineEmits<{
 .side-panel-3d--collapsed .side-panel-3d__close {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Internal tabs navigation */
+.side-panel-3d__tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 var(--spacing-sm);
+  background-color: var(--color-bg-secondary);
+  border-block-end: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.side-panel-3d__tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: none;
+  border: none;
+  border-block-end: 2px solid transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.side-panel-3d__tab-btn:hover {
+  color: var(--color-text-primary);
+  background-color: var(--color-bg-tertiary);
+}
+
+.side-panel-3d__tab-btn--active {
+  color: var(--color-text-primary);
+  border-block-end-color: var(--color-primary);
+  background-color: var(--color-bg-primary);
+}
+
+.side-panel-3d__tab-icon {
+  font-size: 1rem;
+}
+
+.side-panel-3d__tab-label {
+  font-weight: var(--font-weight-medium);
 }
 
 /* Content */

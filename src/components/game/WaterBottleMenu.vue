@@ -1,8 +1,10 @@
 <template>
-  <div
-    class="water-bottle-menu"
-    :style="{ left: position.x + 'px', top: position.y + 'px' }"
-  >
+  <Teleport to="body">
+    <div
+      ref="floatingEl"
+      class="water-bottle-menu"
+      :style="floatingStyles"
+    >
     <div class="water-bottle-menu__header">
       <span class="water-bottle-menu__title">Water Bottle</span>
       <button class="water-bottle-menu__close" @click="$emit('close')">×</button>
@@ -32,10 +34,14 @@
       </button>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-defineProps<{
+import { watch } from 'vue'
+import { usePopover } from '../../composables/ui/usePopover'
+
+const props = defineProps<{
   waterLevel: number
   position: { x: number; y: number }
 }>()
@@ -44,6 +50,22 @@ defineEmits<{
   close: []
   refill: []
 }>()
+
+// Use Floating UI for smart positioning
+// floatingEl is used as template ref (ref="floatingEl")
+const { floatingEl, floatingStyles, updatePosition } = usePopover({ offset: 10 })
+void floatingEl // Prevent unused variable warning - used in template
+
+// Update position when props change
+watch(
+  () => props.position,
+  (pos) => {
+    if (pos) {
+      updatePosition(pos.x, pos.y)
+    }
+  },
+  { immediate: true }
+)
 
 function getLevelColorClass(level: number): string {
   if (level >= 50) return 'water-bottle-menu__level-fill--high'
@@ -54,8 +76,8 @@ function getLevelColorClass(level: number): string {
 
 <style>
 .water-bottle-menu {
-  position: absolute;
-  z-index: 100;
+  /* Floating UI handles position: absolute and top/left */
+  z-index: 1000;
   min-inline-size: 200px;
   max-inline-size: 260px;
   background-color: var(--color-bg-primary);
@@ -63,7 +85,7 @@ function getLevelColorClass(level: number): string {
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  transform: translate(-50%, 10px);
+  /* transform removed - Floating UI handles positioning */
 }
 
 .water-bottle-menu__header {

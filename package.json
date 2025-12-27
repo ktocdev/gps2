@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@floating-ui/vue": "^1.1.9",
     "@iconify-json/flowbite": "^1.2.7",
     "@iconify/vue": "^5.0.0",
     "pinia": "^3.0.3",

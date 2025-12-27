@@ -1,8 +1,10 @@
 <template>
-  <div
-    class="guinea-pig-info-menu"
-    :style="{ left: position.x + 'px', top: position.y + 'px' }"
-  >
+  <Teleport to="body">
+    <div
+      ref="floatingEl"
+      class="guinea-pig-info-menu"
+      :style="floatingStyles"
+    >
     <div class="guinea-pig-info-menu__header">
       <span class="guinea-pig-info-menu__name">{{ guineaPig.name }}</span>
       <button class="guinea-pig-info-menu__close" @click="$emit('close')">×</button>
@@ -35,29 +37,63 @@
 
     <div class="guinea-pig-info-menu__actions">
       <button
+        v-if="!isControlled"
         class="guinea-pig-info-menu__action guinea-pig-info-menu__action--primary"
         @click="$emit('take-control')"
       >
-        Take Control
+        🎯 Take Control
       </button>
+      <template v-else>
+        <div class="guinea-pig-info-menu__control-info">
+          <span class="guinea-pig-info-menu__control-status">🟢 Controlling</span>
+          <span class="guinea-pig-info-menu__control-hint">Click in habitat to move</span>
+        </div>
+        <button
+          class="guinea-pig-info-menu__action guinea-pig-info-menu__action--secondary"
+          @click="$emit('release-control')"
+        >
+          🔄 Release ({{ timeRemaining }}s)
+        </button>
+      </template>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import Badge from '../basic/Badge.vue'
 import type { GuineaPig } from '../../stores/guineaPigStore'
+import { usePopover } from '../../composables/ui/usePopover'
 
 const props = defineProps<{
   guineaPig: GuineaPig
   position: { x: number; y: number }
+  isControlled?: boolean
+  timeRemaining?: number
 }>()
 
 defineEmits<{
   close: []
   'take-control': []
+  'release-control': []
 }>()
+
+// Use Floating UI for smart positioning
+// floatingEl is used as template ref (ref="floatingEl")
+const { floatingEl, floatingStyles, updatePosition } = usePopover({ offset: 10 })
+void floatingEl // Prevent unused variable warning - used in template
+
+// Update position when props change
+watch(
+  () => props.position,
+  (pos) => {
+    if (pos) {
+      updatePosition(pos.x, pos.y)
+    }
+  },
+  { immediate: true }
+)
 
 const genderDisplay = computed(() => {
   return props.guineaPig.gender === 'male' ? 'Male' : 'Female'
@@ -108,8 +144,8 @@ function getNeedColorClass(value: number): string {
 
 <style>
 .guinea-pig-info-menu {
-  position: absolute;
-  z-index: 100;
+  /* Floating UI handles position: absolute and top/left */
+  z-index: 1000;
   min-inline-size: 220px;
   max-inline-size: 280px;
   background-color: var(--color-bg-primary);
@@ -117,7 +153,7 @@ function getNeedColorClass(value: number): string {
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  transform: translate(-50%, 10px);
+  /* transform removed - Floating UI handles positioning */
 }
 
 .guinea-pig-info-menu__header {
@@ -250,5 +286,37 @@ function getNeedColorClass(value: number): string {
 
 .guinea-pig-info-menu__action--primary:active {
   transform: scale(0.98);
+}
+
+.guinea-pig-info-menu__action--secondary {
+  background-color: var(--color-warning);
+  color: var(--color-neutral-900);
+}
+
+.guinea-pig-info-menu__action--secondary:hover {
+  background-color: var(--color-warning-dark, #e6a200);
+}
+
+.guinea-pig-info-menu__action--secondary:active {
+  transform: scale(0.98);
+}
+
+.guinea-pig-info-menu__control-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-block-end: var(--spacing-sm);
+  text-align: center;
+}
+
+.guinea-pig-info-menu__control-status {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-success);
+}
+
+.guinea-pig-info-menu__control-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
 }
 </style>
