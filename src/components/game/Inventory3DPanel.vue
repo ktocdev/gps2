@@ -3,8 +3,8 @@
     :is-open="isOpen"
     side="right"
     color="violet"
-    title="Info Panel"
-    icon="📦"
+    title="Control Panel"
+    icon="☰"
     :tabs="tabs"
     :active-tab="activeTab"
     @toggle="$emit('toggle')"
@@ -349,6 +349,15 @@ function handleItemClick(item: { itemId: string }) {
 /* Hay items - yellow left border */
 .inventory-3d-panel__item--hay {
   border-inline-start: 3px solid var(--color-accent-yellow-500);
+}
+
+/* Read-only items (bedding) - no interaction */
+.inventory-3d-panel__item--readonly {
+  cursor: default;
+}
+
+.inventory-3d-panel__item--readonly:hover {
+  background-color: var(--color-bg-secondary);
 }
 
 .inventory-3d-panel__item-emoji {

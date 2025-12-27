@@ -52,7 +52,9 @@ defineEmits<{
 }>()
 
 // Use Floating UI for smart positioning
+// floatingEl is used as template ref (ref="floatingEl")
 const { floatingEl, floatingStyles, updatePosition } = usePopover({ offset: 10 })
+void floatingEl // Prevent unused variable warning - used in template
 
 // Update position when props change
 watch(
