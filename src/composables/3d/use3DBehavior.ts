@@ -29,6 +29,7 @@ export interface Behavior3DGoal {
   estimatedDuration: number
   needSatisfied?: 'hunger' | 'thirst' | 'shelter' | 'energy' | 'hygiene'
   targetItemId?: string
+  sourceType?: 'food_bowl' | 'hay_rack' // For eating behavior - tracks what container to consume from
 }
 
 // Activity states for UI/animation
@@ -141,12 +142,13 @@ export function use3DBehavior(guineaPigId: string) {
   }
 
   /**
-   * Find the position of a food bowl in world coordinates
+   * Find the position of a food source (food bowl or hay rack) in world coordinates
+   * Priority: Food bowl with food > Hay rack with hay > Empty bowl > Empty hay rack
    */
-  function findFoodBowlPosition(): { position: Vector3D; itemId: string } | null {
+  function findFoodSourcePosition(): { position: Vector3D; itemId: string; sourceType: 'food_bowl' | 'hay_rack' } | null {
     const itemPositions = habitatConditions.itemPositions
 
-    // Find a food bowl with food in it
+    // First priority: Find a food bowl with food in it
     for (const [itemId, gridPos] of itemPositions.entries()) {
       const item = suppliesStore.getItemById(itemId)
 
@@ -156,20 +158,52 @@ export function use3DBehavior(guineaPigId: string) {
         if (bowlContents && bowlContents.length > 0) {
           return {
             position: movement3DStore.gridToWorld(gridPos.x, gridPos.y),
-            itemId
+            itemId,
+            sourceType: 'food_bowl'
           }
         }
       }
     }
 
-    // If no bowl with food, find any bowl
+    // Second priority: Find a hay rack with hay in it
+    for (const [itemId, gridPos] of itemPositions.entries()) {
+      const item = suppliesStore.getItemById(itemId)
+
+      if (item?.stats?.itemType === 'hay_rack') {
+        const hayServings = habitatConditions.getHayRackContents(itemId)
+
+        if (hayServings && hayServings.length > 0) {
+          return {
+            position: movement3DStore.gridToWorld(gridPos.x, gridPos.y),
+            itemId,
+            sourceType: 'hay_rack'
+          }
+        }
+      }
+    }
+
+    // Third priority: Find any food bowl (even if empty, for wandering to it)
     for (const [itemId, gridPos] of itemPositions.entries()) {
       const item = suppliesStore.getItemById(itemId)
 
       if (item?.stats?.itemType === 'food_bowl') {
         return {
           position: movement3DStore.gridToWorld(gridPos.x, gridPos.y),
-          itemId
+          itemId,
+          sourceType: 'food_bowl'
+        }
+      }
+    }
+
+    // Fourth priority: Find any hay rack
+    for (const [itemId, gridPos] of itemPositions.entries()) {
+      const item = suppliesStore.getItemById(itemId)
+
+      if (item?.stats?.itemType === 'hay_rack') {
+        return {
+          position: movement3DStore.gridToWorld(gridPos.x, gridPos.y),
+          itemId,
+          sourceType: 'hay_rack'
         }
       }
     }
@@ -345,12 +379,13 @@ export function use3DBehavior(guineaPigId: string) {
 
     // Hunger < threshold
     if (needs.hunger < THRESHOLDS.hunger && !isOnCooldown('eat')) {
-      const target = findFoodBowlPosition()
+      const target = findFoodSourcePosition()
       if (target) {
         goals.push({
           type: 'eat',
           target: target.position,
           targetItemId: target.itemId,
+          sourceType: target.sourceType,
           priority: calculateNeedPriority(needs.hunger, THRESHOLDS.hunger, 100),
           estimatedDuration: DURATIONS.eat,
           needSatisfied: 'hunger'
@@ -507,8 +542,25 @@ export function use3DBehavior(guineaPigId: string) {
    * Finish eating and restore hunger
    */
   function finishEating(): void {
+    // Save goal info before clearing (need it for food consumption)
+    const targetItemId = currentGoal.value?.targetItemId
+    const sourceType = currentGoal.value?.sourceType
+
     currentActivity.value = 'idle'
     currentGoal.value = null
+
+    // Consume food from the appropriate container
+    if (targetItemId && sourceType) {
+      if (sourceType === 'food_bowl') {
+        // Remove first food item from bowl
+        habitatConditions.removeFoodFromBowl(targetItemId, 0)
+        console.log(`[Behavior3D] Guinea pig ${guineaPigId} consumed food from bowl ${targetItemId}`)
+      } else if (sourceType === 'hay_rack') {
+        // Remove first hay serving from rack
+        habitatConditions.removeHayFromRack(targetItemId, 0)
+        console.log(`[Behavior3D] Guinea pig ${guineaPigId} consumed hay from rack ${targetItemId}`)
+      }
+    }
 
     guineaPigStore.satisfyNeed(guineaPigId, 'hunger', RESTORE_AMOUNTS.hunger)
     setCooldown('eat', COOLDOWNS.eat)
