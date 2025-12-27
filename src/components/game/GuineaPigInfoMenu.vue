@@ -1,8 +1,10 @@
 <template>
-  <div
-    class="guinea-pig-info-menu"
-    :style="{ left: position.x + 'px', top: position.y + 'px' }"
-  >
+  <Teleport to="body">
+    <div
+      ref="floatingEl"
+      class="guinea-pig-info-menu"
+      :style="floatingStyles"
+    >
     <div class="guinea-pig-info-menu__header">
       <span class="guinea-pig-info-menu__name">{{ guineaPig.name }}</span>
       <button class="guinea-pig-info-menu__close" @click="$emit('close')">×</button>
@@ -55,12 +57,14 @@
       </template>
     </div>
   </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch } from 'vue'
 import Badge from '../basic/Badge.vue'
 import type { GuineaPig } from '../../stores/guineaPigStore'
+import { usePopover } from '../../composables/ui/usePopover'
 
 const props = defineProps<{
   guineaPig: GuineaPig
@@ -74,6 +78,20 @@ defineEmits<{
   'take-control': []
   'release-control': []
 }>()
+
+// Use Floating UI for smart positioning
+const { floatingEl, floatingStyles, updatePosition } = usePopover({ offset: 10 })
+
+// Update position when props change
+watch(
+  () => props.position,
+  (pos) => {
+    if (pos) {
+      updatePosition(pos.x, pos.y)
+    }
+  },
+  { immediate: true }
+)
 
 const genderDisplay = computed(() => {
   return props.guineaPig.gender === 'male' ? 'Male' : 'Female'
@@ -124,8 +142,8 @@ function getNeedColorClass(value: number): string {
 
 <style>
 .guinea-pig-info-menu {
-  position: absolute;
-  z-index: 100;
+  /* Floating UI handles position: absolute and top/left */
+  z-index: 1000;
   min-inline-size: 220px;
   max-inline-size: 280px;
   background-color: var(--color-bg-primary);
@@ -133,7 +151,7 @@ function getNeedColorClass(value: number): string {
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   overflow: hidden;
-  transform: translate(-50%, 10px);
+  /* transform removed - Floating UI handles positioning */
 }
 
 .guinea-pig-info-menu__header {

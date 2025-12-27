@@ -1005,9 +1005,10 @@ function handleCanvasClick(event: MouseEvent) {
         selectedContainerId.value = clickedContainerId
         selectedContainerType.value = clickedContainerType
         showContainerMenu.value = true
+        // Use viewport coordinates (for Floating UI)
         menuPosition.value = {
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top
+          x: event.clientX,
+          y: event.clientY
         }
         console.log(`Clicked ${clickedContainerType}:`, clickedContainerId)
         return
@@ -1023,9 +1024,10 @@ function handleCanvasClick(event: MouseEvent) {
             if (item?.stats?.itemType === 'water_bottle') {
               clickedWaterBottle = true
               showWaterBottleMenu.value = true
+              // Use viewport coordinates (for Floating UI)
               waterBottleMenuPosition.value = {
-                x: event.clientX - rect.left,
-                y: event.clientY - rect.top
+                x: event.clientX,
+                y: event.clientY
               }
               console.log('Clicked water bottle:', itemId)
             }
@@ -1047,10 +1049,10 @@ function handleCanvasClick(event: MouseEvent) {
       if (clickedObject.parent === model || clickedObject.parent?.parent === model) {
         clickedModel = model
         selectedGuineaPigId.value = id
-        // Set menu position near the click
+        // Set menu position using viewport coordinates (for Floating UI)
         guineaPigMenuPosition.value = {
-          x: event.clientX - rect.left,
-          y: event.clientY - rect.top
+          x: event.clientX,
+          y: event.clientY
         }
       }
     })

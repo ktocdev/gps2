@@ -26,6 +26,13 @@ Enhanced Habitat Physics
 - enhance hay 3d model
 - create 3d models for some other habitat items
 - guinea pigs autonomously walk through the arch tunnel, igloo walls, water bottle
+- guiniea pig waters through water bottle when drinking
+
+Multiple Item Instances
+- test adding multiple:
+    - food containers
+    - water bottles
+    - toys, etc
 
 Chat Bubble
 - add guinea pig chat bubbles for reactions, etc - parity from 2d game
