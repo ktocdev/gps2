@@ -34,6 +34,7 @@
       class="activity-feed__container"
       :class="{ 'activity-feed__container--paused': isPaused }"
       :style="{ maxHeight: height }"
+      @scroll="handleScroll"
     >
       <div
         v-if="filteredMessages.length === 0"
@@ -123,6 +124,7 @@ const isPausedInternal = ref(false)
 const isLoadingMore = ref(false)
 const displayCount = ref(20)
 const selectedCategories = ref<MessageCategory[]>([...props.categories])
+const isPinnedToTop = ref(true) // Auto-scroll when pinned, disable when user scrolls away
 
 // Computed properties
 const filteredMessages = computed(() => {
@@ -176,10 +178,26 @@ const loadMoreMessages = async () => {
 }
 
 const scrollToTop = async () => {
-  if (!props.autoScroll || !feedContainer.value) return
+  if (!props.autoScroll || !feedContainer.value || !isPinnedToTop.value) return
 
   await nextTick()
   feedContainer.value.scrollTop = 0
+}
+
+// Handle user scroll - unpin when scrolled away from top, re-pin when at top
+const handleScroll = () => {
+  if (!feedContainer.value) return
+
+  const scrollTop = feedContainer.value.scrollTop
+  const threshold = 10 // Small threshold to account for minor scroll differences
+
+  if (scrollTop <= threshold) {
+    // User scrolled back to top - re-pin
+    isPinnedToTop.value = true
+  } else {
+    // User scrolled away - unpin
+    isPinnedToTop.value = false
+  }
 }
 
 const formatTime = (timestamp: number): string => {

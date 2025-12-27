@@ -110,6 +110,7 @@ import BlockMessage from '../../basic/BlockMessage.vue'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
+import { useLoggingStore } from '../../../stores/loggingStore'
 import { CONSUMPTION } from '../../../constants/supplies'
 
 interface Props {
@@ -125,6 +126,7 @@ defineEmits<{
 const habitatConditions = useHabitatConditions()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const loggingStore = useLoggingStore()
 
 // Computed: Get all hay racks with their data
 const hayRacks = computed(() => {
@@ -221,11 +223,15 @@ function handleAddServing(rackId: string) {
   const hayItemId = getFirstHayItemId()
   if (!hayItemId) return
 
-  habitatConditions.addHayToRack(rackId, hayItemId)
+  const success = habitatConditions.addHayToRack(rackId, hayItemId)
+  if (success) {
+    loggingStore.addPlayerAction('Added hay to hay rack', '🌾')
+  }
 }
 
 function handleClearRack(rackId: string) {
   habitatConditions.clearHayRack(rackId)
+  loggingStore.addPlayerAction('Cleared hay rack', '🌾')
 }
 
 function handleReplaceAll() {
@@ -241,7 +247,14 @@ function handleReplaceAll() {
 
   // Fill all racks with fresh hay
   const rackIds = hayRacks.value.map(rack => rack.id)
-  habitatConditions.fillAllHayRacks(rackIds)
+  const result = habitatConditions.fillAllHayRacks(rackIds)
+
+  if (result.totalAdded > 0) {
+    loggingStore.addPlayerAction(
+      `Replaced hay in ${result.racksFilled} rack${result.racksFilled > 1 ? 's' : ''} with ${result.totalAdded} fresh serving${result.totalAdded > 1 ? 's' : ''}`,
+      '🌾'
+    )
+  }
 }
 </script>
 

@@ -329,8 +329,8 @@ const selectedGuineaPig = computed(() => {
   return guineaPigStore.activeGuineaPigs.find(gp => gp.id === selectedGuineaPigId.value)
 })
 
-// Activity Feed computed properties
-const activityMessages = computed(() => loggingStore.activityMessages)
+// Activity Feed computed properties (reversed so newest messages appear first)
+const activityMessages = computed(() => [...loggingStore.activityMessages].reverse())
 
 // Available food items from inventory for adding to bowl
 const availableFoodItems = computed((): InventoryMenuItem[] => {
@@ -1107,6 +1107,10 @@ function handleContainerFill() {
 
     if (added > 0) {
       console.log(`[Habitat3D] Filled hay rack with ${added} servings`)
+      loggingStore.addPlayerAction(
+        `Filled hay rack with ${added} serving${added > 1 ? 's' : ''}`,
+        '🌾'
+      )
     }
     // Don't close the menu - let user see the updated state
   } else {
@@ -1137,9 +1141,11 @@ function handleContainerClear() {
   if (selectedContainerType.value === 'bowl') {
     habitatConditions.clearBowl(selectedContainerId.value)
     console.log(`[Habitat3D] Cleared bowl ${selectedContainerId.value}`)
+    loggingStore.addPlayerAction('Cleared food bowl', '🥗')
   } else if (selectedContainerType.value === 'hay_rack') {
     habitatConditions.clearHayRack(selectedContainerId.value)
     console.log(`[Habitat3D] Cleared hay rack ${selectedContainerId.value}`)
+    loggingStore.addPlayerAction('Cleared hay rack', '🌾')
   }
 
   closeContainerMenu()
@@ -1171,6 +1177,10 @@ function handleAddItemToContainer(itemId: string) {
     success = habitatConditions.addFoodToBowl(selectedContainerId.value, itemId)
     if (success) {
       console.log(`Added ${itemId} to bowl ${selectedContainerId.value}`)
+      const supplyItem = suppliesStore.getItemById(itemId)
+      const foodName = supplyItem?.name || 'food'
+      const emoji = supplyItem?.emoji || '🥗'
+      loggingStore.addPlayerAction(`Added ${foodName} to food bowl`, emoji)
     } else {
       console.warn(`Failed to add ${itemId} to bowl`)
     }
@@ -1178,6 +1188,7 @@ function handleAddItemToContainer(itemId: string) {
     success = habitatConditions.addHayToRack(selectedContainerId.value, itemId)
     if (success) {
       console.log(`Added ${itemId} to hay rack ${selectedContainerId.value}`)
+      loggingStore.addPlayerAction('Added hay to hay rack', '🌾')
     } else {
       console.warn(`Failed to add ${itemId} to hay rack`)
     }
@@ -1198,6 +1209,11 @@ function handleRefillWater() {
   const amountFilled = 100 - previousLevel
   console.log('[Habitat3D] Water bottle refilled')
   closeWaterBottleMenu()
+
+  // Log player action
+  if (amountFilled >= 1) {
+    loggingStore.addPlayerAction(`Refilled water bottle (+${amountFilled.toFixed(0)}%)`, '💧')
+  }
 
   // Show result dialog
   actionResultIcon.value = '💧'
@@ -1429,6 +1445,11 @@ function fabQuickClean() {
   const result = habitatConditions.quickClean()
   console.log(`[Habitat3D] Quick clean: ${result.message}`)
 
+  // Log player action
+  if (result.success) {
+    loggingStore.addPlayerAction(result.message, '🧽')
+  }
+
   // Show result dialog
   actionResultIcon.value = '🧹'
   actionResultTitle.value = 'Quick Clean Complete!'
@@ -1449,6 +1470,11 @@ function fabRefillWater() {
   habitatConditions.refillWater()
   const amountFilled = 100 - previousLevel
   console.log('[Habitat3D] Water refilled')
+
+  // Log player action
+  if (amountFilled >= 1) {
+    loggingStore.addPlayerAction(`Refilled water bottle (+${amountFilled.toFixed(0)}%)`, '💧')
+  }
 
   // Show result dialog
   actionResultIcon.value = '💧'

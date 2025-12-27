@@ -15,6 +15,7 @@ import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useGameController } from '../../stores/gameController'
+import { useLoggingStore } from '../../stores/loggingStore'
 import { use3DMovement } from './use3DMovement'
 import type { Vector3D } from '../../types/movement3d'
 
@@ -87,6 +88,7 @@ export function use3DBehavior(guineaPigId: string) {
   const habitatConditions = useHabitatConditions()
   const suppliesStore = useSuppliesStore()
   const gameController = useGameController()
+  const loggingStore = useLoggingStore()
 
   // Single movement controller for all behaviors
   const movement = use3DMovement(guineaPigId)
@@ -565,6 +567,17 @@ export function use3DBehavior(guineaPigId: string) {
     guineaPigStore.satisfyNeed(guineaPigId, 'hunger', RESTORE_AMOUNTS.hunger)
     setCooldown('eat', COOLDOWNS.eat)
 
+    // Log activity
+    const gp = getGuineaPig()
+    const gpName = gp?.name || 'Guinea pig'
+    const foodType = sourceType === 'hay_rack' ? 'hay' : 'food'
+    const emoji = sourceType === 'hay_rack' ? '🌾' : '🥗'
+    loggingStore.addAutonomousBehavior(
+      `${gpName} finished eating ${foodType}`,
+      emoji,
+      { guineaPigId, behavior: 'eating' }
+    )
+
     if (onEatingEndCallback) {
       onEatingEndCallback()
     }
@@ -618,6 +631,15 @@ export function use3DBehavior(guineaPigId: string) {
 
     guineaPigStore.satisfyNeed(guineaPigId, 'thirst', RESTORE_AMOUNTS.thirst)
     setCooldown('drink', COOLDOWNS.drink)
+
+    // Log activity
+    const gp = getGuineaPig()
+    const gpName = gp?.name || 'Guinea pig'
+    loggingStore.addAutonomousBehavior(
+      `${gpName} finished drinking water`,
+      '💧',
+      { guineaPigId, behavior: 'drinking' }
+    )
 
     if (onDrinkingEndCallback) {
       onDrinkingEndCallback()
@@ -692,6 +714,15 @@ export function use3DBehavior(guineaPigId: string) {
     const hygieneRestored = Math.floor(RESTORE_AMOUNTS.hygiene * cleanlinessMultiplier)
     guineaPigStore.satisfyNeed(guineaPigId, 'hygiene', hygieneRestored)
     setCooldown('groom', COOLDOWNS.groom)
+
+    // Log activity
+    const gp = getGuineaPig()
+    const gpName = gp?.name || 'Guinea pig'
+    loggingStore.addAutonomousBehavior(
+      `${gpName} finished grooming`,
+      '✨',
+      { guineaPigId, behavior: 'grooming' }
+    )
 
     if (onGroomingEndCallback) {
       onGroomingEndCallback()
@@ -853,6 +884,15 @@ export function use3DBehavior(guineaPigId: string) {
     // Also restore comfort slightly when sheltering
     guineaPigStore.satisfyNeed(guineaPigId, 'comfort', 15)
 
+    // Log activity
+    const gp = getGuineaPig()
+    const gpName = gp?.name || 'Guinea pig'
+    loggingStore.addAutonomousBehavior(
+      `${gpName} left the shelter`,
+      '🏠',
+      { guineaPigId, behavior: 'sheltering' }
+    )
+
     // Clear shelter positions
     currentShelterCenter = null
     currentShelterEntrance = null
@@ -993,6 +1033,15 @@ export function use3DBehavior(guineaPigId: string) {
     guineaPigStore.satisfyNeed(guineaPigId, 'energy', energyRestored)
     setCooldown('sleep', COOLDOWNS.sleep)
 
+    // Log activity
+    const gp = getGuineaPig()
+    const gpName = gp?.name || 'Guinea pig'
+    loggingStore.addAutonomousBehavior(
+      `${gpName} woke up`,
+      '😴',
+      { guineaPigId, behavior: 'sleeping' }
+    )
+
     console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished sleeping (restored ${energyRestored} energy)`)
 
     if (onSleepingEndCallback) {
@@ -1033,6 +1082,14 @@ export function use3DBehavior(guineaPigId: string) {
 
       // Pass both subgrid AND world coordinates
       habitatConditions.addPoop(subgridX, subgridY, worldX, worldZ)
+
+      // Log activity
+      const gpName = gp.name || 'Guinea pig'
+      loggingStore.addEnvironmentalEvent(
+        `${gpName} pooped`,
+        '💩',
+        { guineaPigId }
+      )
 
       // Random offset to desync multiple guinea pigs
       const randomOffset = -Math.random() * 10000
