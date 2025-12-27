@@ -14,11 +14,11 @@
   align-items: center;
   padding-block: var(--space-2);
   padding-inline: var(--space-3);
-  border-bottom: 1px solid var(--color-border-light);
+  border-block-end: 1px solid var(--color-border-light);
 }
 
 .stat-item:last-child {
-  border-bottom: none;
+  border-block-end: none;
 }
 
 .stat-item:nth-child(odd) {
