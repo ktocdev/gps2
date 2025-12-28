@@ -278,6 +278,23 @@ export function use3DPhysics() {
   }
 
   /**
+   * Push a physics item with a specific velocity (for guinea pig headbutt)
+   * @param itemId - The ID of the item to push
+   * @param direction - The direction to push (x, y, z)
+   * @param strength - Optional strength multiplier (default 1.0)
+   */
+  function pushItem(itemId: string, direction: { x: number; y: number; z: number }, strength: number = 1.0): void {
+    const item = physics3DStore.getPhysicsItem(itemId)
+    if (!item || item.state === 'locked') return
+
+    physics3DStore.addVelocity(itemId, {
+      x: direction.x * strength,
+      y: direction.y * strength,
+      z: direction.z * strength
+    })
+  }
+
+  /**
    * Set physics state for an item
    */
   function setPhysicsState(itemId: string, state: 'free' | 'controlled' | 'locked'): void {
@@ -311,6 +328,7 @@ export function use3DPhysics() {
     removePhysicsItem,
     updatePhysics,
     handleClick,
+    pushItem,
     setPhysicsState,
     hasPhysics,
     getMeshWrapper,

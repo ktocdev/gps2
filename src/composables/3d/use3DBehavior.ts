@@ -20,7 +20,7 @@ import { use3DMovement } from './use3DMovement'
 import type { Vector3D } from '../../types/movement3d'
 
 // Behavior types (extensible for future needs)
-export type Behavior3DType = 'eat' | 'drink' | 'seek_shelter' | 'sleep' | 'groom' | 'wander'
+export type Behavior3DType = 'eat' | 'drink' | 'seek_shelter' | 'sleep' | 'groom' | 'play' | 'wander'
 
 // Goal structure matching 2D pattern
 export interface Behavior3DGoal {
@@ -28,13 +28,13 @@ export interface Behavior3DGoal {
   target: Vector3D | null
   priority: number
   estimatedDuration: number
-  needSatisfied?: 'hunger' | 'thirst' | 'shelter' | 'energy' | 'hygiene'
+  needSatisfied?: 'hunger' | 'thirst' | 'shelter' | 'energy' | 'hygiene' | 'play'
   targetItemId?: string
   sourceType?: 'food_bowl' | 'hay_rack' // For eating behavior - tracks what container to consume from
 }
 
 // Activity states for UI/animation
-export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking' | 'sheltering' | 'sleeping' | 'grooming'
+export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking' | 'sheltering' | 'sleeping' | 'grooming' | 'playing'
 
 // Configuration
 const BEHAVIOR_TICK_INTERVAL = 2000 // Check behavior every 2 seconds
@@ -44,7 +44,8 @@ const THRESHOLDS = {
   thirst: 65,   // Seek water when thirst < 65
   shelter: 50,  // Seek shelter when shelter < 50
   energy: 40,   // Seek sleep when energy < 40
-  hygiene: 60   // Groom when hygiene < 60
+  hygiene: 60,  // Groom when hygiene < 60
+  play: 55      // Play with toys when play < 55
 }
 
 const COOLDOWNS = {
@@ -53,6 +54,7 @@ const COOLDOWNS = {
   seek_shelter: 60000, // 1 minute after sheltering
   sleep: 120000,      // 2 minutes after sleeping
   groom: 30000,       // 30 seconds after grooming
+  play: 90000,        // 90 seconds after playing
   wander: 3000        // 3 seconds between wanders
 }
 
@@ -61,7 +63,8 @@ const DURATIONS = {
   drink: 3000,        // 3 seconds to drink
   seek_shelter: 8000, // 8 seconds in shelter
   sleep: 5000,        // Base 5 seconds to sleep (multiplied by tiredness)
-  groom: 4000         // Base 4 seconds to groom (modified by cleanliness)
+  groom: 4000,        // Base 4 seconds to groom (modified by cleanliness)
+  play: 6000          // 6 seconds to play with toy (shake + headbutt)
 }
 
 const RESTORE_AMOUNTS = {
@@ -69,7 +72,8 @@ const RESTORE_AMOUNTS = {
   thirst: 35,    // Restore 35 thirst when drinking
   shelter: 30,   // Restore 30 shelter when sheltering
   energy: 25,    // Base 25 energy when sleeping (multiplied by quality)
-  hygiene: 15    // Base 15 hygiene when grooming (modified by cleanliness)
+  hygiene: 15,   // Base 15 hygiene when grooming (modified by cleanliness)
+  play: 35       // Restore 35 play when playing with toys
 }
 
 // Shelter entrance offset (igloo entrance faces +Z direction)
@@ -368,6 +372,36 @@ export function use3DBehavior(guineaPigId: string) {
   }
 
   /**
+   * Find the position of a toy (ball or small toy) in world coordinates
+   * Returns the toy position and its item ID for physics interaction
+   */
+  function findToyPosition(): { position: Vector3D; itemId: string } | null {
+    const itemPositions = habitatConditions.itemPositions
+
+    // Find toy items (ball, toy)
+    for (const [itemId, gridPos] of itemPositions.entries()) {
+      const item = suppliesStore.getItemById(itemId)
+      const itemIdLower = itemId.toLowerCase()
+      const subCategory = item?.subCategory
+
+      // Check if it's a toy by subCategory or ID
+      const isToy =
+        subCategory === 'toys' ||
+        itemIdLower.includes('ball') ||
+        itemIdLower.includes('toy')
+
+      if (isToy) {
+        return {
+          position: movement3DStore.gridToWorld(gridPos.x, gridPos.y),
+          itemId
+        }
+      }
+    }
+
+    return null
+  }
+
+  /**
    * Select the highest priority behavior goal (2D pattern)
    */
   function selectBehaviorGoal(): Behavior3DGoal | null {
@@ -451,6 +485,21 @@ export function use3DBehavior(guineaPigId: string) {
       })
     }
 
+    // Play < threshold (play with toys)
+    if (needs.play < THRESHOLDS.play && !isOnCooldown('play')) {
+      const toy = findToyPosition()
+      if (toy) {
+        goals.push({
+          type: 'play',
+          target: toy.position,
+          targetItemId: toy.itemId,
+          priority: calculateNeedPriority(needs.play, THRESHOLDS.play, 60),
+          estimatedDuration: DURATIONS.play,
+          needSatisfied: 'play'
+        })
+      }
+    }
+
     // LOW PRIORITY (Priority 20-30)
 
     // Wandering when content
@@ -502,6 +551,9 @@ export function use3DBehavior(guineaPigId: string) {
         break
       case 'groom':
         executeGroomBehavior()
+        break
+      case 'play':
+        executePlayBehavior(goal)
         break
       case 'wander':
         executeWanderBehavior()
@@ -729,6 +781,105 @@ export function use3DBehavior(guineaPigId: string) {
     }
 
     console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished grooming (restored ${hygieneRestored} hygiene)`)
+
+    // Trigger next behavior tick
+    tick()
+  }
+
+  // Play callbacks and state
+  let onPlayingStartCallback: ((toyPosition: Vector3D, toyItemId: string) => void) | null = null
+  let onPlayingEndCallback: (() => void) | null = null
+  let onHeadbuttCallback: ((toyItemId: string, direction: Vector3D) => void) | null = null
+  let currentToyItemId: string | null = null
+
+  /**
+   * Execute play behavior - guinea pig plays with toy (ball, etc.)
+   * Sequence: walk to toy -> shake animation -> headbutt -> toy rolls away
+   */
+  function executePlayBehavior(goal: Behavior3DGoal): void {
+    if (!goal.target || !goal.targetItemId) return
+
+    currentActivity.value = 'walking'
+    currentToyItemId = goal.targetItemId
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} seeking toy to play with`)
+
+    movement.moveTo(goal.target)
+    movement.onArrival(() => {
+      startPlaying(goal.target!, goal.targetItemId!)
+    })
+  }
+
+  /**
+   * Start playing with toy - shake animation then headbutt
+   */
+  function startPlaying(toyPosition: Vector3D, toyItemId: string): void {
+    currentActivity.value = 'playing'
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} started playing with toy`)
+
+    if (onPlayingStartCallback) {
+      onPlayingStartCallback(toyPosition, toyItemId)
+    }
+
+    // Play sequence: shake for 3 seconds, then headbutt
+    actionTimeout = window.setTimeout(() => {
+      // Headbutt the toy!
+      performHeadbutt(toyItemId)
+    }, 3000) // 3 seconds of shaking/playing
+  }
+
+  /**
+   * Perform headbutt - push toy with physics
+   */
+  function performHeadbutt(toyItemId: string): void {
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} headbutting toy!`)
+
+    // Get current guinea pig position and facing direction
+    const state = movement3DStore.getGuineaPigState(guineaPigId)
+    if (state) {
+      // Calculate push direction (forward from guinea pig's facing)
+      const pushDirection: Vector3D = {
+        x: Math.sin(state.rotation) * 0.8,
+        y: 0,
+        z: Math.cos(state.rotation) * 0.8
+      }
+
+      if (onHeadbuttCallback) {
+        onHeadbuttCallback(toyItemId, pushDirection)
+      }
+    }
+
+    // Wait for headbutt animation, then finish
+    actionTimeout = window.setTimeout(() => {
+      finishPlaying()
+    }, 1500) // 1.5 seconds for headbutt
+  }
+
+  /**
+   * Finish playing and restore play need
+   */
+  function finishPlaying(): void {
+    currentActivity.value = 'idle'
+    currentGoal.value = null
+
+    guineaPigStore.satisfyNeed(guineaPigId, 'play', RESTORE_AMOUNTS.play)
+    setCooldown('play', COOLDOWNS.play)
+
+    // Log activity
+    const gp = getGuineaPig()
+    const gpName = gp?.name || 'Guinea pig'
+    const toyName = currentToyItemId?.replace(/_/g, ' ').replace(/^habitat\s+/, '') || 'a toy'
+    loggingStore.addAutonomousBehavior(
+      `${gpName} had fun playing with ${toyName}`,
+      '🎾',
+      { guineaPigId, behavior: 'playing' }
+    )
+
+    if (onPlayingEndCallback) {
+      onPlayingEndCallback()
+    }
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished playing`)
+    currentToyItemId = null
 
     // Trigger next behavior tick
     tick()
@@ -1111,8 +1262,8 @@ export function use3DBehavior(guineaPigId: string) {
     // Check for autonomous pooping
     checkAutonomousPooping()
 
-    // Don't interrupt active behaviors (eating, drinking, sheltering, sleeping, grooming)
-    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking' || currentActivity.value === 'sheltering' || currentActivity.value === 'sleeping' || currentActivity.value === 'grooming') {
+    // Don't interrupt active behaviors (eating, drinking, sheltering, sleeping, grooming, playing)
+    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking' || currentActivity.value === 'sheltering' || currentActivity.value === 'sleeping' || currentActivity.value === 'grooming' || currentActivity.value === 'playing') {
       return
     }
 
@@ -1259,6 +1410,27 @@ export function use3DBehavior(guineaPigId: string) {
     onGroomingEndCallback = callback
   }
 
+  /**
+   * Set callback for when playing starts (for play animation)
+   */
+  function onPlayingStart(callback: (toyPosition: Vector3D, toyItemId: string) => void): void {
+    onPlayingStartCallback = callback
+  }
+
+  /**
+   * Set callback for when playing ends (to resume normal pose)
+   */
+  function onPlayingEnd(callback: () => void): void {
+    onPlayingEndCallback = callback
+  }
+
+  /**
+   * Set callback for when headbutt occurs (to push toy with physics)
+   */
+  function onHeadbutt(callback: (toyItemId: string, direction: Vector3D) => void): void {
+    onHeadbuttCallback = callback
+  }
+
   // Auto-cleanup on unmount
   onUnmounted(() => {
     stop()
@@ -1281,6 +1453,9 @@ export function use3DBehavior(guineaPigId: string) {
     onSleepingStart,
     onSleepingEnd,
     onGroomingStart,
-    onGroomingEnd
+    onGroomingEnd,
+    onPlayingStart,
+    onPlayingEnd,
+    onHeadbutt
   }
 }

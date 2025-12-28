@@ -447,6 +447,7 @@ const currentHayFreshness = computed(() => {
 
 // Unified 3D behavior composables registry (for autonomous behavior)
 const behaviors = new Map<string, ReturnType<typeof use3DBehavior>>()
+const playingState = new Map<string, { isPlaying: boolean; isHeadbutting: boolean; toyItemId: string | null }>()
 
 // Water bottle menu state
 const showWaterBottleMenu = ref(false)
@@ -539,6 +540,53 @@ function initializeGuineaPigBehaviors() {
           })
           behavior.onGroomingEnd(() => {
             console.log(`[Habitat3D] Guinea pig ${gp.id} finished grooming`)
+          })
+
+          // Play event handling
+          behavior.onPlayingStart((_toyPosition, toyItemId) => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} started playing with ${toyItemId}`)
+            // Lock toy physics while being held
+            if (physics3D) {
+              physics3D.setPhysicsState(toyItemId, 'locked')
+            }
+            playingState.set(gp.id, { isPlaying: true, isHeadbutting: false, toyItemId })
+          })
+          behavior.onPlayingEnd(() => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} finished playing`)
+            // Unlock toy physics
+            const state = playingState.get(gp.id)
+            if (state?.toyItemId && physics3D) {
+              physics3D.setPhysicsState(state.toyItemId, 'free')
+            }
+            playingState.delete(gp.id)
+          })
+          behavior.onHeadbutt((toyItemId: string) => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} headbutting toy ${toyItemId}`)
+            // Set headbutting state for animation (no longer holding toy)
+            playingState.set(gp.id, { isPlaying: true, isHeadbutting: true, toyItemId: null })
+            // Unlock toy and push it with physics (gentle push)
+            if (physics3D) {
+              physics3D.setPhysicsState(toyItemId, 'free')
+              // Get guinea pig position to calculate push direction
+              const gpState = movement3DStore.getGuineaPigState(gp.id)
+              if (gpState) {
+                // Push in the direction the guinea pig is facing (gentle nudge)
+                const rotation = gpState.rotation ?? 0
+                const pushDirection = {
+                  x: Math.sin(rotation) * 0.6,
+                  y: 0.1,
+                  z: Math.cos(rotation) * 0.6
+                }
+                physics3D.pushItem(toyItemId, pushDirection, 1.0)
+              }
+            }
+            // Reset headbutting state after a short delay
+            setTimeout(() => {
+              const state = playingState.get(gp.id)
+              if (state) {
+                playingState.set(gp.id, { ...state, isHeadbutting: false })
+              }
+            }, 400)
           })
 
           behavior.start()
@@ -786,7 +834,7 @@ function animate(currentTime: number = 0) {
     updateCameraPosition()
   }
 
-  // Update guinea pig animations (blinking, walking, breathing, sleeping, grooming)
+  // Update guinea pig animations (blinking, walking, breathing, sleeping, grooming, playing)
   if (guineaPigModels) {
     guineaPigModels.forEach((model, guineaPigId) => {
       // Get movement state from store to determine if walking
@@ -797,8 +845,27 @@ function animate(currentTime: number = 0) {
       const behavior = behaviors.get(guineaPigId)
       const isSleeping = behavior?.currentActivity.value === 'sleeping'
       const isGrooming = behavior?.currentActivity.value === 'grooming'
+      const isPlaying = behavior?.currentActivity.value === 'playing'
+      const gpPlayState = playingState.get(guineaPigId)
+      const isHeadbutting = gpPlayState?.isHeadbutting ?? false
 
-      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming)
+      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming, isPlaying, isHeadbutting)
+
+      // Pin toy to guinea pig's nose while playing (before headbutt)
+      if (gpPlayState?.isPlaying && gpPlayState.toyItemId && !gpPlayState.isHeadbutting && state && itemModels) {
+        const toyMesh = itemModels.get(gpPlayState.toyItemId)
+        if (toyMesh) {
+          // Position toy in front of guinea pig's nose
+          const noseOffset = 1.8 // Distance in front of guinea pig
+          const heightOffset = 1.2 // Height of nose
+          const rotation = state.rotation ?? 0
+          toyMesh.position.set(
+            state.worldPosition.x + Math.sin(rotation) * noseOffset,
+            heightOffset,
+            state.worldPosition.z + Math.cos(rotation) * noseOffset
+          )
+        }
+      }
     })
   }
 

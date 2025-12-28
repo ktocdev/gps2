@@ -182,6 +182,12 @@ const GROOM_LIFT_HEIGHT = 0.15 // How high front legs lift
 const GROOM_PAW_RANGE = 0.12 // Range of pawing motion
 const GROOM_SIT_UP_ANGLE = -0.25 // Tilt back to sit up on haunches (radians)
 
+// Playing animation constants
+const PLAY_SHAKE_SPEED = 10 // Speed of head shake
+const PLAY_SHAKE_AMOUNT = 0.4 // How much the head shakes side to side (pronounced)
+const PLAY_NOD_SPEED = 6 // Speed of headbutt nod
+const PLAY_NOD_AMOUNT = 0.3 // How far head nods forward for headbutt
+
 /**
  * Update guinea pig animations (call every frame)
  * @param model - The guinea pig THREE.Group
@@ -190,6 +196,8 @@ const GROOM_SIT_UP_ANGLE = -0.25 // Tilt back to sit up on haunches (radians)
  * @param isPaused - Whether animations should be frozen (game paused)
  * @param isSleeping - Whether the guinea pig is sleeping (closed eyes, laying pose)
  * @param isGrooming - Whether the guinea pig is grooming (front leg pawing motion)
+ * @param isPlaying - Whether the guinea pig is playing with a toy (head shake)
+ * @param isHeadbutting - Whether the guinea pig is headbutting a toy (nod forward)
  */
 export function updateGuineaPigAnimation(
   model: THREE.Group,
@@ -197,9 +205,11 @@ export function updateGuineaPigAnimation(
   deltaTime: number,
   isPaused: boolean = false,
   isSleeping: boolean = false,
-  isGrooming: boolean = false
+  isGrooming: boolean = false,
+  isPlaying: boolean = false,
+  isHeadbutting: boolean = false
 ): void {
-  const { body, leftEye, rightEye, feet, animation } = model.userData
+  const { body, head, leftEye, rightEye, feet, animation } = model.userData
   if (!animation) return
 
   // When paused, freeze all animations completely
@@ -286,6 +296,55 @@ export function updateGuineaPigAnimation(
     return // Skip normal animations
   }
 
+  // === PLAYING STATE ===
+  if (isPlaying || isHeadbutting) {
+    const { flFoot, frFoot, blFoot, brFoot } = feet
+    const rest = animation.footRestPositions
+
+    // Advance play phase
+    animation.playPhase = (animation.playPhase || 0) + deltaTime * (isHeadbutting ? PLAY_NOD_SPEED : PLAY_SHAKE_SPEED)
+
+    // Continue breathing animation
+    animation.breathPhase += deltaTime * BREATH_SPEED
+    const breathScale = 1 + Math.sin(animation.breathPhase) * BREATH_SCALE_AMOUNT
+    if (body) {
+      body.scale.set(1, breathScale, 1)
+    }
+
+    if (head) {
+      if (isHeadbutting) {
+        // Headbutt motion - strong nod forward
+        const nodProgress = Math.sin(animation.playPhase)
+        // Nod forward quickly then back
+        head.rotation.x = nodProgress > 0 ? nodProgress * PLAY_NOD_AMOUNT : 0
+        head.rotation.y = 0 // Reset horizontal rotation
+      } else {
+        // Shake head side to side (like shaking a toy)
+        const shakeMotion = Math.sin(animation.playPhase)
+        head.rotation.y = shakeMotion * PLAY_SHAKE_AMOUNT
+        // Slight up-down motion too
+        head.rotation.x = Math.abs(shakeMotion) * 0.05
+      }
+    }
+
+    // Front legs slightly lifted (gripping toy)
+    flFoot.position.y = rest.fl.y + 0.05
+    frFoot.position.y = rest.fr.y + 0.05
+
+    // Return back legs to rest
+    const returnSpeed = 5 * deltaTime
+    blFoot.position.y += (rest.bl.y - blFoot.position.y) * returnSpeed
+    blFoot.position.z += (rest.bl.z - blFoot.position.z) * returnSpeed
+    brFoot.position.y += (rest.br.y - brFoot.position.y) * returnSpeed
+    brFoot.position.z += (rest.br.z - brFoot.position.z) * returnSpeed
+
+    // Eyes wide open (excited)
+    leftEye.scale.y = 1.1
+    rightEye.scale.y = 1.1
+
+    return // Skip normal animations
+  }
+
   // === BREATHING ANIMATION ===
   // Subtle body scale oscillation for lifelike appearance
   animation.breathPhase += deltaTime * BREATH_SPEED
@@ -295,6 +354,16 @@ export function updateGuineaPigAnimation(
     // Reset body rotation if it was tilted (from grooming sit-up)
     if (Math.abs(body.rotation.x) > 0.001) {
       body.rotation.x += (0 - body.rotation.x) * 5 * deltaTime
+    }
+  }
+
+  // Reset head rotation if it was tilted (from playing)
+  if (head) {
+    if (Math.abs(head.rotation.x) > 0.001) {
+      head.rotation.x += (0 - head.rotation.x) * 5 * deltaTime
+    }
+    if (Math.abs(head.rotation.y) > 0.001) {
+      head.rotation.y += (0 - head.rotation.y) * 5 * deltaTime
     }
   }
 
