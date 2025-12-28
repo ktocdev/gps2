@@ -169,17 +169,29 @@
 
             <!-- Right FABs - Actions -->
           <div class="game-fab-container">
-            <!-- Guinea Pigs FAB -->
+            <!-- Interact FAB with popover menu -->
             <div class="game-fab-row">
               <button
+                ref="interactFabRef"
                 class="game-fab game-fab--pink"
-                :class="{ 'game-fab--active': activePanel === 'guinea-pigs' }"
-                @click="togglePanel('guinea-pigs')"
-                title="Guinea Pigs"
+                :class="{ 'game-fab--active': showInteractMenu || pendingInteraction }"
+                @click="handleInteractFabClick"
+                title="Interact"
               >
-                🐹
+                💛
               </button>
             </div>
+
+            <!-- Interact popover menu -->
+            <FabSubnavMenu
+              :show="showInteractMenu"
+              :anchor-x="interactMenuPosition.x"
+              :anchor-y="interactMenuPosition.y"
+              :actions="interactActions"
+              theme="pink"
+              @select="handleInteractAction"
+              @close="showInteractMenu = false"
+            />
 
             <!-- Habitat Care FAB with subactions -->
             <div class="game-fab-row">
@@ -259,6 +271,7 @@ import HelpDialog from '../../game/dialogs/HelpDialog.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import Inventory3DPanel from '../../game/Inventory3DPanel.vue'
 import SidePanel3D from '../../game/SidePanel3D.vue'
+import FabSubnavMenu, { type FabSubnavAction } from '../../game/FabSubnavMenu.vue'
 import type { InventoryMenuItem } from '../../basic/InventoryItemMenu.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
@@ -276,6 +289,7 @@ import { worldToGrid } from '../../../composables/3d-models/shared/utils'
 import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const interactFabRef = ref<HTMLButtonElement | null>(null)
 const selectedGuineaPigId = ref<string | null>(null)
 const guineaPigMenuPosition = ref({ x: 0, y: 0 })
 
@@ -293,6 +307,22 @@ const showInventory = ref(false)
 
 // Help panel state
 const showHelp = ref(false)
+
+// Interact popover state
+const showInteractMenu = ref(false)
+const interactMenuPosition = ref({ x: 0, y: 0 })
+const pendingInteraction = ref<string | null>(null)
+
+// Interact actions for FAB subnav
+const interactActions: FabSubnavAction[] = [
+  { id: 'pet', icon: '🫳', label: 'Pet' },
+  { id: 'hold', icon: '🫴', label: 'Hold' },
+  { id: 'hand-feed', icon: '🥕', label: 'Hand Feed' },
+  { id: 'gentle-wipe', icon: '🧼', label: 'Gentle Wipe' },
+  { id: 'show-toy', icon: '🧸', label: 'Show Toy' },
+  { id: 'peek-a-boo', icon: '👀', label: 'Peek-a-Boo' },
+  { id: 'talk-to', icon: '💬', label: 'Talk To' },
+]
 
 // Placement mode state
 const placementMode = ref<{
@@ -1666,6 +1696,29 @@ function fabRefillWater() {
 function fabFillHay() {
   // Show hay management dialog instead of directly filling
   showHayManagementDialog.value = true
+}
+
+/**
+ * Interact FAB handlers
+ */
+function handleInteractFabClick() {
+  if (!interactFabRef.value) return
+
+  // Get FAB button position for popover anchor
+  const rect = interactFabRef.value.getBoundingClientRect()
+  interactMenuPosition.value = {
+    x: rect.left + rect.width / 2,
+    y: rect.top
+  }
+  showInteractMenu.value = !showInteractMenu.value
+}
+
+function handleInteractAction(actionId: string) {
+  console.log(`[Habitat3D] Interact action selected: ${actionId}`)
+  // Set pending interaction - user now needs to click on a guinea pig
+  pendingInteraction.value = actionId
+  // TODO: Add cursor change to indicate selection mode
+  // TODO: Handle special case for 'hand-feed' which needs food selection first
 }
 
 /**
