@@ -34,7 +34,7 @@ export interface Behavior3DGoal {
 }
 
 // Activity states for UI/animation
-export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking' | 'sheltering' | 'sleeping' | 'grooming' | 'playing' | 'chewing'
+export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking' | 'sheltering' | 'sleeping' | 'grooming' | 'playing' | 'chewing' | 'popcorning'
 
 // Configuration
 const BEHAVIOR_TICK_INTERVAL = 2000 // Check behavior every 2 seconds
@@ -842,6 +842,8 @@ export function use3DBehavior(guineaPigId: string) {
   let onPlayingStartCallback: ((toyPosition: Vector3D, toyItemId: string) => void) | null = null
   let onPlayingEndCallback: (() => void) | null = null
   let onHeadbuttCallback: ((toyItemId: string, direction: Vector3D) => void) | null = null
+  let onPopcornStartCallback: (() => void) | null = null
+  let onPopcornEndCallback: (() => void) | null = null
   let currentToyItemId: string | null = null
 
   /**
@@ -907,12 +909,9 @@ export function use3DBehavior(guineaPigId: string) {
   }
 
   /**
-   * Finish playing and restore play need
+   * Finish playing and start popcorning (happy jump)
    */
   function finishPlaying(): void {
-    currentActivity.value = 'idle'
-    currentGoal.value = null
-
     guineaPigStore.satisfyNeed(guineaPigId, 'play', RESTORE_AMOUNTS.play)
     setCooldown('play', COOLDOWNS.play)
 
@@ -930,8 +929,42 @@ export function use3DBehavior(guineaPigId: string) {
       onPlayingEndCallback()
     }
 
-    console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished playing`)
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished playing, starting popcorn!`)
     currentToyItemId = null
+
+    // Start popcorning (happy jump after playing)
+    startPopcorning()
+  }
+
+  /**
+   * Start popcorning - happy jump after playing
+   */
+  function startPopcorning(): void {
+    currentActivity.value = 'popcorning'
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} is popcorning!`)
+
+    if (onPopcornStartCallback) {
+      onPopcornStartCallback()
+    }
+
+    // Popcorn for 500ms then finish
+    actionTimeout = window.setTimeout(() => {
+      finishPopcorning()
+    }, 500)
+  }
+
+  /**
+   * Finish popcorning and return to idle
+   */
+  function finishPopcorning(): void {
+    currentActivity.value = 'idle'
+    currentGoal.value = null
+
+    if (onPopcornEndCallback) {
+      onPopcornEndCallback()
+    }
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished popcorning`)
 
     // Trigger next behavior tick
     tick()
@@ -1384,8 +1417,8 @@ export function use3DBehavior(guineaPigId: string) {
     // Check for autonomous pooping
     checkAutonomousPooping()
 
-    // Don't interrupt active behaviors (eating, drinking, sheltering, sleeping, grooming, playing)
-    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking' || currentActivity.value === 'sheltering' || currentActivity.value === 'sleeping' || currentActivity.value === 'grooming' || currentActivity.value === 'playing' || currentActivity.value === 'chewing') {
+    // Don't interrupt active behaviors (eating, drinking, sheltering, sleeping, grooming, playing, chewing, popcorning)
+    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking' || currentActivity.value === 'sheltering' || currentActivity.value === 'sleeping' || currentActivity.value === 'grooming' || currentActivity.value === 'playing' || currentActivity.value === 'chewing' || currentActivity.value === 'popcorning') {
       return
     }
 
@@ -1554,6 +1587,20 @@ export function use3DBehavior(guineaPigId: string) {
   }
 
   /**
+   * Set callback for when popcorning starts (happy jump animation)
+   */
+  function onPopcornStart(callback: () => void): void {
+    onPopcornStartCallback = callback
+  }
+
+  /**
+   * Set callback for when popcorning ends
+   */
+  function onPopcornEnd(callback: () => void): void {
+    onPopcornEndCallback = callback
+  }
+
+  /**
    * Set callback for when chewing starts (for chew animation, item pinning)
    */
   function onChewingStart(callback: (chewItemPosition: Vector3D, chewItemId: string) => void): void {
@@ -1593,6 +1640,8 @@ export function use3DBehavior(guineaPigId: string) {
     onPlayingStart,
     onPlayingEnd,
     onHeadbutt,
+    onPopcornStart,
+    onPopcornEnd,
     onChewingStart,
     onChewingEnd
   }

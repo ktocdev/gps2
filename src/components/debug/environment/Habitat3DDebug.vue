@@ -607,6 +607,15 @@ function initializeGuineaPigBehaviors() {
             chewingState.delete(gp.id)
           })
 
+          // Popcorn event handling (reset animation phase)
+          behavior.onPopcornStart(() => {
+            // Reset popcorn phase for fresh animation
+            const gpModel = guineaPigModels?.get(gp.id)
+            if (gpModel?.userData.animation) {
+              gpModel.userData.animation.popcornPhase = 0
+            }
+          })
+
           behavior.start()
 
           console.log(`[Habitat3D] Initialized guinea pig ${gp.id} with unified behavior`)
@@ -867,22 +876,28 @@ function animate(currentTime: number = 0) {
       const gpPlayState = playingState.get(guineaPigId)
       const isHeadbutting = gpPlayState?.isHeadbutting ?? false
       const isChewing = behavior?.currentActivity.value === 'chewing'
+      const isPopcorning = behavior?.currentActivity.value === 'popcorning'
 
-      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming, isPlaying, isHeadbutting, isChewing)
+      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming, isPlaying, isHeadbutting, isChewing, isPopcorning)
 
-      // Pin toy to guinea pig's nose while playing (before headbutt)
+      // Pin toy to guinea pig's nose while playing (before headbutt) with shake animation
       if (gpPlayState?.isPlaying && gpPlayState.toyItemId && !gpPlayState.isHeadbutting && state && itemModels) {
         const toyMesh = itemModels.get(gpPlayState.toyItemId)
         if (toyMesh) {
           // Position toy in front of guinea pig's nose
-          const noseOffset = 1.8 // Distance in front of guinea pig
-          const heightOffset = 1.2 // Height of nose
+          const noseOffset = 1.8
+          const heightOffset = 1.2
           const rotation = state.rotation ?? 0
-          toyMesh.position.set(
-            state.worldPosition.x + Math.sin(rotation) * noseOffset,
-            heightOffset,
-            state.worldPosition.z + Math.cos(rotation) * noseOffset
-          )
+
+          // Add shake animation synced with head movement
+          const playPhase = model.userData.animation?.playPhase || 0
+          const shakeMotion = Math.sin(playPhase) * 0.4 // Match PLAY_SHAKE_AMOUNT
+          const bobAmount = Math.abs(Math.sin(playPhase)) * 0.08
+
+          const newX = state.worldPosition.x + Math.sin(rotation + shakeMotion * 0.3) * noseOffset
+          const newZ = state.worldPosition.z + Math.cos(rotation + shakeMotion * 0.3) * noseOffset
+
+          toyMesh.position.set(newX, heightOffset + bobAmount, newZ)
         }
       }
 

@@ -193,6 +193,11 @@ const CHEW_SPEED = 8 // Speed of gnawing motion
 const CHEW_SHAKE_AMOUNT = 0.15 // Subtle side-to-side head shake while chewing
 const CHEW_NOD_AMOUNT = 0.08 // Small up-down gnawing motion
 
+// Popcorn animation constants (happy jump after playing)
+const POPCORN_JUMP_HEIGHT = 1.5 // How high the guinea pig jumps
+const POPCORN_TWIST_AMOUNT = 0.4 // How much body twists during jump
+const POPCORN_DURATION = 0.5 // Duration of one popcorn hop in seconds
+
 /**
  * Update guinea pig animations (call every frame)
  * @param model - The guinea pig THREE.Group
@@ -204,6 +209,7 @@ const CHEW_NOD_AMOUNT = 0.08 // Small up-down gnawing motion
  * @param isPlaying - Whether the guinea pig is playing with a toy (head shake)
  * @param isHeadbutting - Whether the guinea pig is headbutting a toy (nod forward)
  * @param isChewing - Whether the guinea pig is chewing on an item (gnawing motion)
+ * @param isPopcorning - Whether the guinea pig is doing a happy popcorn jump
  */
 export function updateGuineaPigAnimation(
   model: THREE.Group,
@@ -214,7 +220,8 @@ export function updateGuineaPigAnimation(
   isGrooming: boolean = false,
   isPlaying: boolean = false,
   isHeadbutting: boolean = false,
-  isChewing: boolean = false
+  isChewing: boolean = false,
+  isPopcorning: boolean = false
 ): void {
   const { body, head, leftEye, rightEye, feet, animation } = model.userData
   if (!animation) return
@@ -394,6 +401,50 @@ export function updateGuineaPigAnimation(
     rightEye.scale.y = 0.9
 
     return // Skip normal animations
+  }
+
+  // === POPCORNING STATE (happy jump after playing) ===
+  if (isPopcorning) {
+    const { flFoot, frFoot, blFoot, brFoot } = feet
+    const rest = animation.footRestPositions
+
+    // Advance popcorn phase (0 to 1 over POPCORN_DURATION)
+    animation.popcornPhase = (animation.popcornPhase || 0) + deltaTime / POPCORN_DURATION
+    const phase = Math.min(animation.popcornPhase, 1)
+
+    // Parabolic jump arc (0 at start/end, 1 at peak)
+    const jumpArc = Math.sin(phase * Math.PI)
+    model.position.y = jumpArc * POPCORN_JUMP_HEIGHT
+
+    // Body twist during jump
+    if (body) {
+      body.rotation.z = Math.sin(phase * Math.PI * 2) * POPCORN_TWIST_AMOUNT
+      // Slight forward tilt at peak
+      body.rotation.x = -jumpArc * 0.15
+    }
+
+    // Legs kick out during jump
+    const kickAmount = jumpArc * 0.3
+    flFoot.position.y = rest.fl.y + kickAmount
+    flFoot.position.z = rest.fl.z - kickAmount * 0.5
+    frFoot.position.y = rest.fr.y + kickAmount
+    frFoot.position.z = rest.fr.z - kickAmount * 0.5
+    blFoot.position.y = rest.bl.y + kickAmount * 0.8
+    blFoot.position.z = rest.bl.z + kickAmount * 0.5
+    brFoot.position.y = rest.br.y + kickAmount * 0.8
+    brFoot.position.z = rest.br.z + kickAmount * 0.5
+
+    // Excited wide eyes
+    leftEye.scale.y = 1.2
+    rightEye.scale.y = 1.2
+
+    return // Skip normal animations
+  }
+
+  // Reset model Y position if it was popcorning
+  if (model.position.y > 0.01) {
+    model.position.y *= 0.9 // Smooth return to ground
+    if (model.position.y < 0.01) model.position.y = 0
   }
 
   // === BREATHING ANIMATION ===
