@@ -91,9 +91,21 @@
             @deselect-item="handleInventoryDeselect"
           />
 
+            <!-- Interaction Instruction Overlay -->
+            <div
+              v-if="interactionInstruction"
+              class="habitat-3d-debug__instruction"
+              :class="`habitat-3d-debug__instruction--${interactionInstruction.theme}`"
+            >
+              {{ interactionInstruction.message }}
+            </div>
+
             <canvas
               ref="canvasRef"
-              :class="{ 'habitat-3d-debug__canvas--placing': placementMode }"
+              :class="{
+                'habitat-3d-debug__canvas--placing': placementMode,
+                'habitat-3d-debug__canvas--petting': pendingInteraction === 'pet'
+              }"
               @click="handleCanvasClick"
               @mousemove="handleCanvasMouseMove"
             ></canvas>
@@ -324,6 +336,20 @@ const interactActions: FabSubnavAction[] = [
   { id: 'peek-a-boo', icon: '👀', label: 'Peek-a-Boo' },
   { id: 'talk-to', icon: '💬', label: 'Talk To' },
 ]
+
+// Computed instruction message based on current interaction mode
+const interactionInstruction = computed(() => {
+  if (pendingInteraction.value === 'pet') {
+    return { message: 'Click the guinea pig you want to pet!', theme: 'pink' }
+  }
+  if (placementMode.value) {
+    return { message: `Click to place ${placementMode.value.itemName}`, theme: 'green' }
+  }
+  return null
+})
+
+// Hover state for interaction targeting
+const hoveredGuineaPigId = ref<string | null>(null)
 
 // Placement mode state
 const placementMode = ref<{
@@ -700,6 +726,11 @@ let selectionRing: THREE.Mesh | null = null
 const SELECTION_RING_COLOR_DEFAULT = 0x00ff00 // Green
 const SELECTION_RING_COLOR_CONTROLLED = 0x0088ff // Blue
 
+// Hover ring (green normally, pink in pet mode)
+let hoverRing: THREE.Mesh | null = null
+const HOVER_RING_COLOR_DEFAULT = 0x22c55e // Green (tailwind green-500)
+const HOVER_RING_COLOR_PET_MODE = 0xff69b4 // Pink
+
 // Control mode movement controller
 let controlMovement: ReturnType<typeof use3DMovement> | null = null
 
@@ -767,6 +798,9 @@ onMounted(() => {
 
   // Create selection ring
   createSelectionRing()
+
+  // Create hover ring (pink, for pet mode)
+  createHoverRing()
 
   // Add window resize listener
   window.addEventListener('resize', handleResize)
@@ -1000,6 +1034,9 @@ function animate(currentTime: number = 0) {
   // Update selection ring position
   updateSelectionRing()
 
+  // Update hover ring (pink, for pet mode)
+  updateHoverRing()
+
   // Render the scene
   const renderer = getRenderer()
   if (renderer) {
@@ -1007,24 +1044,34 @@ function animate(currentTime: number = 0) {
   }
 }
 
-// Create selection ring
-function createSelectionRing() {
+// Shared helper to create ring meshes
+function createRingMesh(color: number, yOffset: number, opacity = 0.7): THREE.Mesh {
   const ringGeometry = new THREE.RingGeometry(
     ANIMATION_CONFIG.SELECTION_RING.INNER_RADIUS,
     ANIMATION_CONFIG.SELECTION_RING.OUTER_RADIUS,
     32
   )
   const ringMaterial = new THREE.MeshBasicMaterial({
-    color: ANIMATION_CONFIG.SELECTION_RING.COLOR,
+    color,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: ANIMATION_CONFIG.SELECTION_RING.OPACITY
+    opacity
   })
-  selectionRing = new THREE.Mesh(ringGeometry, ringMaterial)
-  selectionRing.rotation.x = -Math.PI / 2 // Rotate to be horizontal
-  selectionRing.position.y = ANIMATION_CONFIG.SELECTION_RING.Y_OFFSET
-  selectionRing.visible = false
-  worldGroup.add(selectionRing)
+  const ring = new THREE.Mesh(ringGeometry, ringMaterial)
+  ring.rotation.x = -Math.PI / 2 // Rotate to be horizontal
+  ring.position.y = yOffset
+  ring.visible = false
+  worldGroup.add(ring)
+  return ring
+}
+
+// Create selection ring
+function createSelectionRing() {
+  selectionRing = createRingMesh(
+    ANIMATION_CONFIG.SELECTION_RING.COLOR,
+    ANIMATION_CONFIG.SELECTION_RING.Y_OFFSET,
+    ANIMATION_CONFIG.SELECTION_RING.OPACITY
+  )
 }
 
 // Update selection ring position
@@ -1050,6 +1097,51 @@ function updateSelectionRing() {
     selectionRing.scale.set(1 + Math.sin(time) * pulseAmount, 1, 1 + Math.sin(time) * pulseAmount)
   } else {
     selectionRing.visible = false
+  }
+}
+
+// Create hover ring (green normally, pink in pet mode)
+function createHoverRing() {
+  hoverRing = createRingMesh(
+    HOVER_RING_COLOR_DEFAULT,
+    ANIMATION_CONFIG.SELECTION_RING.Y_OFFSET + 0.01 // Slightly above selection ring
+  )
+}
+
+// Update hover ring position and color (shown when hovering over any GP)
+function updateHoverRing() {
+  if (!hoverRing || !guineaPigModels) return
+
+  // Show hover ring when hovering over a guinea pig (any mode)
+  // Also keep it visible during petting animation
+  const shouldShow = hoveredGuineaPigId.value || handAnimationActive
+  const targetId = handAnimationActive ? handAnimationTargetGpId : hoveredGuineaPigId.value
+
+  if (!shouldShow || !targetId) {
+    hoverRing.visible = false
+    return
+  }
+
+  // Update color based on mode: pink in pet mode, green otherwise
+  const material = hoverRing.material as THREE.MeshBasicMaterial
+  const isPetMode = pendingInteraction.value === 'pet' || handAnimationActive
+  const targetColor = isPetMode ? HOVER_RING_COLOR_PET_MODE : HOVER_RING_COLOR_DEFAULT
+  if (material.color.getHex() !== targetColor) {
+    material.color.setHex(targetColor)
+  }
+
+  const targetModel = guineaPigModels.get(targetId)
+  if (targetModel) {
+    hoverRing.position.x = targetModel.position.x
+    hoverRing.position.z = targetModel.position.z
+    hoverRing.visible = true
+
+    // Pulse animation (slightly faster than selection ring)
+    const time = Date.now() * 0.003
+    const pulseAmount = 0.12
+    hoverRing.scale.set(1 + Math.sin(time) * pulseAmount, 1, 1 + Math.sin(time) * pulseAmount)
+  } else {
+    hoverRing.visible = false
   }
 }
 
@@ -1942,10 +2034,10 @@ function updatePreviewColor(valid: boolean) {
 }
 
 /**
- * Handle mouse move for placement preview
+ * Handle mouse move for placement preview and guinea pig hover detection
  */
 function handleCanvasMouseMove(event: MouseEvent) {
-  if (!placementMode.value || !placementPreview || !canvasRef.value) return
+  if (!canvasRef.value) return
 
   const canvas = canvasRef.value
   const rect = canvas.getBoundingClientRect()
@@ -1955,21 +2047,47 @@ function handleCanvasMouseMove(event: MouseEvent) {
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
 
-  // Raycast to floor
+  // Create raycaster
   const raycaster = new THREE.Raycaster()
   raycaster.setFromCamera(mouse, camera)
-  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
-  const intersection = new THREE.Vector3()
-  raycaster.ray.intersectPlane(floorPlane, intersection)
 
-  if (intersection) {
-    // Free placement - use exact world coordinates
-    placementPreview.position.set(intersection.x, 0, intersection.z)
-    placementPreview.visible = true
+  // Handle placement mode preview
+  if (placementMode.value && placementPreview) {
+    const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+    const intersection = new THREE.Vector3()
+    raycaster.ray.intersectPlane(floorPlane, intersection)
 
-    // Validate and update preview color
-    isPlacementValid = isValidPlacement(intersection.x, intersection.z, placementMode.value)
-    updatePreviewColor(isPlacementValid)
+    if (intersection) {
+      // Free placement - use exact world coordinates
+      placementPreview.position.set(intersection.x, 0, intersection.z)
+      placementPreview.visible = true
+
+      // Validate and update preview color
+      isPlacementValid = isValidPlacement(intersection.x, intersection.z, placementMode.value)
+      updatePreviewColor(isPlacementValid)
+    }
+    return
+  }
+
+  // Handle guinea pig hover detection (for all modes - green ring normally, pink in pet mode)
+  if (guineaPigModels) {
+    const intersects = raycaster.intersectObjects(worldGroup.children, true)
+
+    let foundGpId: string | null = null
+    for (const intersect of intersects) {
+      // Walk up to find guinea pig parent
+      let current: THREE.Object3D | null = intersect.object
+      while (current && current !== worldGroup) {
+        if (current.userData?.guineaPigId) {
+          foundGpId = current.userData.guineaPigId
+          break
+        }
+        current = current.parent
+      }
+      if (foundGpId) break
+    }
+
+    hoveredGuineaPigId.value = foundGpId
   }
 }
 
@@ -2368,7 +2486,7 @@ function updateHandAnimation_frame(_deltaTime: number) {
 }
 
 /**
- * Finish the hand animation and log activity
+ * Finish the hand animation and apply petting effects
  */
 function finishHandAnimation() {
   if (!interactionHand) return
@@ -2377,13 +2495,31 @@ function finishHandAnimation() {
   interactionHand.position.set(0, 25, 0)
   handAnimationActive = false
 
-  // Log the petting activity
+  // Apply petting effects
   if (handAnimationTargetGpId) {
-    const gp = guineaPigStore.allGuineaPigs.find((g: { id: string }) => g.id === handAnimationTargetGpId)
-    const gpName = gp?.name || 'Guinea pig'
-    loggingStore.addPlayerAction(`Petted ${gpName}`, '🫳')
+    const gp = guineaPigStore.getGuineaPig(handAnimationTargetGpId)
+    if (gp) {
+      // Satisfy social need (+25) - this also gives friendship based on satisfaction amount
+      guineaPigStore.satisfyNeed(handAnimationTargetGpId, 'social', 25)
 
-    // TODO: Apply happiness/bonding effects to the guinea pig
+      // Additional friendship gain for petting (+2, same as socialize)
+      guineaPigStore.adjustFriendship(handAnimationTargetGpId, 2)
+
+      // Update interaction tracking
+      gp.lastInteraction = Date.now()
+      gp.totalInteractions += 1
+
+      // Log the petting activity with effects
+      loggingStore.addPlayerAction(
+        `Petted ${gp.name} - Social +25, Friendship +2`,
+        '🫳',
+        {
+          guineaPigId: handAnimationTargetGpId,
+          socialGain: 25,
+          friendshipGain: 2
+        }
+      )
+    }
   }
 
   handAnimationTargetGpId = null
@@ -2684,4 +2820,47 @@ function finishHandAnimation() {
   cursor: crosshair !important;
 }
 
+/* Pet mode styles */
+.habitat-3d-debug__canvas--petting {
+  cursor: grab !important;
+}
+
+/* Interaction instruction overlay */
+.habitat-3d-debug__instruction {
+  position: absolute;
+  inset-block-start: var(--spacing-md);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: instruction-fade-in 0.2s ease-out;
+  pointer-events: none;
+}
+
+.habitat-3d-debug__instruction--pink {
+  background-color: var(--color-accent-pink-100);
+  border: 2px solid var(--color-accent-pink-300);
+  color: var(--color-accent-pink-700);
+}
+
+.habitat-3d-debug__instruction--green {
+  background-color: var(--color-accent-green-100);
+  border: 2px solid var(--color-accent-green-300);
+  color: var(--color-accent-green-700);
+}
+
+@keyframes instruction-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
 </style>
