@@ -286,6 +286,7 @@ import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from 
 import { CONSUMPTION } from '../../../constants/supplies'
 import { disposeObject3D } from '../../../utils/three-cleanup'
 import { worldToGrid } from '../../../composables/3d-models/shared/utils'
+import { createHandModel, setHandPose, updateHandAnimation, disposeHand, type Hand3DUserData } from '../../../composables/3d-models/use3DHand'
 import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -709,6 +710,12 @@ let beddingTexture: THREE.CanvasTexture | null = null
 // Cloud objects (added to scene, not worldGroup, so they don't rotate)
 let cloudObjects: THREE.Group[] = []
 
+// Interaction hand model
+let interactionHand: THREE.Group | null = null
+let handAnimationActive = false
+let handAnimationStartTime = 0
+let handAnimationTargetGpId: string | null = null
+
 // Item models registry
 let itemModels: Map<string, THREE.Group> | null = null
 
@@ -754,6 +761,9 @@ onMounted(() => {
 
   // Create clouds in the sky
   createClouds()
+
+  // Create interaction hand (hidden initially, high above scene)
+  createInteractionHand()
 
   // Create selection ring
   createSelectionRing()
@@ -818,6 +828,13 @@ onUnmounted(() => {
     disposeObject3D(cloud)
   })
   cloudObjects = []
+
+  // Dispose interaction hand
+  if (interactionHand) {
+    scene.remove(interactionHand)
+    disposeHand(interactionHand)
+    interactionHand = null
+  }
 
   // Stop and clear all behaviors
   behaviors.forEach(behavior => behavior.stop())
@@ -961,6 +978,9 @@ function animate(currentTime: number = 0) {
   if (!gameController.isPaused) {
     updateClouds(deltaTime)
   }
+
+  // Update hand animation (always, even when paused for responsiveness)
+  updateHandAnimation_frame(deltaTime)
 
   // Update physics for items (ball, stick) - only when not paused
   if (!gameController.isPaused && physics3D) {
@@ -1202,20 +1222,55 @@ function handleCanvasClick(event: MouseEvent) {
 
     // Priority 3: Check if guinea pig was clicked
     let clickedModel: THREE.Group | null = null
+    let clickedGuineaPigId: string | null = null
 
     guineaPigModels.forEach((model, id) => {
       if (clickedObject.parent === model || clickedObject.parent?.parent === model) {
         clickedModel = model
-        selectedGuineaPigId.value = id
-        // Set menu position using viewport coordinates (for Floating UI)
-        guineaPigMenuPosition.value = {
-          x: event.clientX,
-          y: event.clientY
-        }
+        clickedGuineaPigId = id
       }
     })
 
-    if (clickedModel) {
+    if (clickedModel && clickedGuineaPigId) {
+      // Check if we have a pending interaction
+      if (pendingInteraction.value) {
+        const action = pendingInteraction.value
+
+        if (action === 'pet') {
+          // Start petting animation
+          startPettingAnimation(clickedGuineaPigId)
+          return
+        }
+
+        // Other interactions - log and clear for now
+        console.log(`[Habitat3D] Executing ${action} on guinea pig ${clickedGuineaPigId}`)
+        const gp = guineaPigStore.allGuineaPigs.find((g: { id: string }) => g.id === clickedGuineaPigId)
+        const gpName = gp?.name || 'Guinea pig'
+
+        // Log the interaction
+        const actionLabels: Record<string, { label: string; emoji: string }> = {
+          'hold': { label: 'Held', emoji: '🫴' },
+          'hand-feed': { label: 'Hand fed', emoji: '🥕' },
+          'gentle-wipe': { label: 'Wiped', emoji: '🧼' },
+          'show-toy': { label: 'Showed toy to', emoji: '🧸' },
+          'peek-a-boo': { label: 'Played peek-a-boo with', emoji: '👀' },
+          'talk-to': { label: 'Talked to', emoji: '💬' },
+        }
+        const actionInfo = actionLabels[action] || { label: action, emoji: '❓' }
+        loggingStore.addPlayerAction(`${actionInfo.label} ${gpName}`, actionInfo.emoji)
+
+        pendingInteraction.value = null
+        return
+      }
+
+      // No pending interaction - show the guinea pig menu
+      selectedGuineaPigId.value = clickedGuineaPigId
+      // Set menu position using viewport coordinates (for Floating UI)
+      guineaPigMenuPosition.value = {
+        x: event.clientX,
+        y: event.clientY
+      }
+
       // If we clicked a different guinea pig while controlling one, release control
       if (controlledGuineaPigId.value && selectedGuineaPigId.value !== controlledGuineaPigId.value) {
         releaseControl()
@@ -2187,6 +2242,154 @@ function updateClouds(deltaTime: number) {
     cloud.position.z = Math.sin(cloud.userData.angle) * cloud.userData.distance
     cloud.position.y = cloud.userData.height + bob
   })
+}
+
+/**
+ * Create the interaction hand model
+ * Positioned high above scene, invisible until animation starts
+ */
+function createInteractionHand() {
+  interactionHand = createHandModel()
+
+  // Start with petting pose
+  setHandPose(interactionHand, 'petting')
+
+  // Position high above and rotate for petting pose
+  // Palm facing down, fingers pointing horizontally (perpendicular to floor)
+  interactionHand.position.set(0, 25, 0)
+  interactionHand.rotation.x = Math.PI // Flip so palm faces down
+  interactionHand.rotation.y = 0
+  interactionHand.rotation.z = 0
+
+  // Initially hidden
+  interactionHand.visible = false
+
+  // Add to scene (not worldGroup) so it stays in place during camera rotation
+  scene.add(interactionHand)
+
+  console.log('[Habitat3D] Interaction hand created')
+}
+
+/**
+ * Start the petting animation on a guinea pig
+ */
+function startPettingAnimation(guineaPigId: string) {
+  if (!interactionHand || !guineaPigModels || handAnimationActive) return
+
+  const gpModel = guineaPigModels.get(guineaPigId)
+  if (!gpModel) return
+
+  // Get guinea pig world position
+  const gpWorldPos = new THREE.Vector3()
+  gpModel.getWorldPosition(gpWorldPos)
+
+  // Set hand starting position (above the guinea pig)
+  interactionHand.position.set(gpWorldPos.x, 20, gpWorldPos.z)
+  interactionHand.visible = true
+
+  // Set petting pose
+  setHandPose(interactionHand, 'petting')
+
+  // Start animation
+  handAnimationActive = true
+  handAnimationStartTime = Date.now()
+  handAnimationTargetGpId = guineaPigId
+
+  console.log(`[Habitat3D] Starting pet animation on guinea pig: ${guineaPigId}`)
+}
+
+/**
+ * Update the hand animation each frame
+ */
+function updateHandAnimation_frame(_deltaTime: number) {
+  if (!handAnimationActive || !interactionHand || !guineaPigModels) return
+
+  const elapsed = Date.now() - handAnimationStartTime
+  const duration = 3125 // ~3.1 seconds total animation (25% slower)
+  const progress = Math.min(elapsed / duration, 1)
+
+  const gpModel = handAnimationTargetGpId ? guineaPigModels.get(handAnimationTargetGpId) : null
+  if (!gpModel) {
+    finishHandAnimation()
+    return
+  }
+
+  // Get guinea pig world position (it may be moving)
+  const gpWorldPos = new THREE.Vector3()
+  gpModel.getWorldPosition(gpWorldPos)
+
+  // Animation phases:
+  // 0.0 - 0.3: Descend from above
+  // 0.3 - 0.8: Pet (stroke back and forth)
+  // 0.8 - 1.0: Rise back up
+
+  const startY = 20
+  const petY = gpWorldPos.y + 2.5 // Just above the guinea pig's back
+
+  if (progress < 0.3) {
+    // Descend phase
+    const descendProgress = progress / 0.3
+    const eased = 1 - Math.pow(1 - descendProgress, 2) // Ease out
+    interactionHand.position.y = startY - (startY - petY) * eased
+    interactionHand.position.x = gpWorldPos.x
+    interactionHand.position.z = gpWorldPos.z
+  } else if (progress < 0.8) {
+    // Petting phase - gentle back and forth motion
+    const petProgress = (progress - 0.3) / 0.5
+    const strokeOffset = Math.sin(petProgress * Math.PI * 4) * 0.8 // 4 strokes
+    const bobOffset = Math.sin(petProgress * Math.PI * 8) * 0.15 // Gentle bob
+
+    interactionHand.position.x = gpWorldPos.x
+    interactionHand.position.y = petY + bobOffset
+    interactionHand.position.z = gpWorldPos.z + strokeOffset
+
+    // Gentle finger movement during petting
+    const userData = interactionHand.userData as Hand3DUserData
+    if (userData?.animation) {
+      userData.animation.indexCurl = 0.3 + Math.sin(petProgress * Math.PI * 8) * 0.1
+      userData.animation.middleCurl = 0.25 + Math.sin(petProgress * Math.PI * 8 + 0.5) * 0.1
+      userData.animation.ringCurl = 0.2 + Math.sin(petProgress * Math.PI * 8 + 1) * 0.1
+      userData.animation.pinkyCurl = 0.2 + Math.sin(petProgress * Math.PI * 8 + 1.5) * 0.1
+      updateHandAnimation(interactionHand)
+    }
+  } else {
+    // Rise phase
+    const riseProgress = (progress - 0.8) / 0.2
+    const eased = riseProgress * riseProgress // Ease in
+    interactionHand.position.y = petY + (startY - petY) * eased
+    interactionHand.position.x = gpWorldPos.x
+    interactionHand.position.z = gpWorldPos.z
+  }
+
+  // Animation complete
+  if (progress >= 1) {
+    finishHandAnimation()
+  }
+}
+
+/**
+ * Finish the hand animation and log activity
+ */
+function finishHandAnimation() {
+  if (!interactionHand) return
+
+  interactionHand.visible = false
+  interactionHand.position.set(0, 25, 0)
+  handAnimationActive = false
+
+  // Log the petting activity
+  if (handAnimationTargetGpId) {
+    const gp = guineaPigStore.allGuineaPigs.find((g: { id: string }) => g.id === handAnimationTargetGpId)
+    const gpName = gp?.name || 'Guinea pig'
+    loggingStore.addPlayerAction(`Petted ${gpName}`, '🫳')
+
+    // TODO: Apply happiness/bonding effects to the guinea pig
+  }
+
+  handAnimationTargetGpId = null
+  pendingInteraction.value = null
+
+  console.log('[Habitat3D] Pet animation complete')
 }
 </script>
 
