@@ -6,7 +6,7 @@
       <div class="habitat-3d-debug__header-actions">
         <button
           class="utility-nav__button utility-nav__button--primary"
-          @click="togglePause"
+          @click="togglePause()"
         >
           {{ gameController.isPaused ? '▶️ Resume Game' : '⏸️ Pause Game' }}
         </button>
@@ -20,15 +20,22 @@
     </div>
 
     <!-- Normal header (hidden in fullscreen mode) -->
-    <div v-if="!isFullscreen" class="habitat-3d-debug__normal-header">
+    <div v-if="!isFullscreen" class="game-view__header">
       <h2>3D Habitat View</h2>
-      <button
-        v-if="hasActiveSession && !is2DMode"
-        class="utility-nav__button utility-nav__button--primary"
-        @click="toggleFullscreen"
-      >
-        ⛶ Enter Fullscreen
-      </button>
+      <div v-if="hasActiveSession && !is2DMode" class="game-view__header-actions">
+        <button
+          class="utility-nav__button utility-nav__button--primary"
+          @click="togglePause()"
+        >
+          {{ gameController.isPaused ? '▶️ Resume' : '⏸️ Pause' }}
+        </button>
+        <button
+          class="utility-nav__button utility-nav__button--primary"
+          @click="toggleFullscreen"
+        >
+          ⛶ Enter Fullscreen
+        </button>
+      </div>
     </div>
 
     <!-- No Active Session Message -->
@@ -195,7 +202,10 @@
               </button>
             </div>
 
-            <!-- Help FAB -->
+          </div>
+
+          <!-- Left FAB - Help -->
+          <div class="game-fab-container game-fab-container--left">
             <div class="game-fab-row">
               <button
                 class="game-fab game-fab--cyan"
@@ -208,53 +218,8 @@
             </div>
           </div>
 
-          <!-- Help Overlay -->
-          <div v-if="showHelp" class="help-overlay" @click.self="showHelp = false">
-            <div class="help-overlay__panel">
-              <div class="help-overlay__header">
-                <span class="help-overlay__title">❓ Help & Controls</span>
-                <button class="help-overlay__close" @click="showHelp = false">✕</button>
-              </div>
-              <div class="help-overlay__content">
-                <section class="help-overlay__section">
-                  <h4 class="help-overlay__section-title">🎮 Camera Controls</h4>
-                  <div class="help-overlay__shortcuts">
-                    <div class="help-overlay__shortcut"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>Pan camera</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Arrows</kbd> <span>Pan camera (when not controlling)</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Drag</kbd> <span>Rotate view</span></div>
-                    <div class="help-overlay__shortcut"><kbd>&lt;</kbd><kbd>&gt;</kbd> <span>Rotate view</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Scroll</kbd> <span>Zoom in/out</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Z</kbd><kbd>X</kbd> <span>Zoom in/out</span></div>
-                  </div>
-                </section>
-                <section class="help-overlay__section">
-                  <h4 class="help-overlay__section-title">🐹 Guinea Pig Control</h4>
-                  <div class="help-overlay__shortcuts">
-                    <div class="help-overlay__shortcut"><kbd>Click</kbd> guinea pig <span>Select & show menu</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Take Control</kbd> button <span>Control movement</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Arrows</kbd> <span>Move guinea pig (when controlling)</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Click</kbd> ground <span>Walk to location</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Esc</kbd> <span>Release control</span></div>
-                  </div>
-                </section>
-                <section class="help-overlay__section">
-                  <h4 class="help-overlay__section-title">📦 Items & Inventory</h4>
-                  <div class="help-overlay__shortcuts">
-                    <div class="help-overlay__shortcut"><kbd>Click</kbd> container <span>View contents</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Inventory</kbd> panel <span>Place items in habitat</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Esc</kbd> <span>Cancel placement</span></div>
-                  </div>
-                </section>
-                <section class="help-overlay__section">
-                  <h4 class="help-overlay__section-title">🖥️ View</h4>
-                  <div class="help-overlay__shortcuts">
-                    <div class="help-overlay__shortcut"><kbd>⛶ Fullscreen</kbd> button <span>Immersive view</span></div>
-                    <div class="help-overlay__shortcut"><kbd>Esc</kbd> <span>Exit fullscreen</span></div>
-                  </div>
-                </section>
-              </div>
-            </div>
-          </div>
+          <!-- Help Dialog -->
+          <HelpDialog v-model="showHelp" />
         </div>
 
       </div>
@@ -290,6 +255,7 @@ import ContainerContentsMenu from '../../basic/ContainerContentsMenu.vue'
 import CleanCageDialog from '../../game/dialogs/CleanCageDialog.vue'
 import HayManagementDialog from '../../game/dialogs/HayManagementDialog.vue'
 import ActionResultDialog, { type ActionStat } from '../../game/dialogs/ActionResultDialog.vue'
+import HelpDialog from '../../game/dialogs/HelpDialog.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import Inventory3DPanel from '../../game/Inventory3DPanel.vue'
 import SidePanel3D from '../../game/SidePanel3D.vue'
@@ -370,8 +336,8 @@ const selectedGuineaPig = computed(() => {
   return guineaPigStore.activeGuineaPigs.find(gp => gp.id === selectedGuineaPigId.value)
 })
 
-// Activity Feed computed properties
-const activityMessages = computed(() => loggingStore.activityMessages)
+// Activity Feed computed properties (reversed so newest messages appear first)
+const activityMessages = computed(() => [...loggingStore.activityMessages].reverse())
 
 // Available food items from inventory for adding to bowl
 const availableFoodItems = computed((): InventoryMenuItem[] => {
@@ -481,6 +447,7 @@ const currentHayFreshness = computed(() => {
 
 // Unified 3D behavior composables registry (for autonomous behavior)
 const behaviors = new Map<string, ReturnType<typeof use3DBehavior>>()
+const playingState = new Map<string, { isPlaying: boolean; isHeadbutting: boolean; toyItemId: string | null }>()
 
 // Water bottle menu state
 const showWaterBottleMenu = ref(false)
@@ -575,6 +542,53 @@ function initializeGuineaPigBehaviors() {
             console.log(`[Habitat3D] Guinea pig ${gp.id} finished grooming`)
           })
 
+          // Play event handling
+          behavior.onPlayingStart((_toyPosition, toyItemId) => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} started playing with ${toyItemId}`)
+            // Lock toy physics while being held
+            if (physics3D) {
+              physics3D.setPhysicsState(toyItemId, 'locked')
+            }
+            playingState.set(gp.id, { isPlaying: true, isHeadbutting: false, toyItemId })
+          })
+          behavior.onPlayingEnd(() => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} finished playing`)
+            // Unlock toy physics
+            const state = playingState.get(gp.id)
+            if (state?.toyItemId && physics3D) {
+              physics3D.setPhysicsState(state.toyItemId, 'free')
+            }
+            playingState.delete(gp.id)
+          })
+          behavior.onHeadbutt((toyItemId: string) => {
+            console.log(`[Habitat3D] Guinea pig ${gp.id} headbutting toy ${toyItemId}`)
+            // Set headbutting state for animation (no longer holding toy)
+            playingState.set(gp.id, { isPlaying: true, isHeadbutting: true, toyItemId: null })
+            // Unlock toy and push it with physics (gentle push)
+            if (physics3D) {
+              physics3D.setPhysicsState(toyItemId, 'free')
+              // Get guinea pig position to calculate push direction
+              const gpState = movement3DStore.getGuineaPigState(gp.id)
+              if (gpState) {
+                // Push in the direction the guinea pig is facing (gentle nudge)
+                const rotation = gpState.rotation ?? 0
+                const pushDirection = {
+                  x: Math.sin(rotation) * 0.6,
+                  y: 0.1,
+                  z: Math.cos(rotation) * 0.6
+                }
+                physics3D.pushItem(toyItemId, pushDirection, 1.0)
+              }
+            }
+            // Reset headbutting state after a short delay
+            setTimeout(() => {
+              const state = playingState.get(gp.id)
+              if (state) {
+                playingState.set(gp.id, { ...state, isHeadbutting: false })
+              }
+            }, 400)
+          })
+
           behavior.start()
 
           console.log(`[Habitat3D] Initialized guinea pig ${gp.id} with unified behavior`)
@@ -641,6 +655,9 @@ let cloudObjects: THREE.Group[] = []
 // Item models registry
 let itemModels: Map<string, THREE.Group> | null = null
 
+// Physics composable
+let physics3D: ReturnType<typeof import('../../../composables/3d/use3DPhysics').use3DPhysics> | null = null
+
 onMounted(() => {
   if (!canvasRef.value) return
 
@@ -664,9 +681,10 @@ onMounted(() => {
   // Initialize guinea pigs and start hunger behaviors when they become active
   initializeGuineaPigBehaviors()
 
-  // Setup habitat items
+  // Setup habitat items (includes physics for ball/stick)
   const itemsResult = use3DItems(worldGroup)
   itemModels = itemsResult.itemModels
+  physics3D = itemsResult.physics3D
   cleanupItems = itemsResult.cleanup
 
   // Setup poop pellets
@@ -816,7 +834,7 @@ function animate(currentTime: number = 0) {
     updateCameraPosition()
   }
 
-  // Update guinea pig animations (blinking, walking, breathing, sleeping, grooming)
+  // Update guinea pig animations (blinking, walking, breathing, sleeping, grooming, playing)
   if (guineaPigModels) {
     guineaPigModels.forEach((model, guineaPigId) => {
       // Get movement state from store to determine if walking
@@ -827,19 +845,48 @@ function animate(currentTime: number = 0) {
       const behavior = behaviors.get(guineaPigId)
       const isSleeping = behavior?.currentActivity.value === 'sleeping'
       const isGrooming = behavior?.currentActivity.value === 'grooming'
+      const isPlaying = behavior?.currentActivity.value === 'playing'
+      const gpPlayState = playingState.get(guineaPigId)
+      const isHeadbutting = gpPlayState?.isHeadbutting ?? false
 
-      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming)
+      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming, isPlaying, isHeadbutting)
+
+      // Pin toy to guinea pig's nose while playing (before headbutt)
+      if (gpPlayState?.isPlaying && gpPlayState.toyItemId && !gpPlayState.isHeadbutting && state && itemModels) {
+        const toyMesh = itemModels.get(gpPlayState.toyItemId)
+        if (toyMesh) {
+          // Position toy in front of guinea pig's nose
+          const noseOffset = 1.8 // Distance in front of guinea pig
+          const heightOffset = 1.2 // Height of nose
+          const rotation = state.rotation ?? 0
+          toyMesh.position.set(
+            state.worldPosition.x + Math.sin(rotation) * noseOffset,
+            heightOffset,
+            state.worldPosition.z + Math.cos(rotation) * noseOffset
+          )
+        }
+      }
     })
   }
 
-  // Update cloud positions (drift slowly)
-  updateClouds(deltaTime)
+  // Update cloud positions (drift slowly) - only when not paused
+  if (!gameController.isPaused) {
+    updateClouds(deltaTime)
+  }
+
+  // Update physics for items (ball, stick) - only when not paused
+  if (!gameController.isPaused && physics3D) {
+    physics3D.updatePhysics(deltaTime)
+  }
 
   // Update water bottle water level and bubbles
   const waterBottleModel = findWaterBottleModel()
   if (waterBottleModel) {
     updateWaterBottleLevel(waterBottleModel, habitatConditions.waterLevel)
-    updateWaterBottleBubbles(waterBottleModel, deltaTime)
+    // Only animate bubbles when not paused
+    if (!gameController.isPaused) {
+      updateWaterBottleBubbles(waterBottleModel, deltaTime)
+    }
   }
 
   // Update selection ring position
@@ -1040,6 +1087,29 @@ function handleCanvasClick(event: MouseEvent) {
       if (clickedWaterBottle) {
         return
       }
+
+      // Priority 2.5: Check if physics item (ball/stick) was clicked
+      if (physics3D) {
+        let clickedPhysicsItem = false
+        itemModels.forEach((model, itemId) => {
+          if (clickedPhysicsItem) return // Already handled
+          let current: THREE.Object3D | null = clickedObject
+          while (current) {
+            if (current === model && physics3D!.hasPhysics(itemId)) {
+              // Push the physics item in the ray direction
+              physics3D!.handleClick(itemId, raycaster.ray.direction)
+              clickedPhysicsItem = true
+              console.log('Pushed physics item:', itemId)
+              break
+            }
+            current = current.parent
+          }
+        })
+
+        if (clickedPhysicsItem) {
+          return
+        }
+      }
     }
 
     // Priority 3: Check if guinea pig was clicked
@@ -1143,6 +1213,10 @@ function handleContainerFill() {
 
     if (added > 0) {
       console.log(`[Habitat3D] Filled hay rack with ${added} servings`)
+      loggingStore.addPlayerAction(
+        `Filled hay rack with ${added} serving${added > 1 ? 's' : ''}`,
+        '🌾'
+      )
     }
     // Don't close the menu - let user see the updated state
   } else {
@@ -1173,9 +1247,11 @@ function handleContainerClear() {
   if (selectedContainerType.value === 'bowl') {
     habitatConditions.clearBowl(selectedContainerId.value)
     console.log(`[Habitat3D] Cleared bowl ${selectedContainerId.value}`)
+    loggingStore.addPlayerAction('Cleared food bowl', '🥗')
   } else if (selectedContainerType.value === 'hay_rack') {
     habitatConditions.clearHayRack(selectedContainerId.value)
     console.log(`[Habitat3D] Cleared hay rack ${selectedContainerId.value}`)
+    loggingStore.addPlayerAction('Cleared hay rack', '🌾')
   }
 
   closeContainerMenu()
@@ -1207,6 +1283,10 @@ function handleAddItemToContainer(itemId: string) {
     success = habitatConditions.addFoodToBowl(selectedContainerId.value, itemId)
     if (success) {
       console.log(`Added ${itemId} to bowl ${selectedContainerId.value}`)
+      const supplyItem = suppliesStore.getItemById(itemId)
+      const foodName = supplyItem?.name || 'food'
+      const emoji = supplyItem?.emoji || '🥗'
+      loggingStore.addPlayerAction(`Added ${foodName} to food bowl`, emoji)
     } else {
       console.warn(`Failed to add ${itemId} to bowl`)
     }
@@ -1214,6 +1294,7 @@ function handleAddItemToContainer(itemId: string) {
     success = habitatConditions.addHayToRack(selectedContainerId.value, itemId)
     if (success) {
       console.log(`Added ${itemId} to hay rack ${selectedContainerId.value}`)
+      loggingStore.addPlayerAction('Added hay to hay rack', '🌾')
     } else {
       console.warn(`Failed to add ${itemId} to hay rack`)
     }
@@ -1234,6 +1315,11 @@ function handleRefillWater() {
   const amountFilled = 100 - previousLevel
   console.log('[Habitat3D] Water bottle refilled')
   closeWaterBottleMenu()
+
+  // Log player action
+  if (amountFilled >= 1) {
+    loggingStore.addPlayerAction(`Refilled water bottle (+${amountFilled.toFixed(0)}%)`, '💧')
+  }
 
   // Show result dialog
   actionResultIcon.value = '💧'
@@ -1355,6 +1441,14 @@ function updateSelectionRingColor(color: number) {
 const KEYBOARD_MOVE_DISTANCE = 3.0
 
 function handleKeyDown(event: KeyboardEvent) {
+  // Space to toggle pause/play
+  // Shift+Space = silent pause (no dialog), Space = normal pause (with dialog)
+  if (event.code === 'Space') {
+    event.preventDefault()
+    togglePause(event.shiftKey)
+    return
+  }
+
   // Escape priority order:
   // 1. Close inventory if open (but keep placement/container mode active)
   // 2. Cancel placement mode if active
@@ -1465,6 +1559,11 @@ function fabQuickClean() {
   const result = habitatConditions.quickClean()
   console.log(`[Habitat3D] Quick clean: ${result.message}`)
 
+  // Log player action
+  if (result.success) {
+    loggingStore.addPlayerAction(result.message, '🧽')
+  }
+
   // Show result dialog
   actionResultIcon.value = '🧹'
   actionResultTitle.value = 'Quick Clean Complete!'
@@ -1485,6 +1584,11 @@ function fabRefillWater() {
   habitatConditions.refillWater()
   const amountFilled = 100 - previousLevel
   console.log('[Habitat3D] Water refilled')
+
+  // Log player action
+  if (amountFilled >= 1) {
+    loggingStore.addPlayerAction(`Refilled water bottle (+${amountFilled.toFixed(0)}%)`, '💧')
+  }
 
   // Show result dialog
   actionResultIcon.value = '💧'
@@ -1740,11 +1844,11 @@ function formatTime(timestamp: number): string {
 /**
  * Toggle game pause state
  */
-function togglePause() {
+function togglePause(silent = false) {
   if (gameController.isPaused) {
     gameController.resumeGame()
   } else {
-    gameController.pauseGame('manual')
+    gameController.pauseGame(silent ? 'silent' : 'manual')
   }
 }
 
@@ -2006,16 +2110,21 @@ function updateClouds(deltaTime: number) {
   max-inline-size: 400px;
 }
 
-/* Normal header row (title + enter fullscreen button) */
-.habitat-3d-debug__normal-header {
+/* Normal header row (title + actions) */
+.game-view__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-block-end: var(--spacing-md);
 }
 
-.habitat-3d-debug__normal-header h2 {
+.game-view__header h2 {
   margin: 0;
+}
+
+.game-view__header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
 }
 
 /* Fullscreen mode header */
@@ -2072,6 +2181,11 @@ function updateClouds(deltaTime: number) {
   flex-direction: column;
   gap: var(--spacing-sm);
   z-index: 10;
+}
+
+.game-fab-container--left {
+  inset-inline-end: auto;
+  inset-inline-start: var(--spacing-md);
 }
 
 /* Individual FAB button */
@@ -2256,123 +2370,4 @@ function updateClouds(deltaTime: number) {
   cursor: crosshair !important;
 }
 
-/* Help Overlay */
-.help-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 100;
-  animation: help-overlay-fade-in 0.15s ease-out;
-}
-
-@keyframes help-overlay-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.help-overlay__panel {
-  background-color: var(--color-bg-primary);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  max-inline-size: 420px;
-  max-block-size: 80%;
-  overflow: hidden;
-  animation: help-panel-slide-up 0.2s ease-out;
-}
-
-@keyframes help-panel-slide-up {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.help-overlay__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--spacing-sm) var(--spacing-md);
-  background-color: var(--color-need-thirst);
-  color: white;
-}
-
-.help-overlay__title {
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-md);
-}
-
-.help-overlay__close {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.25rem;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-  opacity: 0.8;
-  transition: opacity 0.15s ease;
-}
-
-.help-overlay__close:hover {
-  opacity: 1;
-}
-
-.help-overlay__content {
-  padding: var(--spacing-md);
-  overflow-y: auto;
-  max-block-size: calc(80vh - 60px);
-}
-
-.help-overlay__section {
-  margin-block-end: var(--spacing-md);
-}
-
-.help-overlay__section:last-child {
-  margin-block-end: 0;
-}
-
-.help-overlay__section-title {
-  margin: 0 0 var(--spacing-xs) 0;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-}
-
-.help-overlay__shortcuts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-xs);
-}
-
-.help-overlay__shortcut {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-xs);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.help-overlay__shortcut kbd {
-  display: inline-block;
-  padding: 2px 6px;
-  background-color: var(--color-bg-tertiary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  font-family: inherit;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-primary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.help-overlay__shortcut span {
-  margin-inline-start: auto;
-  color: var(--color-text-muted);
-}
 </style>

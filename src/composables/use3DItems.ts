@@ -3,18 +3,42 @@ import * as THREE from 'three'
 import { useHabitatConditions } from '../stores/habitatConditions'
 import { disposeObject3D } from '../utils/three-cleanup'
 import { createItemModel, getWaterBottleRotation, gridToWorld } from './3d-models'
+import { use3DPhysics } from './3d/use3DPhysics'
 
 /**
  * Sync habitat items with 3D scene
  */
 export function use3DItems(worldGroup: THREE.Group) {
   const habitatConditions = useHabitatConditions()
+  const physics3D = use3DPhysics()
 
   // Registry of item 3D models
   const itemModels = new Map<string, THREE.Group>()
 
   // Store watcher stop handles for cleanup
   const stopWatchers: (() => void)[] = []
+
+  /**
+   * Check if an item should have physics enabled
+   */
+  function shouldHavePhysics(itemId: string): 'ball' | 'stick' | null {
+    const idLower = itemId.toLowerCase()
+    if (idLower.includes('ball')) return 'ball'
+    if (idLower.includes('stick') || idLower.includes('chew')) return 'stick'
+    return null
+  }
+
+  /**
+   * Initialize physics for a model if applicable
+   */
+  function initializePhysicsForItem(itemId: string, model: THREE.Group): void {
+    const preset = shouldHavePhysics(itemId)
+    if (preset) {
+      // For physics items, the wrapper is the group and visual is the first mesh child
+      const visual = model.children.find(child => child instanceof THREE.Mesh) || model
+      physics3D.initializePhysicsItem(itemId, model, visual as THREE.Object3D, preset)
+    }
+  }
 
   // Watch for item position changes
   stopWatchers.push(watch(
@@ -29,6 +53,8 @@ export function use3DItems(worldGroup: THREE.Group) {
           const model = createItemModel(itemId)
           itemModels.set(itemId, model)
           worldGroup.add(model)
+          // Initialize physics for applicable items
+          initializePhysicsForItem(itemId, model)
         }
 
         // Update position
@@ -57,6 +83,8 @@ export function use3DItems(worldGroup: THREE.Group) {
       // Remove models for items that no longer have positions
       itemModels.forEach((model, itemId) => {
         if (!positionedItemIds.has(itemId)) {
+          // Remove physics if applicable
+          physics3D.removePhysicsItem(itemId)
           disposeObject3D(model)
           worldGroup.remove(model)
           itemModels.delete(itemId)
@@ -145,6 +173,9 @@ export function use3DItems(worldGroup: THREE.Group) {
     // Stop all watchers
     stopWatchers.forEach(stop => stop())
 
+    // Cleanup physics
+    physics3D.cleanup()
+
     // Dispose all item models
     itemModels.forEach(model => {
       disposeObject3D(model)
@@ -155,6 +186,7 @@ export function use3DItems(worldGroup: THREE.Group) {
 
   return {
     itemModels,
+    physics3D,
     cleanup,
   }
 }

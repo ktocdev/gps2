@@ -61,16 +61,16 @@ const DEBUG_BEHAVIOR = false // Set to true to enable eat/hay behavior logging
 // Environmental behavior intervals
 const POOP_INTERVAL_MS = 30000 // 30 seconds - guinea pigs poop frequently for realism
 
-// Default behavior thresholds
+// Default behavior thresholds (seek behavior when need drops below this %)
 const DEFAULT_THRESHOLDS = {
-  hunger: 30,  // Seek food when hunger < 30%
-  thirst: 25,  // Seek water when thirst < 25%
-  energy: 40,  // Sleep when energy < 40%
-  hygiene: 60, // Groom when hygiene < 60%
+  hunger: 70,  // Seek food when hunger < 70%
+  thirst: 75,  // Seek water when thirst < 75%
+  energy: 60,  // Sleep when energy < 60%
+  hygiene: 40, // Groom when hygiene < 40%
   shelter: 50, // Seek shelter when shelter < 50%
-  chew: 40,    // Use chew items when chew < 40%
-  play: 45,    // Use toys when play < 45%
-  social: 50   // Socialize with companion when social < 50%
+  chew: 60,    // Use chew items when chew < 60%
+  play: 55,    // Use toys when play < 55%
+  social: 65   // Socialize with companion when social < 65%
 }
 
 export function useGuineaPigBehavior(guineaPigId: string) {

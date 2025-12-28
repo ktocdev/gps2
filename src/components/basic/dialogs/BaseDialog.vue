@@ -39,6 +39,40 @@ const dialogRef = ref<HTMLDialogElement | null>(null)
 
 const dialogSizeClass = `base-dialog--${props.size}`
 
+// Track open dialog count for nested dialogs (module-level)
+let openDialogCount = 0
+
+function lockScroll() {
+  if (openDialogCount === 0) {
+    // Calculate scrollbar width
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+
+    // Store original values in data attributes
+    document.body.dataset.scrollLockPaddingRight = document.body.style.paddingRight
+    document.body.dataset.scrollLockOverflow = document.body.style.overflow
+
+    // Apply scroll lock with scrollbar compensation
+    document.body.style.overflow = 'hidden'
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+    }
+  }
+  openDialogCount++
+}
+
+function unlockScroll() {
+  openDialogCount--
+  if (openDialogCount === 0) {
+    // Restore original values
+    document.body.style.overflow = document.body.dataset.scrollLockOverflow || ''
+    document.body.style.paddingRight = document.body.dataset.scrollLockPaddingRight || ''
+
+    // Clean up data attributes
+    delete document.body.dataset.scrollLockPaddingRight
+    delete document.body.dataset.scrollLockOverflow
+  }
+}
+
 function handleClose() {
   emit('update:modelValue', false)
   emit('close')
@@ -56,9 +90,11 @@ watch(() => props.modelValue, (isOpen) => {
   if (!dialogRef.value) return
 
   if (isOpen && !dialogRef.value.open) {
+    lockScroll()
     dialogRef.value.showModal()
   } else if (!isOpen && dialogRef.value.open) {
     dialogRef.value.close()
+    unlockScroll()
   }
 })
 
@@ -75,6 +111,7 @@ onMounted(() => {
 
     // Open immediately if modelValue is true
     if (props.modelValue) {
+      lockScroll()
       dialogRef.value.showModal()
     }
   }
@@ -83,6 +120,10 @@ onMounted(() => {
 onUnmounted(() => {
   if (dialogRef.value) {
     dialogRef.value.removeEventListener('cancel', handleEscape)
+  }
+  // Ensure scroll is unlocked if component unmounts while open
+  if (props.modelValue) {
+    unlockScroll()
   }
 })
 </script>
