@@ -61,7 +61,7 @@ defineEmits<{
   gap: var(--space-4);
   padding: var(--space-6);
   text-align: center;
-  min-inline-size: 280px;
+  min-inline-size: 320px;
 }
 
 .action-result-dialog__icon {

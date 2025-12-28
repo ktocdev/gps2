@@ -84,6 +84,7 @@ export function use3DSync(worldGroup: THREE.Group, options: Use3DSyncOptions = {
             : undefined
 
           const model = createGuineaPigModel(colors)
+          model.userData.guineaPigId = guineaPigId // For raycasting/click detection
           guineaPigModels.set(guineaPigId, model)
           worldGroup.add(model)
 

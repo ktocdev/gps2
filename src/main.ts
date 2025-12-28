@@ -8,9 +8,11 @@ import App from './App.vue'
 import './styles/base.css'
 import './styles/panel.css'
 import './styles/stats.css'
+import './styles/dialogs.css'
 import './styles/text-utilities.css'
 import './styles/forms.css'
 import './styles/alerts.css'
+import './styles/fab-subnav.css'
 
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)

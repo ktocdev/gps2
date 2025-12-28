@@ -94,18 +94,76 @@
     <!-- Guinea Pig Info Tab Content -->
     <template v-else-if="activeTab === 'guinea-pigs'">
       <div class="guinea-pig-info">
-        <div class="guinea-pig-info__header">
-          🐹 Guinea Pig Information
+        <!-- Empty state -->
+        <div v-if="activeGuineaPigs.length === 0" class="guinea-pig-info__empty">
+          <p>🐹 No guinea pigs in habitat</p>
+          <p class="guinea-pig-info__hint">Start a game to see guinea pig info here.</p>
         </div>
-        <div class="guinea-pig-info__placeholder">
-          <p>Select a guinea pig in the habitat to see detailed information here.</p>
-          <p class="guinea-pig-info__hint">Click on a guinea pig to view:</p>
-          <ul class="guinea-pig-info__list">
-            <li>Current needs & wellness</li>
-            <li>Personality & preferences</li>
-            <li>Friendship levels</li>
-            <li>Activity history</li>
-          </ul>
+
+        <!-- Guinea pig content -->
+        <div v-else-if="selectedGuineaPig">
+          <!-- Toggle button for multiple GPs -->
+          <div class="guinea-pig-info__header">
+            <Button
+              v-if="activeGuineaPigs.length > 1"
+              @click="toggleGuineaPig"
+              variant="tertiary"
+              size="sm"
+            >
+              {{ selectedGuineaPig.name }} ({{ selectedGuineaPigIndex + 1 }}/{{ activeGuineaPigs.length }})
+            </Button>
+            <span v-else class="guinea-pig-info__name">{{ selectedGuineaPig.name }}</span>
+          </div>
+
+          <!-- User Friendship Section -->
+          <div class="guinea-pig-info__section">
+            <div class="guinea-pig-info__section-header">
+              ❤️ User Friendship
+            </div>
+            <div class="guinea-pig-info__section-content">
+              <FriendshipProgress
+                :friendship="selectedGuineaPig.friendship"
+                :threshold="85"
+                :show-message="false"
+              />
+              <div class="guinea-pig-info__stats">
+                <div class="guinea-pig-info__stat">
+                  <span class="guinea-pig-info__stat-label">Last interaction:</span>
+                  <span class="guinea-pig-info__stat-value">{{ formatTimestamp(selectedGuineaPig.lastInteraction) }}</span>
+                </div>
+                <div class="guinea-pig-info__stat">
+                  <span class="guinea-pig-info__stat-label">Total interactions:</span>
+                  <span class="guinea-pig-info__stat-value">{{ selectedGuineaPig.totalInteractions }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GP-to-GP Bonding Section (only if 2+ GPs) -->
+          <div v-if="otherGuineaPig && bondWithOther" class="guinea-pig-info__section">
+            <div class="guinea-pig-info__section-header">
+              🤝 Bonding with {{ otherGuineaPig.name }}
+            </div>
+            <div class="guinea-pig-info__section-content">
+              <div class="guinea-pig-info__bond-bar">
+                <div class="guinea-pig-info__bond-fill" :style="{ width: bondWithOther.bondingLevel + '%' }"></div>
+              </div>
+              <div class="guinea-pig-info__bond-info">
+                <span class="guinea-pig-info__bond-level">{{ Math.round(bondWithOther.bondingLevel) }}%</span>
+                <span class="guinea-pig-info__bond-tier" :class="`guinea-pig-info__bond-tier--${bondWithOther.bondingTier}`">
+                  {{ formatBondTier(bondWithOther.bondingTier) }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- No bonding section message when only 1 GP -->
+          <div v-else-if="activeGuineaPigs.length === 1" class="guinea-pig-info__section guinea-pig-info__section--muted">
+            <div class="guinea-pig-info__section-header">
+              🤝 Social Bonding
+            </div>
+            <p class="guinea-pig-info__hint">Add a second guinea pig to see bonding stats.</p>
+          </div>
         </div>
       </div>
     </template>
@@ -113,10 +171,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import SidePanel3D, { type TabDefinition } from './SidePanel3D.vue'
 import { useInventoryStore } from '../../stores/inventoryStore'
 import { useSuppliesStore } from '../../stores/suppliesStore'
+import { useGuineaPigStore } from '../../stores/guineaPigStore'
+import FriendshipProgress from './ui/FriendshipProgress.vue'
+import Button from '../basic/Button.vue'
 
 interface Props {
   isOpen: boolean
@@ -132,8 +193,80 @@ const emit = defineEmits<{
 
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
+const guineaPigStore = useGuineaPigStore()
 
 const selectedItemId = ref<string | null>(null)
+
+// Guinea pig selection state
+const selectedGuineaPigIndex = ref(0)
+
+const activeGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs)
+
+const selectedGuineaPig = computed(() => {
+  if (activeGuineaPigs.value.length === 0) return null
+  return activeGuineaPigs.value[selectedGuineaPigIndex.value]
+})
+
+// Get the other guinea pig for bonding display
+const otherGuineaPig = computed(() => {
+  if (activeGuineaPigs.value.length < 2 || !selectedGuineaPig.value) return null
+  return activeGuineaPigs.value.find(gp => gp.id !== selectedGuineaPig.value!.id)
+})
+
+// Get bond between selected GP and other GP
+const bondWithOther = computed(() => {
+  if (!selectedGuineaPig.value || !otherGuineaPig.value) return null
+  return guineaPigStore.getBond(selectedGuineaPig.value.id, otherGuineaPig.value.id)
+})
+
+/**
+ * Toggle to next guinea pig
+ */
+function toggleGuineaPig() {
+  const total = activeGuineaPigs.value.length
+  if (total <= 1) return
+  selectedGuineaPigIndex.value = (selectedGuineaPigIndex.value + 1) % total
+  // Update store selection
+  if (selectedGuineaPig.value) {
+    guineaPigStore.selectGuineaPig(selectedGuineaPig.value.id)
+  }
+}
+
+/**
+ * Sync with guinea pig selection from 3D clicks
+ */
+watch(
+  () => guineaPigStore.selectedGuineaPigId,
+  (selectedId) => {
+    if (!selectedId) return
+    const index = activeGuineaPigs.value.findIndex(gp => gp.id === selectedId)
+    if (index !== -1) {
+      selectedGuineaPigIndex.value = index
+    }
+  }
+)
+
+/**
+ * Format timestamp for display
+ */
+function formatTimestamp(timestamp: number | null): string {
+  if (!timestamp) return 'Never'
+  const now = Date.now()
+  const diffMs = now - timestamp
+  const diffMins = Math.floor(diffMs / (1000 * 60))
+
+  if (diffMins < 1) return 'Just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`
+  return `${Math.floor(diffMins / 1440)}d ago`
+}
+
+/**
+ * Format bond tier for display
+ */
+function formatBondTier(tier: string): string {
+  return tier.charAt(0).toUpperCase() + tier.slice(1)
+}
 
 // Tab definitions
 const tabs: TabDefinition[] = [
@@ -393,37 +526,132 @@ function handleItemClick(item: { itemId: string }) {
   padding: var(--spacing-sm);
 }
 
+.guinea-pig-info__empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: var(--spacing-lg) var(--spacing-sm);
+}
+
+.guinea-pig-info__empty p {
+  margin-block-end: var(--spacing-xs);
+}
+
 .guinea-pig-info__header {
-  font-size: var(--font-size-md);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
   margin-block-end: var(--spacing-md);
   padding-block-end: var(--spacing-sm);
   border-block-end: 1px solid var(--color-border);
 }
 
-.guinea-pig-info__placeholder {
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  line-height: 1.5;
-}
-
-.guinea-pig-info__placeholder p {
-  margin-block-end: var(--spacing-sm);
+.guinea-pig-info__name {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
 }
 
 .guinea-pig-info__hint {
-  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+/* Sections */
+.guinea-pig-info__section {
+  margin-block-end: var(--spacing-md);
+  padding-block-end: var(--spacing-md);
+  border-block-end: 1px solid var(--color-border-light);
+}
+
+.guinea-pig-info__section:last-child {
+  border-block-end: none;
+  margin-block-end: 0;
+  padding-block-end: 0;
+}
+
+.guinea-pig-info__section--muted {
+  opacity: 0.7;
+}
+
+.guinea-pig-info__section-header {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-secondary);
+  margin-block-end: var(--spacing-sm);
 }
 
-.guinea-pig-info__list {
-  margin: var(--spacing-xs) 0 0 var(--spacing-md);
-  padding: 0;
-  list-style: disc;
+.guinea-pig-info__section-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
 }
 
-.guinea-pig-info__list li {
-  margin-block-end: var(--spacing-xs);
+/* Stats grid */
+.guinea-pig-info__stats {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.guinea-pig-info__stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+}
+
+.guinea-pig-info__stat-label {
+  color: var(--color-text-muted);
+}
+
+.guinea-pig-info__stat-value {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+/* Bond bar */
+.guinea-pig-info__bond-bar {
+  inline-size: 100%;
+  block-size: 8px;
+  background-color: var(--color-bg-tertiary);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.guinea-pig-info__bond-fill {
+  block-size: 100%;
+  background: linear-gradient(90deg, var(--color-accent-pink-400) 0%, var(--color-accent-pink-600) 100%);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.guinea-pig-info__bond-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.guinea-pig-info__bond-level {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent-pink-600);
+}
+
+.guinea-pig-info__bond-tier {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.guinea-pig-info__bond-tier--neutral {
+  background-color: var(--color-neutral-200);
+  color: var(--color-neutral-700);
+}
+
+.guinea-pig-info__bond-tier--friends {
+  background-color: var(--color-secondary-bg);
+  color: var(--color-secondary);
+}
+
+.guinea-pig-info__bond-tier--bonded {
+  background-color: var(--color-accent-pink-100);
+  color: var(--color-accent-pink-700);
 }
 </style>

@@ -52,6 +52,10 @@
   color: var(--color-warning);
 }
 
+.stat-value--success {
+  color: var(--color-success);
+}
+
 .stat-value--muted {
   color: var(--color-text-muted);
 }

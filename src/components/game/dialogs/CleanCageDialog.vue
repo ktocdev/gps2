@@ -1,20 +1,20 @@
 <template>
   <BaseDialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" size="sm">
-    <div class="clean-cage-dialog">
-      <div class="clean-cage-dialog__header">
-        <h2 class="clean-cage-dialog__title">Clean Habitat</h2>
+    <div class="game-dialog">
+      <div class="game-dialog__header">
+        <h2 class="game-dialog__title">Clean Habitat</h2>
       </div>
 
-      <div class="clean-cage-dialog__content">
-        <div class="bedding-info">
-          <div class="bedding-info__row">
-            <span class="bedding-info__label">Habitat Dirtiness:</span>
-            <span class="bedding-info__value">{{ dirtiness.toFixed(2) }}%</span>
+      <div class="game-dialog__content">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">Habitat Dirtiness:</span>
+            <span class="stat-value">{{ dirtiness.toFixed(2) }}%</span>
           </div>
 
-          <div class="bedding-info__row">
-            <span class="bedding-info__label">Bedding Needed:</span>
-            <span class="bedding-info__value">{{ beddingNeeded.toFixed(1) }} bags</span>
+          <div class="stat-item">
+            <span class="stat-label">Bedding Needed:</span>
+            <span class="stat-value">{{ beddingNeeded.toFixed(1) }} bags</span>
           </div>
         </div>
 
@@ -28,10 +28,10 @@
           />
         </div>
 
-        <div class="bedding-info">
-          <div class="bedding-info__row">
-            <span class="bedding-info__label">Selected Bedding Available:</span>
-            <span class="bedding-info__value" :class="{ 'text-warning': selectedBeddingAvailable < beddingNeeded }">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">Selected Bedding Available:</span>
+            <span class="stat-value" :class="{ 'stat-value--warning': selectedBeddingAvailable < beddingNeeded }">
               {{ selectedBeddingAvailable.toFixed(2) }} bags
             </span>
           </div>
@@ -50,7 +50,7 @@
         </BlockMessage>
       </div>
 
-      <div class="clean-cage-dialog__footer">
+      <div class="game-dialog__footer">
         <Button @click="$emit('update:modelValue', false)" variant="tertiary" size="md">
           Cancel
         </Button>
@@ -162,29 +162,7 @@ function handleConfirm() {
 </script>
 
 <style>
-.clean-cage-dialog {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4);
-}
-
-.clean-cage-dialog__header {
-  text-align: center;
-}
-
-.clean-cage-dialog__title {
-  margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-}
-
-.clean-cage-dialog__content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
+/* Bedding selection specific styles */
 .bedding-selection {
   display: flex;
   flex-direction: column;
@@ -195,41 +173,5 @@ function handleConfirm() {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-medium);
   color: var(--color-text-secondary);
-}
-
-.bedding-info {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  background-color: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-}
-
-.bedding-info__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.bedding-info__label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.bedding-info__value {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-}
-
-.bedding-info__value.text-warning {
-  color: var(--color-warning);
-}
-
-.clean-cage-dialog__footer {
-  display: flex;
-  gap: var(--space-3);
-  justify-content: flex-end;
 }
 </style>

@@ -91,9 +91,21 @@
             @deselect-item="handleInventoryDeselect"
           />
 
+            <!-- Interaction Instruction Overlay -->
+            <div
+              v-if="interactionInstruction"
+              class="habitat-3d-debug__instruction"
+              :class="`habitat-3d-debug__instruction--${interactionInstruction.theme}`"
+            >
+              {{ interactionInstruction.message }}
+            </div>
+
             <canvas
               ref="canvasRef"
-              :class="{ 'habitat-3d-debug__canvas--placing': placementMode }"
+              :class="{
+                'habitat-3d-debug__canvas--placing': placementMode,
+                'habitat-3d-debug__canvas--petting': pendingInteraction === 'pet'
+              }"
               @click="handleCanvasClick"
               @mousemove="handleCanvasMouseMove"
             ></canvas>
@@ -169,17 +181,29 @@
 
             <!-- Right FABs - Actions -->
           <div class="game-fab-container">
-            <!-- Guinea Pigs FAB -->
+            <!-- Interact FAB with popover menu -->
             <div class="game-fab-row">
               <button
+                ref="interactFabRef"
                 class="game-fab game-fab--pink"
-                :class="{ 'game-fab--active': activePanel === 'guinea-pigs' }"
-                @click="togglePanel('guinea-pigs')"
-                title="Guinea Pigs"
+                :class="{ 'game-fab--active': showInteractMenu || pendingInteraction }"
+                @click="handleInteractFabClick"
+                title="Interact"
               >
-                🐹
+                💛
               </button>
             </div>
+
+            <!-- Interact popover menu -->
+            <FabSubnavMenu
+              :show="showInteractMenu"
+              :anchor-x="interactMenuPosition.x"
+              :anchor-y="interactMenuPosition.y"
+              :actions="interactActions"
+              theme="pink"
+              @select="handleInteractAction"
+              @close="showInteractMenu = false"
+            />
 
             <!-- Habitat Care FAB with subactions -->
             <div class="game-fab-row">
@@ -259,6 +283,7 @@ import HelpDialog from '../../game/dialogs/HelpDialog.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import Inventory3DPanel from '../../game/Inventory3DPanel.vue'
 import SidePanel3D from '../../game/SidePanel3D.vue'
+import FabSubnavMenu, { type FabSubnavAction } from '../../game/FabSubnavMenu.vue'
 import type { InventoryMenuItem } from '../../basic/InventoryItemMenu.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
@@ -273,9 +298,11 @@ import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from 
 import { CONSUMPTION } from '../../../constants/supplies'
 import { disposeObject3D } from '../../../utils/three-cleanup'
 import { worldToGrid } from '../../../composables/3d-models/shared/utils'
+import { createHandModel, setHandPose, updateHandAnimation, disposeHand, type Hand3DUserData } from '../../../composables/3d-models/use3DHand'
 import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
+const interactFabRef = ref<HTMLButtonElement | null>(null)
 const selectedGuineaPigId = ref<string | null>(null)
 const guineaPigMenuPosition = ref({ x: 0, y: 0 })
 
@@ -293,6 +320,36 @@ const showInventory = ref(false)
 
 // Help panel state
 const showHelp = ref(false)
+
+// Interact popover state
+const showInteractMenu = ref(false)
+const interactMenuPosition = ref({ x: 0, y: 0 })
+const pendingInteraction = ref<string | null>(null)
+
+// Interact actions for FAB subnav
+const interactActions: FabSubnavAction[] = [
+  { id: 'pet', icon: '🫳', label: 'Pet' },
+  { id: 'hold', icon: '🫴', label: 'Hold' },
+  { id: 'hand-feed', icon: '🥕', label: 'Hand Feed' },
+  { id: 'gentle-wipe', icon: '🧼', label: 'Gentle Wipe' },
+  { id: 'show-toy', icon: '🧸', label: 'Show Toy' },
+  { id: 'peek-a-boo', icon: '👀', label: 'Peek-a-Boo' },
+  { id: 'talk-to', icon: '💬', label: 'Talk To' },
+]
+
+// Computed instruction message based on current interaction mode
+const interactionInstruction = computed(() => {
+  if (pendingInteraction.value === 'pet') {
+    return { message: 'Click the guinea pig you want to pet!', theme: 'pink' }
+  }
+  if (placementMode.value) {
+    return { message: `Click to place ${placementMode.value.itemName}`, theme: 'green' }
+  }
+  return null
+})
+
+// Hover state for interaction targeting
+const hoveredGuineaPigId = ref<string | null>(null)
 
 // Placement mode state
 const placementMode = ref<{
@@ -448,6 +505,7 @@ const currentHayFreshness = computed(() => {
 // Unified 3D behavior composables registry (for autonomous behavior)
 const behaviors = new Map<string, ReturnType<typeof use3DBehavior>>()
 const playingState = new Map<string, { isPlaying: boolean; isHeadbutting: boolean; toyItemId: string | null }>()
+const chewingState = new Map<string, { isChewing: boolean; chewItemId: string | null }>()
 
 // Water bottle menu state
 const showWaterBottleMenu = ref(false)
@@ -589,6 +647,32 @@ function initializeGuineaPigBehaviors() {
             }, 400)
           })
 
+          // Chew event handling
+          behavior.onChewingStart((_chewItemPosition, chewItemId) => {
+            // Lock chew item physics while being held
+            if (physics3D) {
+              physics3D.setPhysicsState(chewItemId, 'locked')
+            }
+            chewingState.set(gp.id, { isChewing: true, chewItemId })
+          })
+          behavior.onChewingEnd(() => {
+            // Unlock chew item physics
+            const state = chewingState.get(gp.id)
+            if (state?.chewItemId && physics3D) {
+              physics3D.setPhysicsState(state.chewItemId, 'free')
+            }
+            chewingState.delete(gp.id)
+          })
+
+          // Popcorn event handling (reset animation phase)
+          behavior.onPopcornStart(() => {
+            // Reset popcorn phase for fresh animation
+            const gpModel = guineaPigModels?.get(gp.id)
+            if (gpModel?.userData.animation) {
+              gpModel.userData.animation.popcornPhase = 0
+            }
+          })
+
           behavior.start()
 
           console.log(`[Habitat3D] Initialized guinea pig ${gp.id} with unified behavior`)
@@ -642,6 +726,11 @@ let selectionRing: THREE.Mesh | null = null
 const SELECTION_RING_COLOR_DEFAULT = 0x00ff00 // Green
 const SELECTION_RING_COLOR_CONTROLLED = 0x0088ff // Blue
 
+// Hover ring (green normally, pink in pet mode)
+let hoverRing: THREE.Mesh | null = null
+const HOVER_RING_COLOR_DEFAULT = 0x22c55e // Green (tailwind green-500)
+const HOVER_RING_COLOR_PET_MODE = 0xff69b4 // Pink
+
 // Control mode movement controller
 let controlMovement: ReturnType<typeof use3DMovement> | null = null
 
@@ -651,6 +740,12 @@ let beddingTexture: THREE.CanvasTexture | null = null
 
 // Cloud objects (added to scene, not worldGroup, so they don't rotate)
 let cloudObjects: THREE.Group[] = []
+
+// Interaction hand model
+let interactionHand: THREE.Group | null = null
+let handAnimationActive = false
+let handAnimationStartTime = 0
+let handAnimationTargetGpId: string | null = null
 
 // Item models registry
 let itemModels: Map<string, THREE.Group> | null = null
@@ -698,8 +793,14 @@ onMounted(() => {
   // Create clouds in the sky
   createClouds()
 
+  // Create interaction hand (hidden initially, high above scene)
+  createInteractionHand()
+
   // Create selection ring
   createSelectionRing()
+
+  // Create hover ring (pink, for pet mode)
+  createHoverRing()
 
   // Add window resize listener
   window.addEventListener('resize', handleResize)
@@ -761,6 +862,13 @@ onUnmounted(() => {
     disposeObject3D(cloud)
   })
   cloudObjects = []
+
+  // Dispose interaction hand
+  if (interactionHand) {
+    scene.remove(interactionHand)
+    disposeHand(interactionHand)
+    interactionHand = null
+  }
 
   // Stop and clear all behaviors
   behaviors.forEach(behavior => behavior.stop())
@@ -848,22 +956,53 @@ function animate(currentTime: number = 0) {
       const isPlaying = behavior?.currentActivity.value === 'playing'
       const gpPlayState = playingState.get(guineaPigId)
       const isHeadbutting = gpPlayState?.isHeadbutting ?? false
+      const isChewing = behavior?.currentActivity.value === 'chewing'
+      const isPopcorning = behavior?.currentActivity.value === 'popcorning'
 
-      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming, isPlaying, isHeadbutting)
+      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming, isPlaying, isHeadbutting, isChewing, isPopcorning)
 
-      // Pin toy to guinea pig's nose while playing (before headbutt)
+      // Pin toy to guinea pig's nose while playing (before headbutt) with shake animation
       if (gpPlayState?.isPlaying && gpPlayState.toyItemId && !gpPlayState.isHeadbutting && state && itemModels) {
         const toyMesh = itemModels.get(gpPlayState.toyItemId)
         if (toyMesh) {
           // Position toy in front of guinea pig's nose
-          const noseOffset = 1.8 // Distance in front of guinea pig
-          const heightOffset = 1.2 // Height of nose
+          const noseOffset = 1.8
+          const heightOffset = 1.2
           const rotation = state.rotation ?? 0
-          toyMesh.position.set(
-            state.worldPosition.x + Math.sin(rotation) * noseOffset,
-            heightOffset,
-            state.worldPosition.z + Math.cos(rotation) * noseOffset
-          )
+
+          // Add shake animation synced with head movement
+          const playPhase = model.userData.animation?.playPhase || 0
+          const shakeMotion = Math.sin(playPhase) * 0.4 // Match PLAY_SHAKE_AMOUNT
+          const bobAmount = Math.abs(Math.sin(playPhase)) * 0.08
+
+          const newX = state.worldPosition.x + Math.sin(rotation + shakeMotion * 0.3) * noseOffset
+          const newZ = state.worldPosition.z + Math.cos(rotation + shakeMotion * 0.3) * noseOffset
+
+          toyMesh.position.set(newX, heightOffset + bobAmount, newZ)
+        }
+      }
+
+      // Pin chew item to guinea pig's mouth while chewing (with shake animation)
+      const gpChewState = chewingState.get(guineaPigId)
+      if (gpChewState?.isChewing && gpChewState.chewItemId && state && itemModels) {
+        const chewMesh = itemModels.get(gpChewState.chewItemId)
+        if (chewMesh) {
+          // Position chew item at guinea pig's mouth
+          const mouthOffset = 1.6
+          const heightOffset = 0.9
+          const rotation = state.rotation ?? 0
+
+          // Add shake animation synced with head movement
+          const chewPhase = model.userData.animation?.chewPhase || 0
+          const shakeAmount = Math.sin(chewPhase) * 0.15
+          const bobAmount = Math.abs(Math.sin(chewPhase * 1.5)) * 0.05
+
+          const newX = state.worldPosition.x + Math.sin(rotation) * mouthOffset
+          const newZ = state.worldPosition.z + Math.cos(rotation) * mouthOffset
+
+          chewMesh.position.set(newX, heightOffset + bobAmount, newZ)
+          // Rotate stick with shake
+          chewMesh.rotation.y = rotation + Math.PI / 2 + shakeAmount
         }
       }
     })
@@ -873,6 +1012,9 @@ function animate(currentTime: number = 0) {
   if (!gameController.isPaused) {
     updateClouds(deltaTime)
   }
+
+  // Update hand animation (always, even when paused for responsiveness)
+  updateHandAnimation_frame(deltaTime)
 
   // Update physics for items (ball, stick) - only when not paused
   if (!gameController.isPaused && physics3D) {
@@ -892,6 +1034,9 @@ function animate(currentTime: number = 0) {
   // Update selection ring position
   updateSelectionRing()
 
+  // Update hover ring (pink, for pet mode)
+  updateHoverRing()
+
   // Render the scene
   const renderer = getRenderer()
   if (renderer) {
@@ -899,24 +1044,34 @@ function animate(currentTime: number = 0) {
   }
 }
 
-// Create selection ring
-function createSelectionRing() {
+// Shared helper to create ring meshes
+function createRingMesh(color: number, yOffset: number, opacity = 0.7): THREE.Mesh {
   const ringGeometry = new THREE.RingGeometry(
     ANIMATION_CONFIG.SELECTION_RING.INNER_RADIUS,
     ANIMATION_CONFIG.SELECTION_RING.OUTER_RADIUS,
     32
   )
   const ringMaterial = new THREE.MeshBasicMaterial({
-    color: ANIMATION_CONFIG.SELECTION_RING.COLOR,
+    color,
     side: THREE.DoubleSide,
     transparent: true,
-    opacity: ANIMATION_CONFIG.SELECTION_RING.OPACITY
+    opacity
   })
-  selectionRing = new THREE.Mesh(ringGeometry, ringMaterial)
-  selectionRing.rotation.x = -Math.PI / 2 // Rotate to be horizontal
-  selectionRing.position.y = ANIMATION_CONFIG.SELECTION_RING.Y_OFFSET
-  selectionRing.visible = false
-  worldGroup.add(selectionRing)
+  const ring = new THREE.Mesh(ringGeometry, ringMaterial)
+  ring.rotation.x = -Math.PI / 2 // Rotate to be horizontal
+  ring.position.y = yOffset
+  ring.visible = false
+  worldGroup.add(ring)
+  return ring
+}
+
+// Create selection ring
+function createSelectionRing() {
+  selectionRing = createRingMesh(
+    ANIMATION_CONFIG.SELECTION_RING.COLOR,
+    ANIMATION_CONFIG.SELECTION_RING.Y_OFFSET,
+    ANIMATION_CONFIG.SELECTION_RING.OPACITY
+  )
 }
 
 // Update selection ring position
@@ -942,6 +1097,51 @@ function updateSelectionRing() {
     selectionRing.scale.set(1 + Math.sin(time) * pulseAmount, 1, 1 + Math.sin(time) * pulseAmount)
   } else {
     selectionRing.visible = false
+  }
+}
+
+// Create hover ring (green normally, pink in pet mode)
+function createHoverRing() {
+  hoverRing = createRingMesh(
+    HOVER_RING_COLOR_DEFAULT,
+    ANIMATION_CONFIG.SELECTION_RING.Y_OFFSET + 0.01 // Slightly above selection ring
+  )
+}
+
+// Update hover ring position and color (shown when hovering over any GP)
+function updateHoverRing() {
+  if (!hoverRing || !guineaPigModels) return
+
+  // Show hover ring when hovering over a guinea pig (any mode)
+  // Also keep it visible during petting animation
+  const shouldShow = hoveredGuineaPigId.value || handAnimationActive
+  const targetId = handAnimationActive ? handAnimationTargetGpId : hoveredGuineaPigId.value
+
+  if (!shouldShow || !targetId) {
+    hoverRing.visible = false
+    return
+  }
+
+  // Update color based on mode: pink in pet mode, green otherwise
+  const material = hoverRing.material as THREE.MeshBasicMaterial
+  const isPetMode = pendingInteraction.value === 'pet' || handAnimationActive
+  const targetColor = isPetMode ? HOVER_RING_COLOR_PET_MODE : HOVER_RING_COLOR_DEFAULT
+  if (material.color.getHex() !== targetColor) {
+    material.color.setHex(targetColor)
+  }
+
+  const targetModel = guineaPigModels.get(targetId)
+  if (targetModel) {
+    hoverRing.position.x = targetModel.position.x
+    hoverRing.position.z = targetModel.position.z
+    hoverRing.visible = true
+
+    // Pulse animation (slightly faster than selection ring)
+    const time = Date.now() * 0.003
+    const pulseAmount = 0.12
+    hoverRing.scale.set(1 + Math.sin(time) * pulseAmount, 1, 1 + Math.sin(time) * pulseAmount)
+  } else {
+    hoverRing.visible = false
   }
 }
 
@@ -1114,20 +1314,55 @@ function handleCanvasClick(event: MouseEvent) {
 
     // Priority 3: Check if guinea pig was clicked
     let clickedModel: THREE.Group | null = null
+    let clickedGuineaPigId: string | null = null
 
     guineaPigModels.forEach((model, id) => {
       if (clickedObject.parent === model || clickedObject.parent?.parent === model) {
         clickedModel = model
-        selectedGuineaPigId.value = id
-        // Set menu position using viewport coordinates (for Floating UI)
-        guineaPigMenuPosition.value = {
-          x: event.clientX,
-          y: event.clientY
-        }
+        clickedGuineaPigId = id
       }
     })
 
-    if (clickedModel) {
+    if (clickedModel && clickedGuineaPigId) {
+      // Check if we have a pending interaction
+      if (pendingInteraction.value) {
+        const action = pendingInteraction.value
+
+        if (action === 'pet') {
+          // Start petting animation
+          startPettingAnimation(clickedGuineaPigId)
+          return
+        }
+
+        // Other interactions - log and clear for now
+        console.log(`[Habitat3D] Executing ${action} on guinea pig ${clickedGuineaPigId}`)
+        const gp = guineaPigStore.allGuineaPigs.find((g: { id: string }) => g.id === clickedGuineaPigId)
+        const gpName = gp?.name || 'Guinea pig'
+
+        // Log the interaction
+        const actionLabels: Record<string, { label: string; emoji: string }> = {
+          'hold': { label: 'Held', emoji: '🫴' },
+          'hand-feed': { label: 'Hand fed', emoji: '🥕' },
+          'gentle-wipe': { label: 'Wiped', emoji: '🧼' },
+          'show-toy': { label: 'Showed toy to', emoji: '🧸' },
+          'peek-a-boo': { label: 'Played peek-a-boo with', emoji: '👀' },
+          'talk-to': { label: 'Talked to', emoji: '💬' },
+        }
+        const actionInfo = actionLabels[action] || { label: action, emoji: '❓' }
+        loggingStore.addPlayerAction(`${actionInfo.label} ${gpName}`, actionInfo.emoji)
+
+        pendingInteraction.value = null
+        return
+      }
+
+      // No pending interaction - show the guinea pig menu
+      selectedGuineaPigId.value = clickedGuineaPigId
+      // Set menu position using viewport coordinates (for Floating UI)
+      guineaPigMenuPosition.value = {
+        x: event.clientX,
+        y: event.clientY
+      }
+
       // If we clicked a different guinea pig while controlling one, release control
       if (controlledGuineaPigId.value && selectedGuineaPigId.value !== controlledGuineaPigId.value) {
         releaseControl()
@@ -1611,6 +1846,29 @@ function fabFillHay() {
 }
 
 /**
+ * Interact FAB handlers
+ */
+function handleInteractFabClick() {
+  if (!interactFabRef.value) return
+
+  // Get FAB button position for popover anchor
+  const rect = interactFabRef.value.getBoundingClientRect()
+  interactMenuPosition.value = {
+    x: rect.left + rect.width / 2,
+    y: rect.top
+  }
+  showInteractMenu.value = !showInteractMenu.value
+}
+
+function handleInteractAction(actionId: string) {
+  console.log(`[Habitat3D] Interact action selected: ${actionId}`)
+  // Set pending interaction - user now needs to click on a guinea pig
+  pendingInteraction.value = actionId
+  // TODO: Add cursor change to indicate selection mode
+  // TODO: Handle special case for 'hand-feed' which needs food selection first
+}
+
+/**
  * Activity Feed panel handlers
  */
 function toggleActivityFeed() {
@@ -1776,10 +2034,10 @@ function updatePreviewColor(valid: boolean) {
 }
 
 /**
- * Handle mouse move for placement preview
+ * Handle mouse move for placement preview and guinea pig hover detection
  */
 function handleCanvasMouseMove(event: MouseEvent) {
-  if (!placementMode.value || !placementPreview || !canvasRef.value) return
+  if (!canvasRef.value) return
 
   const canvas = canvasRef.value
   const rect = canvas.getBoundingClientRect()
@@ -1789,21 +2047,47 @@ function handleCanvasMouseMove(event: MouseEvent) {
   mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
   mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
 
-  // Raycast to floor
+  // Create raycaster
   const raycaster = new THREE.Raycaster()
   raycaster.setFromCamera(mouse, camera)
-  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
-  const intersection = new THREE.Vector3()
-  raycaster.ray.intersectPlane(floorPlane, intersection)
 
-  if (intersection) {
-    // Free placement - use exact world coordinates
-    placementPreview.position.set(intersection.x, 0, intersection.z)
-    placementPreview.visible = true
+  // Handle placement mode preview
+  if (placementMode.value && placementPreview) {
+    const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)
+    const intersection = new THREE.Vector3()
+    raycaster.ray.intersectPlane(floorPlane, intersection)
 
-    // Validate and update preview color
-    isPlacementValid = isValidPlacement(intersection.x, intersection.z, placementMode.value)
-    updatePreviewColor(isPlacementValid)
+    if (intersection) {
+      // Free placement - use exact world coordinates
+      placementPreview.position.set(intersection.x, 0, intersection.z)
+      placementPreview.visible = true
+
+      // Validate and update preview color
+      isPlacementValid = isValidPlacement(intersection.x, intersection.z, placementMode.value)
+      updatePreviewColor(isPlacementValid)
+    }
+    return
+  }
+
+  // Handle guinea pig hover detection (for all modes - green ring normally, pink in pet mode)
+  if (guineaPigModels) {
+    const intersects = raycaster.intersectObjects(worldGroup.children, true)
+
+    let foundGpId: string | null = null
+    for (const intersect of intersects) {
+      // Walk up to find guinea pig parent
+      let current: THREE.Object3D | null = intersect.object
+      while (current && current !== worldGroup) {
+        if (current.userData?.guineaPigId) {
+          foundGpId = current.userData.guineaPigId
+          break
+        }
+        current = current.parent
+      }
+      if (foundGpId) break
+    }
+
+    hoveredGuineaPigId.value = foundGpId
   }
 }
 
@@ -2076,6 +2360,172 @@ function updateClouds(deltaTime: number) {
     cloud.position.z = Math.sin(cloud.userData.angle) * cloud.userData.distance
     cloud.position.y = cloud.userData.height + bob
   })
+}
+
+/**
+ * Create the interaction hand model
+ * Positioned high above scene, invisible until animation starts
+ */
+function createInteractionHand() {
+  interactionHand = createHandModel()
+
+  // Start with petting pose
+  setHandPose(interactionHand, 'petting')
+
+  // Position high above and rotate for petting pose
+  // Palm facing down, fingers pointing horizontally (perpendicular to floor)
+  interactionHand.position.set(0, 25, 0)
+  interactionHand.rotation.x = Math.PI // Flip so palm faces down
+  interactionHand.rotation.y = 0
+  interactionHand.rotation.z = 0
+
+  // Initially hidden
+  interactionHand.visible = false
+
+  // Add to scene (not worldGroup) so it stays in place during camera rotation
+  scene.add(interactionHand)
+
+  console.log('[Habitat3D] Interaction hand created')
+}
+
+/**
+ * Start the petting animation on a guinea pig
+ */
+function startPettingAnimation(guineaPigId: string) {
+  if (!interactionHand || !guineaPigModels || handAnimationActive) return
+
+  const gpModel = guineaPigModels.get(guineaPigId)
+  if (!gpModel) return
+
+  // Get guinea pig world position
+  const gpWorldPos = new THREE.Vector3()
+  gpModel.getWorldPosition(gpWorldPos)
+
+  // Set hand starting position (above the guinea pig)
+  interactionHand.position.set(gpWorldPos.x, 20, gpWorldPos.z)
+  interactionHand.visible = true
+
+  // Set petting pose
+  setHandPose(interactionHand, 'petting')
+
+  // Start animation
+  handAnimationActive = true
+  handAnimationStartTime = Date.now()
+  handAnimationTargetGpId = guineaPigId
+
+  console.log(`[Habitat3D] Starting pet animation on guinea pig: ${guineaPigId}`)
+}
+
+/**
+ * Update the hand animation each frame
+ */
+function updateHandAnimation_frame(_deltaTime: number) {
+  if (!handAnimationActive || !interactionHand || !guineaPigModels) return
+
+  const elapsed = Date.now() - handAnimationStartTime
+  const duration = 3125 // ~3.1 seconds total animation (25% slower)
+  const progress = Math.min(elapsed / duration, 1)
+
+  const gpModel = handAnimationTargetGpId ? guineaPigModels.get(handAnimationTargetGpId) : null
+  if (!gpModel) {
+    finishHandAnimation()
+    return
+  }
+
+  // Get guinea pig world position (it may be moving)
+  const gpWorldPos = new THREE.Vector3()
+  gpModel.getWorldPosition(gpWorldPos)
+
+  // Animation phases:
+  // 0.0 - 0.3: Descend from above
+  // 0.3 - 0.8: Pet (stroke back and forth)
+  // 0.8 - 1.0: Rise back up
+
+  const startY = 20
+  const petY = gpWorldPos.y + 2.5 // Just above the guinea pig's back
+
+  if (progress < 0.3) {
+    // Descend phase
+    const descendProgress = progress / 0.3
+    const eased = 1 - Math.pow(1 - descendProgress, 2) // Ease out
+    interactionHand.position.y = startY - (startY - petY) * eased
+    interactionHand.position.x = gpWorldPos.x
+    interactionHand.position.z = gpWorldPos.z
+  } else if (progress < 0.8) {
+    // Petting phase - gentle back and forth motion
+    const petProgress = (progress - 0.3) / 0.5
+    const strokeOffset = Math.sin(petProgress * Math.PI * 4) * 0.8 // 4 strokes
+    const bobOffset = Math.sin(petProgress * Math.PI * 8) * 0.15 // Gentle bob
+
+    interactionHand.position.x = gpWorldPos.x
+    interactionHand.position.y = petY + bobOffset
+    interactionHand.position.z = gpWorldPos.z + strokeOffset
+
+    // Gentle finger movement during petting
+    const userData = interactionHand.userData as Hand3DUserData
+    if (userData?.animation) {
+      userData.animation.indexCurl = 0.3 + Math.sin(petProgress * Math.PI * 8) * 0.1
+      userData.animation.middleCurl = 0.25 + Math.sin(petProgress * Math.PI * 8 + 0.5) * 0.1
+      userData.animation.ringCurl = 0.2 + Math.sin(petProgress * Math.PI * 8 + 1) * 0.1
+      userData.animation.pinkyCurl = 0.2 + Math.sin(petProgress * Math.PI * 8 + 1.5) * 0.1
+      updateHandAnimation(interactionHand)
+    }
+  } else {
+    // Rise phase
+    const riseProgress = (progress - 0.8) / 0.2
+    const eased = riseProgress * riseProgress // Ease in
+    interactionHand.position.y = petY + (startY - petY) * eased
+    interactionHand.position.x = gpWorldPos.x
+    interactionHand.position.z = gpWorldPos.z
+  }
+
+  // Animation complete
+  if (progress >= 1) {
+    finishHandAnimation()
+  }
+}
+
+/**
+ * Finish the hand animation and apply petting effects
+ */
+function finishHandAnimation() {
+  if (!interactionHand) return
+
+  interactionHand.visible = false
+  interactionHand.position.set(0, 25, 0)
+  handAnimationActive = false
+
+  // Apply petting effects
+  if (handAnimationTargetGpId) {
+    const gp = guineaPigStore.getGuineaPig(handAnimationTargetGpId)
+    if (gp) {
+      // Satisfy social need (+25) - this also gives friendship based on satisfaction amount
+      guineaPigStore.satisfyNeed(handAnimationTargetGpId, 'social', 25)
+
+      // Additional friendship gain for petting (+2, same as socialize)
+      guineaPigStore.adjustFriendship(handAnimationTargetGpId, 2)
+
+      // Update interaction tracking
+      gp.lastInteraction = Date.now()
+      gp.totalInteractions += 1
+
+      // Log the petting activity with effects
+      loggingStore.addPlayerAction(
+        `Petted ${gp.name} - Social +25, Friendship +2`,
+        '🫳',
+        {
+          guineaPigId: handAnimationTargetGpId,
+          socialGain: 25,
+          friendshipGain: 2
+        }
+      )
+    }
+  }
+
+  handAnimationTargetGpId = null
+  pendingInteraction.value = null
+
+  console.log('[Habitat3D] Pet animation complete')
 }
 </script>
 
@@ -2370,4 +2820,47 @@ function updateClouds(deltaTime: number) {
   cursor: crosshair !important;
 }
 
+/* Pet mode styles */
+.habitat-3d-debug__canvas--petting {
+  cursor: grab !important;
+}
+
+/* Interaction instruction overlay */
+.habitat-3d-debug__instruction {
+  position: absolute;
+  inset-block-start: var(--spacing-md);
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: instruction-fade-in 0.2s ease-out;
+  pointer-events: none;
+}
+
+.habitat-3d-debug__instruction--pink {
+  background-color: var(--color-accent-pink-100);
+  border: 2px solid var(--color-accent-pink-300);
+  color: var(--color-accent-pink-700);
+}
+
+.habitat-3d-debug__instruction--green {
+  background-color: var(--color-accent-green-100);
+  border: 2px solid var(--color-accent-green-300);
+  color: var(--color-accent-green-700);
+}
+
+@keyframes instruction-fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
 </style>

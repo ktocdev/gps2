@@ -1,22 +1,22 @@
 <template>
   <BaseDialog :model-value="modelValue" @update:model-value="$emit('update:modelValue', $event)" size="sm">
-    <div class="hay-management-dialog">
-      <div class="hay-management-dialog__header">
-        <h2 class="hay-management-dialog__title">Hay Racks</h2>
+    <div class="game-dialog">
+      <div class="game-dialog__header">
+        <h2 class="game-dialog__title">Hay Racks</h2>
       </div>
 
-      <div class="hay-management-dialog__content">
+      <div class="game-dialog__content">
         <!-- Overall Status -->
-        <div class="hay-status">
-          <div class="hay-status__row">
-            <span class="hay-status__label">Overall Freshness:</span>
-            <span class="hay-status__value" :class="overallFreshnessClass">
+        <div class="stats-grid">
+          <div class="stat-item">
+            <span class="stat-label">Overall Freshness:</span>
+            <span class="stat-value" :class="overallFreshnessClass">
               {{ Math.round(overallFreshness) }}%
             </span>
           </div>
-          <div class="hay-status__row">
-            <span class="hay-status__label">Available Hay:</span>
-            <span class="hay-status__value" :class="{ 'hay-status__value--warning': totalHayServings === 0 }">
+          <div class="stat-item">
+            <span class="stat-label">Available Hay:</span>
+            <span class="stat-value" :class="{ 'stat-value--warning': totalHayServings === 0 }">
               {{ totalHayServings }} servings
             </span>
           </div>
@@ -24,12 +24,12 @@
 
         <!-- Replace All Button -->
         <Button
-          v-if="hayRacks.length > 0 && (overallFreshness < 60 || hasAnyHay)"
+          v-if="hayRacks.length > 0"
           @click="handleReplaceAll"
           variant="secondary"
           size="sm"
           class="hay-management-dialog__replace-btn"
-          :disabled="totalHayServings === 0"
+          :disabled="totalHayServings === 0 || allRacksFullAndFresh"
         >
           Replace All Hay
         </Button>
@@ -93,7 +93,7 @@
         </BlockMessage>
       </div>
 
-      <div class="hay-management-dialog__footer">
+      <div class="game-dialog__footer">
         <Button @click="$emit('update:modelValue', false)" variant="primary" size="md">
           Done
         </Button>
@@ -138,18 +138,23 @@ const hayRacks = computed(() => {
     freshness: number
   }> = []
 
-  const hayRackContents = habitatConditions.hayRackContents
   const capacity = CONSUMPTION.HAY_RACK_MAX_CAPACITY
 
-  // Get all hay rack IDs from the contents map
+  // Find all placed hay racks from habitatItems (not just those with contents)
+  const placedHayRacks = habitatConditions.habitatItems.filter(
+    (itemId: string) => itemId.includes('hay_rack')
+  )
+
   let rackIndex = 1
-  for (const [rackId, data] of hayRackContents.entries()) {
+  for (const rackId of placedHayRacks) {
+    // Check hayRackContents for this rack's data (may not exist if empty)
+    const data = habitatConditions.hayRackContents.get(rackId)
     racks.push({
       id: rackId,
       name: `Hay Rack #${rackIndex}`,
-      servings: data.servings?.length || 0,
+      servings: data?.servings?.length || 0,
       capacity,
-      freshness: data.freshness ?? 100
+      freshness: data?.freshness ?? 100
     })
     rackIndex++
   }
@@ -157,9 +162,10 @@ const hayRacks = computed(() => {
   return racks
 })
 
-// Computed: Check if any rack has hay
-const hasAnyHay = computed(() => {
-  return hayRacks.value.some(rack => rack.servings > 0)
+// Computed: Check if all racks are full and fresh (no need to replace)
+const allRacksFullAndFresh = computed(() => {
+  if (hayRacks.value.length === 0) return false
+  return hayRacks.value.every(rack => rack.servings >= rack.capacity && rack.freshness >= 100)
 })
 
 // Computed: Overall freshness (average of all racks with hay)
@@ -199,15 +205,19 @@ function getFirstHayItemId(): string | null {
   return null
 }
 
-// Freshness class helper
+// Freshness class helper for individual hay rack items
 function getFreshnessClass(freshness: number): string {
   if (freshness >= 80) return 'hay-rack-item__freshness--good'
   if (freshness >= 40) return 'hay-rack-item__freshness--warning'
   return 'hay-rack-item__freshness--critical'
 }
 
+// Overall freshness class for stats grid (uses global stat-value modifiers)
 const overallFreshnessClass = computed(() => {
-  return getFreshnessClass(overallFreshness.value)
+  const freshness = overallFreshness.value
+  if (freshness >= 80) return 'stat-value--success'
+  if (freshness >= 40) return 'stat-value--warning'
+  return 'stat-value--error'
 })
 
 // Bar class helper
@@ -259,66 +269,9 @@ function handleReplaceAll() {
 </script>
 
 <style>
-.hay-management-dialog {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  padding: var(--space-4);
-}
-
-.hay-management-dialog__header {
-  text-align: center;
-}
-
-.hay-management-dialog__title {
-  margin: 0;
-  font-size: var(--font-size-lg);
-  font-weight: var(--font-weight-semibold);
-}
-
-.hay-management-dialog__content {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
+/* Replace button centering */
 .hay-management-dialog__replace-btn {
   align-self: center;
-}
-
-.hay-management-dialog__footer {
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* Overall Status */
-.hay-status {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  background-color: var(--color-bg-tertiary);
-  border-radius: var(--radius-md);
-}
-
-.hay-status__row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.hay-status__label {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-}
-
-.hay-status__value {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-}
-
-.hay-status__value--warning {
-  color: var(--color-warning);
 }
 
 /* Hay Rack List */
