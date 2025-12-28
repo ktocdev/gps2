@@ -20,7 +20,7 @@ import { use3DMovement } from './use3DMovement'
 import type { Vector3D } from '../../types/movement3d'
 
 // Behavior types (extensible for future needs)
-export type Behavior3DType = 'eat' | 'drink' | 'seek_shelter' | 'sleep' | 'groom' | 'play' | 'wander'
+export type Behavior3DType = 'eat' | 'drink' | 'seek_shelter' | 'sleep' | 'groom' | 'play' | 'chew' | 'wander'
 
 // Goal structure matching 2D pattern
 export interface Behavior3DGoal {
@@ -28,13 +28,13 @@ export interface Behavior3DGoal {
   target: Vector3D | null
   priority: number
   estimatedDuration: number
-  needSatisfied?: 'hunger' | 'thirst' | 'shelter' | 'energy' | 'hygiene' | 'play'
+  needSatisfied?: 'hunger' | 'thirst' | 'shelter' | 'energy' | 'hygiene' | 'play' | 'chew'
   targetItemId?: string
   sourceType?: 'food_bowl' | 'hay_rack' // For eating behavior - tracks what container to consume from
 }
 
 // Activity states for UI/animation
-export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking' | 'sheltering' | 'sleeping' | 'grooming' | 'playing'
+export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking' | 'sheltering' | 'sleeping' | 'grooming' | 'playing' | 'chewing'
 
 // Configuration
 const BEHAVIOR_TICK_INTERVAL = 2000 // Check behavior every 2 seconds
@@ -45,7 +45,8 @@ const THRESHOLDS = {
   shelter: 50,  // Seek shelter when shelter < 50
   energy: 40,   // Seek sleep when energy < 40
   hygiene: 60,  // Groom when hygiene < 60
-  play: 55      // Play with toys when play < 55
+  play: 55,     // Play with toys when play < 55
+  chew: 60      // Chew on items when chew < 60
 }
 
 const COOLDOWNS = {
@@ -55,6 +56,7 @@ const COOLDOWNS = {
   sleep: 120000,      // 2 minutes after sleeping
   groom: 30000,       // 30 seconds after grooming
   play: 90000,        // 90 seconds after playing
+  chew: 60000,        // 60 seconds after chewing
   wander: 3000        // 3 seconds between wanders
 }
 
@@ -64,7 +66,8 @@ const DURATIONS = {
   seek_shelter: 8000, // 8 seconds in shelter
   sleep: 5000,        // Base 5 seconds to sleep (multiplied by tiredness)
   groom: 4000,        // Base 4 seconds to groom (modified by cleanliness)
-  play: 6000          // 6 seconds to play with toy (shake + headbutt)
+  play: 6000,         // 6 seconds to play with toy (shake + headbutt)
+  chew: 5000          // 5 seconds to chew on item
 }
 
 const RESTORE_AMOUNTS = {
@@ -73,7 +76,8 @@ const RESTORE_AMOUNTS = {
   shelter: 30,   // Restore 30 shelter when sheltering
   energy: 25,    // Base 25 energy when sleeping (multiplied by quality)
   hygiene: 15,   // Base 15 hygiene when grooming (modified by cleanliness)
-  play: 35       // Restore 35 play when playing with toys
+  play: 35,      // Restore 35 play when playing with toys
+  chew: 40       // Restore 40 chew when chewing on items
 }
 
 // Shelter entrance offset (igloo entrance faces +Z direction)
@@ -402,6 +406,36 @@ export function use3DBehavior(guineaPigId: string) {
   }
 
   /**
+   * Find the position of a chew item (stick, chew toy) in world coordinates
+   * Returns the chew item position and its item ID for physics interaction
+   */
+  function findChewItemPosition(): { position: Vector3D; itemId: string } | null {
+    const itemPositions = habitatConditions.itemPositions
+
+    // Find chew items (sticks, chews)
+    for (const [itemId, gridPos] of itemPositions.entries()) {
+      const item = suppliesStore.getItemById(itemId)
+      const itemIdLower = itemId.toLowerCase()
+      const subCategory = item?.subCategory
+
+      // Check if it's a chew item by subCategory or ID
+      const isChew =
+        subCategory === 'chews' ||
+        itemIdLower.includes('stick') ||
+        itemIdLower.includes('chew')
+
+      if (isChew) {
+        return {
+          position: movement3DStore.gridToWorld(gridPos.x, gridPos.y),
+          itemId
+        }
+      }
+    }
+
+    return null
+  }
+
+  /**
    * Select the highest priority behavior goal (2D pattern)
    */
   function selectBehaviorGoal(): Behavior3DGoal | null {
@@ -500,6 +534,21 @@ export function use3DBehavior(guineaPigId: string) {
       }
     }
 
+    // Chew < threshold (chew on items)
+    if (needs.chew < THRESHOLDS.chew && !isOnCooldown('chew')) {
+      const chewItem = findChewItemPosition()
+      if (chewItem) {
+        goals.push({
+          type: 'chew',
+          target: chewItem.position,
+          targetItemId: chewItem.itemId,
+          priority: calculateNeedPriority(needs.chew, THRESHOLDS.chew, 55),
+          estimatedDuration: DURATIONS.chew,
+          needSatisfied: 'chew'
+        })
+      }
+    }
+
     // LOW PRIORITY (Priority 20-30)
 
     // Wandering when content
@@ -554,6 +603,9 @@ export function use3DBehavior(guineaPigId: string) {
         break
       case 'play':
         executePlayBehavior(goal)
+        break
+      case 'chew':
+        executeChewBehavior(goal)
         break
       case 'wander':
         executeWanderBehavior()
@@ -880,6 +932,76 @@ export function use3DBehavior(guineaPigId: string) {
 
     console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished playing`)
     currentToyItemId = null
+
+    // Trigger next behavior tick
+    tick()
+  }
+
+  // Chew callbacks and state
+  let onChewingStartCallback: ((chewItemPosition: Vector3D, chewItemId: string) => void) | null = null
+  let onChewingEndCallback: (() => void) | null = null
+  let currentChewItemId: string | null = null
+
+  /**
+   * Execute chew behavior - guinea pig chews on a stick or chew item
+   * Sequence: walk to item -> pick it up (pin to mouth) -> gnaw animation -> finish
+   */
+  function executeChewBehavior(goal: Behavior3DGoal): void {
+    if (!goal.target || !goal.targetItemId) return
+
+    currentActivity.value = 'walking'
+    currentChewItemId = goal.targetItemId
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} seeking chew item`)
+
+    movement.moveTo(goal.target)
+    movement.onArrival(() => {
+      startChewing(goal.target!, goal.targetItemId!)
+    })
+  }
+
+  /**
+   * Start chewing on item - pin to mouth and gnaw animation
+   */
+  function startChewing(chewItemPosition: Vector3D, chewItemId: string): void {
+    currentActivity.value = 'chewing'
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} started chewing on ${chewItemId}`)
+
+    if (onChewingStartCallback) {
+      onChewingStartCallback(chewItemPosition, chewItemId)
+    }
+
+    // Chew for the full duration
+    actionTimeout = window.setTimeout(() => {
+      finishChewing()
+    }, DURATIONS.chew)
+  }
+
+  /**
+   * Finish chewing and restore chew need
+   */
+  function finishChewing(): void {
+    currentActivity.value = 'idle'
+    currentGoal.value = null
+
+    guineaPigStore.satisfyNeed(guineaPigId, 'chew', RESTORE_AMOUNTS.chew)
+    setCooldown('chew', COOLDOWNS.chew)
+
+    // Log activity
+    const gp = getGuineaPig()
+    const gpName = gp?.name || 'Guinea pig'
+    const chewItemName = currentChewItemId?.replace(/_/g, ' ').replace(/^habitat\s+/, '') || 'a stick'
+    loggingStore.addAutonomousBehavior(
+      `${gpName} finished chewing on ${chewItemName}`,
+      '🪵',
+      { guineaPigId, behavior: 'chewing' }
+    )
+
+    if (onChewingEndCallback) {
+      onChewingEndCallback()
+    }
+
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished chewing`)
+    currentChewItemId = null
 
     // Trigger next behavior tick
     tick()
@@ -1263,7 +1385,7 @@ export function use3DBehavior(guineaPigId: string) {
     checkAutonomousPooping()
 
     // Don't interrupt active behaviors (eating, drinking, sheltering, sleeping, grooming, playing)
-    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking' || currentActivity.value === 'sheltering' || currentActivity.value === 'sleeping' || currentActivity.value === 'grooming' || currentActivity.value === 'playing') {
+    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking' || currentActivity.value === 'sheltering' || currentActivity.value === 'sleeping' || currentActivity.value === 'grooming' || currentActivity.value === 'playing' || currentActivity.value === 'chewing') {
       return
     }
 
@@ -1431,6 +1553,20 @@ export function use3DBehavior(guineaPigId: string) {
     onHeadbuttCallback = callback
   }
 
+  /**
+   * Set callback for when chewing starts (for chew animation, item pinning)
+   */
+  function onChewingStart(callback: (chewItemPosition: Vector3D, chewItemId: string) => void): void {
+    onChewingStartCallback = callback
+  }
+
+  /**
+   * Set callback for when chewing ends (to resume normal pose, unpin item)
+   */
+  function onChewingEnd(callback: () => void): void {
+    onChewingEndCallback = callback
+  }
+
   // Auto-cleanup on unmount
   onUnmounted(() => {
     stop()
@@ -1456,6 +1592,8 @@ export function use3DBehavior(guineaPigId: string) {
     onGroomingEnd,
     onPlayingStart,
     onPlayingEnd,
-    onHeadbutt
+    onHeadbutt,
+    onChewingStart,
+    onChewingEnd
   }
 }

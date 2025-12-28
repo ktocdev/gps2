@@ -188,6 +188,11 @@ const PLAY_SHAKE_AMOUNT = 0.4 // How much the head shakes side to side (pronounc
 const PLAY_NOD_SPEED = 6 // Speed of headbutt nod
 const PLAY_NOD_AMOUNT = 0.3 // How far head nods forward for headbutt
 
+// Chewing animation constants
+const CHEW_SPEED = 8 // Speed of gnawing motion
+const CHEW_SHAKE_AMOUNT = 0.15 // Subtle side-to-side head shake while chewing
+const CHEW_NOD_AMOUNT = 0.08 // Small up-down gnawing motion
+
 /**
  * Update guinea pig animations (call every frame)
  * @param model - The guinea pig THREE.Group
@@ -198,6 +203,7 @@ const PLAY_NOD_AMOUNT = 0.3 // How far head nods forward for headbutt
  * @param isGrooming - Whether the guinea pig is grooming (front leg pawing motion)
  * @param isPlaying - Whether the guinea pig is playing with a toy (head shake)
  * @param isHeadbutting - Whether the guinea pig is headbutting a toy (nod forward)
+ * @param isChewing - Whether the guinea pig is chewing on an item (gnawing motion)
  */
 export function updateGuineaPigAnimation(
   model: THREE.Group,
@@ -207,7 +213,8 @@ export function updateGuineaPigAnimation(
   isSleeping: boolean = false,
   isGrooming: boolean = false,
   isPlaying: boolean = false,
-  isHeadbutting: boolean = false
+  isHeadbutting: boolean = false,
+  isChewing: boolean = false
 ): void {
   const { body, head, leftEye, rightEye, feet, animation } = model.userData
   if (!animation) return
@@ -341,6 +348,50 @@ export function updateGuineaPigAnimation(
     // Eyes wide open (excited)
     leftEye.scale.y = 1.1
     rightEye.scale.y = 1.1
+
+    return // Skip normal animations
+  }
+
+  // === CHEWING STATE ===
+  if (isChewing) {
+    const { flFoot, frFoot, blFoot, brFoot } = feet
+    const rest = animation.footRestPositions
+
+    // Advance chew phase
+    animation.chewPhase = (animation.chewPhase || 0) + deltaTime * CHEW_SPEED
+
+    // Continue breathing animation
+    animation.breathPhase += deltaTime * BREATH_SPEED
+    const breathScale = 1 + Math.sin(animation.breathPhase) * BREATH_SCALE_AMOUNT
+    if (body) {
+      body.scale.set(1, breathScale, 1)
+    }
+
+    if (head) {
+      // Gnawing motion - subtle head shake plus small up-down nodding
+      const gnawMotion = Math.sin(animation.chewPhase)
+      const gnawMotion2 = Math.sin(animation.chewPhase * 1.5) // Faster secondary motion
+
+      // Side-to-side shake (like shaking a stick in mouth)
+      head.rotation.y = gnawMotion * CHEW_SHAKE_AMOUNT
+      // Small up-down gnawing motion
+      head.rotation.x = Math.abs(gnawMotion2) * CHEW_NOD_AMOUNT
+    }
+
+    // Front legs slightly lifted (gripping chew item)
+    flFoot.position.y = rest.fl.y + 0.03
+    frFoot.position.y = rest.fr.y + 0.03
+
+    // Return back legs to rest
+    const returnSpeed = 5 * deltaTime
+    blFoot.position.y += (rest.bl.y - blFoot.position.y) * returnSpeed
+    blFoot.position.z += (rest.bl.z - blFoot.position.z) * returnSpeed
+    brFoot.position.y += (rest.br.y - brFoot.position.y) * returnSpeed
+    brFoot.position.z += (rest.br.z - brFoot.position.z) * returnSpeed
+
+    // Eyes focused (concentrating on chewing)
+    leftEye.scale.y = 0.9
+    rightEye.scale.y = 0.9
 
     return // Skip normal animations
   }

@@ -448,6 +448,7 @@ const currentHayFreshness = computed(() => {
 // Unified 3D behavior composables registry (for autonomous behavior)
 const behaviors = new Map<string, ReturnType<typeof use3DBehavior>>()
 const playingState = new Map<string, { isPlaying: boolean; isHeadbutting: boolean; toyItemId: string | null }>()
+const chewingState = new Map<string, { isChewing: boolean; chewItemId: string | null }>()
 
 // Water bottle menu state
 const showWaterBottleMenu = ref(false)
@@ -587,6 +588,23 @@ function initializeGuineaPigBehaviors() {
                 playingState.set(gp.id, { ...state, isHeadbutting: false })
               }
             }, 400)
+          })
+
+          // Chew event handling
+          behavior.onChewingStart((_chewItemPosition, chewItemId) => {
+            // Lock chew item physics while being held
+            if (physics3D) {
+              physics3D.setPhysicsState(chewItemId, 'locked')
+            }
+            chewingState.set(gp.id, { isChewing: true, chewItemId })
+          })
+          behavior.onChewingEnd(() => {
+            // Unlock chew item physics
+            const state = chewingState.get(gp.id)
+            if (state?.chewItemId && physics3D) {
+              physics3D.setPhysicsState(state.chewItemId, 'free')
+            }
+            chewingState.delete(gp.id)
           })
 
           behavior.start()
@@ -848,8 +866,9 @@ function animate(currentTime: number = 0) {
       const isPlaying = behavior?.currentActivity.value === 'playing'
       const gpPlayState = playingState.get(guineaPigId)
       const isHeadbutting = gpPlayState?.isHeadbutting ?? false
+      const isChewing = behavior?.currentActivity.value === 'chewing'
 
-      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming, isPlaying, isHeadbutting)
+      updateGuineaPigAnimation(model, isMoving, deltaTime, gameController.isPaused, isSleeping, isGrooming, isPlaying, isHeadbutting, isChewing)
 
       // Pin toy to guinea pig's nose while playing (before headbutt)
       if (gpPlayState?.isPlaying && gpPlayState.toyItemId && !gpPlayState.isHeadbutting && state && itemModels) {
@@ -864,6 +883,30 @@ function animate(currentTime: number = 0) {
             heightOffset,
             state.worldPosition.z + Math.cos(rotation) * noseOffset
           )
+        }
+      }
+
+      // Pin chew item to guinea pig's mouth while chewing (with shake animation)
+      const gpChewState = chewingState.get(guineaPigId)
+      if (gpChewState?.isChewing && gpChewState.chewItemId && state && itemModels) {
+        const chewMesh = itemModels.get(gpChewState.chewItemId)
+        if (chewMesh) {
+          // Position chew item at guinea pig's mouth
+          const mouthOffset = 1.6
+          const heightOffset = 0.9
+          const rotation = state.rotation ?? 0
+
+          // Add shake animation synced with head movement
+          const chewPhase = model.userData.animation?.chewPhase || 0
+          const shakeAmount = Math.sin(chewPhase) * 0.15
+          const bobAmount = Math.abs(Math.sin(chewPhase * 1.5)) * 0.05
+
+          const newX = state.worldPosition.x + Math.sin(rotation) * mouthOffset
+          const newZ = state.worldPosition.z + Math.cos(rotation) * mouthOffset
+
+          chewMesh.position.set(newX, heightOffset + bobAmount, newZ)
+          // Rotate stick with shake
+          chewMesh.rotation.y = rotation + Math.PI / 2 + shakeAmount
         }
       }
     })
