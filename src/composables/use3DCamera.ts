@@ -36,8 +36,23 @@ export function use3DCamera(
       y: e.offsetY - controls.value.previousMousePosition.y,
     }
 
-    // Rotate world on Y-axis
-    worldGroup.rotation.y += deltaMove.x * CAMERA_CONFIG.MOUSE_ROTATION_SPEED
+    if (e.shiftKey) {
+      // Shift+drag = pan camera (move X/Z position)
+      camera.position.x -= deltaMove.x * CAMERA_CONFIG.MOUSE_PAN_SPEED
+      camera.position.z -= deltaMove.y * CAMERA_CONFIG.MOUSE_PAN_SPEED
+      // Clamp to boundaries
+      camera.position.x = Math.max(
+        CAMERA_CONFIG.BOUND_X_MIN,
+        Math.min(CAMERA_CONFIG.BOUND_X_MAX, camera.position.x)
+      )
+      camera.position.z = Math.max(
+        CAMERA_CONFIG.BOUND_Z_MIN,
+        Math.min(CAMERA_CONFIG.BOUND_Z_MAX, camera.position.z)
+      )
+    } else {
+      // Regular drag = rotate world on Y-axis
+      worldGroup.rotation.y += deltaMove.x * CAMERA_CONFIG.MOUSE_ROTATION_SPEED
+    }
 
     controls.value.previousMousePosition = { x: e.offsetX, y: e.offsetY }
   }
@@ -72,7 +87,7 @@ export function use3DCamera(
   function handleKeyDown(e: KeyboardEvent) {
     // Prevent page scroll when hovering over canvas
     if (controls.value.isHovering) {
-      const scrollKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'z', 'x', 'Z', 'X', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D']
+      const scrollKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'z', 'x', 'Z', 'X', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D', 'q', 'e', 'r', 'Q', 'E', 'R']
       if (scrollKeys.includes(e.key) || scrollKeys.includes(e.code)) {
         e.preventDefault()
       }
@@ -135,12 +150,31 @@ export function use3DCamera(
     if (controls.value.keysPressed['z']) camera.position.y += CAMERA_CONFIG.VERTICAL_SPEED
     if (controls.value.keysPressed['x']) camera.position.y -= CAMERA_CONFIG.VERTICAL_SPEED
 
-    // Alternate rotation keys
+    // Q/E for rotation (primary keys)
+    if (controls.value.keysPressed['q']) {
+      worldGroup.rotation.y -= CAMERA_CONFIG.KEYBOARD_ROTATION_SPEED
+    }
+    if (controls.value.keysPressed['e']) {
+      worldGroup.rotation.y += CAMERA_CONFIG.KEYBOARD_ROTATION_SPEED
+    }
+
+    // Alternate rotation keys (comma/period)
     if (controls.value.keysPressed[','] || controls.value.keysPressed['<']) {
       worldGroup.rotation.y -= CAMERA_CONFIG.KEYBOARD_ROTATION_SPEED
     }
     if (controls.value.keysPressed['.'] || controls.value.keysPressed['>']) {
       worldGroup.rotation.y += CAMERA_CONFIG.KEYBOARD_ROTATION_SPEED
+    }
+
+    // R to reset camera to initial position
+    if (controls.value.keysPressed['r']) {
+      camera.position.set(
+        CAMERA_CONFIG.INITIAL_POSITION.x,
+        CAMERA_CONFIG.INITIAL_POSITION.y,
+        CAMERA_CONFIG.INITIAL_POSITION.z
+      )
+      worldGroup.rotation.y = 0
+      controls.value.keysPressed['r'] = false // Prevent continuous reset
     }
 
     // Clamp camera position to world boundaries

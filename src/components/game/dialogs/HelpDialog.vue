@@ -11,10 +11,12 @@
           <div class="help-dialog__shortcuts">
             <div class="help-dialog__shortcut"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> <span>Pan camera</span></div>
             <div class="help-dialog__shortcut"><kbd>Arrows</kbd> <span>Pan camera (when not controlling)</span></div>
+            <div class="help-dialog__shortcut"><kbd>Q</kbd><kbd>E</kbd> <span>Rotate view</span></div>
             <div class="help-dialog__shortcut"><kbd>Drag</kbd> <span>Rotate view</span></div>
-            <div class="help-dialog__shortcut"><kbd>&lt;</kbd><kbd>&gt;</kbd> <span>Rotate view</span></div>
+            <div class="help-dialog__shortcut"><kbd>Shift</kbd>+<kbd>Drag</kbd> <span>Pan camera</span></div>
             <div class="help-dialog__shortcut"><kbd>Scroll</kbd> <span>Zoom in/out</span></div>
             <div class="help-dialog__shortcut"><kbd>Z</kbd><kbd>X</kbd> <span>Zoom in/out</span></div>
+            <div class="help-dialog__shortcut"><kbd>R</kbd> <span>Reset camera</span></div>
           </div>
         </section>
 
@@ -39,10 +41,12 @@
         </section>
 
         <section class="help-dialog__section">
-          <h4 class="help-dialog__section-title">View</h4>
+          <h4 class="help-dialog__section-title">Game Controls</h4>
           <div class="help-dialog__shortcuts">
+            <div class="help-dialog__shortcut"><kbd>Space</kbd> <span>Pause / Resume (with dialog)</span></div>
+            <div class="help-dialog__shortcut"><kbd>Shift</kbd>+<kbd>Space</kbd> <span>Pause / Resume (silent)</span></div>
             <div class="help-dialog__shortcut"><kbd>Fullscreen</kbd> button <span>Immersive view</span></div>
-            <div class="help-dialog__shortcut"><kbd>Esc</kbd> <span>Exit fullscreen</span></div>
+            <div class="help-dialog__shortcut"><kbd>Esc</kbd> <span>Exit mode / fullscreen</span></div>
           </div>
         </section>
       </div>

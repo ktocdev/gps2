@@ -6,7 +6,7 @@
       <div class="habitat-3d-debug__header-actions">
         <button
           class="utility-nav__button utility-nav__button--primary"
-          @click="togglePause"
+          @click="togglePause()"
         >
           {{ gameController.isPaused ? '▶️ Resume Game' : '⏸️ Pause Game' }}
         </button>
@@ -25,7 +25,7 @@
       <div v-if="hasActiveSession && !is2DMode" class="game-view__header-actions">
         <button
           class="utility-nav__button utility-nav__button--primary"
-          @click="togglePause"
+          @click="togglePause()"
         >
           {{ gameController.isPaused ? '▶️ Resume' : '⏸️ Pause' }}
         </button>
@@ -1374,6 +1374,14 @@ function updateSelectionRingColor(color: number) {
 const KEYBOARD_MOVE_DISTANCE = 3.0
 
 function handleKeyDown(event: KeyboardEvent) {
+  // Space to toggle pause/play
+  // Shift+Space = silent pause (no dialog), Space = normal pause (with dialog)
+  if (event.code === 'Space') {
+    event.preventDefault()
+    togglePause(event.shiftKey)
+    return
+  }
+
   // Escape priority order:
   // 1. Close inventory if open (but keep placement/container mode active)
   // 2. Cancel placement mode if active
@@ -1769,11 +1777,11 @@ function formatTime(timestamp: number): string {
 /**
  * Toggle game pause state
  */
-function togglePause() {
+function togglePause(silent = false) {
   if (gameController.isPaused) {
     gameController.resumeGame()
   } else {
-    gameController.pauseGame('manual')
+    gameController.pauseGame(silent ? 'silent' : 'manual')
   }
 }
 

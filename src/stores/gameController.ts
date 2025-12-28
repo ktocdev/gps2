@@ -16,7 +16,7 @@ import { useNeedsController } from './needsController'
 // TypeScript interfaces
 interface GameState {
   currentState: 'intro' | 'playing' | 'paused' | 'stopped'
-  pauseReason?: 'manual' | 'orientation' | 'navigation' | 'visibility' | null
+  pauseReason?: 'manual' | 'orientation' | 'navigation' | 'visibility' | 'silent' | null
   hasGuineaPig: boolean
   isFirstTimeUser: boolean
   lastSaveTimestamp: number
@@ -166,7 +166,7 @@ export const useGameController = defineStore('gameController', () => {
     }
   }
 
-  const pauseGame = (reason: 'manual' | 'orientation' | 'navigation' | 'visibility' = 'manual') => {
+  const pauseGame = (reason: 'manual' | 'orientation' | 'navigation' | 'visibility' | 'silent' = 'manual') => {
     if (gameState.value.currentState === 'playing') {
       setState('paused', reason)
 

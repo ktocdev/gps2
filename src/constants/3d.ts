@@ -33,6 +33,7 @@ export const CAMERA_CONFIG = {
   BOUND_Z_MIN: -30,
   BOUND_Z_MAX: 40, // Extra room in +Z since camera looks inward
   MOUSE_ROTATION_SPEED: 0.01,
+  MOUSE_PAN_SPEED: 0.05, // Shift+drag panning speed
   WHEEL_ZOOM_SPEED: 0.01,
   PAN_SPEED: 0.15,
   VERTICAL_SPEED: 0.1,
