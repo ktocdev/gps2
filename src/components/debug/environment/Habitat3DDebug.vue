@@ -20,15 +20,22 @@
     </div>
 
     <!-- Normal header (hidden in fullscreen mode) -->
-    <div v-if="!isFullscreen" class="habitat-3d-debug__normal-header">
+    <div v-if="!isFullscreen" class="game-view__header">
       <h2>3D Habitat View</h2>
-      <button
-        v-if="hasActiveSession && !is2DMode"
-        class="utility-nav__button utility-nav__button--primary"
-        @click="toggleFullscreen"
-      >
-        ⛶ Enter Fullscreen
-      </button>
+      <div v-if="hasActiveSession && !is2DMode" class="game-view__header-actions">
+        <button
+          class="utility-nav__button utility-nav__button--primary"
+          @click="togglePause"
+        >
+          {{ gameController.isPaused ? '▶️ Resume' : '⏸️ Pause' }}
+        </button>
+        <button
+          class="utility-nav__button utility-nav__button--primary"
+          @click="toggleFullscreen"
+        >
+          ⛶ Enter Fullscreen
+        </button>
+      </div>
     </div>
 
     <!-- No Active Session Message -->
@@ -600,6 +607,9 @@ let cloudObjects: THREE.Group[] = []
 // Item models registry
 let itemModels: Map<string, THREE.Group> | null = null
 
+// Physics composable
+let physics3D: ReturnType<typeof import('../../../composables/3d/use3DPhysics').use3DPhysics> | null = null
+
 onMounted(() => {
   if (!canvasRef.value) return
 
@@ -623,9 +633,10 @@ onMounted(() => {
   // Initialize guinea pigs and start hunger behaviors when they become active
   initializeGuineaPigBehaviors()
 
-  // Setup habitat items
+  // Setup habitat items (includes physics for ball/stick)
   const itemsResult = use3DItems(worldGroup)
   itemModels = itemsResult.itemModels
+  physics3D = itemsResult.physics3D
   cleanupItems = itemsResult.cleanup
 
   // Setup poop pellets
@@ -794,6 +805,11 @@ function animate(currentTime: number = 0) {
   // Update cloud positions (drift slowly) - only when not paused
   if (!gameController.isPaused) {
     updateClouds(deltaTime)
+  }
+
+  // Update physics for items (ball, stick) - only when not paused
+  if (!gameController.isPaused && physics3D) {
+    physics3D.updatePhysics(deltaTime)
   }
 
   // Update water bottle water level and bubbles
@@ -1003,6 +1019,29 @@ function handleCanvasClick(event: MouseEvent) {
 
       if (clickedWaterBottle) {
         return
+      }
+
+      // Priority 2.5: Check if physics item (ball/stick) was clicked
+      if (physics3D) {
+        let clickedPhysicsItem = false
+        itemModels.forEach((model, itemId) => {
+          if (clickedPhysicsItem) return // Already handled
+          let current: THREE.Object3D | null = clickedObject
+          while (current) {
+            if (current === model && physics3D!.hasPhysics(itemId)) {
+              // Push the physics item in the ray direction
+              physics3D!.handleClick(itemId, raycaster.ray.direction)
+              clickedPhysicsItem = true
+              console.log('Pushed physics item:', itemId)
+              break
+            }
+            current = current.parent
+          }
+        })
+
+        if (clickedPhysicsItem) {
+          return
+        }
       }
     }
 
@@ -1996,16 +2035,21 @@ function updateClouds(deltaTime: number) {
   max-inline-size: 400px;
 }
 
-/* Normal header row (title + enter fullscreen button) */
-.habitat-3d-debug__normal-header {
+/* Normal header row (title + actions) */
+.game-view__header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-block-end: var(--spacing-md);
 }
 
-.habitat-3d-debug__normal-header h2 {
+.game-view__header h2 {
   margin: 0;
+}
+
+.game-view__header-actions {
+  display: flex;
+  gap: var(--spacing-sm);
 }
 
 /* Fullscreen mode header */

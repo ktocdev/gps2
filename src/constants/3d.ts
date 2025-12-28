@@ -24,7 +24,7 @@ export const CAMERA_CONFIG = {
   FOV: 45,
   NEAR: 0.1,
   FAR: 1000,
-  INITIAL_POSITION: { x: 10, y: 15, z: 30 } as const,
+  INITIAL_POSITION: { x: 0, y: 32, z: 22 } as const, // Centered view of habitat
   HEIGHT_MIN: 0.5,
   HEIGHT_MAX: 50, // Increased from 20 to allow viewing entire habitat
   // Camera X/Z boundaries - margin beyond habitat for viewing angles
