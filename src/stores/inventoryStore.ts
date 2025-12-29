@@ -12,6 +12,7 @@ import { defineStore } from 'pinia'
 import type { InventoryItem, InventoryState, SellBackResult, ItemInstance } from '../types/supplies'
 import { useSuppliesStore } from './suppliesStore'
 import { usePlayerProgression } from './playerProgression'
+import { hasServingSystem, getServingCount } from '../utils/servingSystem'
 
 function generateInstanceId(): string {
   return `instance_${crypto.randomUUID()}`
@@ -505,5 +506,33 @@ export const useInventoryStore = defineStore('inventory', {
     }
   },
 
-  persist: true
+  persist: {
+    afterHydrate: (ctx) => {
+      const store = ctx.store
+      const suppliesStore = useSuppliesStore()
+
+      // Migrate instances missing servings data
+      // This fixes corrupted inventory from removeFoodFromBowl using addItem instead of addConsumableWithServings
+      let migratedCount = 0
+      store.items.forEach((item: InventoryItem) => {
+        const supplyItem = suppliesStore.getItemById(item.itemId)
+        if (hasServingSystem(supplyItem)) {
+          const defaultServings = getServingCount(supplyItem)
+          item.instances.forEach((inst: ItemInstance) => {
+            if (inst.servingsRemaining === undefined) {
+              inst.servingsRemaining = defaultServings
+              inst.maxServings = defaultServings
+              migratedCount++
+            }
+          })
+        }
+      })
+
+      if (migratedCount > 0) {
+        console.log(`[Inventory] Migrated ${migratedCount} instances with missing servings data`)
+      }
+
+      console.log('[Inventory] After hydrate - items:', store.items.length)
+    }
+  }
 })
