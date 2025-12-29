@@ -183,4 +183,21 @@ onUnmounted(() => {
   max-inline-size: none;
   background-color: #111;
 }
+
+/* Landscape mobile optimizations */
+@media (max-height: 500px) and (orientation: landscape) {
+  .habitat-3d-debug__fullscreen-header {
+    padding-block: var(--spacing-xs);
+    padding-inline: var(--spacing-sm);
+  }
+
+  .habitat-3d-debug__title {
+    font-size: var(--font-size-md);
+  }
+
+  .habitat-3d-debug__header-actions .utility-nav__button {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    font-size: var(--font-size-xs);
+  }
+}
 </style>
