@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import BaseDialog from '../../basic/dialogs/BaseDialog.vue'
 import Button from '../../basic/Button.vue'
 import { useInventoryStore } from '../../../stores/inventoryStore'
@@ -96,6 +96,11 @@ const suppliesStore = useSuppliesStore()
 
 const selectedCategory = ref<string>('vegetables')
 const selectedFoodId = ref<string | null>(null)
+
+// Reset food selection when category changes
+watch(selectedCategory, () => {
+  selectedFoodId.value = null
+})
 
 const foodCategories = [
   { id: 'vegetables', label: 'Vegetables', emoji: '🥕' },
@@ -171,7 +176,9 @@ function confirmFeed() {
 }
 
 .food-selection-dialog__subtitle {
-  margin: var(--space-2) 0 0 0;
+  margin-block-start: var(--space-2);
+  margin-block-end: 0;
+  margin-inline: 0;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
@@ -287,7 +294,8 @@ function confirmFeed() {
 }
 
 .food-items__empty p {
-  margin: 0;
+  margin-block: 0;
+  margin-inline: 0;
 }
 
 .food-items__empty-hint {

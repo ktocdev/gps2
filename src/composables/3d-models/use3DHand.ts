@@ -271,7 +271,7 @@ export function updateHandAnimation(hand: THREE.Group): void {
  */
 export function setHandPose(
   hand: THREE.Group,
-  pose: 'open' | 'closed' | 'pointing' | 'petting' | 'holding' | 'wave'
+  pose: 'open' | 'closed' | 'pointing' | 'petting' | 'holding' | 'wave' | 'gripping'
 ): void {
   const userData = hand.userData as Hand3DUserData
   if (!userData?.animation) return
@@ -334,6 +334,16 @@ export function setHandPose(
       anim.ringCurl = 0
       anim.pinkyCurl = 0
       anim.fingerSpread = 0.7
+      break
+
+    case 'gripping':
+      // Pinched fingers pose (like 🤌 emoji)
+      anim.thumbCurl = 0.85
+      anim.indexCurl = 0.9
+      anim.middleCurl = 0.9
+      anim.ringCurl = 0.85
+      anim.pinkyCurl = 0.8
+      anim.fingerSpread = -0.2
       break
   }
 

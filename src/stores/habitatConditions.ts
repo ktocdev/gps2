@@ -1339,6 +1339,18 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   persist: {
     key: 'gps2-habitat-conditions',
     storage: localStorage,
+    afterHydrate: (ctx) => {
+      // Sync deserialized Maps back to composable singleton refs
+      // This fixes the bug where composable refs point to empty Maps after page refresh
+      const containers = useHabitatContainers()
+      if (ctx.store.bowlContents instanceof Map) {
+        containers.bowlContents.value = ctx.store.bowlContents
+      }
+      if (ctx.store.hayRackContents instanceof Map) {
+        containers.hayRackContents.value = ctx.store.hayRackContents
+      }
+      // Note: chewItems is not currently exposed from the store, but sync if it becomes available
+    },
     serializer: {
       serialize: (state) => {
         // Convert Maps to arrays for serialization

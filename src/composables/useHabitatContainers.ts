@@ -16,7 +16,7 @@ import { ref } from 'vue'
 import { useSuppliesStore } from '../stores/suppliesStore'
 import { useInventoryStore } from '../stores/inventoryStore'
 import { CONSUMPTION, CHEW_DEGRADATION } from '../constants/supplies'
-import { hasServingSystem } from '../utils/servingSystem'
+import { hasServingSystem, getServingCount } from '../utils/servingSystem'
 
 // Types
 interface FoodItem {
@@ -139,6 +139,7 @@ export function useHabitatContainers() {
 
   function removeFoodFromBowl(bowlItemId: string, foodIndex: number): boolean {
     const inventoryStore = useInventoryStore()
+    const suppliesStore = useSuppliesStore()
     const currentContents = bowlContents.value.get(bowlItemId)
     if (!currentContents) {
       console.warn(`Bowl ${bowlItemId} has no contents`)
@@ -151,9 +152,15 @@ export function useHabitatContainers() {
     }
 
     const foodItem = currentContents[foodIndex]
+    const supplyItem = suppliesStore.getItemById(foodItem.itemId)
 
-    // Add food back to inventory
-    inventoryStore.addItem(foodItem.itemId, 1)
+    // Add food back to inventory with proper serving tracking
+    if (hasServingSystem(supplyItem)) {
+      const servings = getServingCount(supplyItem)
+      inventoryStore.addConsumableWithServings(foodItem.itemId, servings)
+    } else {
+      inventoryStore.addItem(foodItem.itemId, 1)
+    }
 
     // Remove food from bowl - create new array to trigger reactivity
     const updatedContents = currentContents.filter((_, index) => index !== foodIndex)

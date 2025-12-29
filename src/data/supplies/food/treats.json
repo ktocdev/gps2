@@ -13,7 +13,8 @@
       "playBoost": 15,
       "stimulationBoost": 10,
       "servingSize": "1 treat",
-      "shelfLife": "12 months"
+      "shelfLife": "12 months",
+      "foodBallColor": "#FF8C00"
     },
     "visualEffect": {
       "type": "glow",
@@ -44,7 +45,8 @@
       "stimulationBoost": 20,
       "comfortBoost": 10,
       "servingSize": "1 treat",
-      "shelfLife": "12 months"
+      "shelfLife": "12 months",
+      "foodBallColor": "#E040FB"
     },
     "visualEffect": {
       "type": "color_shift",
@@ -75,7 +77,8 @@
       "comfortBoost": 15,
       "playBoost": 10,
       "servingSize": "1 treat",
-      "shelfLife": "12 months"
+      "shelfLife": "12 months",
+      "foodBallColor": "#20B2AA"
     },
     "visualEffect": {
       "type": "glow",
@@ -104,7 +107,8 @@
       "nutrition": 5,
       "hungerSatisfaction": 15,
       "servingSize": "1-2 pieces",
-      "shelfLife": "6 months"
+      "shelfLife": "6 months",
+      "foodBallColor": "#FFC107"
     },
     "availability": "always",
     "emoji": "🍇",
@@ -123,7 +127,8 @@
       "nutrition": 6,
       "hungerSatisfaction": 12,
       "servingSize": "1 cookie",
-      "shelfLife": "6 months"
+      "shelfLife": "6 months",
+      "foodBallColor": "#FFD54F"
     },
     "availability": "always",
     "emoji": "🍪",
@@ -143,7 +148,8 @@
       "hungerSatisfaction": 18,
       "playBoost": 8,
       "servingSize": "1 ball",
-      "shelfLife": "12 months"
+      "shelfLife": "12 months",
+      "foodBallColor": "#C8A030"
     },
     "availability": "always",
     "emoji": "⚽",
@@ -163,7 +169,8 @@
       "hungerSatisfaction": 14,
       "playBoost": 5,
       "servingSize": "1-2 sticks",
-      "shelfLife": "12 months"
+      "shelfLife": "12 months",
+      "foodBallColor": "#D4A843"
     },
     "availability": "always",
     "emoji": "🌾",
