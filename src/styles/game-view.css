@@ -35,6 +35,8 @@
   max-inline-size: calc(var(--fullscreen-height) * var(--aspect-ratio));
   margin-inline: auto; /* Center horizontally */
   border-radius: 0 0 var(--radius-md) var(--radius-md);
+  /* Prevent touch scrolling on mobile while allowing canvas interactions */
+  touch-action: none;
 }
 
 /* Instruction overlay */
@@ -73,5 +75,30 @@
   to {
     opacity: 1;
     transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Landscape mobile optimizations */
+@media (max-height: 500px) and (orientation: landscape) {
+  /* Remove aspect ratio constraint on landscape mobile - fill the screen */
+  .game-view--fullscreen .game-view__canvas-wrapper {
+    max-inline-size: 100%;
+    block-size: calc(100vh - 56px); /* Smaller header on mobile */
+    border-radius: 0;
+    margin-inline: 0;
+  }
+
+  /* Make FABs smaller on landscape mobile */
+  .game-fab {
+    inline-size: 44px;
+    block-size: 44px;
+    font-size: 1.25rem;
+  }
+
+  /* Adjust instruction overlay */
+  .instruction-overlay {
+    inset-block-start: var(--spacing-xs);
+    padding: var(--spacing-xs) var(--spacing-md);
+    font-size: var(--font-size-xs);
   }
 }
