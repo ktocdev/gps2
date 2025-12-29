@@ -12,7 +12,8 @@
       "hungerSatisfaction": 15,
       "servingSize": "1-2 leaves",
       "shelfLife": "3-5 days",
-      "servings": 6
+      "servings": 6,
+      "foodBallColor": "#81C784"
     },
     "availability": "always",
     "emoji": "🥬",
@@ -31,7 +32,8 @@
       "hungerSatisfaction": 18,
       "servingSize": "1-2 leaves",
       "shelfLife": "5-7 days",
-      "servings": 6
+      "servings": 6,
+      "foodBallColor": "#66BB6A"
     },
     "availability": "always",
     "emoji": "🥬",
@@ -50,7 +52,8 @@
       "hungerSatisfaction": 15,
       "servingSize": "1-2 leaves",
       "shelfLife": "3-5 days",
-      "servings": 6
+      "servings": 6,
+      "foodBallColor": "#8D6E63"
     },
     "availability": "always",
     "emoji": "🥬",
@@ -68,7 +71,8 @@
       "nutrition": 9,
       "hungerSatisfaction": 12,
       "servingSize": "2-3 small leaves",
-      "shelfLife": "3-5 days"
+      "shelfLife": "3-5 days",
+      "foodBallColor": "#388E3C"
     },
     "availability": "always",
     "emoji": "🥬",
@@ -86,7 +90,8 @@
       "nutrition": 10,
       "hungerSatisfaction": 14,
       "servingSize": "1-2 small leaves",
-      "shelfLife": "5-7 days"
+      "shelfLife": "5-7 days",
+      "foodBallColor": "#2E7D32"
     },
     "availability": "always",
     "emoji": "🥬",
@@ -104,7 +109,8 @@
       "nutrition": 8,
       "hungerSatisfaction": 13,
       "servingSize": "2-3 leaves",
-      "shelfLife": "3-5 days"
+      "shelfLife": "3-5 days",
+      "foodBallColor": "#4CAF50"
     },
     "availability": "always",
     "emoji": "🥬",
@@ -122,7 +128,8 @@
       "nutrition": 7,
       "hungerSatisfaction": 16,
       "servingSize": "2-3 leaves",
-      "shelfLife": "3-5 days"
+      "shelfLife": "3-5 days",
+      "foodBallColor": "#A5D6A7"
     },
     "availability": "always",
     "emoji": "🥬",

@@ -12,7 +12,8 @@
       "hungerSatisfaction": 25,
       "servingSize": "1/8 cup daily",
       "shelfLife": "6 months",
-      "servings": 10
+      "servings": 10,
+      "foodBallColor": "#8D6E63"
     },
     "availability": "always",
     "emoji": "🌰",
@@ -33,7 +34,8 @@
       "hungerSatisfaction": 30,
       "servingSize": "1/8 cup daily",
       "shelfLife": "6 months",
-      "servings": 10
+      "servings": 10,
+      "foodBallColor": "#795548"
     },
     "availability": "always",
     "emoji": "🌰",
@@ -54,7 +56,8 @@
       "hungerSatisfaction": 35,
       "servingSize": "1/8 cup daily",
       "shelfLife": "6 months",
-      "servings": 10
+      "servings": 10,
+      "foodBallColor": "#5D4037"
     },
     "availability": "always",
     "emoji": "✨",

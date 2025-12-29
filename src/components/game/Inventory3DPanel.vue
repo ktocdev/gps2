@@ -115,6 +115,29 @@
             <span v-else class="guinea-pig-info__name">{{ selectedGuineaPig.name }}</span>
           </div>
 
+          <!-- Guinea Pig Info Section -->
+          <div class="guinea-pig-info__section">
+            <div class="guinea-pig-info__section-header">
+              🐹 Info
+            </div>
+            <div class="guinea-pig-info__section-content">
+              <div class="guinea-pig-info__stats">
+                <div class="guinea-pig-info__stat">
+                  <span class="guinea-pig-info__stat-label">Breed:</span>
+                  <span class="guinea-pig-info__stat-value">{{ selectedGuineaPig.breed }}</span>
+                </div>
+                <div class="guinea-pig-info__stat">
+                  <span class="guinea-pig-info__stat-label">Gender:</span>
+                  <span class="guinea-pig-info__stat-value">{{ formatGender(selectedGuineaPig.gender) }}</span>
+                </div>
+                <div class="guinea-pig-info__stat">
+                  <span class="guinea-pig-info__stat-label">Fur:</span>
+                  <span class="guinea-pig-info__stat-value">{{ formatFur(selectedGuineaPig.appearance) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- User Friendship Section -->
           <div class="guinea-pig-info__section">
             <div class="guinea-pig-info__section-header">
@@ -164,6 +187,28 @@
             </div>
             <p class="guinea-pig-info__hint">Add a second guinea pig to see bonding stats.</p>
           </div>
+
+          <!-- Activity History Section -->
+          <div class="guinea-pig-info__section">
+            <div class="guinea-pig-info__section-header">
+              📜 Recent Activity
+            </div>
+            <div class="guinea-pig-info__section-content">
+              <div v-if="recentActivity.length === 0" class="guinea-pig-info__hint">
+                No recent activity
+              </div>
+              <div v-else class="guinea-pig-info__activity-list">
+                <div
+                  v-for="activity in recentActivity"
+                  :key="activity.id"
+                  class="guinea-pig-info__activity-item"
+                >
+                  <span class="guinea-pig-info__activity-time">{{ formatActivityTime(activity.timestamp) }}</span>
+                  <span class="guinea-pig-info__activity-message">{{ activity.message }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </template>
@@ -176,8 +221,10 @@ import SidePanel3D, { type TabDefinition } from './SidePanel3D.vue'
 import { useInventoryStore } from '../../stores/inventoryStore'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
+import { useLoggingStore } from '../../stores/loggingStore'
 import FriendshipProgress from './ui/FriendshipProgress.vue'
 import Button from '../basic/Button.vue'
+import type { GuineaPigAppearance } from '../../stores/guineaPigStore'
 
 interface Props {
   isOpen: boolean
@@ -194,6 +241,7 @@ const emit = defineEmits<{
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 const guineaPigStore = useGuineaPigStore()
+const loggingStore = useLoggingStore()
 
 const selectedItemId = ref<string | null>(null)
 
@@ -204,7 +252,12 @@ const activeGuineaPigs = computed(() => guineaPigStore.activeGuineaPigs)
 
 const selectedGuineaPig = computed(() => {
   if (activeGuineaPigs.value.length === 0) return null
-  return activeGuineaPigs.value[selectedGuineaPigIndex.value]
+  // Clamp index to valid range in case guinea pigs were removed
+  const safeIndex = Math.min(selectedGuineaPigIndex.value, activeGuineaPigs.value.length - 1)
+  if (safeIndex !== selectedGuineaPigIndex.value) {
+    selectedGuineaPigIndex.value = safeIndex
+  }
+  return activeGuineaPigs.value[safeIndex]
 })
 
 // Get the other guinea pig for bonding display
@@ -217,6 +270,13 @@ const otherGuineaPig = computed(() => {
 const bondWithOther = computed(() => {
   if (!selectedGuineaPig.value || !otherGuineaPig.value) return null
   return guineaPigStore.getBond(selectedGuineaPig.value.id, otherGuineaPig.value.id)
+})
+
+// Get recent activity messages (last 5)
+const recentActivity = computed(() => {
+  return [...loggingStore.activityMessages]
+    .reverse()
+    .slice(0, 5)
 })
 
 /**
@@ -266,6 +326,36 @@ function formatTimestamp(timestamp: number | null): string {
  */
 function formatBondTier(tier: string): string {
   return tier.charAt(0).toUpperCase() + tier.slice(1)
+}
+
+/**
+ * Format gender for display
+ */
+function formatGender(gender: 'male' | 'female'): string {
+  return gender === 'male' ? '♂ Male' : '♀ Female'
+}
+
+/**
+ * Format fur appearance for display
+ */
+function formatFur(appearance: GuineaPigAppearance): string {
+  const color = appearance.furColor.charAt(0).toUpperCase() + appearance.furColor.slice(1)
+  const pattern = appearance.furPattern.charAt(0).toUpperCase() + appearance.furPattern.slice(1)
+  return `${color} ${pattern}`
+}
+
+/**
+ * Format activity timestamp for compact display
+ */
+function formatActivityTime(timestamp: number): string {
+  const now = Date.now()
+  const diffMs = now - timestamp
+  const diffSecs = Math.floor(diffMs / 1000)
+  const diffMins = Math.floor(diffSecs / 60)
+
+  if (diffSecs < 60) return `${diffSecs}s`
+  if (diffMins < 60) return `${diffMins}m`
+  return `${Math.floor(diffMins / 60)}h`
 }
 
 // Tab definitions
@@ -653,5 +743,35 @@ function handleItemClick(item: { itemId: string }) {
 .guinea-pig-info__bond-tier--bonded {
   background-color: var(--color-accent-pink-100);
   color: var(--color-accent-pink-700);
+}
+
+/* Activity list */
+.guinea-pig-info__activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  max-block-size: 150px;
+  overflow-y: auto;
+}
+
+.guinea-pig-info__activity-item {
+  display: flex;
+  gap: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  padding: var(--spacing-xs);
+  background-color: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+}
+
+.guinea-pig-info__activity-time {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  min-inline-size: 2.5rem;
+}
+
+.guinea-pig-info__activity-message {
+  color: var(--color-text-primary);
+  line-height: 1.3;
 }
 </style>

@@ -179,6 +179,13 @@
               :stats="actionResultStats"
             />
 
+            <!-- Food Selection Dialog for Hand Feed -->
+            <FoodSelectionDialog
+              v-model="showFoodSelectionDialog"
+              guinea-pig-name="your guinea pig"
+              @select-food="handleFoodSelected"
+            />
+
             <!-- Right FABs - Actions -->
           <div class="game-fab-container">
             <!-- Interact FAB with popover menu -->
@@ -280,6 +287,7 @@ import CleanCageDialog from '../../game/dialogs/CleanCageDialog.vue'
 import HayManagementDialog from '../../game/dialogs/HayManagementDialog.vue'
 import ActionResultDialog, { type ActionStat } from '../../game/dialogs/ActionResultDialog.vue'
 import HelpDialog from '../../game/dialogs/HelpDialog.vue'
+import FoodSelectionDialog from '../../game/dialogs/FoodSelectionDialog.vue'
 import NeedsPanel from './NeedsPanel.vue'
 import Inventory3DPanel from '../../game/Inventory3DPanel.vue'
 import SidePanel3D from '../../game/SidePanel3D.vue'
@@ -299,6 +307,7 @@ import { CONSUMPTION } from '../../../constants/supplies'
 import { disposeObject3D } from '../../../utils/three-cleanup'
 import { worldToGrid } from '../../../composables/3d-models/shared/utils'
 import { createHandModel, setHandPose, updateHandAnimation, disposeHand, type Hand3DUserData } from '../../../composables/3d-models/use3DHand'
+import { createHeldFoodBall } from '../../../composables/3d-models/food/held-food'
 import * as THREE from 'three'
 
 const canvasRef = ref<HTMLCanvasElement | null>(null)
@@ -326,6 +335,10 @@ const showInteractMenu = ref(false)
 const interactMenuPosition = ref({ x: 0, y: 0 })
 const pendingInteraction = ref<string | null>(null)
 
+// Hand feed state
+const showFoodSelectionDialog = ref(false)
+const selectedFoodForFeeding = ref<string | null>(null)
+
 // Interact actions for FAB subnav
 const interactActions: FabSubnavAction[] = [
   { id: 'pet', icon: '🫳', label: 'Pet' },
@@ -341,6 +354,11 @@ const interactActions: FabSubnavAction[] = [
 const interactionInstruction = computed(() => {
   if (pendingInteraction.value === 'pet') {
     return { message: 'Click the guinea pig you want to pet!', theme: 'pink' }
+  }
+  if (pendingInteraction.value === 'hand-feed' && selectedFoodForFeeding.value) {
+    const foodItem = suppliesStore.getItemById(selectedFoodForFeeding.value)
+    const foodName = foodItem?.name || 'food'
+    return { message: `Click the guinea pig you want to feed! (${foodName})`, theme: 'pink' }
   }
   if (placementMode.value) {
     return { message: `Click to place ${placementMode.value.itemName}`, theme: 'green' }
@@ -747,6 +765,13 @@ let handAnimationActive = false
 let handAnimationStartTime = 0
 let handAnimationTargetGpId: string | null = null
 
+// Hand feed animation state
+let handFeedAnimationActive = false
+let handFeedStartTime = 0
+let handFeedTargetGpId: string | null = null
+let handFeedFoodId: string | null = null
+let handFeedFoodMesh: THREE.Group | null = null
+
 // Item models registry
 let itemModels: Map<string, THREE.Group> | null = null
 
@@ -862,6 +887,15 @@ onUnmounted(() => {
     disposeObject3D(cloud)
   })
   cloudObjects = []
+
+  // Dispose hand feed food mesh (if animation was interrupted)
+  if (handFeedFoodMesh) {
+    if (interactionHand) {
+      interactionHand.remove(handFeedFoodMesh)
+    }
+    disposeObject3D(handFeedFoodMesh)
+    handFeedFoodMesh = null
+  }
 
   // Dispose interaction hand
   if (interactionHand) {
@@ -1015,6 +1049,7 @@ function animate(currentTime: number = 0) {
 
   // Update hand animation (always, even when paused for responsiveness)
   updateHandAnimation_frame(deltaTime)
+  updateHandFeedAnimation_frame()
 
   // Update physics for items (ball, stick) - only when not paused
   if (!gameController.isPaused && physics3D) {
@@ -1113,18 +1148,20 @@ function updateHoverRing() {
   if (!hoverRing || !guineaPigModels) return
 
   // Show hover ring when hovering over a guinea pig (any mode)
-  // Also keep it visible during petting animation
-  const shouldShow = hoveredGuineaPigId.value || handAnimationActive
-  const targetId = handAnimationActive ? handAnimationTargetGpId : hoveredGuineaPigId.value
+  // Also keep it visible during petting or hand feed animation
+  const shouldShow = hoveredGuineaPigId.value || handAnimationActive || handFeedAnimationActive
+  const targetId = handAnimationActive ? handAnimationTargetGpId :
+                   handFeedAnimationActive ? handFeedTargetGpId :
+                   hoveredGuineaPigId.value
 
   if (!shouldShow || !targetId) {
     hoverRing.visible = false
     return
   }
 
-  // Update color based on mode: pink in pet mode, green otherwise
+  // Update color based on mode: pink in pet/hand-feed mode, green otherwise
   const material = hoverRing.material as THREE.MeshBasicMaterial
-  const isPetMode = pendingInteraction.value === 'pet' || handAnimationActive
+  const isPetMode = pendingInteraction.value === 'pet' || pendingInteraction.value === 'hand-feed' || handAnimationActive || handFeedAnimationActive
   const targetColor = isPetMode ? HOVER_RING_COLOR_PET_MODE : HOVER_RING_COLOR_DEFAULT
   if (material.color.getHex() !== targetColor) {
     material.color.setHex(targetColor)
@@ -1334,6 +1371,12 @@ function handleCanvasClick(event: MouseEvent) {
           return
         }
 
+        if (action === 'hand-feed' && selectedFoodForFeeding.value) {
+          // Execute hand feed with selected food
+          executeHandFeed(clickedGuineaPigId, selectedFoodForFeeding.value)
+          return
+        }
+
         // Other interactions - log and clear for now
         console.log(`[Habitat3D] Executing ${action} on guinea pig ${clickedGuineaPigId}`)
         const gp = guineaPigStore.allGuineaPigs.find((g: { id: string }) => g.id === clickedGuineaPigId)
@@ -1342,7 +1385,6 @@ function handleCanvasClick(event: MouseEvent) {
         // Log the interaction
         const actionLabels: Record<string, { label: string; emoji: string }> = {
           'hold': { label: 'Held', emoji: '🫴' },
-          'hand-feed': { label: 'Hand fed', emoji: '🥕' },
           'gentle-wipe': { label: 'Wiped', emoji: '🧼' },
           'show-toy': { label: 'Showed toy to', emoji: '🧸' },
           'peek-a-boo': { label: 'Played peek-a-boo with', emoji: '👀' },
@@ -1862,10 +1904,203 @@ function handleInteractFabClick() {
 
 function handleInteractAction(actionId: string) {
   console.log(`[Habitat3D] Interact action selected: ${actionId}`)
-  // Set pending interaction - user now needs to click on a guinea pig
+
+  // Special case: hand-feed needs food selection first
+  if (actionId === 'hand-feed') {
+    showFoodSelectionDialog.value = true
+    return
+  }
+
+  // Other interactions - set pending and wait for guinea pig click
   pendingInteraction.value = actionId
-  // TODO: Add cursor change to indicate selection mode
-  // TODO: Handle special case for 'hand-feed' which needs food selection first
+}
+
+/**
+ * Handle food selection from FoodSelectionDialog
+ */
+function handleFoodSelected(foodId: string) {
+  console.log(`[Habitat3D] Food selected for hand feed: ${foodId}`)
+  selectedFoodForFeeding.value = foodId
+  pendingInteraction.value = 'hand-feed'
+  showFoodSelectionDialog.value = false
+}
+
+/**
+ * Start the hand feed animation
+ */
+function startHandFeedAnimation(guineaPigId: string, foodId: string) {
+  if (!interactionHand || !guineaPigModels || handFeedAnimationActive || handAnimationActive) return
+
+  const gpModel = guineaPigModels.get(guineaPigId)
+  if (!gpModel) return
+
+  // Get guinea pig world position
+  const gpWorldPos = new THREE.Vector3()
+  gpModel.getWorldPosition(gpWorldPos)
+
+  // Create food ball with color from food item metadata (or fallback to category-based color)
+  const foodItem = suppliesStore.getItemById(foodId)
+  const foodBallColor = foodItem?.stats?.foodBallColor
+  handFeedFoodMesh = createHeldFoodBall(foodBallColor || foodItem?.subCategory || 'vegetables')
+  // Position food ball at fingertips (same as model viewer)
+  handFeedFoodMesh.position.set(1.4, 1, 0.3)
+  interactionHand.add(handFeedFoodMesh)
+
+  // Position hand above guinea pig
+  interactionHand.position.set(gpWorldPos.x, 20, gpWorldPos.z)
+  interactionHand.rotation.x = 0
+  interactionHand.rotation.y = 0
+  interactionHand.rotation.z = Math.PI // Finger curves face down (same as model viewer)
+
+  // Set gripping pose
+  setHandPose(interactionHand, 'gripping')
+
+  // Show hand
+  interactionHand.visible = true
+
+  // Set animation state
+  handFeedAnimationActive = true
+  handFeedStartTime = Date.now()
+  handFeedTargetGpId = guineaPigId
+  handFeedFoodId = foodId
+
+  // Clear pending interaction but keep selectedFoodForFeeding for finishHandFeedAnimation
+  pendingInteraction.value = null
+
+  console.log(`[Habitat3D] Started hand feed animation for ${guineaPigId} with ${foodId}`)
+}
+
+/**
+ * Update hand feed animation per frame
+ */
+function updateHandFeedAnimation_frame() {
+  if (!handFeedAnimationActive || !interactionHand || !guineaPigModels) return
+
+  const elapsed = Date.now() - handFeedStartTime
+  const duration = 2500 // 2.5 seconds
+  const progress = Math.min(elapsed / duration, 1)
+
+  if (progress >= 1) {
+    finishHandFeedAnimation()
+    return
+  }
+
+  // Get guinea pig world position (it may be moving)
+  const gpModel = handFeedTargetGpId ? guineaPigModels.get(handFeedTargetGpId) : null
+  if (!gpModel) {
+    finishHandFeedAnimation()
+    return
+  }
+
+  const gpWorldPos = new THREE.Vector3()
+  gpModel.getWorldPosition(gpWorldPos)
+
+  const startY = 20
+  const feedY = gpWorldPos.y + 2.5 // Just above the guinea pig's back
+
+  // Animation phases
+  if (progress < 0.35) {
+    // Descend phase (ease out)
+    const descendProgress = progress / 0.35
+    const eased = 1 - Math.pow(1 - descendProgress, 2)
+    interactionHand.position.y = startY - (startY - feedY) * eased
+  } else if (progress < 0.75) {
+    // Linger phase - gentle bob while GP accepts
+    const lingerProgress = (progress - 0.35) / 0.4
+    const bob = Math.sin(lingerProgress * Math.PI * 2) * 0.1
+    interactionHand.position.y = feedY + bob
+  } else {
+    // Food disappears at 0.75
+    if (handFeedFoodMesh?.visible) {
+      handFeedFoodMesh.visible = false
+    }
+    // Rise phase (ease in)
+    const riseProgress = (progress - 0.75) / 0.25
+    const eased = riseProgress * riseProgress
+    interactionHand.position.y = feedY + (startY - feedY) * eased
+  }
+
+  // Follow guinea pig X/Z position
+  interactionHand.position.x = gpWorldPos.x
+  interactionHand.position.z = gpWorldPos.z
+}
+
+/**
+ * Finish the hand feed animation and apply effects
+ */
+function finishHandFeedAnimation() {
+  if (!interactionHand) return
+
+  // Hide hand
+  interactionHand.visible = false
+  interactionHand.position.set(0, 25, 0)
+
+  // Remove and dispose food mesh
+  if (handFeedFoodMesh) {
+    interactionHand.remove(handFeedFoodMesh)
+    disposeObject3D(handFeedFoodMesh)
+    handFeedFoodMesh = null
+  }
+
+  // Apply effects
+  if (handFeedTargetGpId && handFeedFoodId) {
+    const gp = guineaPigStore.getGuineaPig(handFeedTargetGpId)
+    if (gp) {
+      const foodItem = suppliesStore.getItemById(handFeedFoodId)
+      const gpName = gp.name || 'Guinea pig'
+      const foodName = foodItem?.name || 'food'
+      const foodEmoji = foodItem?.emoji || '🥕'
+
+      // Apply need effects (matching 2D game: hunger +10, social +15)
+      guineaPigStore.satisfyNeed(handFeedTargetGpId, 'hunger', 10)
+      guineaPigStore.satisfyNeed(handFeedTargetGpId, 'social', 15)
+
+      // Add friendship (+3)
+      guineaPigStore.adjustFriendship(handFeedTargetGpId, 3)
+
+      // Update interaction tracking
+      gp.lastInteraction = Date.now()
+      gp.totalInteractions += 1
+
+      // Consume food from inventory
+      const inventoryItem = inventoryStore.consumables.find(c => c.itemId === handFeedFoodId)
+      if (inventoryItem) {
+        const hasServings = inventoryItem.instances[0]?.servingsRemaining !== undefined
+        if (hasServings) {
+          inventoryStore.consumeServing(handFeedFoodId)
+        } else {
+          inventoryStore.removeItem(handFeedFoodId, 1)
+        }
+      }
+
+      // Log activity
+      loggingStore.addPlayerAction(`Hand fed ${foodName} to ${gpName}`, foodEmoji)
+    }
+  }
+
+  // Clear state
+  handFeedAnimationActive = false
+  handFeedTargetGpId = null
+  handFeedFoodId = null
+  selectedFoodForFeeding.value = null
+}
+
+/**
+ * Execute hand feeding a guinea pig - starts the animation
+ */
+function executeHandFeed(guineaPigId: string, foodId: string) {
+  console.log(`[Habitat3D] Executing hand feed: ${foodId} to ${guineaPigId}`)
+
+  const gp = guineaPigStore.getGuineaPig(guineaPigId)
+  if (!gp) {
+    console.warn(`[Habitat3D] Guinea pig ${guineaPigId} not found`)
+    selectedFoodForFeeding.value = null
+    pendingInteraction.value = null
+    return
+  }
+
+  // Start the animation - effects applied in finishHandFeedAnimation
+  startHandFeedAnimation(guineaPigId, foodId)
 }
 
 /**

@@ -10,9 +10,9 @@ export function createWoodenTunnelModel(): THREE.Group {
 
   // Create arch shape (hollow, no floor - matches demo pattern)
   const tunnelShape = new THREE.Shape()
-  const legHeight = 2.1 // Reduced 30% from 3.0
-  const outerRadius = 4.0 // Scaled 2x from 2.0
-  const innerRadius = 3.2 // Scaled 2x from 1.6
+  const legHeight = 1.785 // Reduced 15% from 2.1
+  const outerRadius = 3.4 // Reduced 15% from 4.0
+  const innerRadius = 2.72 // Reduced 15% from 3.2
 
   // Start at outer bottom right
   tunnelShape.moveTo(outerRadius, -legHeight)
@@ -35,10 +35,10 @@ export function createWoodenTunnelModel(): THREE.Group {
 
   // Extrude settings
   const extrudeSettings = {
-    depth: 8.0, // Scaled 2x from 4.0
+    depth: 6.8, // Reduced 15% from 8.0
     bevelEnabled: true,
-    bevelThickness: 0.1, // Scaled 2x from 0.05
-    bevelSize: 0.1,      // Scaled 2x from 0.05
+    bevelThickness: 0.085, // Reduced 15% from 0.1
+    bevelSize: 0.085,      // Reduced 15% from 0.1
     bevelSegments: 2,
     curveSegments: 16,
     steps: 1,
@@ -63,7 +63,7 @@ export function createWoodenTunnelModel(): THREE.Group {
   })
 
   const tunnel = new THREE.Mesh(tunnelGeo, [woodSideMat, woodEndMat])
-  tunnel.position.y = 2.1 // Match legHeight so bottom touches ground
+  tunnel.position.y = 1.785 // Reduced 15% from 2.1, matches legHeight
   tunnel.rotation.y = Math.PI / 2
   tunnel.castShadow = true
   tunnel.receiveShadow = true

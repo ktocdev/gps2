@@ -94,6 +94,7 @@ export interface SuppliesItem {
     servingSize?: string
     shelfLife?: string
     servings?: number // Number of servings per item (for hay, lettuce, carrots)
+    foodBallColor?: string // Hex color for 3D held food representation (e.g. "#FF6B00")
 
     // Habitat item stats
     durability?: number
@@ -173,6 +174,7 @@ export type FoodItem = SuppliesItem & {
     hungerSatisfaction?: number
     servingSize?: string
     shelfLife?: string
+    foodBallColor?: string // Hex color for 3D held food representation (e.g. "#FF6B00")
   }
 }
 
