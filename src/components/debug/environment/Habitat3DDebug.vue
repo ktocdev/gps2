@@ -158,11 +158,12 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-block: var(--spacing-sm);
+  block-size: 52px; /* Fixed height to match canvas calc */
   padding-inline: var(--spacing-md);
+  /* Safe area for mobile notches/status bars */
+  padding-block-start: env(safe-area-inset-top, 0);
   background-color: var(--color-bg-secondary);
   border-block-end: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
 }
 
 .habitat-3d-debug__title {
@@ -178,16 +179,43 @@ onUnmounted(() => {
   max-inline-size: 400px;
 }
 
+/* Body fullscreen class - prevents page scrolling */
+body.habitat-fullscreen {
+  overflow: hidden;
+  block-size: 100vh; /* Fallback */
+  block-size: 100dvh; /* Dynamic viewport height for mobile browsers */
+}
+
 /* Fullscreen mode adjustments */
 .habitat-3d-debug--fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
   max-inline-size: none;
   background-color: #111;
+  /* Prevent scrollbars - content must fit exactly */
+  /* Use dvh for mobile browsers that have dynamic address bar */
+  block-size: 100dvh;
+  overflow: hidden;
+}
+
+/* Remove panel styling in fullscreen mode */
+.habitat-3d-debug--fullscreen .panel {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.habitat-3d-debug--fullscreen .panel__content {
+  padding: 0;
 }
 
 /* Landscape mobile optimizations */
 @media (max-height: 500px) and (orientation: landscape) {
   .habitat-3d-debug__fullscreen-header {
-    padding-block: var(--spacing-xs);
+    block-size: 40px; /* Smaller header on mobile landscape */
     padding-inline: var(--spacing-sm);
   }
 
