@@ -35,6 +35,7 @@ export const CAMERA_CONFIG = {
   MOUSE_ROTATION_SPEED: 0.01,
   MOUSE_PAN_SPEED: 0.05, // Shift+drag panning speed
   WHEEL_ZOOM_SPEED: 0.01,
+  PINCH_ZOOM_SPEED: 0.05, // Touch pinch-to-zoom sensitivity
   PAN_SPEED: 0.15,
   VERTICAL_SPEED: 0.1,
   KEYBOARD_ROTATION_SPEED: 0.03,

@@ -7,6 +7,9 @@ export interface CameraControls {
   previousMousePosition: { x: number; y: number }
   keysPressed: Record<string, boolean>
   isHovering: boolean
+  // Pinch-to-zoom state
+  isPinching: boolean
+  initialPinchDistance: number
 }
 
 export function use3DCamera(
@@ -20,6 +23,8 @@ export function use3DCamera(
     previousMousePosition: { x: 0, y: 0 },
     keysPressed: {},
     isHovering: false,
+    isPinching: false,
+    initialPinchDistance: 0,
   })
 
   // Mouse Rotation
@@ -103,28 +108,73 @@ export function use3DCamera(
   }
 
   // Touch Controls
+
+  // Calculate distance between two touch points
+  function getTouchDistance(touches: TouchList): number {
+    const dx = touches[0].clientX - touches[1].clientX
+    const dy = touches[0].clientY - touches[1].clientY
+    return Math.sqrt(dx * dx + dy * dy)
+  }
+
   function handleTouchStart(e: TouchEvent) {
-    controls.value.isDragging = true
-    controls.value.previousMousePosition = {
-      x: e.touches[0].clientX,
-      y: e.touches[0].clientY,
+    if (e.touches.length === 2) {
+      // Two fingers: start pinch-to-zoom
+      controls.value.isPinching = true
+      controls.value.isDragging = false
+      controls.value.initialPinchDistance = getTouchDistance(e.touches)
+    } else if (e.touches.length === 1) {
+      // Single finger: rotate
+      controls.value.isDragging = true
+      controls.value.isPinching = false
+      controls.value.previousMousePosition = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      }
     }
   }
 
   function handleTouchMove(e: TouchEvent) {
-    if (!controls.value.isDragging) return
+    if (e.touches.length === 2 && controls.value.isPinching) {
+      // Pinch-to-zoom
+      const currentDistance = getTouchDistance(e.touches)
+      const deltaDistance = currentDistance - controls.value.initialPinchDistance
 
-    const currentX = e.touches[0].clientX
-    const currentY = e.touches[0].clientY
+      // Pinch out (spread fingers) = zoom in (lower camera)
+      // Pinch in (pinch fingers) = zoom out (raise camera)
+      camera.position.y -= deltaDistance * CAMERA_CONFIG.PINCH_ZOOM_SPEED
+      camera.position.y = Math.max(
+        CAMERA_CONFIG.HEIGHT_MIN,
+        Math.min(CAMERA_CONFIG.HEIGHT_MAX, camera.position.y)
+      )
 
-    worldGroup.rotation.y +=
-      (currentX - controls.value.previousMousePosition.x) * CAMERA_CONFIG.MOUSE_ROTATION_SPEED
+      controls.value.initialPinchDistance = currentDistance
+    } else if (e.touches.length === 1 && controls.value.isDragging) {
+      // Single finger rotate
+      const currentX = e.touches[0].clientX
+      const currentY = e.touches[0].clientY
 
-    controls.value.previousMousePosition = { x: currentX, y: currentY }
+      worldGroup.rotation.y +=
+        (currentX - controls.value.previousMousePosition.x) * CAMERA_CONFIG.MOUSE_ROTATION_SPEED
+
+      controls.value.previousMousePosition = { x: currentX, y: currentY }
+    }
   }
 
-  function handleTouchEnd() {
-    controls.value.isDragging = false
+  function handleTouchEnd(e: TouchEvent) {
+    if (e.touches.length === 0) {
+      // All fingers lifted
+      controls.value.isDragging = false
+      controls.value.isPinching = false
+      controls.value.initialPinchDistance = 0
+    } else if (e.touches.length === 1) {
+      // One finger remaining - switch from pinch to rotate
+      controls.value.isPinching = false
+      controls.value.isDragging = true
+      controls.value.previousMousePosition = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      }
+    }
   }
 
   // Update camera position based on keyboard input

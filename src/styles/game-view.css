@@ -25,16 +25,13 @@
   cursor: grab !important;
 }
 
-/* Fullscreen mode canvas wrapper */
+/* Fullscreen mode canvas wrapper - fills entire browser */
 .game-view--fullscreen .game-view__canvas-wrapper {
-  /* Constrain aspect ratio to prevent distortion on wide monitors */
-  /* Using 16:10 aspect ratio (similar to habitat grid 14:10) */
-  --fullscreen-height: calc(100vh - 80px);
-  --aspect-ratio: calc(16 / 10);
-  block-size: var(--fullscreen-height);
-  max-inline-size: calc(var(--fullscreen-height) * var(--aspect-ratio));
-  margin-inline: auto; /* Center horizontally */
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  inline-size: 100vw;
+  /* Full height minus header, accounting for mobile safe area (notch/status bar) */
+  block-size: calc(100vh - 52px - env(safe-area-inset-top, 0px)); /* Fallback */
+  block-size: calc(100dvh - 52px - env(safe-area-inset-top, 0px)); /* Dynamic viewport for mobile */
+  border-radius: 0;
   /* Prevent touch scrolling on mobile while allowing canvas interactions */
   touch-action: none;
 }
@@ -80,12 +77,10 @@
 
 /* Landscape mobile optimizations */
 @media (max-height: 500px) and (orientation: landscape) {
-  /* Remove aspect ratio constraint on landscape mobile - fill the screen */
+  /* Adjust header height for smaller screens */
   .game-view--fullscreen .game-view__canvas-wrapper {
-    max-inline-size: 100%;
-    block-size: calc(100vh - 56px); /* Smaller header on mobile */
-    border-radius: 0;
-    margin-inline: 0;
+    block-size: calc(100vh - 40px - env(safe-area-inset-top, 0px)); /* Fallback */
+    block-size: calc(100dvh - 40px - env(safe-area-inset-top, 0px)); /* Dynamic viewport for mobile landscape */
   }
 
   /* Make FABs smaller on landscape mobile */
