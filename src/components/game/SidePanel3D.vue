@@ -82,6 +82,11 @@ defineEmits<{
   pointer-events: none;
 }
 
+/* When panel is expanded, raise z-index so it appears above other panel tabs */
+.side-panel-3d:not(.side-panel-3d--collapsed) {
+  z-index: 25;
+}
+
 /* Side positioning */
 .side-panel-3d--left {
   inset-inline-start: 0;

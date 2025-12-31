@@ -7,9 +7,10 @@ export interface CameraControls {
   previousMousePosition: { x: number; y: number }
   keysPressed: Record<string, boolean>
   isHovering: boolean
-  // Pinch-to-zoom state
-  isPinching: boolean
+  // Two-finger gesture state (pinch-to-zoom + drag-to-pan)
+  isTwoFingerGesture: boolean
   initialPinchDistance: number
+  previousTouchCenter: { x: number; y: number }
 }
 
 export function use3DCamera(
@@ -23,8 +24,9 @@ export function use3DCamera(
     previousMousePosition: { x: 0, y: 0 },
     keysPressed: {},
     isHovering: false,
-    isPinching: false,
+    isTwoFingerGesture: false,
     initialPinchDistance: 0,
+    previousTouchCenter: { x: 0, y: 0 },
   })
 
   // Mouse Rotation
@@ -116,16 +118,25 @@ export function use3DCamera(
     return Math.sqrt(dx * dx + dy * dy)
   }
 
+  // Calculate center point between two touch points
+  function getTouchCenter(touches: TouchList): { x: number; y: number } {
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    }
+  }
+
   function handleTouchStart(e: TouchEvent) {
     if (e.touches.length === 2) {
-      // Two fingers: start pinch-to-zoom
-      controls.value.isPinching = true
+      // Two fingers: pinch-to-zoom + drag-to-pan
+      controls.value.isTwoFingerGesture = true
       controls.value.isDragging = false
       controls.value.initialPinchDistance = getTouchDistance(e.touches)
+      controls.value.previousTouchCenter = getTouchCenter(e.touches)
     } else if (e.touches.length === 1) {
       // Single finger: rotate
       controls.value.isDragging = true
-      controls.value.isPinching = false
+      controls.value.isTwoFingerGesture = false
       controls.value.previousMousePosition = {
         x: e.touches[0].clientX,
         y: e.touches[0].clientY,
@@ -134,11 +145,13 @@ export function use3DCamera(
   }
 
   function handleTouchMove(e: TouchEvent) {
-    if (e.touches.length === 2 && controls.value.isPinching) {
-      // Pinch-to-zoom
+    if (e.touches.length === 2 && controls.value.isTwoFingerGesture) {
+      // Two-finger gesture: pinch-to-zoom + drag-to-pan
       const currentDistance = getTouchDistance(e.touches)
-      const deltaDistance = currentDistance - controls.value.initialPinchDistance
+      const currentCenter = getTouchCenter(e.touches)
 
+      // Pinch-to-zoom
+      const deltaDistance = currentDistance - controls.value.initialPinchDistance
       // Pinch out (spread fingers) = zoom in (lower camera)
       // Pinch in (pinch fingers) = zoom out (raise camera)
       camera.position.y -= deltaDistance * CAMERA_CONFIG.PINCH_ZOOM_SPEED
@@ -147,7 +160,26 @@ export function use3DCamera(
         Math.min(CAMERA_CONFIG.HEIGHT_MAX, camera.position.y)
       )
 
+      // Drag-to-pan
+      const deltaCenter = {
+        x: currentCenter.x - controls.value.previousTouchCenter.x,
+        y: currentCenter.y - controls.value.previousTouchCenter.y,
+      }
+      camera.position.x -= deltaCenter.x * CAMERA_CONFIG.MOUSE_PAN_SPEED
+      camera.position.z -= deltaCenter.y * CAMERA_CONFIG.MOUSE_PAN_SPEED
+      // Clamp to boundaries
+      camera.position.x = Math.max(
+        CAMERA_CONFIG.BOUND_X_MIN,
+        Math.min(CAMERA_CONFIG.BOUND_X_MAX, camera.position.x)
+      )
+      camera.position.z = Math.max(
+        CAMERA_CONFIG.BOUND_Z_MIN,
+        Math.min(CAMERA_CONFIG.BOUND_Z_MAX, camera.position.z)
+      )
+
+      // Update previous values
       controls.value.initialPinchDistance = currentDistance
+      controls.value.previousTouchCenter = currentCenter
     } else if (e.touches.length === 1 && controls.value.isDragging) {
       // Single finger rotate
       const currentX = e.touches[0].clientX
@@ -164,11 +196,11 @@ export function use3DCamera(
     if (e.touches.length === 0) {
       // All fingers lifted
       controls.value.isDragging = false
-      controls.value.isPinching = false
+      controls.value.isTwoFingerGesture = false
       controls.value.initialPinchDistance = 0
     } else if (e.touches.length === 1) {
-      // One finger remaining - switch from pinch to rotate
-      controls.value.isPinching = false
+      // One finger remaining - switch from two-finger gesture to rotate
+      controls.value.isTwoFingerGesture = false
       controls.value.isDragging = true
       controls.value.previousMousePosition = {
         x: e.touches[0].clientX,
