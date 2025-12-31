@@ -16,6 +16,7 @@ import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useGameController } from '../../stores/gameController'
 import { useLoggingStore } from '../../stores/loggingStore'
+import { useHabitatContainers } from '../useHabitatContainers'
 import { use3DMovement } from './use3DMovement'
 import type { Vector3D } from '../../types/movement3d'
 
@@ -97,6 +98,7 @@ export function use3DBehavior(guineaPigId: string) {
   const suppliesStore = useSuppliesStore()
   const gameController = useGameController()
   const loggingStore = useLoggingStore()
+  const habitatContainers = useHabitatContainers()
 
   // Single movement controller for all behaviors
   const movement = use3DMovement(guineaPigId)
@@ -1015,6 +1017,16 @@ export function use3DBehavior(guineaPigId: string) {
   function finishChewing(): void {
     currentActivity.value = 'idle'
     currentGoal.value = null
+
+    // Degrade the chew item durability
+    if (currentChewItemId) {
+      // Initialize chew tracking if not already tracked
+      if (!habitatContainers.getChewData(currentChewItemId)) {
+        habitatContainers.initializeChewItem(currentChewItemId)
+      }
+      // Reduce durability
+      habitatContainers.chewItem(currentChewItemId)
+    }
 
     guineaPigStore.satisfyNeed(guineaPigId, 'chew', RESTORE_AMOUNTS.chew)
     setCooldown('chew', COOLDOWNS.chew)

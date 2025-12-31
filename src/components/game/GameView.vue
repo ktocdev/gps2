@@ -102,6 +102,24 @@
         @select="containerMenu.handleAddItemToContainer"
       />
 
+      <!-- Chew Item Popover (shows durability, discard when unsafe) -->
+      <ChewPopover3D
+        :show="chewPopover.showChewPopover.value"
+        :position="chewPopover.menuPosition.value"
+        :chew-data="chewPopover.currentChewData.value"
+        @close="chewPopover.closeChewPopover"
+        @discard="handleDiscardChew"
+      />
+
+      <!-- General Item Popover (for removing hideaways, toys, enrichment) -->
+      <ItemPopover3D
+        :show="itemPopover.showItemPopover.value"
+        :position="itemPopover.menuPosition.value"
+        :item-data="itemPopover.currentItemData.value"
+        @close="itemPopover.closeItemPopover"
+        @remove="handleRemoveItem"
+      />
+
       <!-- Water Bottle Menu -->
       <WaterBottleMenu
         v-if="waterBottle.showWaterBottleMenu.value"
@@ -251,7 +269,12 @@ import { use3DPlacement } from '../../composables/3d/use3DPlacement'
 import { use3DHabitatCare } from '../../composables/3d/use3DHabitatCare'
 import { use3DWaterBottle } from '../../composables/3d/use3DWaterBottle'
 import { use3DChatBubbles } from '../../composables/3d/use3DChatBubbles'
+import { use3DChewPopover } from '../../composables/3d/use3DChewPopover'
+import { use3DItemPopover } from '../../composables/3d/use3DItemPopover'
+import { useHabitatContainers } from '../../composables/useHabitatContainers'
 import ChatBubble3D from './ChatBubble3D.vue'
+import ChewPopover3D from './ChewPopover3D.vue'
+import ItemPopover3D from './ItemPopover3D.vue'
 import * as THREE from 'three'
 
 // Props
@@ -308,6 +331,15 @@ const waterBottle = use3DWaterBottle()
 
 // Chat bubbles composable
 const chatBubbles = use3DChatBubbles()
+
+// Chew popover composable
+const chewPopover = use3DChewPopover()
+
+// Item popover composable (for general habitat items)
+const itemPopover = use3DItemPopover()
+
+// Habitat containers for chew data
+const habitatContainers = useHabitatContainers()
 
 // Interact actions for FAB subnav
 const interactActions: FabSubnavAction[] = [
@@ -1000,7 +1032,69 @@ function handleCanvasClick(event: MouseEvent) {
 
       if (clickedWaterBottle) return
 
-      // Check for physics item click
+      // Check for chew item click (regular click = popover, shift+click = physics push)
+      let clickedChewId: string | null = null
+      itemModels.forEach((model, itemId) => {
+        if (clickedChewId) return
+        let current: THREE.Object3D | null = clickedObject
+        while (current) {
+          if (current === model) {
+            const item = suppliesStore.getItemById(itemId)
+            if (item?.subCategory === 'chews') {
+              clickedChewId = itemId
+            }
+            break
+          }
+          current = current.parent
+        }
+      })
+
+      if (clickedChewId) {
+        // Shift+click = physics push
+        if (event.shiftKey && physics3D?.hasPhysics(clickedChewId)) {
+          physics3D.handleClick(clickedChewId, raycaster.ray.direction)
+          return
+        }
+
+        // Regular click = show popover
+        // Initialize chew tracking if not already initialized
+        if (!habitatContainers.getChewData(clickedChewId)) {
+          habitatContainers.initializeChewItem(clickedChewId)
+        }
+        chewPopover.openChewPopover(clickedChewId, { x: event.clientX, y: event.clientY })
+        return
+      }
+
+      // Check for general removable item click (hideaways, toys, enrichment)
+      // Regular click = popover, Shift+click = physics push
+      let clickedRemovableId: string | null = null
+      itemModels.forEach((model, itemId) => {
+        if (clickedRemovableId) return
+        let current: THREE.Object3D | null = clickedObject
+        while (current) {
+          if (current === model) {
+            if (itemPopover.canRemoveItem(itemId)) {
+              clickedRemovableId = itemId
+            }
+            break
+          }
+          current = current.parent
+        }
+      })
+
+      if (clickedRemovableId) {
+        // Shift+click = physics push
+        if (event.shiftKey && physics3D?.hasPhysics(clickedRemovableId)) {
+          physics3D.handleClick(clickedRemovableId, raycaster.ray.direction)
+          return
+        }
+
+        // Regular click = show item popover
+        itemPopover.openItemPopover(clickedRemovableId, { x: event.clientX, y: event.clientY })
+        return
+      }
+
+      // Check for physics item click (remaining items like food containers)
       if (physics3D) {
         let clickedPhysicsItem = false
         itemModels.forEach((model, itemId) => {
@@ -1100,11 +1194,62 @@ function handleCanvasClick(event: MouseEvent) {
   if (waterBottle.isMenuOpen()) {
     waterBottle.closeMenu()
   }
+  if (chewPopover.isOpen()) {
+    chewPopover.closeChewPopover()
+  }
 }
 
 // Guinea pig menu handlers
 function handleDeselect() {
   selectedGuineaPigId.value = null
+}
+
+// Chew popover handler (discard only - chews can't be moved to inventory)
+function handleDiscardChew() {
+  const chewId = chewPopover.selectedChewId.value
+  if (!chewId) return
+
+  // Remove 3D model from scene
+  if (itemModels) {
+    const model = itemModels.get(chewId)
+    if (model && worldGroup) {
+      worldGroup.remove(model)
+      disposeObject3D(model)
+      itemModels.delete(chewId)
+    }
+  }
+
+  // Remove physics if applicable
+  if (physics3D?.hasPhysics(chewId)) {
+    physics3D.removePhysicsItem(chewId)
+  }
+
+  // Handle the discard (updates stores and logs)
+  chewPopover.handleDiscardChew()
+}
+
+// Item popover handler (for general habitat items)
+function handleRemoveItem() {
+  const itemId = itemPopover.selectedItemId.value
+  if (!itemId) return
+
+  // Remove 3D model from scene
+  if (itemModels) {
+    const model = itemModels.get(itemId)
+    if (model && worldGroup) {
+      worldGroup.remove(model)
+      disposeObject3D(model)
+      itemModels.delete(itemId)
+    }
+  }
+
+  // Remove physics if applicable
+  if (physics3D?.hasPhysics(itemId)) {
+    physics3D.removePhysicsItem(itemId)
+  }
+
+  // Handle the removal (updates stores and logs)
+  itemPopover.handleRemoveItem()
 }
 
 function handleTakeControl() {
