@@ -7,7 +7,7 @@
         side="left"
         color="yellow"
         title="Activity Log"
-        icon="📝"
+        icon="📓"
         @toggle="toggleActivityFeed"
       >
         <div v-if="activityMessages.length === 0" class="activity-feed__empty">

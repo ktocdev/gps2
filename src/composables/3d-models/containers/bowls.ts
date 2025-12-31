@@ -1,8 +1,31 @@
 import * as THREE from 'three'
 import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { createHayPile } from '../food/hay'
-import { createCucumberSlice } from '../food/vegetables'
+import { createCucumberSlice, createCarrotStick } from '../food/vegetables'
+import { createPelletPile } from '../food/pellets'
+import { createLettucePile } from '../food/greens'
 import { ITEM_CONFIG } from '../../../constants/3d'
+
+/**
+ * Create a 3D model for a food item based on its ID
+ * Falls back to cucumber slice for items without custom models
+ */
+function createFoodModel(itemId: string): THREE.Group {
+  if (itemId.includes('carrot')) {
+    return createCarrotStick()
+  }
+  if (itemId.includes('cucumber')) {
+    return createCucumberSlice()
+  }
+  if (itemId.includes('pellet')) {
+    return createPelletPile()
+  }
+  if (itemId.includes('lettuce')) {
+    return createLettucePile()
+  }
+  // Default fallback - cucumber slice for items without custom models
+  return createCucumberSlice()
+}
 
 export function createBowlModel(bowlItemId: string): THREE.Group {
   const group = new THREE.Group()
@@ -59,7 +82,7 @@ export function createBowlModel(bowlItemId: string): THREE.Group {
     // Render food items on top
     if (foodItems.length === 1) {
       // Single food item - centered
-      const foodModel = createCucumberSlice()
+      const foodModel = createFoodModel(foodItems[0].itemId)
       foodModel.position.set(
         ITEM_CONFIG.FOOD_POSITION.SINGLE.x,
         ITEM_CONFIG.FOOD_POSITION.SINGLE.y,
@@ -67,8 +90,8 @@ export function createBowlModel(bowlItemId: string): THREE.Group {
       )
       group.add(foodModel)
     } else if (foodItems.length >= 2) {
-      // Two food items - split 50/50
-      const foodLeft = createCucumberSlice()
+      // Two food items - render first two with their actual models
+      const foodLeft = createFoodModel(foodItems[0].itemId)
       foodLeft.position.set(
         ITEM_CONFIG.FOOD_POSITION.LEFT.x,
         ITEM_CONFIG.FOOD_POSITION.LEFT.y,
@@ -76,7 +99,7 @@ export function createBowlModel(bowlItemId: string): THREE.Group {
       )
       group.add(foodLeft)
 
-      const foodRight = createCucumberSlice()
+      const foodRight = createFoodModel(foodItems[1].itemId)
       foodRight.position.set(
         ITEM_CONFIG.FOOD_POSITION.RIGHT.x,
         ITEM_CONFIG.FOOD_POSITION.RIGHT.y,

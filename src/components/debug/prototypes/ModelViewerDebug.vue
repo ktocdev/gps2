@@ -67,7 +67,9 @@ import SidePanel3D from '../../game/SidePanel3D.vue'
 // Model factories
 import { createGuineaPigModel, updateGuineaPigAnimation } from '../../../composables/use3DGuineaPig'
 import { createHandModel, setHandPose } from '../../../composables/3d-models/use3DHand'
-import { createCucumberSlice } from '../../../composables/3d-models/food/vegetables'
+import { createCucumberSlice, createCarrotStick } from '../../../composables/3d-models/food/vegetables'
+import { createPelletPile } from '../../../composables/3d-models/food/pellets'
+import { createLettucePile } from '../../../composables/3d-models/food/greens'
 import { createHeldFoodBall } from '../../../composables/3d-models/food/held-food'
 import { createHayPile } from '../../../composables/3d-models/food/hay'
 import { createBowlModel } from '../../../composables/3d-models/containers/bowls'
@@ -104,6 +106,7 @@ const VIEWER_CONFIG = {
   MOUSE_ROTATION_SPEED: 0.01,
   MOUSE_PAN_SPEED: 0.05,
   WHEEL_ZOOM_SPEED: 0.01,
+  PINCH_ZOOM_SPEED: 0.05,
 }
 
 // Model registry
@@ -163,6 +166,12 @@ const modelRegistry: ModelCategory[] = [
     icon: '🥬',
     models: [
       {
+        id: 'carrot',
+        name: 'Carrot Stick',
+        description: 'Thick julienne orange carrot',
+        factory: () => createCarrotStick()
+      },
+      {
         id: 'cucumber',
         name: 'Cucumber Slice',
         description: 'Half-circle vegetable slice',
@@ -173,6 +182,18 @@ const modelRegistry: ModelCategory[] = [
         name: 'Hay Pile',
         description: 'Procedurally generated hay strands',
         factory: () => createHayPile(2, 12345)
+      },
+      {
+        id: 'pellets',
+        name: 'Pellet Pile',
+        description: 'Golden beige food pellets (15 count)',
+        factory: () => createPelletPile(15, 54321)
+      },
+      {
+        id: 'lettuce',
+        name: 'Lettuce Pile',
+        description: 'Green leaf lettuce pieces (12 count)',
+        factory: () => createLettucePile(12, 98765)
       }
     ]
   },
@@ -382,6 +403,11 @@ function setupCameraControls(): () => void {
   let isDragging = false
   let previousMousePosition = { x: 0, y: 0 }
 
+  // Touch gesture state
+  let isTwoFingerGesture = false
+  let initialPinchDistance = 0
+  let previousTouchCenter = { x: 0, y: 0 }
+
   function handleMouseDown(e: MouseEvent) {
     isDragging = true
     previousMousePosition = { x: e.offsetX, y: e.offsetY }
@@ -435,12 +461,108 @@ function setupCameraControls(): () => void {
     }
   }
 
+  // Touch helper functions
+  function getTouchDistance(touches: TouchList): number {
+    const dx = touches[0].clientX - touches[1].clientX
+    const dy = touches[0].clientY - touches[1].clientY
+    return Math.sqrt(dx * dx + dy * dy)
+  }
+
+  function getTouchCenter(touches: TouchList): { x: number; y: number } {
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    }
+  }
+
+  function handleTouchStart(e: TouchEvent) {
+    if (e.touches.length === 2) {
+      // Two fingers: pinch-to-zoom + drag-to-pan
+      isTwoFingerGesture = true
+      isDragging = false
+      initialPinchDistance = getTouchDistance(e.touches)
+      previousTouchCenter = getTouchCenter(e.touches)
+    } else if (e.touches.length === 1) {
+      // Single finger: rotate
+      isDragging = true
+      isTwoFingerGesture = false
+      previousMousePosition = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      }
+    }
+  }
+
+  function handleTouchMove(e: TouchEvent) {
+    if (!camera || !worldGroup) return
+
+    if (e.touches.length === 2 && isTwoFingerGesture) {
+      // Two-finger gesture: pinch-to-zoom + drag-to-pan
+      const currentDistance = getTouchDistance(e.touches)
+      const currentCenter = getTouchCenter(e.touches)
+
+      // Pinch-to-zoom
+      const deltaDistance = currentDistance - initialPinchDistance
+      camera.position.y -= deltaDistance * VIEWER_CONFIG.PINCH_ZOOM_SPEED
+      camera.position.y = Math.max(
+        VIEWER_CONFIG.HEIGHT_MIN,
+        Math.min(VIEWER_CONFIG.HEIGHT_MAX, camera.position.y)
+      )
+
+      // Drag-to-pan
+      const deltaCenter = {
+        x: currentCenter.x - previousTouchCenter.x,
+        y: currentCenter.y - previousTouchCenter.y,
+      }
+      camera.position.x -= deltaCenter.x * VIEWER_CONFIG.MOUSE_PAN_SPEED
+      camera.position.z -= deltaCenter.y * VIEWER_CONFIG.MOUSE_PAN_SPEED
+
+      // Update camera look-at
+      camera.lookAt(0, 2, 0)
+
+      // Update previous values
+      initialPinchDistance = currentDistance
+      previousTouchCenter = currentCenter
+    } else if (e.touches.length === 1 && isDragging) {
+      // Single finger rotate
+      const currentX = e.touches[0].clientX
+      const currentY = e.touches[0].clientY
+
+      worldGroup.rotation.y +=
+        (currentX - previousMousePosition.x) * VIEWER_CONFIG.MOUSE_ROTATION_SPEED
+
+      previousMousePosition = { x: currentX, y: currentY }
+    }
+  }
+
+  function handleTouchEnd(e: TouchEvent) {
+    if (e.touches.length === 0) {
+      // All fingers lifted
+      isDragging = false
+      isTwoFingerGesture = false
+      initialPinchDistance = 0
+    } else if (e.touches.length === 1) {
+      // One finger remaining - switch from two-finger gesture to rotate
+      isTwoFingerGesture = false
+      isDragging = true
+      previousMousePosition = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      }
+    }
+  }
+
   // Add event listeners
   canvas.addEventListener('mousedown', handleMouseDown)
   document.addEventListener('mousemove', handleMouseMove)
   document.addEventListener('mouseup', handleMouseUp)
   canvas.addEventListener('wheel', handleWheel, { passive: false })
   document.addEventListener('keydown', handleKeyDown)
+
+  // Touch event listeners
+  canvas.addEventListener('touchstart', handleTouchStart, { passive: true })
+  canvas.addEventListener('touchmove', handleTouchMove, { passive: true })
+  canvas.addEventListener('touchend', handleTouchEnd, { passive: true })
 
   // Return cleanup function
   return () => {
@@ -449,6 +571,9 @@ function setupCameraControls(): () => void {
     document.removeEventListener('mouseup', handleMouseUp)
     canvas.removeEventListener('wheel', handleWheel)
     document.removeEventListener('keydown', handleKeyDown)
+    canvas.removeEventListener('touchstart', handleTouchStart)
+    canvas.removeEventListener('touchmove', handleTouchMove)
+    canvas.removeEventListener('touchend', handleTouchEnd)
   }
 }
 
@@ -517,6 +642,15 @@ function loadModel(modelId: string) {
     } else if (modelId === 'cucumber') {
       // Cucumber needs to be raised slightly
       currentModel.position.set(0, 0.5, 0)
+    } else if (modelId === 'carrot') {
+      // Carrot stick raised to sit on floor (offset by 0.6 for bowl alignment)
+      currentModel.position.set(0, 0.8, 0)
+    } else if (modelId === 'pellets') {
+      // Pellet pile raised to sit on floor (Y offset matches carrot)
+      currentModel.position.set(0, 0.8, 0)
+    } else if (modelId === 'lettuce') {
+      // Lettuce pile raised to sit on floor
+      currentModel.position.set(0, 0.7, 0)
     } else {
       currentModel.position.set(0, 0, 0)
     }
@@ -606,20 +740,57 @@ onUnmounted(() => {
 <style>
 /* Model Viewer Debug Page Styles */
 .model-viewer-debug {
-  padding: var(--space-4);
+  padding: 0;
 }
 
 .model-viewer-debug h2 {
   margin-block-end: var(--space-4);
+  padding-inline: var(--space-4);
+  padding-block-start: var(--space-4);
   color: var(--color-text-primary);
+}
+
+/* Mobile-first: Remove panel padding on mobile */
+.model-viewer-debug .panel--full-width {
+  padding: 0;
+}
+
+.model-viewer-debug .panel__content {
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .model-viewer-debug {
+    padding: var(--space-4);
+  }
+
+  .model-viewer-debug h2 {
+    padding-inline: 0;
+    padding-block-start: 0;
+  }
+
+  .model-viewer-debug .panel--full-width {
+    padding: var(--space-4);
+  }
+
+  .model-viewer-debug .panel__content {
+    padding: var(--space-4);
+  }
 }
 
 /* Canvas Wrapper - contains canvas and overlay panels */
 .model-viewer-debug__canvas-wrapper {
   position: relative;
-  block-size: 600px;
+  block-size: 70vh;
   overflow: hidden;
-  border-radius: var(--radius-md);
+  border-radius: 0;
+}
+
+@media (min-width: 768px) {
+  .model-viewer-debug__canvas-wrapper {
+    block-size: 600px;
+    border-radius: var(--radius-md);
+  }
 }
 
 /* Canvas fills wrapper */
@@ -627,6 +798,12 @@ onUnmounted(() => {
   inline-size: 100%;
   block-size: 100%;
   display: block;
+  /* Disable tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  /* Prevent touch scrolling on mobile while allowing canvas interactions */
+  touch-action: none;
 }
 
 /* Model Info Overlay (top-left) */
