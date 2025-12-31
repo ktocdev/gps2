@@ -45,7 +45,9 @@ export { createWoodenTunnelModel } from './shelters/tunnels'
 export { createBedModel } from './bedding/beds'
 export { createToyModel } from './toys/chew-toys'
 export { createHayPile } from './food/hay'
-export { createCucumberSlice } from './food/vegetables'
+export { createCucumberSlice, createCarrotStick } from './food/vegetables'
+export { createPelletPile } from './food/pellets'
+export { createLettucePile } from './food/greens'
 
 // Re-export shared utilities
 export { createWoodTexture } from './shared/textures'

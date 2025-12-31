@@ -8,13 +8,15 @@
           class="utility-nav__button utility-nav__button--primary"
           @click="togglePause()"
         >
-          {{ gameController.isPaused ? '▶️ Resume Game' : '⏸️ Pause Game' }}
+          <span class="hide-mobile">{{ gameController.isPaused ? '▶️ Resume' : '⏸️ Pause' }}</span>
+          <span class="show-mobile">{{ gameController.isPaused ? '▶️' : '⏸️' }}</span>
         </button>
         <button
           class="utility-nav__button utility-nav__button--primary"
           @click="toggleFullscreen"
         >
-          Exit Fullscreen
+          <span class="hide-mobile">Exit</span>
+          <span class="show-mobile">✕</span>
         </button>
       </div>
     </div>
@@ -150,7 +152,31 @@ onUnmounted(() => {
 
 .habitat-3d-debug__header-actions {
   display: flex;
-  gap: var(--spacing-sm);
+  gap: var(--spacing-xs);
+  flex-shrink: 0;
+}
+
+/* Mobile-first responsive text helpers */
+.habitat-3d-debug__header-actions .show-mobile {
+  display: inline;
+}
+
+.habitat-3d-debug__header-actions .hide-mobile {
+  display: none;
+}
+
+@media (min-width: 400px) {
+  .habitat-3d-debug__header-actions {
+    gap: var(--spacing-sm);
+  }
+
+  .habitat-3d-debug__header-actions .show-mobile {
+    display: none;
+  }
+
+  .habitat-3d-debug__header-actions .hide-mobile {
+    display: inline;
+  }
 }
 
 /* Fullscreen mode header */
@@ -159,18 +185,42 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   block-size: 52px; /* Fixed height to match canvas calc */
-  padding-inline: var(--spacing-md);
+  padding-inline: var(--spacing-sm);
   /* Safe area for mobile notches/status bars */
   padding-block-start: env(safe-area-inset-top, 0);
   background-color: var(--color-bg-secondary);
   border-block-end: 1px solid var(--color-border-light);
 }
 
+/* Mobile-first: compact buttons */
+.habitat-3d-debug__fullscreen-header .utility-nav__button {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+
+@media (min-width: 400px) {
+  .habitat-3d-debug__fullscreen-header {
+    padding-inline: var(--spacing-md);
+  }
+
+  .habitat-3d-debug__fullscreen-header .utility-nav__button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-base);
+  }
+}
+
 .habitat-3d-debug__title {
   margin: 0;
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
+}
+
+@media (min-width: 400px) {
+  .habitat-3d-debug__title {
+    font-size: var(--font-size-xl);
+  }
 }
 
 /* Needs row (debug-only, below game view) */

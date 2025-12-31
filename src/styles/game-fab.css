@@ -54,7 +54,7 @@
 
 /* FAB color variants */
 .game-fab--pink {
-  background-color: var(--color-accent-pink-500);
+  background-color: var(--color-accent-pink-600);
 }
 
 .game-fab--violet {
@@ -62,7 +62,7 @@
 }
 
 .game-fab--green {
-  background-color: var(--color-accent-green-500);
+  background-color: var(--color-accent-green-600);
 }
 
 .game-fab--orange {
@@ -74,7 +74,7 @@
 }
 
 .game-fab--cyan {
-  background-color: var(--color-need-thirst);
+  background-color: var(--color-accent-cyan-700);
 }
 
 /* Subactions container */
@@ -106,9 +106,9 @@
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
 }
 
-/* Subaction colors (lighter shades) */
+/* Subaction colors (slightly lighter than main FAB) */
 .game-fab-sub--green {
-  background-color: var(--color-accent-green-400);
+  background-color: var(--color-accent-green-600);
 }
 
 .game-fab-sub--pink {
