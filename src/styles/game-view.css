@@ -7,6 +7,8 @@
   block-size: 70vh;
   background-color: var(--color-bg-canvas);
   overflow: hidden;
+  /* Disable tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .game-view__canvas-wrapper canvas {
@@ -14,6 +16,10 @@
   inline-size: 100%;
   block-size: 100%;
   cursor: pointer;
+  /* Disable tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
 }
 
 /* Cursor states */
