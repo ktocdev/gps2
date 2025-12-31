@@ -43,17 +43,6 @@ export function createLettucePile(count: number = 12, seed: number = 98765): THR
     0xADFF2F, // Green-yellow (bright pieces)
   ]
 
-  // Create instanced mesh for each color variant
-  const colorGroups = leafColors.map(color => {
-    const mat = new THREE.MeshStandardMaterial({
-      color,
-      roughness: 0.7,
-      metalness: 0.0,
-      side: THREE.DoubleSide,
-    })
-    return { material: mat, count: 0 }
-  })
-
   // Distribute pieces among color groups
   const piecesPerColor = Math.ceil(count / leafColors.length)
 
