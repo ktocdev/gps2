@@ -1,6 +1,9 @@
 import { ref, computed } from 'vue'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useLoggingStore } from '../../stores/loggingStore'
+import { useGuineaPigStore } from '../../stores/guineaPigStore'
+import { guineaPigMessages } from '../../data/guineaPigMessages'
+import type { ReactionMessage } from '../../data/guineaPigMessages'
 
 export interface ActionStat {
   label: string
@@ -15,6 +18,26 @@ export function use3DHabitatCare() {
   // Stores
   const habitatConditions = useHabitatConditions()
   const loggingStore = useLoggingStore()
+  const guineaPigStore = useGuineaPigStore()
+
+  /**
+   * Show care reaction chat bubble for all active guinea pigs
+   */
+  function showCareReaction(careType: 'cageClean' | 'beddingRefresh' | 'waterRefill' | 'hayRackFill' | 'bowlFill') {
+    const activeGuineaPigs = guineaPigStore.activeGuineaPigs
+    if (activeGuineaPigs.length === 0) return
+
+    const messages = guineaPigMessages.care[careType]
+
+    activeGuineaPigs.forEach(guineaPig => {
+      const reaction = messages[Math.floor(Math.random() * messages.length)] as ReactionMessage
+
+      document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+        detail: { guineaPigId: guineaPig.id, reaction },
+        bubbles: true
+      }))
+    })
+  }
 
   // Dialog state
   const showCleanCageDialog = ref(false)
@@ -51,6 +74,7 @@ export function use3DHabitatCare() {
     if (result.success) {
       console.log(`[use3DHabitatCare] Clean habitat: ${result.message}`)
       loggingStore.addPlayerAction(result.message, '🧹')
+      showCareReaction('cageClean')
     } else {
       console.warn(`[use3DHabitatCare] Clean habitat failed: ${result.message}`)
     }
@@ -66,6 +90,9 @@ export function use3DHabitatCare() {
     // Log player action
     if (result.success) {
       loggingStore.addPlayerAction(result.message, '🧽')
+      if (result.poopsRemoved > 0) {
+        showCareReaction('cageClean')
+      }
     }
 
     // Show result dialog
@@ -95,6 +122,7 @@ export function use3DHabitatCare() {
     // Log player action
     if (amountFilled >= 1) {
       loggingStore.addPlayerAction(`Refilled water bottle (+${amountFilled.toFixed(0)}%)`, '💧')
+      showCareReaction('waterRefill')
     }
 
     // Show result dialog
@@ -135,6 +163,9 @@ export function use3DHabitatCare() {
     habitatDirtiness,
     beddingNeeded,
     beddingAvailable,
+
+    // Chat bubble helper
+    showCareReaction,
 
     // FAB handlers
     fabCleanHabitat,

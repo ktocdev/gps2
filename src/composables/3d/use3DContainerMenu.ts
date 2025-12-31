@@ -3,8 +3,11 @@ import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useLoggingStore } from '../../stores/loggingStore'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useInventoryStore } from '../../stores/inventoryStore'
+import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { CONSUMPTION } from '../../constants/supplies'
 import type { InventoryMenuItem } from '../../components/basic/InventoryItemMenu.vue'
+import { guineaPigMessages } from '../../data/guineaPigMessages'
+import type { ReactionMessage } from '../../data/guineaPigMessages'
 
 export type ContainerType = 'bowl' | 'hay_rack'
 
@@ -18,6 +21,26 @@ export function use3DContainerMenu() {
   const loggingStore = useLoggingStore()
   const suppliesStore = useSuppliesStore()
   const inventoryStore = useInventoryStore()
+  const guineaPigStore = useGuineaPigStore()
+
+  /**
+   * Show care reaction chat bubble for all active guinea pigs
+   */
+  function showCareReaction(careType: 'hayRackFill' | 'bowlFill') {
+    const activeGuineaPigs = guineaPigStore.activeGuineaPigs
+    if (activeGuineaPigs.length === 0) return
+
+    const messages = guineaPigMessages.care[careType]
+
+    activeGuineaPigs.forEach(guineaPig => {
+      const reaction = messages[Math.floor(Math.random() * messages.length)] as ReactionMessage
+
+      document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+        detail: { guineaPigId: guineaPig.id, reaction },
+        bubbles: true
+      }))
+    })
+  }
 
   // State refs (reactive for UI)
   const selectedContainerId = ref<string | null>(null)
@@ -237,6 +260,7 @@ export function use3DContainerMenu() {
           `Filled hay rack with ${added} serving${added > 1 ? 's' : ''}`,
           '🌾'
         )
+        showCareReaction('hayRackFill')
       }
       // Don't close the menu - let user see the updated state
     } else {
@@ -293,6 +317,7 @@ export function use3DContainerMenu() {
         const foodName = supplyItem?.name || 'food'
         const emoji = supplyItem?.emoji || '🥗'
         loggingStore.addPlayerAction(`Added ${foodName} to food bowl`, emoji)
+        showCareReaction('bowlFill')
       } else {
         console.warn(`[use3DContainerMenu] Failed to add ${itemId} to bowl`)
       }
@@ -301,6 +326,7 @@ export function use3DContainerMenu() {
       if (success) {
         console.log(`[use3DContainerMenu] Added ${itemId} to hay rack ${selectedContainerId.value}`)
         loggingStore.addPlayerAction('Added hay to hay rack', '🌾')
+        showCareReaction('hayRackFill')
       } else {
         console.warn(`[use3DContainerMenu] Failed to add ${itemId} to hay rack`)
       }

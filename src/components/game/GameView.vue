@@ -52,6 +52,17 @@
         @mousemove="handleCanvasMouseMove"
       ></canvas>
 
+      <!-- 3D Chat Bubbles (overlay positioned relative to canvas) -->
+      <ChatBubble3D
+        v-for="bubble in chatBubbles.getBubbles()"
+        :key="bubble.guineaPigId"
+        :message="bubble.message"
+        :emoji="bubble.emoji"
+        :variant="bubble.variant"
+        :position="bubble.screenPosition"
+        :is-visible="bubble.isVisible"
+      />
+
       <!-- Guinea Pig Info Menu (replaces floating action buttons) -->
       <GuineaPigInfoMenu
         v-if="selectedGuineaPigId && selectedGuineaPig"
@@ -239,6 +250,8 @@ import { use3DContainerMenu } from '../../composables/3d/use3DContainerMenu'
 import { use3DPlacement } from '../../composables/3d/use3DPlacement'
 import { use3DHabitatCare } from '../../composables/3d/use3DHabitatCare'
 import { use3DWaterBottle } from '../../composables/3d/use3DWaterBottle'
+import { use3DChatBubbles } from '../../composables/3d/use3DChatBubbles'
+import ChatBubble3D from './ChatBubble3D.vue'
 import * as THREE from 'three'
 
 // Props
@@ -292,6 +305,9 @@ const habitatCare = use3DHabitatCare()
 
 // Water bottle composable
 const waterBottle = use3DWaterBottle()
+
+// Chat bubbles composable
+const chatBubbles = use3DChatBubbles()
 
 // Interact actions for FAB subnav
 const interactActions: FabSubnavAction[] = [
@@ -600,6 +616,9 @@ onMounted(() => {
   // Initialize water bottle system
   waterBottle.init(itemModels, habitatCare)
 
+  // Initialize chat bubbles system
+  chatBubbles.init(camera, guineaPigModels, canvasRef.value)
+
   // Create selection ring
   createSelectionRing()
 
@@ -667,6 +686,7 @@ onUnmounted(() => {
 
   placement.dispose()
   waterBottle.dispose()
+  chatBubbles.dispose()
 
   movement3DStore.clearAllGuineaPigs()
   cleanupScene()
@@ -767,6 +787,9 @@ function animate(currentTime: number = 0) {
 
   updateSelectionRing()
   updateHoverRing()
+
+  // Update chat bubble screen positions
+  chatBubbles.updatePositions()
 
   const renderer = getRenderer()
   if (renderer) {
