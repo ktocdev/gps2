@@ -5,6 +5,7 @@ import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useInventoryStore } from '../../stores/inventoryStore'
 import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { CONSUMPTION } from '../../constants/supplies'
+import { getBaseItemId } from '../../utils/placementId'
 import type { InventoryMenuItem } from '../../components/basic/InventoryItemMenu.vue'
 import { guineaPigMessages } from '../../data/guineaPigMessages'
 import type { ReactionMessage } from '../../data/guineaPigMessages'
@@ -141,8 +142,17 @@ export function use3DContainerMenu() {
 
   const currentBowlCapacity = computed(() => {
     if (!selectedContainerId.value) return 3
-    const bowlItem = suppliesStore.getItemById(selectedContainerId.value)
+    const baseItemId = getBaseItemId(selectedContainerId.value)
+    const bowlItem = suppliesStore.getItemById(baseItemId)
     return bowlItem?.stats?.foodCapacity || 3
+  })
+
+  // Get the name of the currently selected container from supplies store
+  const currentContainerName = computed(() => {
+    if (!selectedContainerId.value) return null
+    const baseItemId = getBaseItemId(selectedContainerId.value)
+    const item = suppliesStore.getItemById(baseItemId)
+    return item?.name || null
   })
 
   const currentHayServings = computed(() => {
@@ -337,6 +347,38 @@ export function use3DContainerMenu() {
   }
 
   /**
+   * Handle removing container from habitat (return to inventory)
+   */
+  function handleRemoveContainer() {
+    if (!selectedContainerId.value || !selectedContainerType.value) return
+
+    const placementId = selectedContainerId.value
+    const baseItemId = getBaseItemId(placementId)
+    const containerType = selectedContainerType.value
+    const supplyItem = suppliesStore.getItemById(baseItemId)
+    const itemName = supplyItem?.name || 'container'
+    const emoji = supplyItem?.emoji || '📦'
+
+    // Clear contents first (don't waste food/hay)
+    if (containerType === 'bowl') {
+      habitatConditions.clearBowl(placementId)
+    } else if (containerType === 'hay_rack') {
+      habitatConditions.clearHayRack(placementId)
+    }
+
+    // Remove from habitat (handles inventory unmark internally)
+    habitatConditions.removeItemFromHabitat(placementId)
+
+    loggingStore.addPlayerAction(
+      `Removed ${itemName} from habitat`,
+      emoji
+    )
+
+    console.log(`[use3DContainerMenu] Removed container: ${placementId}`)
+    closeContainerMenu()
+  }
+
+  /**
    * Check if any menu is open
    */
   function isAnyMenuOpen(): boolean {
@@ -355,6 +397,7 @@ export function use3DContainerMenu() {
     currentMenuItems,
     menuTitle,
     menuEmptyMessage,
+    currentContainerName,
     currentBowlContents,
     currentBowlCapacity,
     currentHayServings,
@@ -369,6 +412,7 @@ export function use3DContainerMenu() {
     handleContainerClear,
     handleRemoveFood,
     handleAddItemToContainer,
+    handleRemoveContainer,
     isAnyMenuOpen
   }
 }

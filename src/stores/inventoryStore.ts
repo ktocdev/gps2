@@ -327,19 +327,29 @@ export const useInventoryStore = defineStore('inventory', {
       console.log(`📦 Marked ${toMark}x ${itemId} as opened (cannot be returned)`)
     },
 
-    markAsPlacedInHabitat(itemId: string, count: number = 1): void {
+    /**
+     * Mark an item instance as placed in habitat
+     * @returns The instanceId of the marked instance, or null if none available
+     */
+    markAsPlacedInHabitat(itemId: string, count: number = 1): string | null {
       const inventoryItem = this.items.find((item) => item.itemId === itemId)
-      if (!inventoryItem) return
+      if (!inventoryItem) return null
 
       // Find unplaced instances and mark them as placed
       const unplacedInstances = inventoryItem.instances.filter(inst => !inst.isPlacedInHabitat)
       const toMark = Math.min(count, unplacedInstances.length)
 
+      let markedInstanceId: string | null = null
       for (let i = 0; i < toMark; i++) {
         unplacedInstances[i].isPlacedInHabitat = true
+        // Return the first marked instanceId
+        if (i === 0) {
+          markedInstanceId = unplacedInstances[i].instanceId
+        }
       }
 
       console.log(`🏠 Marked ${toMark}x ${itemId} as placed in habitat (cannot be returned)`)
+      return markedInstanceId
     },
 
     unmarkAsPlacedInHabitat(itemId: string, count: number = 1): void {

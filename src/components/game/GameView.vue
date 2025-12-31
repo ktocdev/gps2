@@ -80,6 +80,7 @@
         :show="containerMenu.showContainerMenu.value"
         :position="containerMenu.menuPosition.value"
         :container-type="containerMenu.selectedContainerType.value || 'bowl'"
+        :container-name="containerMenu.currentContainerName.value"
         :foods="containerMenu.currentBowlContents.value"
         :bowl-capacity="containerMenu.currentBowlCapacity.value"
         :hay-servings="containerMenu.currentHayServings.value"
@@ -88,6 +89,7 @@
         @close="containerMenu.closeContainerMenu"
         @fill="containerMenu.handleContainerFill"
         @clear="containerMenu.handleContainerClear"
+        @remove="containerMenu.handleRemoveContainer"
         @remove-food="containerMenu.handleRemoveFood"
       />
 

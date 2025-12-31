@@ -5,9 +5,11 @@ import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useInventoryStore } from '../../stores/inventoryStore'
 import { useHabitatConditions } from '../../stores/habitatConditions'
 import { CHEW_DEGRADATION } from '../../constants/supplies'
+import { getBaseItemId } from '../../utils/placementId'
 
 export interface ChewPopoverData {
-  itemId: string
+  placementId: string  // Full placement ID
+  itemId: string       // Base item ID
   itemName: string
   itemEmoji: string
   durability: number
@@ -27,8 +29,8 @@ export function use3DChewPopover() {
   const suppliesStore = useSuppliesStore()
   const inventoryStore = useInventoryStore()
 
-  // State
-  const selectedChewId = ref<string | null>(null)
+  // State - stores the full placement ID
+  const selectedPlacementId = ref<string | null>(null)
   const showChewPopover = ref(false)
   const menuPosition = ref({ x: 0, y: 0 })
 
@@ -40,16 +42,20 @@ export function use3DChewPopover() {
    * Get data for the currently selected chew item
    */
   const currentChewData = computed((): ChewPopoverData | null => {
-    if (!selectedChewId.value) return null
+    if (!selectedPlacementId.value) return null
 
-    const chewData = habitatContainers.getChewData(selectedChewId.value)
+    // Chew data is stored by placement ID
+    const chewData = habitatContainers.getChewData(selectedPlacementId.value)
     if (!chewData) return null
 
-    const item = suppliesStore.getItemById(selectedChewId.value)
+    // Use base itemId for metadata lookup
+    const baseItemId = getBaseItemId(selectedPlacementId.value)
+    const item = suppliesStore.getItemById(baseItemId)
     if (!item) return null
 
     return {
-      itemId: selectedChewId.value,
+      placementId: selectedPlacementId.value,
+      itemId: baseItemId,
       itemName: item.name,
       itemEmoji: item.emoji || '🪵',
       durability: chewData.durability,
@@ -96,15 +102,16 @@ export function use3DChewPopover() {
 
   /**
    * Open chew popover for a specific item
+   * @param placementId - The full placement ID (e.g., "habitat_chew_stick::instance_abc")
    */
   function openChewPopover(
-    chewItemId: string,
+    placementId: string,
     position: { x: number; y: number }
   ) {
-    selectedChewId.value = chewItemId
+    selectedPlacementId.value = placementId
     menuPosition.value = position
     showChewPopover.value = true
-    console.log(`[use3DChewPopover] Opened popover for: ${chewItemId}`)
+    console.log(`[use3DChewPopover] Opened popover for: ${placementId}`)
   }
 
   /**
@@ -112,7 +119,7 @@ export function use3DChewPopover() {
    */
   function closeChewPopover() {
     showChewPopover.value = false
-    selectedChewId.value = null
+    selectedPlacementId.value = null
   }
 
   /**
@@ -120,26 +127,27 @@ export function use3DChewPopover() {
    * Note: Chews cannot be moved to inventory - they can only be discarded when unsafe
    */
   function handleDiscardChew() {
-    if (!selectedChewId.value || !currentChewData.value) return
+    if (!selectedPlacementId.value || !currentChewData.value) return
 
-    const itemId = selectedChewId.value
+    const placementId = selectedPlacementId.value
+    const baseItemId = currentChewData.value.itemId
     const itemName = currentChewData.value.itemName
 
-    // Remove from habitat items
-    habitatConditions.removeItemFromHabitat(itemId)
+    // Remove from habitat items (handles inventory unmark internally)
+    habitatConditions.removeItemFromHabitat(placementId)
 
-    // Remove from inventory entirely (not just unmark)
-    inventoryStore.removeItem(itemId, 1)
+    // Remove from inventory entirely (use base itemId)
+    inventoryStore.removeItem(baseItemId, 1)
 
     // Remove chew tracking data
-    habitatContainers.removeChewItem(itemId)
+    habitatContainers.removeChewItem(placementId)
 
     loggingStore.addPlayerAction(
       `Discarded unsafe ${itemName}`,
       '🗑️'
     )
 
-    console.log(`[use3DChewPopover] Discarded unsafe chew: ${itemId}`)
+    console.log(`[use3DChewPopover] Discarded unsafe chew: ${placementId}`)
     closeChewPopover()
   }
 
@@ -152,7 +160,7 @@ export function use3DChewPopover() {
 
   return {
     // State
-    selectedChewId,
+    selectedChewId: selectedPlacementId, // Keep same name for API compatibility
     showChewPopover,
     menuPosition,
 

@@ -1,32 +1,32 @@
 import { ref, computed } from 'vue'
 import { useLoggingStore } from '../../stores/loggingStore'
 import { useSuppliesStore } from '../../stores/suppliesStore'
-import { useInventoryStore } from '../../stores/inventoryStore'
 import { useHabitatConditions } from '../../stores/habitatConditions'
+import { getBaseItemId } from '../../utils/placementId'
 
 export interface ItemPopoverData {
-  itemId: string
+  placementId: string  // Full placement ID (used for habitat operations)
+  itemId: string       // Base item ID (used for metadata lookup)
   itemName: string
   itemEmoji: string
   subCategory: string
 }
 
 // Item subcategories that can be removed via this popover
-const REMOVABLE_SUBCATEGORIES = ['hideaways', 'toys', 'enrichment']
+const REMOVABLE_SUBCATEGORIES = ['hideaways', 'toys', 'enrichment', 'bowls_bottles']
 
 /**
  * Composable for managing general item popover menu in 3D view
- * Handles removal of habitat items (toys, hideaways, enrichment) back to inventory
+ * Handles removal of habitat items (toys, hideaways, enrichment, bowls, bottles, hay racks) back to inventory
  */
 export function use3DItemPopover() {
   // Stores
   const habitatConditions = useHabitatConditions()
   const loggingStore = useLoggingStore()
   const suppliesStore = useSuppliesStore()
-  const inventoryStore = useInventoryStore()
 
-  // State
-  const selectedItemId = ref<string | null>(null)
+  // State - stores the full placement ID
+  const selectedPlacementId = ref<string | null>(null)
   const showItemPopover = ref(false)
   const menuPosition = ref({ x: 0, y: 0 })
 
@@ -34,13 +34,16 @@ export function use3DItemPopover() {
    * Get data for the currently selected item
    */
   const currentItemData = computed((): ItemPopoverData | null => {
-    if (!selectedItemId.value) return null
+    if (!selectedPlacementId.value) return null
 
-    const item = suppliesStore.getItemById(selectedItemId.value)
+    // Extract base itemId for metadata lookup
+    const baseItemId = getBaseItemId(selectedPlacementId.value)
+    const item = suppliesStore.getItemById(baseItemId)
     if (!item) return null
 
     return {
-      itemId: selectedItemId.value,
+      placementId: selectedPlacementId.value,
+      itemId: baseItemId,
       itemName: item.name,
       itemEmoji: item.emoji || '📦',
       subCategory: item.subCategory || ''
@@ -49,9 +52,11 @@ export function use3DItemPopover() {
 
   /**
    * Check if an item can be removed via this popover
+   * Accepts either a placement ID or base item ID
    */
-  function canRemoveItem(itemId: string): boolean {
-    const item = suppliesStore.getItemById(itemId)
+  function canRemoveItem(placementId: string): boolean {
+    const baseItemId = getBaseItemId(placementId)
+    const item = suppliesStore.getItemById(baseItemId)
     if (!item) return false
 
     // Only handle specific subcategories
@@ -60,20 +65,21 @@ export function use3DItemPopover() {
 
   /**
    * Open item popover for a specific item
+   * @param placementId - The full placement ID (e.g., "habitat_igloo::instance_abc")
    */
   function openItemPopover(
-    itemId: string,
+    placementId: string,
     position: { x: number; y: number }
   ) {
-    if (!canRemoveItem(itemId)) {
-      console.log(`[use3DItemPopover] Item ${itemId} not removable via this popover`)
+    if (!canRemoveItem(placementId)) {
+      console.log(`[use3DItemPopover] Item ${placementId} not removable via this popover`)
       return false
     }
 
-    selectedItemId.value = itemId
+    selectedPlacementId.value = placementId
     menuPosition.value = position
     showItemPopover.value = true
-    console.log(`[use3DItemPopover] Opened popover for: ${itemId}`)
+    console.log(`[use3DItemPopover] Opened popover for: ${placementId}`)
     return true
   }
 
@@ -82,31 +88,28 @@ export function use3DItemPopover() {
    */
   function closeItemPopover() {
     showItemPopover.value = false
-    selectedItemId.value = null
+    selectedPlacementId.value = null
   }
 
   /**
    * Remove item from habitat (return to inventory)
    */
   function handleRemoveItem() {
-    if (!selectedItemId.value || !currentItemData.value) return
+    if (!selectedPlacementId.value || !currentItemData.value) return
 
-    const itemId = selectedItemId.value
+    const placementId = selectedPlacementId.value
     const itemName = currentItemData.value.itemName
     const emoji = currentItemData.value.itemEmoji
 
-    // Remove from habitat items
-    habitatConditions.removeItemFromHabitat(itemId)
-
-    // Unmark as placed in inventory
-    inventoryStore.unmarkAsPlacedInHabitat(itemId)
+    // Remove from habitat items (handles inventory unmark internally)
+    habitatConditions.removeItemFromHabitat(placementId)
 
     loggingStore.addPlayerAction(
       `Removed ${itemName} from habitat`,
       emoji
     )
 
-    console.log(`[use3DItemPopover] Removed item: ${itemId}`)
+    console.log(`[use3DItemPopover] Removed item: ${placementId}`)
     closeItemPopover()
   }
 
@@ -119,7 +122,7 @@ export function use3DItemPopover() {
 
   return {
     // State
-    selectedItemId,
+    selectedItemId: selectedPlacementId, // Keep same name for API compatibility
     showItemPopover,
     menuPosition,
 

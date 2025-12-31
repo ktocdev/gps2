@@ -210,14 +210,16 @@ export function use3DPlacement() {
     // Convert to grid coords for storage
     const gridPos = worldToGrid(position.x, position.z)
 
-    // Add item to habitat
-    habitatConditions.addItemToHabitat(placementMode.value.itemId, gridPos)
-    console.log(`[use3DPlacement] Placed ${placementMode.value.itemName} at grid (${gridPos.x}, ${gridPos.y})`)
+    // Add item to habitat (returns unique placement ID or null)
+    const placementId = habitatConditions.addItemToHabitat(placementMode.value.itemId, gridPos)
+    if (!placementId) {
+      console.warn(`[use3DPlacement] Failed to place ${placementMode.value.itemName}`)
+      return false
+    }
+    console.log(`[use3DPlacement] Placed ${placementMode.value.itemName} as ${placementId} at grid (${gridPos.x}, ${gridPos.y})`)
 
-    // Check if more of this item available
-    const placedCount = inventoryStore.getPlacedCount(placementMode.value.itemId) + 1
-    const totalQuantity = inventoryStore.getItemQuantity(placementMode.value.itemId)
-    const remaining = totalQuantity - placedCount
+    // Check if more of this item available (unplaced instances)
+    const remaining = inventoryStore.getUnplacedCount(placementMode.value.itemId)
 
     if (remaining <= 0) {
       exitPlacementMode()

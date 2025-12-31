@@ -14,6 +14,7 @@ import {
 } from '../constants/supplies'
 import { safeDeserializeMap, serializeMap } from '../utils/mapSerialization'
 import { useHabitatContainers } from '../composables/useHabitatContainers'
+import { generatePlacementId, getBaseItemId } from '../utils/placementId'
 
 // Types
 interface HabitatSnapshot {
@@ -739,35 +740,49 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     console.log(`🏠 Habitat reset to starter state with ${starterItemIds.length} default items`)
   }
 
-  function addItemToHabitat(itemId: string, position?: { x: number; y: number }) {
+  /**
+   * Add an item to the habitat
+   * @param itemId - The base item ID (e.g., "habitat_basic_water_bottle")
+   * @param position - Optional grid position
+   * @returns The placement ID if successful, or null if failed
+   */
+  function addItemToHabitat(itemId: string, position?: { x: number; y: number }): string | null {
     const inventoryStore = useInventoryStore()
 
     // Check if item is in inventory
     if (!inventoryStore.hasItem(itemId)) {
       console.warn(`Item ${itemId} not found in inventory`)
-      return false
+      return null
     }
 
-    // Check if already in habitat
-    if (habitatItems.value.includes(itemId)) {
-      console.warn(`Item ${itemId} already in habitat`)
-      return false
+    // Check if there's an unplaced instance available
+    const unplacedCount = inventoryStore.getUnplacedCount(itemId)
+    if (unplacedCount <= 0) {
+      console.warn(`No unplaced instances of ${itemId} available`)
+      return null
     }
 
-    // Mark as placed in habitat (cannot be returned to store)
-    inventoryStore.markAsPlacedInHabitat(itemId, 1)
+    // Mark as placed in habitat and get the instanceId
+    const instanceId = inventoryStore.markAsPlacedInHabitat(itemId, 1)
+    if (!instanceId) {
+      console.warn(`Failed to mark ${itemId} as placed`)
+      return null
+    }
 
-    // Add to habitat
-    habitatItems.value.push(itemId)
+    // Generate unique placement ID for this instance
+    const placementId = generatePlacementId(itemId, instanceId)
+
+    // Add to habitat with unique placement ID
+    habitatItems.value.push(placementId)
 
     // Store position if provided
     if (position) {
-      itemPositions.value.set(itemId, position)
+      itemPositions.value.set(placementId, position)
     }
 
     // System 16: Phase 5 - Initialize item usage tracking with freshness bonus
-    if (!itemUsageHistory.value.has(itemId)) {
-      itemUsageHistory.value.set(itemId, {
+    if (!itemUsageHistory.value.has(placementId)) {
+      itemUsageHistory.value.set(placementId, {
         lastUsedAt: Date.now(),
         usageCount: 0,
         lastUsedBy: '',
@@ -776,35 +791,44 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       })
     }
 
-    return true
+    console.log(`🏠 Added ${itemId} to habitat as ${placementId}`)
+    return placementId
   }
 
-  function removeItemFromHabitat(itemId: string) {
-    const index = habitatItems.value.indexOf(itemId)
+  /**
+   * Remove an item from the habitat
+   * @param placementId - The placement ID (can be base itemId for legacy or full placement ID)
+   */
+  function removeItemFromHabitat(placementId: string) {
+    const index = habitatItems.value.indexOf(placementId)
     if (index === -1) {
-      console.warn(`Item ${itemId} not found in habitat`)
+      console.warn(`Item ${placementId} not found in habitat`)
       return false
     }
 
     const inventoryStore = useInventoryStore()
 
-    // Remove placement flag
-    inventoryStore.unmarkAsPlacedInHabitat(itemId, 1)
+    // Extract base itemId for inventory operations
+    const baseItemId = getBaseItemId(placementId)
+
+    // Remove placement flag from inventory
+    inventoryStore.unmarkAsPlacedInHabitat(baseItemId, 1)
 
     // Remove from habitat
     habitatItems.value.splice(index, 1)
 
     // Remove position tracking
-    itemPositions.value.delete(itemId)
+    itemPositions.value.delete(placementId)
 
     // Clear bowl contents if it's a bowl
-    if (bowlContents.value.has(itemId)) {
-      bowlContents.value.delete(itemId)
+    if (bowlContents.value.has(placementId)) {
+      bowlContents.value.delete(placementId)
     }
 
     // System 16: Phase 5 - Reset effectiveness when item is removed (rotation benefit)
-    resetItemEffectiveness(itemId)
+    resetItemEffectiveness(placementId)
 
+    console.log(`🏠 Removed ${placementId} from habitat`)
     return true
   }
 
