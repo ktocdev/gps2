@@ -6,7 +6,7 @@
       :style="floatingStyles"
     >
     <div class="water-bottle-menu__header">
-      <span class="water-bottle-menu__title">Water Bottle</span>
+      <span class="water-bottle-menu__title">{{ bottleName || 'Water Bottle' }}</span>
       <button class="water-bottle-menu__close" @click="$emit('close')">×</button>
     </div>
 
@@ -30,7 +30,13 @@
         :disabled="waterLevel >= 100"
         @click="$emit('refill')"
       >
-        Refill Water Bottle
+        💧 Refill Water
+      </button>
+      <button
+        class="water-bottle-menu__action water-bottle-menu__action--remove"
+        @click="$emit('remove')"
+      >
+        📦 Move to Inventory
       </button>
     </div>
   </div>
@@ -44,11 +50,13 @@ import { usePopover } from '../../composables/ui/usePopover'
 const props = defineProps<{
   waterLevel: number
   position: { x: number; y: number }
+  bottleName?: string | null
 }>()
 
 defineEmits<{
   close: []
   refill: []
+  remove: []
 }>()
 
 // Use Floating UI for smart positioning
@@ -175,13 +183,17 @@ function getLevelColorClass(level: number): string {
 
 .water-bottle-menu__actions {
   display: flex;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-md);
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
   border-block-start: 1px solid var(--color-border-light);
 }
 
 .water-bottle-menu__action {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
   padding: var(--spacing-sm) var(--spacing-md);
   border: none;
   border-radius: var(--radius-sm);
@@ -207,5 +219,14 @@ function getLevelColorClass(level: number): string {
 .water-bottle-menu__action:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.water-bottle-menu__action--remove {
+  background-color: var(--color-accent-blue-100);
+  color: var(--color-accent-blue-700);
+}
+
+.water-bottle-menu__action--remove:hover {
+  background-color: var(--color-accent-blue-200);
 }
 </style>

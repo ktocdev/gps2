@@ -13,6 +13,9 @@ import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useInventoryStore } from '../../stores/inventoryStore'
 import { useLoggingStore } from '../../stores/loggingStore'
+import { useNeedsController } from '../../stores/needsController'
+import type { ReactionMessage } from '../../data/guineaPigMessages'
+import { guineaPigMessages } from '../../data/guineaPigMessages'
 
 // Animation constants
 const PETTING_DURATION = 3125 // ~3.1 seconds
@@ -24,12 +27,41 @@ const FOOD_BALL_POSITION = { x: 1.4, y: 1, z: 0.3 } // Position at fingertips
 /**
  * Composable for managing 3D interaction animations (petting, hand feeding)
  */
+/**
+ * Get wellness tier from wellness value
+ */
+function getWellnessTier(wellness: number): 'excellent' | 'good' | 'fair' | 'poor' | 'critical' {
+  if (wellness >= 80) return 'excellent'
+  if (wellness >= 60) return 'good'
+  if (wellness >= 40) return 'fair'
+  if (wellness >= 20) return 'poor'
+  return 'critical'
+}
+
+/**
+ * Dispatch a chat bubble event for a guinea pig
+ */
+function showChatBubble(guineaPigId: string, reaction: ReactionMessage): void {
+  document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+    detail: { guineaPigId, reaction },
+    bubbles: true
+  }))
+}
+
+/**
+ * Get a random message from an array
+ */
+function getRandomMessage(messages: readonly ReactionMessage[]): ReactionMessage {
+  return messages[Math.floor(Math.random() * messages.length)]
+}
+
 export function use3DInteractions() {
   // Stores
   const guineaPigStore = useGuineaPigStore()
   const suppliesStore = useSuppliesStore()
   const inventoryStore = useInventoryStore()
   const loggingStore = useLoggingStore()
+  const needsController = useNeedsController()
 
   // State refs (reactive for UI)
   const isPetting = ref(false)
@@ -233,6 +265,14 @@ export function use3DInteractions() {
         gp.lastInteraction = Date.now()
         gp.totalInteractions += 1
 
+        // Show chat bubble reaction (socialize success based on wellness)
+        const wellness = needsController.calculateWellness(targetGuineaPigId.value)
+        const tier = getWellnessTier(wellness)
+        const messages = guineaPigMessages.socialize.success[tier]
+        if (messages && messages.length > 0) {
+          showChatBubble(targetGuineaPigId.value, getRandomMessage(messages))
+        }
+
         // Log activity
         loggingStore.addPlayerAction(
           `Petted ${gp.name} - Social +25, Friendship +2`,
@@ -392,6 +432,14 @@ export function use3DInteractions() {
           } else {
             inventoryStore.removeItem(handFeedFoodId, 1)
           }
+        }
+
+        // Show chat bubble reaction (feeding neutral based on wellness)
+        const wellness = needsController.calculateWellness(targetGuineaPigId.value)
+        const tier = getWellnessTier(wellness)
+        const messages = guineaPigMessages.feeding.neutral[tier]
+        if (messages && messages.length > 0) {
+          showChatBubble(targetGuineaPigId.value, getRandomMessage(messages))
         }
 
         // Log activity

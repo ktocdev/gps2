@@ -1023,7 +1023,7 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
     const starterHabitatItems = [
       { itemId: 'habitat_basic_water_bottle', quantity: 1, name: 'Basic Water Bottle' },
       { itemId: 'habitat_plastic_igloo', quantity: 1, name: 'Plastic Igloo' },
-      { itemId: 'habitat_ceramic_bowl', quantity: 1, name: 'Basic Ceramic Bowl' },
+      { itemId: 'habitat_ceramic_bowl', quantity: 1, name: 'Basic Bowl' },
       { itemId: 'habitat_basic_hay_rack', quantity: 1, name: 'Basic Hay Rack' }
     ]
 

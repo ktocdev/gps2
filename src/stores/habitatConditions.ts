@@ -14,6 +14,7 @@ import {
 } from '../constants/supplies'
 import { safeDeserializeMap, serializeMap } from '../utils/mapSerialization'
 import { useHabitatContainers } from '../composables/useHabitatContainers'
+import { generatePlacementId, getBaseItemId } from '../utils/placementId'
 
 // Types
 interface HabitatSnapshot {
@@ -93,7 +94,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   const cleanliness = ref<number>(HABITAT_CONDITIONS.DEFAULT_CLEANLINESS)
   const beddingFreshness = ref<number>(HABITAT_CONDITIONS.DEFAULT_BEDDING_FRESHNESS)
   const hayFreshness = ref<number>(HABITAT_CONDITIONS.DEFAULT_HAY_FRESHNESS)
-  const waterLevel = ref<number>(HABITAT_CONDITIONS.DEFAULT_WATER_LEVEL)
+  // Note: waterLevel is now computed from per-bottle levels (see computed section below)
   const dirtiness = ref<number>(0) // 0-100, inverse of cleanliness
 
   // Tracking and history
@@ -133,11 +134,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   // Item positions (Map of itemId -> grid position)
   const itemPositions = ref<Map<string, { x: number; y: number }>>(new Map())
 
-  // Bowl and Hay Rack Management (using composable)
+  // Bowl, Hay Rack, and Water Bottle Management (using composable)
   const containers = useHabitatContainers()
   const {
     bowlContents,
     hayRackContents,
+    waterBottles,
     addFoodToBowl,
     removeFoodFromBowl,
     getBowlContents,
@@ -150,8 +152,20 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     getHayRackFreshness,
     clearHayRack,
     clearAllHayRacks,
-    fillAllHayRacks
+    fillAllHayRacks,
+    // Water bottle methods
+    initializeWaterBottle,
+    getWaterBottleLevel,
+    setWaterBottleLevel,
+    refillWaterBottle,
+    consumeWaterFromBottle,
+    getAllWaterBottles,
+    getAggregateWaterLevel,
+    findAvailableWaterBottle,
+    removeWaterBottle,
+    clearAllWaterBottles: _clearAllWaterBottles
   } = containers
+  void _clearAllWaterBottles // Reserved for future use
 
   // Poop tracking
   const poops = ref<Poop[]>([])
@@ -170,6 +184,12 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
   const decaySpeedMultiplier = ref<number>(DECAY.DEFAULT_SPEED)
 
   // Computed properties
+
+  // Water level is now computed from per-bottle levels
+  const waterLevel = computed(() => {
+    return getAggregateWaterLevel()
+  })
+
   const overallCondition = computed(() => {
     // Calculate average freshness from all hay racks
     let hayRackAvgFreshness = 100
@@ -586,10 +606,27 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     return true
   }
 
-  function refillWater() {
-    waterLevel.value = HABITAT_CONDITIONS.RESET_VALUE
+  /**
+   * Refill a specific water bottle to 100%
+   * @param bottlePlacementId - The placement ID of the bottle to refill
+   * @returns The amount of water added (0-100)
+   */
+  function refillWater(bottlePlacementId?: string): number {
+    if (!bottlePlacementId) {
+      // If no bottle specified, refill all bottles
+      let totalAdded = 0
+      waterBottles.value.forEach((_, id) => {
+        totalAdded += refillWaterBottle(id)
+      })
+      lastWaterRefill.value = Date.now()
+      recordSnapshot()
+      return totalAdded
+    }
+
+    const amountAdded = refillWaterBottle(bottlePlacementId)
     lastWaterRefill.value = Date.now()
     recordSnapshot()
+    return amountAdded
   }
 
   function consumeHayHandful() {
@@ -638,7 +675,10 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
         hayFreshness.value = value
         break
       case 'waterLevel':
-        waterLevel.value = value
+        // Set all water bottles to this level
+        getAllWaterBottles().forEach(bottleId => {
+          setWaterBottleLevel(bottleId, value)
+        })
         break
       case 'dirtiness':
         dirtiness.value = value
@@ -654,7 +694,10 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     cleanliness.value = HABITAT_CONDITIONS.RESET_VALUE
     beddingFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
     hayFreshness.value = HABITAT_CONDITIONS.RESET_VALUE
-    waterLevel.value = HABITAT_CONDITIONS.RESET_VALUE
+    // Refill all water bottles to 100%
+    getAllWaterBottles().forEach(bottleId => {
+      refillWaterBottle(bottleId)
+    })
     dirtiness.value = 0
 
     // Update all timestamps
@@ -739,35 +782,49 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     console.log(`🏠 Habitat reset to starter state with ${starterItemIds.length} default items`)
   }
 
-  function addItemToHabitat(itemId: string, position?: { x: number; y: number }) {
+  /**
+   * Add an item to the habitat
+   * @param itemId - The base item ID (e.g., "habitat_basic_water_bottle")
+   * @param position - Optional grid position
+   * @returns The placement ID if successful, or null if failed
+   */
+  function addItemToHabitat(itemId: string, position?: { x: number; y: number }): string | null {
     const inventoryStore = useInventoryStore()
 
     // Check if item is in inventory
     if (!inventoryStore.hasItem(itemId)) {
       console.warn(`Item ${itemId} not found in inventory`)
-      return false
+      return null
     }
 
-    // Check if already in habitat
-    if (habitatItems.value.includes(itemId)) {
-      console.warn(`Item ${itemId} already in habitat`)
-      return false
+    // Check if there's an unplaced instance available
+    const unplacedCount = inventoryStore.getUnplacedCount(itemId)
+    if (unplacedCount <= 0) {
+      console.warn(`No unplaced instances of ${itemId} available`)
+      return null
     }
 
-    // Mark as placed in habitat (cannot be returned to store)
-    inventoryStore.markAsPlacedInHabitat(itemId, 1)
+    // Mark as placed in habitat and get the instanceId
+    const instanceId = inventoryStore.markAsPlacedInHabitat(itemId, 1)
+    if (!instanceId) {
+      console.warn(`Failed to mark ${itemId} as placed`)
+      return null
+    }
 
-    // Add to habitat
-    habitatItems.value.push(itemId)
+    // Generate unique placement ID for this instance
+    const placementId = generatePlacementId(itemId, instanceId)
+
+    // Add to habitat with unique placement ID
+    habitatItems.value.push(placementId)
 
     // Store position if provided
     if (position) {
-      itemPositions.value.set(itemId, position)
+      itemPositions.value.set(placementId, position)
     }
 
     // System 16: Phase 5 - Initialize item usage tracking with freshness bonus
-    if (!itemUsageHistory.value.has(itemId)) {
-      itemUsageHistory.value.set(itemId, {
+    if (!itemUsageHistory.value.has(placementId)) {
+      itemUsageHistory.value.set(placementId, {
         lastUsedAt: Date.now(),
         usageCount: 0,
         lastUsedBy: '',
@@ -776,35 +833,56 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       })
     }
 
-    return true
+    // Initialize water bottle tracking if this is a water bottle
+    const suppliesStore = useSuppliesStore()
+    const item = suppliesStore.getItemById(itemId)
+    if (item?.stats?.itemType === 'water_bottle') {
+      initializeWaterBottle(placementId, HABITAT_CONDITIONS.DEFAULT_WATER_LEVEL)
+    }
+
+    console.log(`🏠 Added ${itemId} to habitat as ${placementId}`)
+    return placementId
   }
 
-  function removeItemFromHabitat(itemId: string) {
-    const index = habitatItems.value.indexOf(itemId)
+  /**
+   * Remove an item from the habitat
+   * @param placementId - The placement ID (can be base itemId for legacy or full placement ID)
+   */
+  function removeItemFromHabitat(placementId: string) {
+    const index = habitatItems.value.indexOf(placementId)
     if (index === -1) {
-      console.warn(`Item ${itemId} not found in habitat`)
+      console.warn(`Item ${placementId} not found in habitat`)
       return false
     }
 
     const inventoryStore = useInventoryStore()
 
-    // Remove placement flag
-    inventoryStore.unmarkAsPlacedInHabitat(itemId, 1)
+    // Extract base itemId for inventory operations
+    const baseItemId = getBaseItemId(placementId)
+
+    // Remove placement flag from inventory
+    inventoryStore.unmarkAsPlacedInHabitat(baseItemId, 1)
 
     // Remove from habitat
     habitatItems.value.splice(index, 1)
 
     // Remove position tracking
-    itemPositions.value.delete(itemId)
+    itemPositions.value.delete(placementId)
 
     // Clear bowl contents if it's a bowl
-    if (bowlContents.value.has(itemId)) {
-      bowlContents.value.delete(itemId)
+    if (bowlContents.value.has(placementId)) {
+      bowlContents.value.delete(placementId)
+    }
+
+    // Clear water bottle tracking if it's a water bottle
+    if (waterBottles.value.has(placementId)) {
+      removeWaterBottle(placementId)
     }
 
     // System 16: Phase 5 - Reset effectiveness when item is removed (rotation benefit)
-    resetItemEffectiveness(itemId)
+    resetItemEffectiveness(placementId)
 
+    console.log(`🏠 Removed ${placementId} from habitat`)
     return true
   }
 
@@ -870,90 +948,68 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
 
   /**
    * Consume water from bottle (called when guinea pig drinks)
-   * @param waterBottleItemId - ID of the water bottle item to drink from
+   * @param bottlePlacementId - Placement ID of the water bottle to drink from (optional)
    * @returns True if water was consumed successfully
    */
-  function consumeWater(waterBottleItemId?: string): boolean {
-    // If no specific bottle provided, find any water bottle in habitat
-    let bottleId = waterBottleItemId
+  function consumeWater(bottlePlacementId?: string): boolean {
+    // If no specific bottle provided, find any water bottle with available water
+    let targetBottleId: string | undefined = bottlePlacementId
 
-    if (!bottleId) {
-      const suppliesStore = useSuppliesStore()
-      bottleId = habitatItems.value.find(itemId => {
-        const item = suppliesStore.getItemById(itemId)
-        return item?.stats?.itemType === 'water_bottle'
-      })
+    if (!targetBottleId) {
+      targetBottleId = findAvailableWaterBottle() ?? undefined
     }
 
-    if (!bottleId) {
-      console.warn('No water bottle found in habitat')
+    if (!targetBottleId) {
+      console.warn('No water bottle with available water found')
       return false
     }
 
     // Check if water bottle exists in habitat
-    if (!habitatItems.value.includes(bottleId)) {
-      console.warn(`Water bottle ${bottleId} not in habitat`)
+    if (!habitatItems.value.includes(targetBottleId)) {
+      console.warn(`Water bottle ${targetBottleId} not in habitat`)
       return false
     }
 
-    // Check if item is actually a water bottle
-    const suppliesStore = useSuppliesStore()
-    const item = suppliesStore.getItemById(bottleId)
-    if (item?.stats?.itemType !== 'water_bottle') {
-      console.warn(`Item ${bottleId} is not a water bottle`)
-      return false
-    }
-
-    // Check if water level is sufficient
-    if (waterLevel.value < CONSUMPTION.WATER_MINIMUM_LEVEL) {
-      console.warn('Water bottle is empty - cannot drink')
+    // Check if this bottle has water
+    const bottleLevel = getWaterBottleLevel(targetBottleId)
+    if (bottleLevel < CONSUMPTION.WATER_MINIMUM_LEVEL) {
+      console.warn(`Water bottle ${targetBottleId} is empty - cannot drink`)
       return false
     }
 
     // Consume water (random amount between min and max)
     const range = CONSUMPTION.WATER_CONSUMPTION_MAX - CONSUMPTION.WATER_CONSUMPTION_MIN + 1
     const consumption = Math.floor(Math.random() * range) + CONSUMPTION.WATER_CONSUMPTION_MIN
-    waterLevel.value = Math.max(0, waterLevel.value - consumption)
 
-    console.log(`💧 Water consumed: ${consumption} units. Remaining: ${waterLevel.value}%`)
-    recordSnapshot()
-    return true
+    const success = consumeWaterFromBottle(targetBottleId, consumption)
+    if (success) {
+      recordSnapshot()
+    }
+    return success
   }
 
   /**
    * Check if water is available for drinking
-   * @returns True if water bottle is present and has sufficient water
+   * @returns True if any water bottle has sufficient water
    */
   function hasWaterAvailable(): boolean {
-    // Check if any water bottle is placed in habitat
-    const suppliesStore = useSuppliesStore()
-    const waterBottle = habitatItems.value.find(itemId => {
-      const item = suppliesStore.getItemById(itemId)
-      return item?.stats?.itemType === 'water_bottle'
-    })
-
-    return waterBottle !== undefined && waterLevel.value >= CONSUMPTION.WATER_MINIMUM_LEVEL
+    return findAvailableWaterBottle() !== null
   }
 
   /**
    * Find water bottle position for autonomy pathfinding
-   * @returns Position of first water bottle, or null if none found
+   * @returns Position of first available water bottle, or null if none found
    */
   function getWaterBottlePosition(): { x: number; y: number } | null {
-    const suppliesStore = useSuppliesStore()
+    // Find first water bottle with available water
+    const availableBottleId = findAvailableWaterBottle()
 
-    // Find first water bottle in habitat
-    const waterBottleId = habitatItems.value.find(itemId => {
-      const item = suppliesStore.getItemById(itemId)
-      return item?.stats?.itemType === 'water_bottle'
-    })
-
-    if (!waterBottleId) {
+    if (!availableBottleId) {
       return null
     }
 
     // Return stored position
-    return itemPositions.value.get(waterBottleId) || null
+    return itemPositions.value.get(availableBottleId) || null
   }
 
   function initializeStarterHabitat(starterItemIds: string[]) {
@@ -1269,6 +1325,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     itemPositions,
     bowlContents,
     hayRackContents,
+    waterBottles,
     poops,
     guineaPigPositions,
     itemUsageHistory,
@@ -1311,7 +1368,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
     clearAllHayRacks,
     fillAllHayRacks,
 
-    // System 16: Phase 2 - Water Consumption
+    // System 16: Phase 2 - Water Consumption (per-bottle)
+    getWaterBottleLevel,
+    refillWaterBottle,
     consumeWater,
     hasWaterAvailable,
     getWaterBottlePosition,
@@ -1349,7 +1408,9 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
       if (ctx.store.hayRackContents instanceof Map) {
         containers.hayRackContents.value = ctx.store.hayRackContents
       }
-      // Note: chewItems is not currently exposed from the store, but sync if it becomes available
+      if (ctx.store.waterBottles instanceof Map) {
+        containers.waterBottles.value = ctx.store.waterBottles
+      }
     },
     serializer: {
       serialize: (state) => {
@@ -1359,6 +1420,7 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
           itemPositions: serializeMap(state.itemPositions as Map<string, { x: number; y: number }>),
           bowlContents: serializeMap(state.bowlContents as Map<string, any[]>),
           hayRackContents: serializeMap(state.hayRackContents as Map<string, any[]>),
+          waterBottles: serializeMap(state.waterBottles as Map<string, any>),
           poops: state.poops || [],
           guineaPigPositions: serializeMap(state.guineaPigPositions as Map<string, GuineaPigPosition>),
           itemUsageHistory: serializeMap(state.itemUsageHistory as Map<string, ItemUsage>)
@@ -1378,6 +1440,10 @@ export const useHabitatConditions = defineStore('habitatConditions', () => {
         )
         parsed.hayRackContents = safeDeserializeMap<string, any[]>(
           parsed.hayRackContents,
+          new Map()
+        )
+        parsed.waterBottles = safeDeserializeMap<string, any>(
+          parsed.waterBottles,
           new Map()
         )
         parsed.poops = parsed.poops || []

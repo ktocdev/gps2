@@ -52,6 +52,17 @@
         @mousemove="handleCanvasMouseMove"
       ></canvas>
 
+      <!-- 3D Chat Bubbles (overlay positioned relative to canvas) -->
+      <ChatBubble3D
+        v-for="bubble in chatBubbles.getBubbles()"
+        :key="bubble.guineaPigId"
+        :message="bubble.message"
+        :emoji="bubble.emoji"
+        :variant="bubble.variant"
+        :position="bubble.screenPosition"
+        :is-visible="bubble.isVisible"
+      />
+
       <!-- Guinea Pig Info Menu (replaces floating action buttons) -->
       <GuineaPigInfoMenu
         v-if="selectedGuineaPigId && selectedGuineaPig"
@@ -69,6 +80,7 @@
         :show="containerMenu.showContainerMenu.value"
         :position="containerMenu.menuPosition.value"
         :container-type="containerMenu.selectedContainerType.value || 'bowl'"
+        :container-name="containerMenu.currentContainerName.value"
         :foods="containerMenu.currentBowlContents.value"
         :bowl-capacity="containerMenu.currentBowlCapacity.value"
         :hay-servings="containerMenu.currentHayServings.value"
@@ -77,6 +89,7 @@
         @close="containerMenu.closeContainerMenu"
         @fill="containerMenu.handleContainerFill"
         @clear="containerMenu.handleContainerClear"
+        @remove="containerMenu.handleRemoveContainer"
         @remove-food="containerMenu.handleRemoveFood"
       />
 
@@ -91,13 +104,33 @@
         @select="containerMenu.handleAddItemToContainer"
       />
 
+      <!-- Chew Item Popover (shows durability, discard when unsafe) -->
+      <ChewPopover3D
+        :show="chewPopover.showChewPopover.value"
+        :position="chewPopover.menuPosition.value"
+        :chew-data="chewPopover.currentChewData.value"
+        @close="chewPopover.closeChewPopover"
+        @discard="handleDiscardChew"
+      />
+
+      <!-- General Item Popover (for removing hideaways, toys, enrichment) -->
+      <ItemPopover3D
+        :show="itemPopover.showItemPopover.value"
+        :position="itemPopover.menuPosition.value"
+        :item-data="itemPopover.currentItemData.value"
+        @close="itemPopover.closeItemPopover"
+        @remove="handleRemoveItem"
+      />
+
       <!-- Water Bottle Menu -->
       <WaterBottleMenu
         v-if="waterBottle.showWaterBottleMenu.value"
-        :water-level="habitatConditions.waterLevel"
+        :water-level="waterBottle.currentBottleWaterLevel.value"
         :position="waterBottle.waterBottleMenuPosition.value"
+        :bottle-name="waterBottle.currentBottleName.value"
         @close="waterBottle.closeMenu"
         @refill="waterBottle.handleRefill"
+        @remove="waterBottle.handleRemoveWaterBottle"
       />
 
       <!-- Clean Cage Dialog -->
@@ -134,7 +167,7 @@
         <div class="game-fab-row">
           <button
             ref="interactFabRef"
-            class="game-fab game-fab--pink"
+            class="game-fab game-fab--violet"
             :class="{ 'game-fab--active': showInteractMenu || pendingInteraction }"
             @click="handleInteractFabClick"
             title="Interact"
@@ -149,7 +182,7 @@
           :anchor-x="interactMenuPosition.x"
           :anchor-y="interactMenuPosition.y"
           :actions="interactActions"
-          theme="pink"
+          theme="violet"
           @select="handleInteractAction"
           @close="showInteractMenu = false"
         />
@@ -160,13 +193,13 @@
             v-if="activePanel === 'habitat-care'"
             class="game-fab-subactions"
           >
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabFillHay" title="Fill All Hay Racks">🌾</button>
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabRefillWater" title="Refill Water">💧</button>
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabQuickClean" title="Quick Clean">🧹</button>
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabCleanHabitat" title="Clean Habitat">🧽</button>
+            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabFillHay" title="Fill All Hay Racks">🌾</button>
+            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabRefillWater" title="Refill Water">💧</button>
+            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabQuickClean" title="Quick Clean">🧹</button>
+            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabCleanHabitat" title="Clean Habitat">🧽</button>
           </div>
           <button
-            class="game-fab game-fab--green"
+            class="game-fab game-fab--cyan"
             :class="{ 'game-fab--active': activePanel === 'habitat-care' }"
             @click="togglePanel('habitat-care')"
             title="Habitat Care"
@@ -180,7 +213,7 @@
       <div class="game-fab-container game-fab-container--left">
         <div class="game-fab-row">
           <button
-            class="game-fab game-fab--cyan"
+            class="game-fab game-fab--green"
             :class="{ 'game-fab--active': showHelp }"
             @click="showHelp = !showHelp"
             title="Help & Controls"
@@ -234,11 +267,19 @@ import { useGameController } from '../../stores/gameController'
 import { useLoggingStore } from '../../stores/loggingStore'
 import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from '../../constants/3d'
 import { disposeObject3D } from '../../utils/three-cleanup'
+import { getBaseItemId } from '../../utils/placementId'
 import { use3DInteractions } from '../../composables/3d/use3DInteractions'
 import { use3DContainerMenu } from '../../composables/3d/use3DContainerMenu'
 import { use3DPlacement } from '../../composables/3d/use3DPlacement'
 import { use3DHabitatCare } from '../../composables/3d/use3DHabitatCare'
 import { use3DWaterBottle } from '../../composables/3d/use3DWaterBottle'
+import { use3DChatBubbles } from '../../composables/3d/use3DChatBubbles'
+import { use3DChewPopover } from '../../composables/3d/use3DChewPopover'
+import { use3DItemPopover } from '../../composables/3d/use3DItemPopover'
+import { useHabitatContainers } from '../../composables/useHabitatContainers'
+import ChatBubble3D from './ChatBubble3D.vue'
+import ChewPopover3D from './ChewPopover3D.vue'
+import ItemPopover3D from './ItemPopover3D.vue'
 import * as THREE from 'three'
 
 // Props
@@ -292,6 +333,18 @@ const habitatCare = use3DHabitatCare()
 
 // Water bottle composable
 const waterBottle = use3DWaterBottle()
+
+// Chat bubbles composable
+const chatBubbles = use3DChatBubbles()
+
+// Chew popover composable
+const chewPopover = use3DChewPopover()
+
+// Item popover composable (for general habitat items)
+const itemPopover = use3DItemPopover()
+
+// Habitat containers for chew data
+const habitatContainers = useHabitatContainers()
 
 // Interact actions for FAB subnav
 const interactActions: FabSubnavAction[] = [
@@ -600,6 +653,9 @@ onMounted(() => {
   // Initialize water bottle system
   waterBottle.init(itemModels, habitatCare)
 
+  // Initialize chat bubbles system
+  chatBubbles.init(camera, guineaPigModels, canvasRef.value)
+
   // Create selection ring
   createSelectionRing()
 
@@ -667,6 +723,7 @@ onUnmounted(() => {
 
   placement.dispose()
   waterBottle.dispose()
+  chatBubbles.dispose()
 
   movement3DStore.clearAllGuineaPigs()
   cleanupScene()
@@ -756,17 +813,21 @@ function animate(currentTime: number = 0) {
     physics3D.updatePhysics(deltaTime)
   }
 
-  // Update water bottle
-  const waterBottleModel = waterBottle.findWaterBottleModel()
-  if (waterBottleModel) {
-    updateWaterBottleLevel(waterBottleModel, habitatConditions.waterLevel)
+  // Update all water bottles with per-bottle water levels
+  const allBottles = waterBottle.getAllWaterBottles()
+  for (const { placementId, model } of allBottles) {
+    const bottleLevel = habitatConditions.getWaterBottleLevel(placementId)
+    updateWaterBottleLevel(model, bottleLevel)
     if (!gameController.isPaused) {
-      updateWaterBottleBubbles(waterBottleModel, deltaTime)
+      updateWaterBottleBubbles(model, deltaTime)
     }
   }
 
   updateSelectionRing()
   updateHoverRing()
+
+  // Update chat bubble screen positions
+  chatBubbles.updatePositions()
 
   const renderer = getRenderer()
   if (renderer) {
@@ -914,11 +975,11 @@ function handleCanvasClick(event: MouseEvent) {
         let current: THREE.Object3D | null = clickedObject
         while (current) {
           if (current === model) {
-            const item = suppliesStore.getItemById(itemId)
+            const item = suppliesStore.getItemById(getBaseItemId(itemId))
             if (item?.stats?.itemType === 'food_bowl') {
               clickedContainerId = itemId
               clickedContainerType = 'bowl'
-            } else if (item?.stats?.itemType === 'hay_rack' || (itemId.includes('hay') && itemId.includes('rack'))) {
+            } else if (item?.stats?.itemType === 'hay_rack' || (getBaseItemId(itemId).includes('hay') && getBaseItemId(itemId).includes('rack'))) {
               clickedContainerId = itemId
               clickedContainerType = 'hay_rack'
             }
@@ -959,15 +1020,14 @@ function handleCanvasClick(event: MouseEvent) {
       }
 
       // Check for water bottle click
-      let clickedWaterBottle = false
+      let clickedWaterBottleId: string | null = null
       itemModels.forEach((model, itemId) => {
         let current: THREE.Object3D | null = clickedObject
         while (current) {
           if (current === model) {
-            const item = suppliesStore.getItemById(itemId)
+            const item = suppliesStore.getItemById(getBaseItemId(itemId))
             if (item?.stats?.itemType === 'water_bottle') {
-              clickedWaterBottle = true
-              waterBottle.openMenu({ x: event.clientX, y: event.clientY })
+              clickedWaterBottleId = itemId
             }
             break
           }
@@ -975,9 +1035,74 @@ function handleCanvasClick(event: MouseEvent) {
         }
       })
 
-      if (clickedWaterBottle) return
+      if (clickedWaterBottleId) {
+        waterBottle.openMenu(clickedWaterBottleId, { x: event.clientX, y: event.clientY })
+        return
+      }
 
-      // Check for physics item click
+      // Check for chew item click (regular click = popover, shift+click = physics push)
+      let clickedChewId: string | null = null
+      itemModels.forEach((model, itemId) => {
+        if (clickedChewId) return
+        let current: THREE.Object3D | null = clickedObject
+        while (current) {
+          if (current === model) {
+            const item = suppliesStore.getItemById(getBaseItemId(itemId))
+            if (item?.subCategory === 'chews') {
+              clickedChewId = itemId
+            }
+            break
+          }
+          current = current.parent
+        }
+      })
+
+      if (clickedChewId) {
+        // Shift+click = physics push
+        if (event.shiftKey && physics3D?.hasPhysics(clickedChewId)) {
+          physics3D.handleClick(clickedChewId, raycaster.ray.direction)
+          return
+        }
+
+        // Regular click = show popover
+        // Initialize chew tracking if not already initialized
+        if (!habitatContainers.getChewData(clickedChewId)) {
+          habitatContainers.initializeChewItem(clickedChewId)
+        }
+        chewPopover.openChewPopover(clickedChewId, { x: event.clientX, y: event.clientY })
+        return
+      }
+
+      // Check for general removable item click (hideaways, toys, enrichment)
+      // Regular click = popover, Shift+click = physics push
+      let clickedRemovableId: string | null = null
+      itemModels.forEach((model, itemId) => {
+        if (clickedRemovableId) return
+        let current: THREE.Object3D | null = clickedObject
+        while (current) {
+          if (current === model) {
+            if (itemPopover.canRemoveItem(itemId)) {
+              clickedRemovableId = itemId
+            }
+            break
+          }
+          current = current.parent
+        }
+      })
+
+      if (clickedRemovableId) {
+        // Shift+click = physics push
+        if (event.shiftKey && physics3D?.hasPhysics(clickedRemovableId)) {
+          physics3D.handleClick(clickedRemovableId, raycaster.ray.direction)
+          return
+        }
+
+        // Regular click = show item popover
+        itemPopover.openItemPopover(clickedRemovableId, { x: event.clientX, y: event.clientY })
+        return
+      }
+
+      // Check for physics item click (remaining items like food containers)
       if (physics3D) {
         let clickedPhysicsItem = false
         itemModels.forEach((model, itemId) => {
@@ -1077,11 +1202,62 @@ function handleCanvasClick(event: MouseEvent) {
   if (waterBottle.isMenuOpen()) {
     waterBottle.closeMenu()
   }
+  if (chewPopover.isOpen()) {
+    chewPopover.closeChewPopover()
+  }
 }
 
 // Guinea pig menu handlers
 function handleDeselect() {
   selectedGuineaPigId.value = null
+}
+
+// Chew popover handler (discard only - chews can't be moved to inventory)
+function handleDiscardChew() {
+  const chewId = chewPopover.selectedChewId.value
+  if (!chewId) return
+
+  // Remove 3D model from scene
+  if (itemModels) {
+    const model = itemModels.get(chewId)
+    if (model && worldGroup) {
+      worldGroup.remove(model)
+      disposeObject3D(model)
+      itemModels.delete(chewId)
+    }
+  }
+
+  // Remove physics if applicable
+  if (physics3D?.hasPhysics(chewId)) {
+    physics3D.removePhysicsItem(chewId)
+  }
+
+  // Handle the discard (updates stores and logs)
+  chewPopover.handleDiscardChew()
+}
+
+// Item popover handler (for general habitat items)
+function handleRemoveItem() {
+  const itemId = itemPopover.selectedItemId.value
+  if (!itemId) return
+
+  // Remove 3D model from scene
+  if (itemModels) {
+    const model = itemModels.get(itemId)
+    if (model && worldGroup) {
+      worldGroup.remove(model)
+      disposeObject3D(model)
+      itemModels.delete(itemId)
+    }
+  }
+
+  // Remove physics if applicable
+  if (physics3D?.hasPhysics(itemId)) {
+    physics3D.removePhysicsItem(itemId)
+  }
+
+  // Handle the removal (updates stores and logs)
+  itemPopover.handleRemoveItem()
 }
 
 function handleTakeControl() {

@@ -14,7 +14,8 @@ import { createToyModel } from './toys/chew-toys'
 export function createItemModel(itemId: string): THREE.Group {
   // Containers
   if (itemId.includes('bowl')) return createBowlModel(itemId)
-  if (itemId.includes('water') && itemId.includes('bottle')) return createWaterBottleModel()
+  // All items with 'bottle' in ID are water bottles (basic, large_capacity, wellness, refreshing)
+  if (itemId.includes('bottle')) return createWaterBottleModel()
   if (itemId.includes('hay') && itemId.includes('rack')) return createHayRackModel(itemId)
 
   // Shelters

@@ -111,6 +111,9 @@ import { useHabitatConditions } from '../../../stores/habitatConditions'
 import { useInventoryStore } from '../../../stores/inventoryStore'
 import { useSuppliesStore } from '../../../stores/suppliesStore'
 import { useLoggingStore } from '../../../stores/loggingStore'
+import { useGuineaPigStore } from '../../../stores/guineaPigStore'
+import { guineaPigMessages } from '../../../data/guineaPigMessages'
+import type { ReactionMessage } from '../../../data/guineaPigMessages'
 import { CONSUMPTION } from '../../../constants/supplies'
 
 interface Props {
@@ -127,6 +130,26 @@ const habitatConditions = useHabitatConditions()
 const inventoryStore = useInventoryStore()
 const suppliesStore = useSuppliesStore()
 const loggingStore = useLoggingStore()
+const guineaPigStore = useGuineaPigStore()
+
+/**
+ * Show care reaction chat bubble for all active guinea pigs
+ */
+function showCareReaction() {
+  const activeGuineaPigs = guineaPigStore.activeGuineaPigs
+  if (activeGuineaPigs.length === 0) return
+
+  const messages = guineaPigMessages.care.hayRackFill
+
+  activeGuineaPigs.forEach(guineaPig => {
+    const reaction = messages[Math.floor(Math.random() * messages.length)] as ReactionMessage
+
+    document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+      detail: { guineaPigId: guineaPig.id, reaction },
+      bubbles: true
+    }))
+  })
+}
 
 // Computed: Get all hay racks with their data
 const hayRacks = computed(() => {
@@ -236,6 +259,7 @@ function handleAddServing(rackId: string) {
   const success = habitatConditions.addHayToRack(rackId, hayItemId)
   if (success) {
     loggingStore.addPlayerAction('Added hay to hay rack', '🌾')
+    showCareReaction()
   }
 }
 
@@ -264,6 +288,7 @@ function handleReplaceAll() {
       `Replaced hay in ${result.racksFilled} rack${result.racksFilled > 1 ? 's' : ''} with ${result.totalAdded} fresh serving${result.totalAdded > 1 ? 's' : ''}`,
       '🌾'
     )
+    showCareReaction()
   }
 }
 </script>

@@ -3,8 +3,12 @@ import { useHabitatConditions } from '../../stores/habitatConditions'
 import { useLoggingStore } from '../../stores/loggingStore'
 import { useSuppliesStore } from '../../stores/suppliesStore'
 import { useInventoryStore } from '../../stores/inventoryStore'
+import { useGuineaPigStore } from '../../stores/guineaPigStore'
 import { CONSUMPTION } from '../../constants/supplies'
+import { getBaseItemId } from '../../utils/placementId'
 import type { InventoryMenuItem } from '../../components/basic/InventoryItemMenu.vue'
+import { guineaPigMessages } from '../../data/guineaPigMessages'
+import type { ReactionMessage } from '../../data/guineaPigMessages'
 
 export type ContainerType = 'bowl' | 'hay_rack'
 
@@ -18,6 +22,26 @@ export function use3DContainerMenu() {
   const loggingStore = useLoggingStore()
   const suppliesStore = useSuppliesStore()
   const inventoryStore = useInventoryStore()
+  const guineaPigStore = useGuineaPigStore()
+
+  /**
+   * Show care reaction chat bubble for all active guinea pigs
+   */
+  function showCareReaction(careType: 'hayRackFill' | 'bowlFill') {
+    const activeGuineaPigs = guineaPigStore.activeGuineaPigs
+    if (activeGuineaPigs.length === 0) return
+
+    const messages = guineaPigMessages.care[careType]
+
+    activeGuineaPigs.forEach(guineaPig => {
+      const reaction = messages[Math.floor(Math.random() * messages.length)] as ReactionMessage
+
+      document.dispatchEvent(new CustomEvent('show-chat-bubble', {
+        detail: { guineaPigId: guineaPig.id, reaction },
+        bubbles: true
+      }))
+    })
+  }
 
   // State refs (reactive for UI)
   const selectedContainerId = ref<string | null>(null)
@@ -118,8 +142,17 @@ export function use3DContainerMenu() {
 
   const currentBowlCapacity = computed(() => {
     if (!selectedContainerId.value) return 3
-    const bowlItem = suppliesStore.getItemById(selectedContainerId.value)
+    const baseItemId = getBaseItemId(selectedContainerId.value)
+    const bowlItem = suppliesStore.getItemById(baseItemId)
     return bowlItem?.stats?.foodCapacity || 3
+  })
+
+  // Get the name of the currently selected container from supplies store
+  const currentContainerName = computed(() => {
+    if (!selectedContainerId.value) return null
+    const baseItemId = getBaseItemId(selectedContainerId.value)
+    const item = suppliesStore.getItemById(baseItemId)
+    return item?.name || null
   })
 
   const currentHayServings = computed(() => {
@@ -237,6 +270,7 @@ export function use3DContainerMenu() {
           `Filled hay rack with ${added} serving${added > 1 ? 's' : ''}`,
           '🌾'
         )
+        showCareReaction('hayRackFill')
       }
       // Don't close the menu - let user see the updated state
     } else {
@@ -293,6 +327,7 @@ export function use3DContainerMenu() {
         const foodName = supplyItem?.name || 'food'
         const emoji = supplyItem?.emoji || '🥗'
         loggingStore.addPlayerAction(`Added ${foodName} to food bowl`, emoji)
+        showCareReaction('bowlFill')
       } else {
         console.warn(`[use3DContainerMenu] Failed to add ${itemId} to bowl`)
       }
@@ -301,6 +336,7 @@ export function use3DContainerMenu() {
       if (success) {
         console.log(`[use3DContainerMenu] Added ${itemId} to hay rack ${selectedContainerId.value}`)
         loggingStore.addPlayerAction('Added hay to hay rack', '🌾')
+        showCareReaction('hayRackFill')
       } else {
         console.warn(`[use3DContainerMenu] Failed to add ${itemId} to hay rack`)
       }
@@ -308,6 +344,38 @@ export function use3DContainerMenu() {
 
     // Close menu after adding
     closeInventoryMenu()
+  }
+
+  /**
+   * Handle removing container from habitat (return to inventory)
+   */
+  function handleRemoveContainer() {
+    if (!selectedContainerId.value || !selectedContainerType.value) return
+
+    const placementId = selectedContainerId.value
+    const baseItemId = getBaseItemId(placementId)
+    const containerType = selectedContainerType.value
+    const supplyItem = suppliesStore.getItemById(baseItemId)
+    const itemName = supplyItem?.name || 'container'
+    const emoji = supplyItem?.emoji || '📦'
+
+    // Clear contents first (don't waste food/hay)
+    if (containerType === 'bowl') {
+      habitatConditions.clearBowl(placementId)
+    } else if (containerType === 'hay_rack') {
+      habitatConditions.clearHayRack(placementId)
+    }
+
+    // Remove from habitat (handles inventory unmark internally)
+    habitatConditions.removeItemFromHabitat(placementId)
+
+    loggingStore.addPlayerAction(
+      `Removed ${itemName} from habitat`,
+      emoji
+    )
+
+    console.log(`[use3DContainerMenu] Removed container: ${placementId}`)
+    closeContainerMenu()
   }
 
   /**
@@ -329,6 +397,7 @@ export function use3DContainerMenu() {
     currentMenuItems,
     menuTitle,
     menuEmptyMessage,
+    currentContainerName,
     currentBowlContents,
     currentBowlCapacity,
     currentHayServings,
@@ -343,6 +412,7 @@ export function use3DContainerMenu() {
     handleContainerClear,
     handleRemoveFood,
     handleAddItemToContainer,
+    handleRemoveContainer,
     isAnyMenuOpen
   }
 }

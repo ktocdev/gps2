@@ -79,6 +79,12 @@
       >
         {{ clearButtonLabel }}
       </button>
+      <button
+        class="container-contents-menu__action container-contents-menu__action--remove"
+        @click="$emit('remove')"
+      >
+        📦 Move to Inventory
+      </button>
     </div>
   </div>
   </Teleport>
@@ -99,6 +105,7 @@ interface Props {
   show: boolean
   position: { x: number; y: number }
   containerType: 'bowl' | 'hay_rack'
+  containerName?: string | null
   // Food bowl props
   foods?: FoodItem[]
   bowlCapacity?: number
@@ -120,6 +127,7 @@ defineEmits<{
   close: []
   fill: []
   clear: []
+  remove: []
   'remove-food': [index: number]
 }>()
 
@@ -142,7 +150,7 @@ watch(
 const STALE_THRESHOLD = 40
 
 const title = computed(() => {
-  return props.containerType === 'bowl' ? 'Food Bowl' : 'Hay Rack'
+  return props.containerName || 'Container'
 })
 
 const itemCount = computed(() => {
@@ -428,5 +436,14 @@ function getFreshnessClass(value: number): string {
 .container-contents-menu__action--warning:hover {
   background-color: var(--color-error);
   color: white;
+}
+
+.container-contents-menu__action--remove {
+  background-color: var(--color-accent-blue-100);
+  color: var(--color-accent-blue-700);
+}
+
+.container-contents-menu__action--remove:hover {
+  background-color: var(--color-accent-blue-200);
 }
 </style>

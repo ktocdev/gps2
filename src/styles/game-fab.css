@@ -119,6 +119,10 @@
   background-color: var(--color-accent-violet-400);
 }
 
+.game-fab-sub--cyan {
+  background-color: var(--color-accent-cyan-600);
+}
+
 @keyframes fab-slide-in {
   from {
     opacity: 0;
