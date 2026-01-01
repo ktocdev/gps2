@@ -17,6 +17,7 @@ import { useSuppliesStore } from '../stores/suppliesStore'
 import { useInventoryStore } from '../stores/inventoryStore'
 import { CONSUMPTION, CHEW_DEGRADATION } from '../constants/supplies'
 import { hasServingSystem, getServingCount } from '../utils/servingSystem'
+import { getBaseItemId } from '../utils/placementId'
 
 // Types
 interface FoodItem {
@@ -46,10 +47,16 @@ interface ChewData {
   degradationRate: number // Per-use degradation %
 }
 
+interface WaterBottleData {
+  level: number           // 0-100% water level
+  lastDrinkAt: number     // Timestamp of last drink
+}
+
 // Shared state - singleton pattern to ensure same instance across all uses
 const bowlContents = ref<Map<string, FoodItem[]>>(new Map())
 const hayRackContents = ref<Map<string, HayRackData>>(new Map())
 const chewItems = ref<Map<string, ChewData>>(new Map())
+const waterBottles = ref<Map<string, WaterBottleData>>(new Map())
 
 export function useHabitatContainers() {
 
@@ -57,7 +64,7 @@ export function useHabitatContainers() {
   // Bowl Management
   // ========================================================================
 
-  function addFoodToBowl(bowlItemId: string, foodItemId: string): boolean {
+  function addFoodToBowl(bowlPlacementId: string, foodItemId: string): boolean {
     const suppliesStore = useSuppliesStore()
     const inventoryStore = useInventoryStore()
 
@@ -67,21 +74,22 @@ export function useHabitatContainers() {
       return false
     }
 
-    // Get bowl item to check capacity
-    const bowlItem = suppliesStore.getItemById(bowlItemId)
+    // Get bowl item to check capacity (use base ID for supplies lookup)
+    const baseItemId = getBaseItemId(bowlPlacementId)
+    const bowlItem = suppliesStore.getItemById(baseItemId)
     if (!bowlItem) {
-      console.warn(`Bowl ${bowlItemId} not found`)
+      console.warn(`Bowl ${baseItemId} not found`)
       return false
     }
 
     // Validate bowl is actually a bowl/bottle container
     if (bowlItem.subCategory !== 'bowls_bottles') {
-      console.warn(`Item ${bowlItemId} is not a food bowl`)
+      console.warn(`Item ${baseItemId} is not a food bowl`)
       return false
     }
 
     const capacity = bowlItem.stats?.foodCapacity || CONSUMPTION.DEFAULT_FOOD_CAPACITY
-    const currentContents = bowlContents.value.get(bowlItemId) || []
+    const currentContents = bowlContents.value.get(bowlPlacementId) || []
 
     // Check if bowl is full
     if (currentContents.length >= capacity) {
@@ -132,22 +140,22 @@ export function useHabitatContainers() {
 
     // Create new Map to trigger reactivity
     const newMap = new Map(bowlContents.value)
-    newMap.set(bowlItemId, updatedContents)
+    newMap.set(bowlPlacementId, updatedContents)
     bowlContents.value = newMap
     return true
   }
 
-  function removeFoodFromBowl(bowlItemId: string, foodIndex: number): boolean {
+  function removeFoodFromBowl(bowlPlacementId: string, foodIndex: number): boolean {
     const inventoryStore = useInventoryStore()
     const suppliesStore = useSuppliesStore()
-    const currentContents = bowlContents.value.get(bowlItemId)
+    const currentContents = bowlContents.value.get(bowlPlacementId)
     if (!currentContents) {
-      console.warn(`Bowl ${bowlItemId} has no contents`)
+      console.warn(`Bowl ${bowlPlacementId} has no contents`)
       return false
     }
 
     if (foodIndex < 0 || foodIndex >= currentContents.length) {
-      console.warn(`Invalid food index ${foodIndex} for bowl ${bowlItemId}`)
+      console.warn(`Invalid food index ${foodIndex} for bowl ${bowlPlacementId}`)
       return false
     }
 
@@ -168,28 +176,28 @@ export function useHabitatContainers() {
     // Create new Map to trigger Vue reactivity
     const newMap = new Map(bowlContents.value)
     if (updatedContents.length === 0) {
-      newMap.delete(bowlItemId)
+      newMap.delete(bowlPlacementId)
     } else {
-      newMap.set(bowlItemId, updatedContents)
+      newMap.set(bowlPlacementId, updatedContents)
     }
     bowlContents.value = newMap
     return true
   }
 
-  function getBowlContents(bowlItemId: string): FoodItem[] {
-    return bowlContents.value.get(bowlItemId) || []
+  function getBowlContents(bowlPlacementId: string): FoodItem[] {
+    return bowlContents.value.get(bowlPlacementId) || []
   }
 
-  function clearBowl(bowlItemId: string): void {
-    bowlContents.value.delete(bowlItemId)
+  function clearBowl(bowlPlacementId: string): void {
+    bowlContents.value.delete(bowlPlacementId)
   }
 
   function clearAllBowls(): void {
     bowlContents.value.clear()
   }
 
-  function setFoodFreshness(bowlItemId: string, foodIndex: number, freshness: number): void {
-    const currentContents = bowlContents.value.get(bowlItemId)
+  function setFoodFreshness(bowlPlacementId: string, foodIndex: number, freshness: number): void {
+    const currentContents = bowlContents.value.get(bowlPlacementId)
     if (!currentContents || foodIndex >= currentContents.length) {
       console.warn(`Invalid bowl or food index`)
       return
@@ -207,7 +215,7 @@ export function useHabitatContainers() {
 
     // Create new Map to trigger reactivity
     const newMap = new Map(bowlContents.value)
-    newMap.set(bowlItemId, updatedContents)
+    newMap.set(bowlPlacementId, updatedContents)
     bowlContents.value = newMap
   }
 
@@ -231,14 +239,15 @@ export function useHabitatContainers() {
   // Hay Rack Management
   // ========================================================================
 
-  function addHayToRack(hayRackItemId: string, hayItemId: string): boolean {
+  function addHayToRack(hayRackPlacementId: string, hayItemId: string): boolean {
     const inventoryStore = useInventoryStore()
     const suppliesStore = useSuppliesStore()
 
-    // Validate hay rack is actually a hay rack
-    const hayRackItem = suppliesStore.getItemById(hayRackItemId)
+    // Validate hay rack is actually a hay rack (use base ID for supplies lookup)
+    const baseItemId = getBaseItemId(hayRackPlacementId)
+    const hayRackItem = suppliesStore.getItemById(baseItemId)
     if (!hayRackItem || hayRackItem.subCategory !== 'bowls_bottles') {
-      console.warn(`Item ${hayRackItemId} is not a hay rack`)
+      console.warn(`Item ${baseItemId} is not a hay rack`)
       return false
     }
 
@@ -256,7 +265,7 @@ export function useHabitatContainers() {
       return false
     }
 
-    const currentData = hayRackContents.value.get(hayRackItemId) || {
+    const currentData = hayRackContents.value.get(hayRackPlacementId) || {
       servings: [],
       freshness: 100,
       lastDecayUpdate: Date.now()
@@ -285,7 +294,7 @@ export function useHabitatContainers() {
       }
     ]
 
-    hayRackContents.value.set(hayRackItemId, {
+    hayRackContents.value.set(hayRackPlacementId, {
       servings: updatedServings,
       freshness: currentData.freshness,
       lastDecayUpdate: currentData.lastDecayUpdate
@@ -293,8 +302,8 @@ export function useHabitatContainers() {
     return true
   }
 
-  function removeHayFromRack(hayRackItemId: string, servingIndex: number): boolean {
-    const currentData = hayRackContents.value.get(hayRackItemId)
+  function removeHayFromRack(hayRackPlacementId: string, servingIndex: number): boolean {
+    const currentData = hayRackContents.value.get(hayRackPlacementId)
     if (!currentData || servingIndex >= currentData.servings.length) {
       console.warn(`Invalid hay rack or serving index`)
       return false
@@ -305,9 +314,9 @@ export function useHabitatContainers() {
     const updatedServings = currentData.servings.filter((_, index) => index !== servingIndex)
 
     if (updatedServings.length === 0) {
-      hayRackContents.value.delete(hayRackItemId)
+      hayRackContents.value.delete(hayRackPlacementId)
     } else {
-      hayRackContents.value.set(hayRackItemId, {
+      hayRackContents.value.set(hayRackPlacementId, {
         servings: updatedServings,
         freshness: currentData.freshness,
         lastDecayUpdate: currentData.lastDecayUpdate
@@ -317,18 +326,18 @@ export function useHabitatContainers() {
     return true
   }
 
-  function getHayRackContents(hayRackItemId: string): HayServing[] {
-    const data = hayRackContents.value.get(hayRackItemId)
+  function getHayRackContents(hayRackPlacementId: string): HayServing[] {
+    const data = hayRackContents.value.get(hayRackPlacementId)
     return data?.servings || []
   }
 
-  function getHayRackFreshness(hayRackItemId: string): number {
-    const data = hayRackContents.value.get(hayRackItemId)
+  function getHayRackFreshness(hayRackPlacementId: string): number {
+    const data = hayRackContents.value.get(hayRackPlacementId)
     return data?.freshness ?? 100
   }
 
-  function setHayRackFreshness(hayRackItemId: string, freshness: number): void {
-    const data = hayRackContents.value.get(hayRackItemId)
+  function setHayRackFreshness(hayRackPlacementId: string, freshness: number): void {
+    const data = hayRackContents.value.get(hayRackPlacementId)
 
     // If hay rack doesn't exist in the map yet, initialize it
     const rackData = data || {
@@ -339,7 +348,7 @@ export function useHabitatContainers() {
 
     // Create a new Map to trigger Vue reactivity
     const newMap = new Map(hayRackContents.value)
-    newMap.set(hayRackItemId, {
+    newMap.set(hayRackPlacementId, {
       servings: rackData.servings,
       freshness: Math.max(0, Math.min(100, freshness)),
       lastDecayUpdate: rackData.lastDecayUpdate
@@ -347,11 +356,11 @@ export function useHabitatContainers() {
     hayRackContents.value = newMap
   }
 
-  function clearHayRack(hayRackItemId: string): void {
+  function clearHayRack(hayRackPlacementId: string): void {
     // Keep the rack entry but clear its servings and reset freshness
     // This ensures the rack is still tracked in the system
     const newMap = new Map(hayRackContents.value)
-    newMap.set(hayRackItemId, {
+    newMap.set(hayRackPlacementId, {
       servings: [],
       freshness: 100,
       lastDecayUpdate: Date.now()
@@ -436,12 +445,13 @@ export function useHabitatContainers() {
   /**
    * Initialize chew item tracking when placed in habitat
    */
-  function initializeChewItem(chewItemId: string): void {
+  function initializeChewItem(chewPlacementId: string): void {
     const suppliesStore = useSuppliesStore()
-    const chewItem = suppliesStore.getItemById(chewItemId)
+    const baseItemId = getBaseItemId(chewPlacementId)
+    const chewItem = suppliesStore.getItemById(baseItemId)
 
     if (!chewItem) {
-      console.warn(`Chew item ${chewItemId} not found`)
+      console.warn(`Chew item ${baseItemId} not found`)
       return
     }
 
@@ -459,7 +469,7 @@ export function useHabitatContainers() {
 
     // Initialize fresh chew data
     const newMap = new Map(chewItems.value)
-    newMap.set(chewItemId, {
+    newMap.set(chewPlacementId, {
       durability: 100,
       usageCount: 0,
       lastUsedAt: Date.now(),
@@ -471,24 +481,24 @@ export function useHabitatContainers() {
   /**
    * Use/chew an item, reducing its durability
    */
-  function chewItem(chewItemId: string): boolean {
-    const chewData = chewItems.value.get(chewItemId)
+  function chewItem(chewPlacementId: string): boolean {
+    const chewData = chewItems.value.get(chewPlacementId)
 
     if (!chewData) {
-      console.warn(`Chew item ${chewItemId} not initialized`)
+      console.warn(`Chew item ${chewPlacementId} not initialized`)
       return false
     }
 
     // Don't allow using unsafe chews
     if (chewData.durability < CHEW_DEGRADATION.UNSAFE_THRESHOLD) {
-      console.warn(`Chew item ${chewItemId} is unsafe to use (durability: ${chewData.durability}%)`)
+      console.warn(`Chew item ${chewPlacementId} is unsafe to use (durability: ${chewData.durability}%)`)
       return false
     }
 
     // Reduce durability and update usage
     const newDurability = Math.max(0, chewData.durability - chewData.degradationRate)
     const newMap = new Map(chewItems.value)
-    newMap.set(chewItemId, {
+    newMap.set(chewPlacementId, {
       ...chewData,
       durability: newDurability,
       usageCount: chewData.usageCount + 1,
@@ -502,30 +512,30 @@ export function useHabitatContainers() {
   /**
    * Get chew item data
    */
-  function getChewData(chewItemId: string): ChewData | undefined {
-    return chewItems.value.get(chewItemId)
+  function getChewData(chewPlacementId: string): ChewData | undefined {
+    return chewItems.value.get(chewPlacementId)
   }
 
   /**
    * Get durability of a chew item
    */
-  function getChewDurability(chewItemId: string): number {
-    const data = chewItems.value.get(chewItemId)
+  function getChewDurability(chewPlacementId: string): number {
+    const data = chewItems.value.get(chewPlacementId)
     return data?.durability ?? 100
   }
 
   /**
    * Set chew durability (for debug controls)
    */
-  function setChewDurability(chewItemId: string, durability: number): void {
-    const chewData = chewItems.value.get(chewItemId)
+  function setChewDurability(chewPlacementId: string, durability: number): void {
+    const chewData = chewItems.value.get(chewPlacementId)
     if (!chewData) {
-      console.warn(`Chew item ${chewItemId} not found`)
+      console.warn(`Chew item ${chewPlacementId} not found`)
       return
     }
 
     const newMap = new Map(chewItems.value)
-    newMap.set(chewItemId, {
+    newMap.set(chewPlacementId, {
       ...chewData,
       durability: Math.max(0, Math.min(100, durability))
     })
@@ -535,9 +545,9 @@ export function useHabitatContainers() {
   /**
    * Remove chew item tracking when removed from habitat
    */
-  function removeChewItem(chewItemId: string): void {
+  function removeChewItem(chewPlacementId: string): void {
     const newMap = new Map(chewItems.value)
-    newMap.delete(chewItemId)
+    newMap.delete(chewPlacementId)
     chewItems.value = newMap
   }
 
@@ -555,6 +565,134 @@ export function useHabitatContainers() {
   }
 
   // ========================================================================
+  // Water Bottle Management
+  // ========================================================================
+
+  /**
+   * Initialize water bottle tracking when placed in habitat
+   */
+  function initializeWaterBottle(bottlePlacementId: string, initialLevel: number = 100): void {
+    const newMap = new Map(waterBottles.value)
+    newMap.set(bottlePlacementId, {
+      level: Math.max(0, Math.min(100, initialLevel)),
+      lastDrinkAt: Date.now()
+    })
+    waterBottles.value = newMap
+    console.log(`[useHabitatContainers] Initialized water bottle: ${bottlePlacementId} at ${initialLevel}%`)
+  }
+
+  /**
+   * Get water level for a specific bottle
+   */
+  function getWaterBottleLevel(bottlePlacementId: string): number {
+    const data = waterBottles.value.get(bottlePlacementId)
+    return data?.level ?? 100
+  }
+
+  /**
+   * Set water level for a specific bottle
+   */
+  function setWaterBottleLevel(bottlePlacementId: string, level: number): void {
+    const data = waterBottles.value.get(bottlePlacementId)
+    const bottleData = data || { level: 100, lastDrinkAt: Date.now() }
+
+    const newMap = new Map(waterBottles.value)
+    newMap.set(bottlePlacementId, {
+      ...bottleData,
+      level: Math.max(0, Math.min(100, level))
+    })
+    waterBottles.value = newMap
+  }
+
+  /**
+   * Refill a specific water bottle to 100%
+   */
+  function refillWaterBottle(bottlePlacementId: string): number {
+    const currentLevel = getWaterBottleLevel(bottlePlacementId)
+    const amountFilled = 100 - currentLevel
+
+    setWaterBottleLevel(bottlePlacementId, 100)
+    console.log(`[useHabitatContainers] Refilled water bottle: ${bottlePlacementId} (+${amountFilled}%)`)
+
+    return amountFilled
+  }
+
+  /**
+   * Consume water from a specific bottle
+   * Returns true if water was consumed, false if bottle is empty
+   */
+  function consumeWaterFromBottle(bottlePlacementId: string, amount: number): boolean {
+    const currentLevel = getWaterBottleLevel(bottlePlacementId)
+
+    if (currentLevel < CONSUMPTION.WATER_MINIMUM_LEVEL) {
+      console.log(`[useHabitatContainers] Water bottle ${bottlePlacementId} is empty`)
+      return false
+    }
+
+    const newLevel = Math.max(0, currentLevel - amount)
+
+    const newMap = new Map(waterBottles.value)
+    newMap.set(bottlePlacementId, {
+      level: newLevel,
+      lastDrinkAt: Date.now()
+    })
+    waterBottles.value = newMap
+
+    console.log(`💧 Water consumed from ${bottlePlacementId}: ${amount}%. Remaining: ${newLevel}%`)
+    return true
+  }
+
+  /**
+   * Get all water bottle placement IDs
+   */
+  function getAllWaterBottles(): string[] {
+    return Array.from(waterBottles.value.keys())
+  }
+
+  /**
+   * Get aggregate water level (average of all bottles)
+   */
+  function getAggregateWaterLevel(): number {
+    if (waterBottles.value.size === 0) return 0
+
+    let total = 0
+    waterBottles.value.forEach(data => {
+      total += data.level
+    })
+    return total / waterBottles.value.size
+  }
+
+  /**
+   * Find a water bottle with available water for drinking
+   * Returns null if no bottles have water
+   */
+  function findAvailableWaterBottle(): string | null {
+    for (const [placementId, data] of waterBottles.value.entries()) {
+      if (data.level >= CONSUMPTION.WATER_MINIMUM_LEVEL) {
+        return placementId
+      }
+    }
+    return null
+  }
+
+  /**
+   * Remove water bottle tracking when removed from habitat
+   */
+  function removeWaterBottle(bottlePlacementId: string): void {
+    const newMap = new Map(waterBottles.value)
+    newMap.delete(bottlePlacementId)
+    waterBottles.value = newMap
+    console.log(`[useHabitatContainers] Removed water bottle tracking: ${bottlePlacementId}`)
+  }
+
+  /**
+   * Clear all water bottle tracking
+   */
+  function clearAllWaterBottles(): void {
+    waterBottles.value = new Map()
+  }
+
+  // ========================================================================
   // Return API
   // ========================================================================
 
@@ -563,6 +701,7 @@ export function useHabitatContainers() {
     bowlContents,
     hayRackContents,
     chewItems,
+    waterBottles,
 
     // Bowl methods
     addFoodToBowl,
@@ -591,9 +730,21 @@ export function useHabitatContainers() {
     getChewDurability,
     setChewDurability,
     removeChewItem,
-    getUnsafeChews
+    getUnsafeChews,
+
+    // Water bottle methods
+    initializeWaterBottle,
+    getWaterBottleLevel,
+    setWaterBottleLevel,
+    refillWaterBottle,
+    consumeWaterFromBottle,
+    getAllWaterBottles,
+    getAggregateWaterLevel,
+    findAvailableWaterBottle,
+    removeWaterBottle,
+    clearAllWaterBottles
   }
 }
 
 // Export types for external use
-export type { FoodItem, HayServing, HayRackData, ChewData }
+export type { FoodItem, HayServing, HayRackData, ChewData, WaterBottleData }

@@ -52,9 +52,9 @@ export function use3DItems(worldGroup: THREE.Group) {
       // Add models for items that have positions
       positionedItemIds.forEach((placementId) => {
         if (!itemModels.has(placementId)) {
-          // Use base itemId for model creation (determines model type)
+          // Use placement ID for model creation (contains base ID for type detection + unique ID for content lookup)
           const baseItemId = getBaseItemId(placementId)
-          const model = createItemModel(baseItemId)
+          const model = createItemModel(placementId)
           // Store creation-time offsets in userData BEFORE any position updates
           // This prevents the offset from being compounded on each watcher run
           model.userData.creationOffsetX = model.position.x
@@ -85,7 +85,7 @@ export function use3DItems(worldGroup: THREE.Group) {
 
             // Apply smart rotation for water bottles based on wall position
             const baseId = model.userData.baseItemId || getBaseItemId(placementId)
-            if (baseId.includes('water') && baseId.includes('bottle')) {
+            if (baseId.includes('bottle')) {
               model.rotation.y = getWaterBottleRotation(position.x, position.y)
             }
           }
@@ -121,8 +121,8 @@ export function use3DItems(worldGroup: THREE.Group) {
             disposeObject3D(model)
             worldGroup.remove(model)
 
-            // Create new model with updated contents (use base itemId)
-            const newModel = createItemModel(baseItemId)
+            // Create new model with updated contents (use placement ID for content lookup)
+            const newModel = createItemModel(placementId)
             // Store creation-time offsets in userData
             newModel.userData.creationOffsetX = newModel.position.x
             newModel.userData.creationOffsetY = newModel.position.y
@@ -163,8 +163,8 @@ export function use3DItems(worldGroup: THREE.Group) {
             disposeObject3D(model)
             worldGroup.remove(model)
 
-            // Create new model with updated contents (use base itemId)
-            const newModel = createItemModel(baseItemId)
+            // Create new model with updated contents (use placement ID for content lookup)
+            const newModel = createItemModel(placementId)
             // Store creation-time offsets in userData
             newModel.userData.creationOffsetX = newModel.position.x
             newModel.userData.creationOffsetY = newModel.position.y

@@ -125,10 +125,12 @@
       <!-- Water Bottle Menu -->
       <WaterBottleMenu
         v-if="waterBottle.showWaterBottleMenu.value"
-        :water-level="habitatConditions.waterLevel"
+        :water-level="waterBottle.currentBottleWaterLevel.value"
         :position="waterBottle.waterBottleMenuPosition.value"
+        :bottle-name="waterBottle.currentBottleName.value"
         @close="waterBottle.closeMenu"
         @refill="waterBottle.handleRefill"
+        @remove="waterBottle.handleRemoveWaterBottle"
       />
 
       <!-- Clean Cage Dialog -->
@@ -165,7 +167,7 @@
         <div class="game-fab-row">
           <button
             ref="interactFabRef"
-            class="game-fab game-fab--pink"
+            class="game-fab game-fab--violet"
             :class="{ 'game-fab--active': showInteractMenu || pendingInteraction }"
             @click="handleInteractFabClick"
             title="Interact"
@@ -180,7 +182,7 @@
           :anchor-x="interactMenuPosition.x"
           :anchor-y="interactMenuPosition.y"
           :actions="interactActions"
-          theme="pink"
+          theme="violet"
           @select="handleInteractAction"
           @close="showInteractMenu = false"
         />
@@ -191,13 +193,13 @@
             v-if="activePanel === 'habitat-care'"
             class="game-fab-subactions"
           >
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabFillHay" title="Fill All Hay Racks">🌾</button>
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabRefillWater" title="Refill Water">💧</button>
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabQuickClean" title="Quick Clean">🧹</button>
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabCleanHabitat" title="Clean Habitat">🧽</button>
+            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabFillHay" title="Fill All Hay Racks">🌾</button>
+            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabRefillWater" title="Refill Water">💧</button>
+            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabQuickClean" title="Quick Clean">🧹</button>
+            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabCleanHabitat" title="Clean Habitat">🧽</button>
           </div>
           <button
-            class="game-fab game-fab--green"
+            class="game-fab game-fab--cyan"
             :class="{ 'game-fab--active': activePanel === 'habitat-care' }"
             @click="togglePanel('habitat-care')"
             title="Habitat Care"
@@ -211,7 +213,7 @@
       <div class="game-fab-container game-fab-container--left">
         <div class="game-fab-row">
           <button
-            class="game-fab game-fab--cyan"
+            class="game-fab game-fab--green"
             :class="{ 'game-fab--active': showHelp }"
             @click="showHelp = !showHelp"
             title="Help & Controls"
@@ -265,6 +267,7 @@ import { useGameController } from '../../stores/gameController'
 import { useLoggingStore } from '../../stores/loggingStore'
 import { GRID_CONFIG, ENVIRONMENT_CONFIG, ANIMATION_CONFIG, CLOUD_CONFIG } from '../../constants/3d'
 import { disposeObject3D } from '../../utils/three-cleanup'
+import { getBaseItemId } from '../../utils/placementId'
 import { use3DInteractions } from '../../composables/3d/use3DInteractions'
 import { use3DContainerMenu } from '../../composables/3d/use3DContainerMenu'
 import { use3DPlacement } from '../../composables/3d/use3DPlacement'
@@ -810,12 +813,13 @@ function animate(currentTime: number = 0) {
     physics3D.updatePhysics(deltaTime)
   }
 
-  // Update water bottle
-  const waterBottleModel = waterBottle.findWaterBottleModel()
-  if (waterBottleModel) {
-    updateWaterBottleLevel(waterBottleModel, habitatConditions.waterLevel)
+  // Update all water bottles with per-bottle water levels
+  const allBottles = waterBottle.getAllWaterBottles()
+  for (const { placementId, model } of allBottles) {
+    const bottleLevel = habitatConditions.getWaterBottleLevel(placementId)
+    updateWaterBottleLevel(model, bottleLevel)
     if (!gameController.isPaused) {
-      updateWaterBottleBubbles(waterBottleModel, deltaTime)
+      updateWaterBottleBubbles(model, deltaTime)
     }
   }
 
@@ -971,11 +975,11 @@ function handleCanvasClick(event: MouseEvent) {
         let current: THREE.Object3D | null = clickedObject
         while (current) {
           if (current === model) {
-            const item = suppliesStore.getItemById(itemId)
+            const item = suppliesStore.getItemById(getBaseItemId(itemId))
             if (item?.stats?.itemType === 'food_bowl') {
               clickedContainerId = itemId
               clickedContainerType = 'bowl'
-            } else if (item?.stats?.itemType === 'hay_rack' || (itemId.includes('hay') && itemId.includes('rack'))) {
+            } else if (item?.stats?.itemType === 'hay_rack' || (getBaseItemId(itemId).includes('hay') && getBaseItemId(itemId).includes('rack'))) {
               clickedContainerId = itemId
               clickedContainerType = 'hay_rack'
             }
@@ -1016,15 +1020,14 @@ function handleCanvasClick(event: MouseEvent) {
       }
 
       // Check for water bottle click
-      let clickedWaterBottle = false
+      let clickedWaterBottleId: string | null = null
       itemModels.forEach((model, itemId) => {
         let current: THREE.Object3D | null = clickedObject
         while (current) {
           if (current === model) {
-            const item = suppliesStore.getItemById(itemId)
+            const item = suppliesStore.getItemById(getBaseItemId(itemId))
             if (item?.stats?.itemType === 'water_bottle') {
-              clickedWaterBottle = true
-              waterBottle.openMenu({ x: event.clientX, y: event.clientY })
+              clickedWaterBottleId = itemId
             }
             break
           }
@@ -1032,7 +1035,10 @@ function handleCanvasClick(event: MouseEvent) {
         }
       })
 
-      if (clickedWaterBottle) return
+      if (clickedWaterBottleId) {
+        waterBottle.openMenu(clickedWaterBottleId, { x: event.clientX, y: event.clientY })
+        return
+      }
 
       // Check for chew item click (regular click = popover, shift+click = physics push)
       let clickedChewId: string | null = null
@@ -1041,7 +1047,7 @@ function handleCanvasClick(event: MouseEvent) {
         let current: THREE.Object3D | null = clickedObject
         while (current) {
           if (current === model) {
-            const item = suppliesStore.getItemById(itemId)
+            const item = suppliesStore.getItemById(getBaseItemId(itemId))
             if (item?.subCategory === 'chews') {
               clickedChewId = itemId
             }

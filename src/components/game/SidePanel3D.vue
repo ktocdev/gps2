@@ -297,7 +297,7 @@ defineEmits<{
 
 /* Color variants - Pink */
 .side-panel-3d--pink .side-panel-3d__tab {
-  background-color: var(--color-accent-pink-500);
+  background-color: var(--color-accent-pink-600);
   color: white;
 }
 
@@ -306,7 +306,7 @@ defineEmits<{
 }
 
 .side-panel-3d--pink .side-panel-3d__header {
-  background-color: var(--color-accent-pink-500);
+  background-color: var(--color-accent-pink-700);
 }
 
 /* Color variants - Green */

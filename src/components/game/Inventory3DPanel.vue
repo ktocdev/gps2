@@ -2,7 +2,7 @@
   <SidePanel3D
     :is-open="isOpen"
     side="right"
-    color="violet"
+    color="pink"
     title="Control Panel"
     icon="☰"
     :tabs="tabs"
