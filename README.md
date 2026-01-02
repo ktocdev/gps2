@@ -28,6 +28,7 @@ Players manage habitat conditions, provide food and water, and engage in social 
 
 ## Documentation
 
+- [3D Development](docs-3d/) - Active development documentation and sprints
 - [Project Plan](docs/PROJECT_PLAN.md) - Documentation navigation and overview
 - [Development Phases](docs/DEVELOPMENT_PHASES.md) - Implementation roadmap
 - [System Integration](docs/SYSTEM_INTEGRATION.md) - Architecture and dependencies
