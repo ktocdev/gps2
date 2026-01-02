@@ -15,15 +15,20 @@ This directory contains all documentation for the 3D habitat visualization syste
 ### [Phase 2: 3D Models & Items](./phase2/) ✅ COMPLETE
 1. Item Models Implementation
 
-### [Phase 3: Free Movement System](./phase3/) 🚧 IN PROGRESS
+### [Phase 3: Free Movement System](./phase3/) ✅ COMPLETE
 1. Free Movement Prototype
 2. Manual Control System
 3. Item Models Refactoring
 4. UI Controls Plan
 
-### [Phase 4: Animation & Polish](./phase4/) 📋 PLANNED
+### [Phase 3.5: Integration Sprint](./phase3.5/) ✅ COMPLETE
+- Sprint-based development for integration work
+- Chat bubbles, item removal, multiple item placement
+
+### [Phase 4: Interactions & Polish](./phase4/) 🚧 IN PROGRESS
 1. Interaction Animations
 2. Movement and Visual Polish
+- [Current Sprint](./phase4/SPRINT-2026-01-01.md)
 
 ## 🗂️ Document Naming Convention
 
@@ -38,24 +43,24 @@ This ensures:
 
 ## 🚀 Current Focus
 
-**Active Development:** Phase 3 - Free Movement System
-- Implementing continuous positioning system
-- Creating manual control options
-- Planning integration with main game
+**Active Development:** Phase 4 - Interactions & Polish
+- User-to-GP and GP-to-GP interactions
+- Guinea pig popover improvements
+- Personality and preference discovery system
 
 ## 📈 Progress Timeline
 
 - **Phase 1:** ✅ Complete (November 2025)
 - **Phase 2:** ✅ Complete (November 2025)
-- **Phase 3:** 🚧 In Progress (December 2025)
-- **Phase 4:** 📋 Planned (Q1 2026)
+- **Phase 3:** ✅ Complete (December 2025)
+- **Phase 3.5:** ✅ Complete (December 2025)
+- **Phase 4:** 🚧 In Progress (January 2026)
 
 ## 🔗 Quick Links
 
-- [Current Sprint](./phase3/1-free-movement-prototype.md) - Free Movement Prototype
-- [Next Priority](./phase3/2-manual-control-system.md) - Manual Control System
-- [Integration Plan](./phase3/README.md) - Phase 3 Overview
+- [Current Sprint](./phase4/SPRINT-2026-01-01.md) - Phase 4 Sprint
+- [Previous Sprint](./phase4/archived/SPRINT-2025-12-31.md) - December 31 Sprint (archived)
 
 ---
 
-**Last Updated:** December 6, 2025
+**Last Updated:** January 1, 2026

@@ -67,9 +67,10 @@
       </div>
     </div>
 
-    <!-- Needs Panel (debug only - below 3D canvas) -->
-    <div v-if="hasActiveSession && !is2DMode && !isFullscreen" class="habitat-3d-debug__needs-row">
+    <!-- Debug Panels (below 3D canvas) -->
+    <div v-if="hasActiveSession && !is2DMode && !isFullscreen" class="habitat-3d-debug__panels-row">
       <NeedsPanel />
+      <PersonalityPanel />
     </div>
   </div>
 </template>
@@ -78,6 +79,7 @@
 import { ref, computed, onUnmounted } from 'vue'
 import GameView from '../../game/GameView.vue'
 import NeedsPanel from './NeedsPanel.vue'
+import PersonalityPanel from './PersonalityPanel.vue'
 import { useGuineaPigStore } from '../../../stores/guineaPigStore'
 import { usePetStoreManager } from '../../../stores/petStoreManager'
 import { useGameViewStore } from '../../../stores/gameViewStore'
@@ -223,10 +225,24 @@ onUnmounted(() => {
   }
 }
 
-/* Needs row (debug-only, below game view) */
-.habitat-3d-debug__needs-row {
+/* Debug panels row (below game view) */
+.habitat-3d-debug__panels-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
   margin-block-start: var(--spacing-md);
-  max-inline-size: 400px;
+}
+
+@media (min-width: 768px) {
+  .habitat-3d-debug__panels-row {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .habitat-3d-debug__panels-row > * {
+    flex: 1;
+    max-inline-size: 400px;
+  }
 }
 
 /* Body fullscreen class - prevents page scrolling */
