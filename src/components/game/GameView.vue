@@ -217,13 +217,13 @@
             v-if="activePanel === 'habitat-care'"
             class="game-fab-subactions"
           >
-            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabFillHay" title="Fill All Hay Racks">🌾</button>
-            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabRefillWater" title="Refill Water">💧</button>
-            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabQuickClean" title="Quick Clean">🧹</button>
-            <button class="game-fab-sub game-fab-sub--cyan" @click="habitatCare.fabCleanHabitat" title="Clean Habitat">🧽</button>
+            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabFillHay" title="Fill All Hay Racks">🌾</button>
+            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabRefillWater" title="Refill Water">💧</button>
+            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabQuickClean" title="Quick Clean">🧹</button>
+            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabCleanHabitat" title="Clean Habitat">🧽</button>
           </div>
           <button
-            class="game-fab game-fab--cyan"
+            class="game-fab game-fab--green"
             :class="{ 'game-fab--active': activePanel === 'habitat-care' }"
             @click="togglePanel('habitat-care')"
             title="Habitat Care"
@@ -237,12 +237,12 @@
       <div class="game-fab-container game-fab-container--left">
         <div class="game-fab-row">
           <button
-            class="game-fab game-fab--green"
+            class="game-fab game-fab--cyan"
             :class="{ 'game-fab--active': showHelp }"
             @click="showHelp = !showHelp"
             title="Help & Controls"
           >
-            ❓
+            💡
           </button>
         </div>
       </div>

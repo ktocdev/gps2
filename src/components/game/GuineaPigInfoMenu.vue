@@ -9,14 +9,6 @@
       <span class="guinea-pig-info-menu__name">{{ guineaPig.name }}</span>
       <button class="guinea-pig-info-menu__close" @click="$emit('close')">×</button>
     </div>
-
-    <div class="guinea-pig-info-menu__info">
-      <Badge size="sm">{{ guineaPig.breed }}</Badge>
-      <Badge size="sm">{{ genderDisplay }}</Badge>
-      <Badge size="sm">{{ furColorDisplay }}</Badge>
-      <Badge size="sm">{{ furPatternDisplay }}</Badge>
-    </div>
-
     <div class="guinea-pig-info-menu__needs">
       <div
         v-for="need in needsList"
@@ -190,14 +182,6 @@ function getNeedColorClass(value: number): string {
 .guinea-pig-info-menu__close:hover {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
-}
-
-.guinea-pig-info-menu__info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-block-end: 1px solid var(--color-border-light);
 }
 
 .guinea-pig-info-menu__needs {
