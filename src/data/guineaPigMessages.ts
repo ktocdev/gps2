@@ -424,16 +424,6 @@ export const guineaPigMessages = {
         { message: 'TRIM MY NAILS!!', emoji: '⚠️', variant: 'critical' as const }
       ]
     },
-    health: {
-      warning: [
-        { message: 'Not feeling well...', emoji: '🤒', variant: 'warning' as const },
-        { message: 'Something wrong...', emoji: '', variant: 'warning' as const }
-      ],
-      critical: [
-        { message: 'VERY SICK!!', emoji: '🚨', variant: 'critical' as const },
-        { message: 'NEED HELP!!', emoji: '⚠️', variant: 'critical' as const }
-      ]
-    },
     chew: {
       warning: [
         { message: 'Teeth hurt...', emoji: '🦷', variant: 'warning' as const },

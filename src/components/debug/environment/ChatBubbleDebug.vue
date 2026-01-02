@@ -270,7 +270,6 @@ const needTypeOptions = [
   { label: 'Play', value: 'play' },
   { label: 'Comfort', value: 'comfort' },
   { label: 'Nails', value: 'nails' },
-  { label: 'Health', value: 'health' },
   { label: 'Chew', value: 'chew' }
 ]
 

@@ -111,7 +111,6 @@ const formatNeedName = (need: string): string => {
     thirst: 'Thirst',
     happiness: 'Happiness',
     cleanliness: 'Cleanliness',
-    health: 'Health',
     energy: 'Energy',
     social: 'Social',
     nails: 'Nails',

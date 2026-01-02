@@ -70,6 +70,12 @@
   color: var(--color-accent-green-700);
 }
 
+.instruction-overlay--orange {
+  background-color: var(--color-warning-100);
+  border: 2px solid var(--color-warning-300);
+  color: var(--color-warning-700);
+}
+
 @keyframes instruction-fade-in {
   from {
     opacity: 0;

@@ -374,7 +374,6 @@ export const usePetStoreManager = defineStore('petStoreManager', () => {
         comfort: 100,
         hygiene: 100,
         nails: 100,
-        health: 100,
         chew: 100
       },
 

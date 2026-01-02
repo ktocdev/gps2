@@ -9,14 +9,6 @@
       <span class="guinea-pig-info-menu__name">{{ guineaPig.name }}</span>
       <button class="guinea-pig-info-menu__close" @click="$emit('close')">×</button>
     </div>
-
-    <div class="guinea-pig-info-menu__info">
-      <Badge size="sm">{{ guineaPig.breed }}</Badge>
-      <Badge size="sm">{{ genderDisplay }}</Badge>
-      <Badge size="sm">{{ furColorDisplay }}</Badge>
-      <Badge size="sm">{{ furPatternDisplay }}</Badge>
-    </div>
-
     <div class="guinea-pig-info-menu__needs">
       <div
         v-for="need in needsList"
@@ -62,7 +54,6 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import Badge from '../basic/Badge.vue'
 import type { GuineaPig } from '../../stores/guineaPigStore'
 import { usePopover } from '../../composables/ui/usePopover'
 
@@ -95,22 +86,6 @@ watch(
   { immediate: true }
 )
 
-const genderDisplay = computed(() => {
-  return props.guineaPig.gender === 'male' ? 'Male' : 'Female'
-})
-
-const furColorDisplay = computed(() => {
-  const color = props.guineaPig.appearance.furColor
-  // Capitalize first letter of each word
-  return color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-})
-
-const furPatternDisplay = computed(() => {
-  const pattern = props.guineaPig.appearance.furPattern
-  // Capitalize first letter of each word
-  return pattern.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-})
-
 // Define which needs to display and their labels
 // Organized by category: Critical > Environmental > Maintenance
 const needsList = computed(() => [
@@ -126,7 +101,6 @@ const needsList = computed(() => [
   // Maintenance Needs
   { key: 'hygiene', label: 'Hygiene', value: props.guineaPig.needs.hygiene },
   { key: 'nails', label: 'Nails', value: props.guineaPig.needs.nails },
-  { key: 'health', label: 'Health', value: props.guineaPig.needs.health },
   { key: 'chew', label: 'Chew', value: props.guineaPig.needs.chew },
 ])
 
@@ -190,14 +164,6 @@ function getNeedColorClass(value: number): string {
 .guinea-pig-info-menu__close:hover {
   background-color: var(--color-bg-tertiary);
   color: var(--color-text-primary);
-}
-
-.guinea-pig-info-menu__info {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-xs);
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-block-end: 1px solid var(--color-border-light);
 }
 
 .guinea-pig-info-menu__needs {

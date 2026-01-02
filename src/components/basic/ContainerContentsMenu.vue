@@ -420,7 +420,7 @@ function getFreshnessClass(value: number): string {
 
 .container-contents-menu__action--clear {
   background-color: var(--color-bg-tertiary);
-  color: var(--color-text-muted);
+  color: var(--color-text-primary);
 }
 
 .container-contents-menu__action--clear:hover {

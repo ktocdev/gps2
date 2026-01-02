@@ -45,7 +45,6 @@ export type NeedType =
   // Maintenance Needs
   | 'hygiene'
   | 'nails'
-  | 'health'
   | 'chew'
 
 // ============================================================================

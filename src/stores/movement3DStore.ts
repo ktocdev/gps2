@@ -12,16 +12,17 @@ import { GRID_CONFIG } from '../constants/3d'
 import type { Vector3D, GuineaPig3DState, CircleObstacle, WorldBounds } from '../types/movement3d'
 
 // Obstacle radii by item type (world units)
+// These should match or slightly exceed the visual footprint of 3D models
 const OBSTACLE_RADII: Record<string, number> = {
-  food_bowl: 1.5,
-  water_bottle: 1.5,
-  shelter: 4.0,
-  igloo: 4.0,
-  tunnel: 3.0,
-  hideout: 2.5,
-  bed: 2.5,
-  hay_rack: 2.0,
-  default: 1.5
+  food_bowl: 2.0,      // Increased from 1.5 to match visual bowl size
+  water_bottle: 2.5,   // Increased from 1.5 - bottles are taller/wider
+  shelter: 4.5,        // Increased from 4.0 for better wall clearance
+  igloo: 4.5,          // Increased from 4.0 for better wall clearance
+  tunnel: 0,           // Set to 0 - tunnels are passable (guinea pigs walk through)
+  hideout: 3.0,        // Increased from 2.5
+  bed: 3.0,            // Increased from 2.5
+  hay_rack: 2.5,       // Increased from 2.0
+  default: 2.0         // Increased from 1.5
 }
 
 export const useMovement3DStore = defineStore('movement3D', () => {
@@ -161,6 +162,11 @@ export const useMovement3DStore = defineStore('movement3D', () => {
 
       // Get appropriate radius for this item type
       const radius = getObstacleRadius(itemId, itemType)
+
+      // Skip items with 0 radius (e.g., tunnels are passable)
+      if (radius <= 0) {
+        continue
+      }
 
       newObstacles.push({
         id: itemId,

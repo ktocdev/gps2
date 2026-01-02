@@ -18,10 +18,11 @@ import { useGameController } from '../../stores/gameController'
 import { useLoggingStore } from '../../stores/loggingStore'
 import { useHabitatContainers } from '../useHabitatContainers'
 import { use3DMovement } from './use3DMovement'
+import { use3DSocialActions } from './use3DSocialActions'
 import type { Vector3D } from '../../types/movement3d'
 
 // Behavior types (extensible for future needs)
-export type Behavior3DType = 'eat' | 'drink' | 'seek_shelter' | 'sleep' | 'groom' | 'play' | 'chew' | 'wander'
+export type Behavior3DType = 'eat' | 'drink' | 'seek_shelter' | 'sleep' | 'groom' | 'play' | 'chew' | 'socialize' | 'wander'
 
 // Goal structure matching 2D pattern
 export interface Behavior3DGoal {
@@ -29,13 +30,14 @@ export interface Behavior3DGoal {
   target: Vector3D | null
   priority: number
   estimatedDuration: number
-  needSatisfied?: 'hunger' | 'thirst' | 'shelter' | 'energy' | 'hygiene' | 'play' | 'chew'
+  needSatisfied?: 'hunger' | 'thirst' | 'shelter' | 'energy' | 'hygiene' | 'play' | 'chew' | 'social'
   targetItemId?: string
   sourceType?: 'food_bowl' | 'hay_rack' // For eating behavior - tracks what container to consume from
+  socialMetadata?: { partnerId: string; bondId: string } // For social behavior
 }
 
 // Activity states for UI/animation
-export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking' | 'sheltering' | 'sleeping' | 'grooming' | 'playing' | 'chewing' | 'popcorning'
+export type Activity3DType = 'idle' | 'walking' | 'eating' | 'drinking' | 'sheltering' | 'sleeping' | 'grooming' | 'playing' | 'chewing' | 'popcorning' | 'socializing'
 
 // Configuration
 const BEHAVIOR_TICK_INTERVAL = 2000 // Check behavior every 2 seconds
@@ -47,7 +49,8 @@ const THRESHOLDS = {
   energy: 40,   // Seek sleep when energy < 40
   hygiene: 60,  // Groom when hygiene < 60
   play: 55,     // Play with toys when play < 55
-  chew: 60      // Chew on items when chew < 60
+  chew: 60,     // Chew on items when chew < 60
+  social: 55    // Socialize with companion when social < 55
 }
 
 const COOLDOWNS = {
@@ -58,6 +61,7 @@ const COOLDOWNS = {
   groom: 30000,       // 30 seconds after grooming
   play: 90000,        // 90 seconds after playing
   chew: 60000,        // 60 seconds after chewing
+  socialize: 45000,   // 45 seconds after socializing
   wander: 3000        // 3 seconds between wanders
 }
 
@@ -78,7 +82,8 @@ const RESTORE_AMOUNTS = {
   energy: 25,    // Base 25 energy when sleeping (multiplied by quality)
   hygiene: 15,   // Base 15 hygiene when grooming (modified by cleanliness)
   play: 35,      // Restore 35 play when playing with toys
-  chew: 40       // Restore 40 chew when chewing on items
+  chew: 40,      // Restore 40 chew when chewing on items
+  social: 25     // Restore 25 social when socializing with companion
 }
 
 // Shelter entrance offset (igloo entrance faces +Z direction)
@@ -99,6 +104,7 @@ export function use3DBehavior(guineaPigId: string) {
   const gameController = useGameController()
   const loggingStore = useLoggingStore()
   const habitatContainers = useHabitatContainers()
+  const socialActions = use3DSocialActions()
 
   // Single movement controller for all behaviors
   const movement = use3DMovement(guineaPigId)
@@ -119,6 +125,8 @@ export function use3DBehavior(guineaPigId: string) {
   let onEatingEndCallback: (() => void) | null = null
   let onShelteringStartCallback: ((shelterPosition: Vector3D) => void) | null = null
   let onShelteringEndCallback: (() => void) | null = null
+  let onSocializingStartCallback: ((partnerId: string) => void) | null = null
+  let onSocializingEndCallback: (() => void) | null = null
 
   /**
    * Get the guinea pig data
@@ -551,6 +559,27 @@ export function use3DBehavior(guineaPigId: string) {
       }
     }
 
+    // Social < threshold (socialize with companion)
+    if (needs.social < THRESHOLDS.social && !isOnCooldown('socialize')) {
+      const bonds = guineaPigStore.getAllBonds()
+
+      if (bonds.length > 0) {
+        // Get a partner to socialize with (prioritize by bonding level)
+        const sortedBonds = bonds.sort((a, b) => b.bondingLevel - a.bondingLevel)
+        const topBond = sortedBonds[0]
+        const partnerId = topBond.guineaPig1Id === guineaPigId ? topBond.guineaPig2Id : topBond.guineaPig1Id
+
+        goals.push({
+          type: 'socialize',
+          target: null, // Will be determined by partner position
+          priority: calculateNeedPriority(needs.social, THRESHOLDS.social, 50),
+          estimatedDuration: 8000, // ~8 seconds for social interaction
+          needSatisfied: 'social',
+          socialMetadata: { partnerId, bondId: topBond.id }
+        })
+      }
+    }
+
     // LOW PRIORITY (Priority 20-30)
 
     // Wandering when content
@@ -608,6 +637,9 @@ export function use3DBehavior(guineaPigId: string) {
         break
       case 'chew':
         executeChewBehavior(goal)
+        break
+      case 'socialize':
+        executeSocializeBehavior(goal)
         break
       case 'wander':
         executeWanderBehavior()
@@ -1052,6 +1084,93 @@ export function use3DBehavior(guineaPigId: string) {
     tick()
   }
 
+  /**
+   * Execute socialize behavior - guinea pig approaches companion when social need is low
+   */
+  function executeSocializeBehavior(goal: Behavior3DGoal): void {
+    if (!goal.socialMetadata) {
+      console.warn(`[Behavior3D] Social goal missing metadata for guinea pig ${guineaPigId}`)
+      return
+    }
+
+    const { partnerId, bondId } = goal.socialMetadata
+
+    currentActivity.value = 'socializing'
+    console.log(`[Behavior3D] Guinea pig ${guineaPigId} initiating social interaction with ${partnerId}`)
+
+    // Get guinea pig names for logging
+    const gp = getGuineaPig()
+    const gpName = gp?.name || 'Guinea pig'
+    const partner = guineaPigStore.collection.guineaPigs[partnerId]
+    const partnerName = partner?.name || 'companion'
+
+    if (onSocializingStartCallback) {
+      onSocializingStartCallback(partnerId)
+    }
+
+    // Execute the approach using 3D social actions
+    // Note: We don't pass behavior controllers here since this is autonomous
+    // (the guinea pig will pause itself via currentActivity state)
+    socialActions.executeApproach(
+      guineaPigId,
+      partnerId,
+      gpName,
+      partnerName
+    ).then(success => {
+      finishSocializing(success, partnerId, bondId)
+    }).catch(() => {
+      finishSocializing(false, partnerId, bondId)
+    })
+  }
+
+  /**
+   * Finish socializing and restore social need
+   */
+  function finishSocializing(success: boolean, partnerId: string, bondId: string): void {
+    currentActivity.value = 'idle'
+    currentGoal.value = null
+
+    if (success) {
+      // Restore social need for this guinea pig
+      guineaPigStore.satisfyNeed(guineaPigId, 'social', RESTORE_AMOUNTS.social)
+
+      // Also slightly restore partner's social need
+      guineaPigStore.satisfyNeed(partnerId, 'social', Math.floor(RESTORE_AMOUNTS.social * 0.7))
+
+      // Increase bonding
+      guineaPigStore.increaseBonding(
+        bondId,
+        1,
+        'proximity',
+        'Autonomous social approach'
+      )
+
+      // Log activity
+      const gp = getGuineaPig()
+      const gpName = gp?.name || 'Guinea pig'
+      const partner = guineaPigStore.collection.guineaPigs[partnerId]
+      const partnerName = partner?.name || 'companion'
+      loggingStore.addAutonomousBehavior(
+        `${gpName} socialized with ${partnerName}`,
+        '🐹',
+        { guineaPigId, behavior: 'socializing' }
+      )
+
+      console.log(`[Behavior3D] Guinea pig ${guineaPigId} finished socializing`)
+    } else {
+      console.log(`[Behavior3D] Guinea pig ${guineaPigId} social interaction failed`)
+    }
+
+    setCooldown('socialize', COOLDOWNS.socialize)
+
+    if (onSocializingEndCallback) {
+      onSocializingEndCallback()
+    }
+
+    // Trigger next behavior tick
+    tick()
+  }
+
   // Store shelter positions for exit animation
   let currentShelterCenter: Vector3D | null = null
   let currentShelterEntrance: Vector3D | null = null
@@ -1430,7 +1549,7 @@ export function use3DBehavior(guineaPigId: string) {
     checkAutonomousPooping()
 
     // Don't interrupt active behaviors (eating, drinking, sheltering, sleeping, grooming, playing, chewing, popcorning)
-    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking' || currentActivity.value === 'sheltering' || currentActivity.value === 'sleeping' || currentActivity.value === 'grooming' || currentActivity.value === 'playing' || currentActivity.value === 'chewing' || currentActivity.value === 'popcorning') {
+    if (currentActivity.value === 'eating' || currentActivity.value === 'drinking' || currentActivity.value === 'sheltering' || currentActivity.value === 'sleeping' || currentActivity.value === 'grooming' || currentActivity.value === 'playing' || currentActivity.value === 'chewing' || currentActivity.value === 'popcorning' || currentActivity.value === 'socializing') {
       return
     }
 
@@ -1626,6 +1745,20 @@ export function use3DBehavior(guineaPigId: string) {
     onChewingEndCallback = callback
   }
 
+  /**
+   * Set callback for when socializing starts (approaching companion)
+   */
+  function onSocializingStart(callback: (partnerId: string) => void): void {
+    onSocializingStartCallback = callback
+  }
+
+  /**
+   * Set callback for when socializing ends
+   */
+  function onSocializingEnd(callback: () => void): void {
+    onSocializingEndCallback = callback
+  }
+
   // Auto-cleanup on unmount
   onUnmounted(() => {
     stop()
@@ -1655,6 +1788,8 @@ export function use3DBehavior(guineaPigId: string) {
     onPopcornStart,
     onPopcornEnd,
     onChewingStart,
-    onChewingEnd
+    onChewingEnd,
+    onSocializingStart,
+    onSocializingEnd
   }
 }
