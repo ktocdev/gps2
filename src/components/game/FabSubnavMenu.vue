@@ -22,8 +22,8 @@ const props = defineProps<{
   anchorY: number
   /** Array of actions to display */
   actions: FabSubnavAction[]
-  /** Theme variant: 'pink' | 'green' | 'violet' | 'yellow' | 'orange' */
-  theme?: 'pink' | 'green' | 'violet' | 'yellow' | 'orange'
+  /** Theme variant: 'pink' | 'green' | 'violet' | 'yellow' | 'orange' | 'cyan' */
+  theme?: 'pink' | 'green' | 'violet' | 'yellow' | 'orange' | 'cyan'
 }>()
 
 const emit = defineEmits<{

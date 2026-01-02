@@ -211,26 +211,29 @@
           @close="showInteractMenu = false"
         />
 
-        <!-- Habitat Care FAB with subactions -->
+        <!-- Habitat Care FAB -->
         <div class="game-fab-row">
-          <div
-            v-if="activePanel === 'habitat-care'"
-            class="game-fab-subactions"
-          >
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabFillHay" title="Fill All Hay Racks">🌾</button>
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabRefillWater" title="Refill Water">💧</button>
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabQuickClean" title="Quick Clean">🧹</button>
-            <button class="game-fab-sub game-fab-sub--green" @click="habitatCare.fabCleanHabitat" title="Clean Habitat">🧽</button>
-          </div>
           <button
-            class="game-fab game-fab--green"
-            :class="{ 'game-fab--active': activePanel === 'habitat-care' }"
-            @click="togglePanel('habitat-care')"
+            ref="habitatCareFabRef"
+            class="game-fab game-fab--cyan"
+            :class="{ 'game-fab--active': showHabitatCareMenu }"
+            @click="handleHabitatCareFabClick"
             title="Habitat Care"
           >
             🏠
           </button>
         </div>
+
+        <!-- Habitat Care popover menu -->
+        <FabSubnavMenu
+          :show="showHabitatCareMenu"
+          :anchor-x="habitatCareMenuPosition.x"
+          :anchor-y="habitatCareMenuPosition.y"
+          :actions="habitatCareActions"
+          theme="cyan"
+          @select="handleHabitatCareAction"
+          @close="showHabitatCareMenu = false"
+        />
       </div>
 
       <!-- Left FAB - Help -->
@@ -322,11 +325,9 @@ const emit = defineEmits<{
 const canvasRef = ref<HTMLCanvasElement | null>(null)
 const interactFabRef = ref<HTMLButtonElement | null>(null)
 const socialFabRef = ref<HTMLButtonElement | null>(null)
+const habitatCareFabRef = ref<HTMLButtonElement | null>(null)
 const selectedGuineaPigId = ref<string | null>(null)
 const guineaPigMenuPosition = ref({ x: 0, y: 0 })
-
-// Floating Action Button panel state
-const activePanel = ref<string | null>(null)
 
 // Activity Feed panel state
 const showActivityFeed = ref(false)
@@ -346,6 +347,10 @@ const pendingInteraction = ref<string | null>(null)
 const showSocialMenu = ref(false)
 const socialMenuPosition = ref({ x: 0, y: 0 })
 const pendingSocialAction = ref<string | null>(null)
+
+// Habitat care popover state
+const showHabitatCareMenu = ref(false)
+const habitatCareMenuPosition = ref({ x: 0, y: 0 })
 
 // Hand feed state
 const showFoodSelectionDialog = ref(false)
@@ -385,12 +390,12 @@ const socialActions3D = use3DSocialActions()
 // Interact actions for FAB subnav
 const interactActions: FabSubnavAction[] = [
   { id: 'pet', icon: '🫳', label: 'Pet' },
-  { id: 'hold', icon: '🫴', label: 'Hold' },
   { id: 'hand-feed', icon: '🥕', label: 'Hand Feed' },
-  { id: 'gentle-wipe', icon: '🧼', label: 'Gentle Wipe' },
-  { id: 'show-toy', icon: '🧸', label: 'Show Toy' },
-  { id: 'peek-a-boo', icon: '👀', label: 'Peek-a-Boo' },
   { id: 'talk-to', icon: '💬', label: 'Talk To' },
+  { id: 'show-toy', icon: '🧸', label: 'Show Toy' },
+  { id: 'hold', icon: '🫴', label: 'Hold' },
+  { id: 'gentle-wipe', icon: '🧼', label: 'Gentle Wipe' },
+  { id: 'trim-nails', icon: '✂️', label: 'Trim Nails' },
 ]
 
 // Social (GP-to-GP) actions for FAB subnav
@@ -410,6 +415,14 @@ const socialActionMessages: Record<string, string> = {
   'share-food': 'Select a guinea pig to share food!',
   'greet': 'Select a guinea pig to greet their companion!'
 }
+
+// Habitat care actions for FAB subnav
+const habitatCareActions: FabSubnavAction[] = [
+  { id: 'fill-hay', icon: '🌾', label: 'Fill Hay Racks' },
+  { id: 'refill-water', icon: '💧', label: 'Refill Water' },
+  { id: 'quick-clean', icon: '🧹', label: 'Quick Clean' },
+  { id: 'deep-clean', icon: '🧽', label: 'Deep Clean' },
+]
 
 // Computed instruction message based on current interaction mode
 const interactionInstruction = computed(() => {
@@ -1537,11 +1550,6 @@ function handleKeyDown(event: KeyboardEvent) {
   }
 }
 
-// Panel toggles
-function togglePanel(panelId: string) {
-  activePanel.value = activePanel.value === panelId ? null : panelId
-}
-
 // Interact FAB handlers
 function handleInteractFabClick() {
   if (!interactFabRef.value) return
@@ -1576,6 +1584,34 @@ function handleSocialAction(actionId: string) {
   console.log('[GameView] Social action selected:', actionId)
   showSocialMenu.value = false
   pendingSocialAction.value = actionId
+}
+
+// Habitat Care FAB handlers
+function handleHabitatCareFabClick() {
+  if (!habitatCareFabRef.value) return
+  const rect = habitatCareFabRef.value.getBoundingClientRect()
+  habitatCareMenuPosition.value = { x: rect.left + rect.width / 2, y: rect.top }
+  showHabitatCareMenu.value = !showHabitatCareMenu.value
+}
+
+function handleHabitatCareAction(actionId: string) {
+  console.log('[GameView] Habitat care action selected:', actionId)
+  showHabitatCareMenu.value = false
+
+  switch (actionId) {
+    case 'fill-hay':
+      habitatCare.fabFillHay()
+      break
+    case 'refill-water':
+      habitatCare.fabRefillWater()
+      break
+    case 'quick-clean':
+      habitatCare.fabQuickClean()
+      break
+    case 'deep-clean':
+      habitatCare.fabCleanHabitat()
+      break
+  }
 }
 
 // Side panels

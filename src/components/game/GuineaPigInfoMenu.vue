@@ -54,7 +54,6 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import Badge from '../basic/Badge.vue'
 import type { GuineaPig } from '../../stores/guineaPigStore'
 import { usePopover } from '../../composables/ui/usePopover'
 
@@ -86,22 +85,6 @@ watch(
   },
   { immediate: true }
 )
-
-const genderDisplay = computed(() => {
-  return props.guineaPig.gender === 'male' ? 'Male' : 'Female'
-})
-
-const furColorDisplay = computed(() => {
-  const color = props.guineaPig.appearance.furColor
-  // Capitalize first letter of each word
-  return color.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-})
-
-const furPatternDisplay = computed(() => {
-  const pattern = props.guineaPig.appearance.furPattern
-  // Capitalize first letter of each word
-  return pattern.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
-})
 
 // Define which needs to display and their labels
 // Organized by category: Critical > Environmental > Maintenance

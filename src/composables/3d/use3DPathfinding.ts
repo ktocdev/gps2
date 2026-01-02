@@ -106,8 +106,8 @@ export function use3DPathfinding() {
       pushDirZ /= pushLength
     }
 
-    // Place waypoint at obstacle edge plus small margin
-    const margin = 0.5
+    // Place waypoint at obstacle edge plus margin for guinea pig body size
+    const margin = 1.2  // Increased from 0.5 to account for guinea pig body
     const waypointX = obstacle.center.x + pushDirX * (obstacle.radius + margin)
     const waypointZ = obstacle.center.z + pushDirZ * (obstacle.radius + margin)
 
@@ -204,8 +204,9 @@ export function use3DPathfinding() {
 
   /**
    * Find the nearest valid position from a point (outside obstacles and in bounds)
+   * margin accounts for guinea pig body size
    */
-  function findNearestValidPosition(point: Vector3D, margin: number = 0.5): Vector3D {
+  function findNearestValidPosition(point: Vector3D, margin: number = 1.2): Vector3D {
     // First clamp to bounds
     let result = movement3DStore.clampToBounds(point, margin)
 

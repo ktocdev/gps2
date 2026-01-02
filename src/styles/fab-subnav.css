@@ -113,6 +113,17 @@
   --fab-subnav-label: var(--color-warning-700);
 }
 
+/* Theme: Cyan (habitat care) */
+.fab-subnav--cyan {
+  --fab-subnav-bg: var(--color-accent-cyan-50);
+  --fab-subnav-border: var(--color-accent-cyan-200);
+  --fab-subnav-item-hover: var(--color-accent-cyan-100);
+  --fab-subnav-item-border-hover: var(--color-accent-cyan-300);
+  --fab-subnav-item-active: var(--color-accent-cyan-200);
+  --fab-subnav-focus: var(--color-accent-cyan-500);
+  --fab-subnav-label: var(--color-accent-cyan-700);
+}
+
 /* Dark mode adjustments - use opaque colors */
 @media (prefers-color-scheme: dark) {
   .fab-subnav--pink {
@@ -134,5 +145,12 @@
     --fab-subnav-border: var(--color-warning-400);
     --fab-subnav-item-hover: #4d3825;
     --fab-subnav-label: var(--color-warning-300);
+  }
+
+  .fab-subnav--cyan {
+    --fab-subnav-bg: #1a3d3d; /* dark cyan - opaque */
+    --fab-subnav-border: var(--color-accent-cyan-400);
+    --fab-subnav-item-hover: #254d4d;
+    --fab-subnav-label: var(--color-accent-cyan-300);
   }
 }
