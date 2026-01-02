@@ -101,7 +101,6 @@ const needsList = computed(() => [
   // Maintenance Needs
   { key: 'hygiene', label: 'Hygiene', value: props.guineaPig.needs.hygiene },
   { key: 'nails', label: 'Nails', value: props.guineaPig.needs.nails },
-  { key: 'health', label: 'Health', value: props.guineaPig.needs.health },
   { key: 'chew', label: 'Chew', value: props.guineaPig.needs.chew },
 ])
 

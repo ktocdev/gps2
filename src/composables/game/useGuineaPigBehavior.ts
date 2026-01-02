@@ -143,7 +143,6 @@ export function useGuineaPigBehavior(guineaPigId: string) {
       social: [], // Handled separately
       comfort: ['bed', 'hideaway'],
       nails: [], // Player action
-      health: ['shelter'], // Rest in shelter
       chew: ['chew', 'wood']
     }
 

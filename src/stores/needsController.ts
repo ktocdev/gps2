@@ -66,7 +66,7 @@ export const useNeedsController = defineStore('needsController', () => {
     const environmental = (needs.play + needs.social + needs.comfort) / 3
 
     // Maintenance Needs (lower weight - 25%)
-    const maintenance = (needs.hygiene + needs.nails + needs.health + needs.chew) / 4
+    const maintenance = (needs.hygiene + needs.nails + needs.chew) / 3
 
     const averageNeed = (
       (critical * 0.40) +

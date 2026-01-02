@@ -345,19 +345,6 @@ const handleInput = (event: Event) => {
   background: color-mix(in srgb, var(--color-need-nails) 85%, black);
 }
 
-.slider__input--health::-webkit-slider-thumb {
-  background: var(--color-need-health);
-}
-.slider__input--health::-moz-range-thumb {
-  background: var(--color-need-health);
-}
-.slider__input--health::-webkit-slider-thumb:hover {
-  background: color-mix(in srgb, var(--color-need-health) 85%, black);
-}
-.slider__input--health::-moz-range-thumb:hover {
-  background: color-mix(in srgb, var(--color-need-health) 85%, black);
-}
-
 .slider__input--chew::-webkit-slider-thumb {
   background: var(--color-need-chew);
 }

@@ -292,13 +292,6 @@
                       <span class="decay-preview__effect">{{ getDecayEffectText(getHygieneDecayModifier(selectedGuineaPig.personality.cleanliness)) }}</span>
                     </span>
                   </div>
-                  <div class="decay-preview__item">
-                    <span class="decay-preview__label">Health Need Decay:</span>
-                    <span class="decay-preview__value" :class="getDecayModifierClass(getHealthDecayModifier(selectedGuineaPig.personality.cleanliness))">
-                      {{ getHealthDecayModifier(selectedGuineaPig.personality.cleanliness) }}x
-                      <span class="decay-preview__effect">{{ getDecayEffectText(getHealthDecayModifier(selectedGuineaPig.personality.cleanliness)) }}</span>
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -1001,11 +994,6 @@ function getBoldnessDecayModifier(boldness: number): string {
 
 function getHygieneDecayModifier(cleanliness: number): string {
   const modifier = 1 - (cleanliness - 5) * 0.06
-  return modifier.toFixed(2)
-}
-
-function getHealthDecayModifier(cleanliness: number): string {
-  const modifier = 1 - (cleanliness - 5) * 0.05
   return modifier.toFixed(2)
 }
 

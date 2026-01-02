@@ -76,7 +76,7 @@ export interface InteractionResult {
 export type NeedType =
   | 'hunger' | 'thirst' | 'energy' | 'shelter'
   | 'play' | 'social' | 'comfort'
-  | 'hygiene' | 'nails' | 'health' | 'chew'
+  | 'hygiene' | 'nails' | 'chew'
 
 export interface GuineaPigNeeds {
   // Critical Needs (high decay, high weight)
@@ -93,7 +93,6 @@ export interface GuineaPigNeeds {
   // Maintenance Needs (low decay, medium weight)
   hygiene: number       // 0-100: Cleanliness (100 = clean, 0 = needs grooming)
   nails: number         // 0-100: Nail condition (100 = trimmed, 0 = needs trimming)
-  health: number        // 0-100: Health condition (100 = healthy, 0 = needs care)
   chew: number          // 0-100: Dental care (100 = good dental health, 0 = needs chew items)
 }
 
@@ -461,7 +460,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     // Maintenance Needs (low decay)
     hygiene: 3,       // ~0.05 points/sec = 33 minutes from 100 to 0
     nails: 0.5,       // ~0.008 points/sec = 200 minutes from 100 to 0
-    health: 1,        // ~0.017 points/sec = 100 minutes from 100 to 0
     chew: 2.5         // ~0.042 points/sec = 40 minutes from 100 to 0
   })
 
@@ -502,13 +500,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
         // Modifier: 1 - (cleanliness - 5) * 0.06
         // Cleanliness 10 (picky): 0.70x (-30%), Cleanliness 1 (piggy): 1.24x (+24%)
         modifier = 1 - (personality.cleanliness - 5) * 0.06
-        break
-
-      case 'health':
-        // Cleanliness: higher (picky) = slower decay (more careful, healthier habits)
-        // Modifier: 1 - (cleanliness - 5) * 0.05
-        // Cleanliness 10 (picky): 0.75x (-25%), Cleanliness 1 (piggy): 1.20x (+20%)
-        modifier = 1 - (personality.cleanliness - 5) * 0.05
         break
 
       default:
@@ -1295,36 +1286,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     return true
   }
 
-  const performHealthCheck = (guineaPigId: string): boolean => {
-    const guineaPig = collection.value.guineaPigs[guineaPigId]
-    if (!guineaPig) return false
-
-    // Health check improves health needs
-    const healthImprovement = 20
-    const happinessBonus = 5
-
-    satisfyNeed(guineaPigId, 'health', healthImprovement)
-    // Happiness bonus removed - happiness is now derived from wellness
-
-    // Update interaction tracking
-    guineaPig.lastInteraction = Date.now()
-    guineaPig.totalInteractions += 1
-
-    const { message, emoji } = MessageGenerator.generateHealthCheckMessage(guineaPig.name)
-
-    getLoggingStore().addPlayerAction(
-      message,
-      emoji,
-      {
-        guineaPigId,
-        healthImprovement,
-        happinessBonus
-      }
-    )
-
-    return true
-  }
-
   const sootheToSleep = (guineaPigId: string): boolean => {
     const guineaPig = collection.value.guineaPigs[guineaPigId]
     if (!guineaPig) return false
@@ -1418,7 +1379,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
       // Maintenance Needs
       hygiene: 100,
       nails: 100,
-      health: 100,
       chew: 100
     }
 
@@ -2201,7 +2161,6 @@ export const useGuineaPigStore = defineStore('guineaPigStore', () => {
     provideChewToy,
     trimNails,
     provideShelter,
-    performHealthCheck,
     sootheToSleep
   }
 }, {

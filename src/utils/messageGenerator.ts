@@ -554,19 +554,6 @@ export class MessageGenerator {
     return { message, emoji: '🏠' }
   }
 
-  static generateHealthCheckMessage(guineaPigName: string): { message: string; emoji: string } {
-    const templates = [
-      `You perform a health check on ${guineaPigName}`,
-      `${guineaPigName} gets a wellness examination`,
-      `You carefully inspect ${guineaPigName}'s health`,
-      `${guineaPigName} receives a thorough checkup`,
-      `You assess ${guineaPigName}'s overall health`
-    ]
-
-    const message = templates[Math.floor(Math.random() * templates.length)]
-    return { message, emoji: '🏥' }
-  }
-
   static generateSootheToSleepMessage(guineaPigName: string): { message: string; emoji: string } {
     const templates = [
       `You gently soothe ${guineaPigName} to sleep`,

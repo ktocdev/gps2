@@ -11,6 +11,3 @@ Guinea Pig Popover
 - make the "Take Control" button an icon-only button with title
 - add "Pet" and "Hand Feed" icon only buttons that will evoke the U2P social action on that guinea pig
 - these buttons should all be smaller and inline beneath the needs
-
-Health Need
-- is this a real need? should we keep it? it is not in the Needs Debug
