@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   message: string
-  theme: 'pink' | 'green'
+  theme: 'pink' | 'green' | 'orange'
 }>()
 </script>
 

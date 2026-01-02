@@ -77,6 +77,10 @@
   background-color: var(--color-accent-cyan-700);
 }
 
+.game-fab--red-orange {
+  background-color: #fec802;
+}
+
 /* Subactions container */
 .game-fab-subactions {
   display: flex;
