@@ -1,6 +1,6 @@
 # Guinea Pig Simulation Game (GPS2)
 
-**Copyright © 2025 ktocdev. All Rights Reserved.**
+**Copyright © 2026 ktocdev. All Rights Reserved.**
 
 ## About
 
